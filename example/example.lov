@@ -1,9 +1,13 @@
 interface printf(format: i8[], ...): i32;
 
+interface malloc(count: u64): void[mut];
+interface realloc(block: void[mut], count: u64): void[mut];
+interface memcpy(dst: void[mut], src: void[], count: u64): void[mut];
+
 define fib(n: i32): i32 {
-    let mut a = 0:i32;
-    let mut b = 1:i32;
-    foreach (_ : <[0:i32,n)>) {
+    let mut a = 0;
+    let mut b = 1;
+    foreach (_ : 0..n) {
         let c = a + b;
         a = b;
         b = c;
@@ -15,16 +19,34 @@ define hello(name: i8[]) {
     printf("Hello, %s!\r\n", name);
 }
 
-define demangle main(count: i32, args: i8[][]): i32 {
-    let n = 10:i32;
+interface main(count: i32, args: i8[][]): i32 {
+    let n = 10;
     let f = fib(n);
     printf("fib(%d) = %d\r\n", n, f);
     hello("world");
     yield 0;
 }
 
-type foo_t = {
-    mut bar: i32;
+type vec3 = {
+    mut x: f64,
+    mut y: f64,
+    mut z: f64,
+}
+
+define +(&l: vec3, &r: vec3): vec3 {
+    yield {
+        x: l.x + r.x,
+        y: l.y + r.y,
+        z: l.z + r.z,
+    }:vec3;
+}
+
+define -(&l: vec3, &r: vec3): vec3 {
+    yield {
+        x: l.x - r.x,
+        y: l.y - r.y,
+        z: l.z - r.z,
+    }:vec3;
 }
 
 define foo(mut bar: i32) {
@@ -40,34 +62,184 @@ define foo(mut bar: i32) {
 
 class string {
 
-    expose create();           # ()[mut &string] => void
-    expose create(s: i8);      # (i8)[mut &string] => void
-    expose create(s: i8[]);    # (i8[])[mut &string] => void
+    expose create();
+    expose create(s: i8);
+    expose create(s: i8[]);
+    expose create(s: string);
+    expose create(&s: string);
 
-    expose move(); # (string)[mut &string] => void
-    expose copy(); # (&string)[mut &string] => void
+    expose delete();
 
-    expose delete(); # ()[mut &string] => void
+    expose length(): u64;
 
-    expose length(): u64; # ()[&string] => u64
+    expose mut clear();
 
-    expose mut clear(); # ()[mut &string] => void
+    expose mut =(s: i8): mut &string;
+    expose mut =(s: i8[]): mut &string;
+    expose mut =(s: string): mut &string;
+    expose mut =(&s: string): mut &string;
 
-    expose mut =(s: i8): mut &string;      # (i8)[mut &string] => mut &string
-    expose mut =(s: i8[]): mut &string;    # (i8[])[mut &string] => mut &string
-    expose mut =(s: string): mut &string;  # (string)[mut &string] => mut &string
-    expose mut =(&s: string): mut &string; # (&string)[mut &string] => mut &string
-
-    expose mut +=(s: i8): mut &string;      # (i8)[mut &string] => mut &string
-    expose mut +=(s: i8[]): mut &string;    # (i8[])[mut &string] => mut &string
-    expose mut +=(s: string): mut &string;  # (string)[mut &string] => mut &string
-    expose mut +=(&s: string): mut &string; # (&string)[mut &string] => mut &string
+    expose mut +=(s: i8): mut &string;
+    expose mut +=(s: i8[]): mut &string;
+    expose mut +=(&s: string): mut &string;
 
     expose +(s: i8): string;
     expose +(s: i8[]): string;
-    expose +(s: string): string;
     expose +(&s: string): string;
 
-    mut beg: i8[];
-    mut end: i8[];
+    let mut beg: i8[mut];
+    let mut end: i8[];
+}
+
+define:string create() {
+    self.beg = null;
+    self.end = null;
+}
+
+define:string create(s: i8) {
+    self.beg = malloc(1);
+    self.end = self.beg + 1;
+
+    self.beg[0] = s;
+}
+
+define:string create(s: i8[]) {
+    let len = strlen(s);
+
+    self.beg = malloc(len);
+    self.end = self.beg + len;
+
+    memcpy(self.beg, s, len);
+}
+
+define:string create(s: string) {
+    self.beg = s.beg;
+    self.end = s.end;
+
+    s.beg = null;
+    s.end = null;
+}
+
+define:string create(&s: string) {
+    let len = s.length();
+
+    self.beg = malloc(len);
+    self.end = self.beg + len;
+
+    memcpy(self.beg, s.beg, len);
+}
+
+define:string delete() {
+    free(self.beg);
+
+    self.beg = null;
+    self.end = null;
+}
+
+define:string length(): u64 {
+    yield self.end - self.beg;
+}
+
+define:string mut clear() {
+    free(self.beg);
+
+    self.beg = null;
+    self.end = null;
+}
+
+define:string mut =(s: i8): mut &string {
+    self.beg = realloc(self.beg, 1);
+    self.end = self.beg + 1;
+
+    self.beg[0] = s;
+
+    yield self;
+}
+
+define:string mut =(s: i8[]): mut &string {
+    let len = strlen(s);
+
+    self.beg = realloc(self.beg, len);
+    self.end = self.beg + len;
+
+    memcpy(self.beg, s, len);
+
+    yield self;
+}
+
+define:string mut =(s: string): mut &string {
+    let pbeg = self.beg;
+    let pend = self.end;
+
+    self.beg = s.beg;
+    self.end = s.end;
+
+    s.beg = pbeg;
+    s.end = pend;
+
+    yield self;
+}
+
+define:string mut =(&s: string): mut &string {
+    let len = s.length();
+
+    self.beg = realloc(self.beg, len);
+    self.end = self.beg + len;
+
+    memcpy(self.beg, s.beg, len);
+
+    yield self;
+}
+
+define:string mut +=(s: i8): mut &string {
+    let len = self.length();
+
+    self.beg = realloc(self.beg, len + 1);
+    self.end = self.beg + len + 1;
+
+    self.beg[len] = s;
+
+    yield self;
+}
+
+define:string mut +=(s: i8[]): mut &string {
+    let len = self.length();
+    let slen = strlen(s);
+
+    self.beg = realloc(self.beg, len + slen);
+    self.end = self.beg + len + slen;
+
+    memcpy(self.beg + len, s, slen);
+
+    yield self;
+}
+
+define:string mut +=(&s: string): mut &string {
+    let len = self.length();
+    let slen = s.length();
+
+    self.beg = realloc(self.beg, len + slen);
+    self.end = self.beg + len + slen;
+
+    memcpy(self.beg + len, s.beg, slen);
+
+    yield self;
+}
+
+define:string +(s: i8): string {
+    let mut r = self;
+    r += s;
+    yield r;
+}
+
+define:string +(s: i8[]): string {
+    let mut r = self;
+    r += s;
+    yield r;
+}
+
+define:string +(&s: string): string {
+    let mut r = self;
+    r += s;
+    yield r;
 }

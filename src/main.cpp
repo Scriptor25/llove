@@ -1,19 +1,30 @@
 #include <fstream>
+#include <iostream>
 #include <istream>
+#include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-int main(int argc, const char **argv)
+int main(const int argc, const char *const *argv)
 {
-    std::ifstream stream("example/example.lov");
+    if (argc != 2)
+        return 1;
+
+    std::ifstream stream(argv[1]);
     if (!stream.is_open())
         return 1;
 
-    llove::Context context;
-    llove::Parser parser(context, stream);
+    llove::Context types;
+    llove::Parser parser(types, stream);
+    llove::Builder builder(types);
+
     while (parser.Ok())
-        parser.Parse();
+        if (auto ptr = parser.Parse())
+        {
+            std::cerr << ptr << std::endl;
+            ptr->Gen(builder);
+        }
 
     stream.close();
     return 0;

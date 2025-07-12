@@ -5,6 +5,7 @@
 #include <set>
 #include <vector>
 #include <llove/context.hpp>
+#include <llove/error.hpp>
 #include <llove/parameter.hpp>
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
@@ -26,8 +27,8 @@ static bool isdigit(const int c, const int base)
     }
 }
 
-llove::Parser::Parser(Context &context, std::istream &stream)
-    : m_Context(context),
+llove::Parser::Parser(Context &types, std::istream &stream)
+    : m_Types(types),
       m_Stream(stream)
 {
     m_Buffer = stream.get();
@@ -44,7 +45,7 @@ llove::GlobalPtr llove::Parser::Parse()
     return ParseGlobal();
 }
 
-void llove::Parser::Escape(std::string &raw, std::string &value)
+void llove::Parser::RemoveEscape(std::string &raw, std::string &value)
 {
     if (m_Buffer != '\\')
     {
@@ -91,7 +92,7 @@ void llove::Parser::Escape(std::string &raw, std::string &value)
 
 llove::Token llove::Parser::Next()
 {
-    static const std::map<std::string, std::set<int>> op_map
+    static const std::map<std::string, std::set<int>> compound_map
     {
         { "+", { '=', '+' } },
         { "-", { '=', '-', '>' } },
@@ -113,6 +114,7 @@ llove::Token llove::Parser::Next()
     enum
     {
         State_Idl,
+        State_Cmt,
         State_Idt,
         State_Str,
         State_Chr,
@@ -131,6 +133,9 @@ llove::Token llove::Parser::Next()
         case State_Idl:
             switch (m_Buffer)
             {
+            case '#':
+                state = State_Cmt;
+                break;
             case '(':
             case ')':
             case '{':
@@ -218,9 +223,19 @@ llove::Token llove::Parser::Next()
                     state = State_Idt;
                     break;
                 }
+                raw += static_cast<char>(m_Buffer);
                 m_Buffer = m_Stream.get();
                 break;
             }
+            break;
+        case State_Cmt:
+            if (m_Buffer != '\n')
+            {
+                raw += static_cast<char>(m_Buffer);
+                m_Buffer = m_Stream.get();
+                break;
+            }
+            state = State_Idl;
             break;
         case State_Idt:
             if (isalnum(m_Buffer) || m_Buffer == '_')
@@ -238,7 +253,7 @@ llove::Token llove::Parser::Next()
         case State_Str:
             if (m_Buffer != '"')
             {
-                Escape(raw, value);
+                RemoveEscape(raw, value);
                 break;
             }
             raw += static_cast<char>(m_Buffer);
@@ -251,7 +266,7 @@ llove::Token llove::Parser::Next()
         case State_Chr:
             if (m_Buffer != '\'')
             {
-                Escape(raw, value);
+                RemoveEscape(raw, value);
                 break;
             }
             raw += static_cast<char>(m_Buffer);
@@ -284,7 +299,7 @@ llove::Token llove::Parser::Next()
                 .FltValue = flt ? std::stod(value) : 0.0,
             };
         case State_Opr:
-            if (op_map.contains(value) && op_map.at(value).contains(m_Buffer))
+            if (compound_map.contains(value) && compound_map.at(value).contains(m_Buffer))
             {
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
@@ -347,7 +362,7 @@ llove::Token llove::Parser::Expect(const TokenType type, const std::string &valu
 {
     if (At(type, value))
         return Skip();
-    throw std::runtime_error("(Expect) !");
+    Error("expected {} : '{}', but is {} : '{}'", type, value, m_Token.Type, m_Token.Value);
 }
 
 llove::TypePtr llove::Parser::ParseType()
@@ -360,10 +375,16 @@ llove::TypePtr llove::Parser::ParseArrayType()
     auto base = ParseBaseType();
     while (SkipIf(TokenType_Otr, "["))
     {
-        int64_t size = -1;
         if (At(TokenType_Int))
-            size = static_cast<int64_t>(Skip().IntValue);
-        base = m_Context.GetArray(base, size);
+        {
+            const auto size = Skip().IntValue;
+            base = m_Types.GetArray(std::move(base), size);
+        }
+        else
+        {
+            const auto mutable_ = SkipIf(TokenType_Sym, "mut");
+            base = m_Types.GetPtr(std::move(base), mutable_);
+        }
         Expect(TokenType_Otr, "]");
     }
     return base;
@@ -382,62 +403,71 @@ llove::TypePtr llove::Parser::ParseBaseType()
 
             fields.emplace_back(field, name);
 
-            Expect(TokenType_Otr, ";");
+            Expect(TokenType_Otr, ",");
         }
         Expect(TokenType_Otr, "}");
 
-        return m_Context.GetStruct(fields);
+        return m_Types.GetStruct(std::move(fields));
+    }
+
+    if (SkipIf(TokenType_Sym, "class"))
+    {
+        Expect(TokenType_Opr, "<");
+        const auto name = Expect(TokenType_Sym).Value;
+        Expect(TokenType_Opr, ">");
+
+        return m_Types.GetClass(name);
     }
 
     if (At(TokenType_Sym))
     {
-        const auto id = Expect(TokenType_Sym).Value;
-        if (auto type = m_Context.Get(id))
+        const auto name = Expect(TokenType_Sym).Value;
+        if (auto type = m_Types.Get(name))
             return type;
 
-        if (id == "void")
-            return m_Context.GetVoid();
-        if (id == "i1")
-            return m_Context.GetInt(true, 1);
-        if (id == "i8")
-            return m_Context.GetInt(true, 8);
-        if (id == "i16")
-            return m_Context.GetInt(true, 16);
-        if (id == "i32")
-            return m_Context.GetInt(true, 32);
-        if (id == "i64")
-            return m_Context.GetInt(true, 64);
-        if (id == "u1")
-            return m_Context.GetInt(false, 1);
-        if (id == "u8")
-            return m_Context.GetInt(false, 8);
-        if (id == "u16")
-            return m_Context.GetInt(false, 16);
-        if (id == "u32")
-            return m_Context.GetInt(false, 32);
-        if (id == "u64")
-            return m_Context.GetInt(false, 64);
-        if (id == "f16")
-            return m_Context.GetFlt(16);
-        if (id == "f32")
-            return m_Context.GetFlt(32);
-        if (id == "f64")
-            return m_Context.GetFlt(64);
+        if (name == "void")
+            return m_Types.GetVoid();
+        if (name == "i1")
+            return m_Types.GetInt(true, 1);
+        if (name == "i8")
+            return m_Types.GetInt(true, 8);
+        if (name == "i16")
+            return m_Types.GetInt(true, 16);
+        if (name == "i32")
+            return m_Types.GetInt(true, 32);
+        if (name == "i64")
+            return m_Types.GetInt(true, 64);
+        if (name == "u1")
+            return m_Types.GetInt(false, 1);
+        if (name == "u8")
+            return m_Types.GetInt(false, 8);
+        if (name == "u16")
+            return m_Types.GetInt(false, 16);
+        if (name == "u32")
+            return m_Types.GetInt(false, 32);
+        if (name == "u64")
+            return m_Types.GetInt(false, 64);
+        if (name == "f16")
+            return m_Types.GetFlt(16);
+        if (name == "f32")
+            return m_Types.GetFlt(32);
+        if (name == "f64")
+            return m_Types.GetFlt(64);
+
+        Error("undefined type '{}'", name);
     }
 
-    throw std::runtime_error("!");
+    Error("unable to parse type from {} : '{}'", m_Token.Type, m_Token.Value);
 }
 
 std::string llove::Parser::ParseField(Field &field, const bool require_name, const bool allow_name)
 {
-    std::string name;
-    TypePtr type;
-
-    const auto mutable_ = SkipIf(TokenType_Sym, "mut");
-    const auto reference = SkipIf(TokenType_Opr, "&");
+    field.Mutable = SkipIf(TokenType_Sym, "mut");
+    field.Reference = SkipIf(TokenType_Opr, "&");
 
     auto allow_type = !allow_name;
 
+    std::string name;
     if (allow_name && (require_name || At(TokenType_Sym)))
     {
         name = Expect(TokenType_Sym).Value;
@@ -445,13 +475,7 @@ std::string llove::Parser::ParseField(Field &field, const bool require_name, con
     }
 
     if (allow_type)
-        type = ParseType();
-
-    field = {
-        .Mutable = mutable_,
-        .Reference = reference,
-        .Type = std::move(type),
-    };
+        field.Type = ParseType();
 
     return name;
 }
@@ -462,26 +486,27 @@ llove::GlobalPtr llove::Parser::ParseGlobal()
     {
         const auto name = Expect(TokenType_Sym).Value;
         Expect(TokenType_Opr, "=");
-        const auto type = ParseType();
-        m_Context.Set(name, type);
+        auto type = ParseType();
+        m_Types.Set(name, std::move(type));
         return nullptr;
-    }
-
-    if (SkipIf(TokenType_Sym, "class"))
-    {
     }
 
     if (At(TokenType_Sym, "define", "interface"))
         return ParseDefinitionGlobal();
+    if (At(TokenType_Sym, "class"))
+        return ParseClassGlobal();
 
-    throw std::runtime_error(std::format("(Global) ! {} !", m_Token.Raw));
+    Error("unable to parse global from {} : '{}'", m_Token.Type, m_Token.Value);
 }
 
 llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
 {
     auto interface = SkipIf(TokenType_Sym, "interface") || (Expect(TokenType_Sym, "define"), false);
-    auto demangle = SkipIf(TokenType_Sym, "demangle");
-    auto name = Expect(TokenType_Sym).Value;
+
+    if (!interface && SkipIf(TokenType_Otr, ":"))
+        return ParseClassDefinitionGlobal();
+
+    auto name = !interface && At(TokenType_Opr) ? Skip().Value : Expect(TokenType_Sym).Value;
 
     std::vector<Parameter> parameters;
     auto vararg = false;
@@ -495,10 +520,8 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
             break;
         }
 
-        Field field;
-        auto parameter_name = ParseField(field, false);
-
-        parameters.emplace_back(field, parameter_name);
+        auto &[info_, name_] = parameters.emplace_back();
+        name_ = ParseField(info_);
 
         if (!At(TokenType_Otr, ")"))
             Expect(TokenType_Otr, ",");
@@ -507,33 +530,143 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
 
     Field result;
     if (SkipIf(TokenType_Otr, ":"))
-    {
         ParseField(result, false, false);
-    }
+    else
+        result.Type = m_Types.GetVoid();
 
-    if (interface || At(TokenType_Otr, ";"))
-    {
-        Expect(TokenType_Otr, ";");
+    if (SkipIf(TokenType_Otr, ";"))
         return std::make_unique<DefinitionGlobal>(
             interface,
-            demangle,
-            name,
-            parameters,
+            std::move(name),
+            std::move(parameters),
             vararg,
-            result,
+            std::move(result),
             nullptr);
-    }
 
     auto content = ParseScopeStatement();
 
     return std::make_unique<DefinitionGlobal>(
         interface,
-        demangle,
-        name,
-        parameters,
+        std::move(name),
+        std::move(parameters),
         vararg,
-        result,
+        std::move(result),
         std::move(content));
+}
+
+llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
+{
+    auto class_name = Expect(TokenType_Sym).Value;
+    auto mutable_ = SkipIf(TokenType_Sym, "mut");
+    auto name = At(TokenType_Opr) ? Skip().Value : Expect(TokenType_Sym).Value;
+
+    std::vector<Parameter> parameters;
+    auto vararg = false;
+
+    Expect(TokenType_Otr, "(");
+    while (!At(TokenType_Otr, ")"))
+    {
+        if (SkipIf(TokenType_Opr, "..."))
+        {
+            vararg = true;
+            break;
+        }
+
+        auto &[info_, name_] = parameters.emplace_back();
+        name_ = ParseField(info_);
+
+        if (!At(TokenType_Otr, ")"))
+            Expect(TokenType_Otr, ",");
+    }
+    Expect(TokenType_Otr, ")");
+
+    Field result;
+    if (SkipIf(TokenType_Otr, ":"))
+        ParseField(result, false, false);
+    else
+        result.Type = m_Types.GetVoid();
+
+    auto content = ParseScopeStatement();
+
+    return std::make_unique<ClassDefinitionGlobal>(
+        std::move(class_name),
+        mutable_,
+        std::move(name),
+        std::move(parameters),
+        vararg,
+        std::move(result),
+        std::move(content));
+}
+
+llove::GlobalPtr llove::Parser::ParseClassGlobal()
+{
+    Expect(TokenType_Sym, "class");
+    auto name = Expect(TokenType_Sym).Value;
+
+    const auto type = m_Types.GetClass(name);
+    m_Types.Set(name, type);
+
+    if (SkipIf(TokenType_Otr, ";"))
+        return std::make_unique<ClassGlobal>(std::move(name));
+
+    std::vector<ClassField> fields;
+    std::vector<ClassFunction> functions;
+
+    Expect(TokenType_Otr, "{");
+    while (!At(TokenType_Otr, "}"))
+    {
+        if (At(TokenType_Sym, "let"))
+        {
+            ParseClassField(fields.emplace_back());
+            continue;
+        }
+
+        ParseClassFunction(functions.emplace_back());
+    }
+    Expect(TokenType_Otr, "}");
+
+    return std::make_unique<ClassGlobal>(std::move(name), std::move(fields), std::move(functions));
+}
+
+void llove::Parser::ParseClassField(ClassField &field)
+{
+    Expect(TokenType_Sym, "let");
+    field.Name = ParseField(field.Info, true);
+    Expect(TokenType_Otr, ";");
+}
+
+void llove::Parser::ParseClassFunction(ClassFunction &function)
+{
+    function.Expose = SkipIf(TokenType_Sym, "expose");
+    function.Mutable = SkipIf(TokenType_Sym, "mut");
+    function.Name = At(TokenType_Opr) ? Skip().Value : Expect(TokenType_Sym).Value;
+
+    Expect(TokenType_Otr, "(");
+    while (!At(TokenType_Otr, ")"))
+    {
+        if (SkipIf(TokenType_Opr, "..."))
+        {
+            function.VarArg = true;
+            break;
+        }
+
+        auto &[info_, name_] = function.Parameters.emplace_back();
+        name_ = ParseField(info_);
+
+        if (!At(TokenType_Otr, ")"))
+            Expect(TokenType_Otr, ",");
+    }
+    Expect(TokenType_Otr, ")");
+
+    if (SkipIf(TokenType_Otr, ":"))
+        ParseField(function.Result, false, false);
+    else
+        function.Result.Type = m_Types.GetVoid();
+
+    if (SkipIf(TokenType_Otr, ";"))
+        return;
+
+    function.Content = ParseScopeStatement();
 }
 
 llove::StatementPtr llove::Parser::ParseStatement()
@@ -569,8 +702,8 @@ llove::StatementPtr llove::Parser::ParseLetStatement()
 {
     Expect(TokenType_Sym, "let");
 
-    Field field;
-    auto name = ParseField(field, true);
+    Field info;
+    auto name = ParseField(info, true);
 
     ExpressionPtr value;
     if (SkipIf(TokenType_Opr, "="))
@@ -578,7 +711,7 @@ llove::StatementPtr llove::Parser::ParseLetStatement()
 
     Expect(TokenType_Otr, ";");
 
-    return std::make_unique<LetStatement>(field, name, std::move(value));
+    return std::make_unique<LetStatement>(std::move(info), std::move(name), std::move(value));
 }
 
 llove::StatementPtr llove::Parser::ParseForEachStatement()
@@ -598,7 +731,12 @@ llove::StatementPtr llove::Parser::ParseForEachStatement()
 
     auto content = ParseStatement();
 
-    return std::make_unique<ForEachStatement>(mutable_, reference, name, std::move(range), std::move(content));
+    return std::make_unique<ForEachStatement>(
+        mutable_,
+        reference,
+        std::move(name),
+        std::move(range),
+        std::move(content));
 }
 
 llove::StatementPtr llove::Parser::ParseYieldStatement()
@@ -684,7 +822,7 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
                 std::move(right),
                 operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));
 
-        left = std::make_unique<BinaryExpression>(value_, std::move(left), std::move(right));
+        left = std::make_unique<BinaryExpression>(std::move(value_), std::move(left), std::move(right));
     }
 
     return left;
@@ -713,6 +851,31 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             continue;
         }
 
+        if (SkipIf(TokenType_Opr, "."))
+        {
+            auto member = Expect(TokenType_Sym).Value;
+
+            expression = std::make_unique<MemberExpression>(std::move(expression), std::move(member));
+            continue;
+        }
+
+        if (SkipIf(TokenType_Opr, ".."))
+        {
+            auto end = ParsePrimaryExpression();
+
+            expression = std::make_unique<RangeExpression>(std::move(expression), std::move(end));
+            continue;
+        }
+
+        if (SkipIf(TokenType_Otr, "["))
+        {
+            auto index = ParseExpression();
+            Expect(TokenType_Otr, "]");
+
+            expression = std::make_unique<SubscriptExpression>(std::move(expression), std::move(index));
+            continue;
+        }
+
         if (At(TokenType_Opr, "++", "--"))
         {
             auto operator_ = Skip().Value;
@@ -733,24 +896,13 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         TypePtr type;
         if (SkipIf(TokenType_Otr, ":"))
             type = ParseType();
-        return std::make_unique<IntExpression>(value, type);
+        return std::make_unique<IntExpression>(value, std::move(type));
     }
 
     if (At(TokenType_Str))
     {
         auto value = Skip().Value;
-        return std::make_unique<StringExpression>(value);
-    }
-
-    if (SkipIf(TokenType_Opr, "<"))
-    {
-        auto include_begin = SkipIf(TokenType_Otr, "[") || (Expect(TokenType_Otr, "("), false);
-        auto begin = ParseExpression();
-        Expect(TokenType_Otr, ",");
-        auto end = ParseExpression();
-        auto include_end = SkipIf(TokenType_Otr, "]") || (Expect(TokenType_Otr, ")"), false);
-        Expect(TokenType_Opr, ">");
-        return std::make_unique<RangeExpression>(include_begin, std::move(begin), std::move(end), include_end);
+        return std::make_unique<StringExpression>(std::move(value));
     }
 
     if (At(TokenType_Opr, "-", "~", "!", "++", "--"))
@@ -761,11 +913,74 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         return std::make_unique<UnaryExpression>(std::move(operator_), std::move(operand), false);
     }
 
+    if (SkipIf(TokenType_Otr, "("))
+    {
+        auto expression = ParseExpression();
+        Expect(TokenType_Otr, ")");
+        return expression;
+    }
+
+    if (SkipIf(TokenType_Otr, "["))
+    {
+        std::vector<ExpressionPtr> values;
+        while (!At(TokenType_Otr, "]"))
+        {
+            values.emplace_back(ParseExpression());
+
+            if (!At(TokenType_Otr, "]"))
+                Expect(TokenType_Otr, ",");
+        }
+        Expect(TokenType_Otr, "]");
+
+        TypePtr type;
+        if (SkipIf(TokenType_Otr, ":"))
+            type = ParseType();
+
+        return std::make_unique<ArrayExpression>(std::move(values), std::move(type));
+    }
+
+    if (SkipIf(TokenType_Otr, "{"))
+    {
+        std::map<std::string, ExpressionPtr> values;
+        while (!At(TokenType_Otr, "}"))
+        {
+            auto name = Expect(TokenType_Sym).Value;
+
+            if (values.contains(name))
+                Error("struct expression must not set field '{}' twice", name);
+
+            ExpressionPtr value;
+            if (SkipIf(TokenType_Otr, ":"))
+                value = ParseExpression();
+            else
+                value = std::make_unique<SymbolExpression>(name);
+            values[name] = std::move(value);
+
+            if (!At(TokenType_Otr, "}"))
+                Expect(TokenType_Otr, ",");
+        }
+        Expect(TokenType_Otr, "}");
+
+        TypePtr type;
+        if (SkipIf(TokenType_Otr, ":"))
+            type = ParseType();
+
+        return std::make_unique<StructExpression>(std::move(values), std::move(type));
+    }
+
+    if (SkipIf(TokenType_Sym, "null"))
+    {
+        TypePtr type;
+        if (SkipIf(TokenType_Otr, ":"))
+            type = ParseType();
+        return std::make_unique<NullExpression>(type);
+    }
+
     if (At(TokenType_Sym))
     {
         auto name = Skip().Value;
-        return std::make_unique<SymbolExpression>(name);
+        return std::make_unique<SymbolExpression>(std::move(name));
     }
 
-    throw std::runtime_error(std::format("(Expression) ! {} !", m_Token.Raw));
+    Error("unable to parse expression from {} : '{}'", m_Token.Type, m_Token.Value);
 }

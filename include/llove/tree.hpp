@@ -1,59 +1,119 @@
 #pragma once
 
+#include <map>
 #include <memory>
+#include <llove/class.hpp>
 #include <llove/forward.hpp>
 #include <llove/parameter.hpp>
 
 namespace llove
 {
-    struct Global
+    class Global
     {
+    public:
         virtual ~Global() = default;
+        virtual void Gen(Builder &builder) const = 0;
+        virtual std::ostream &Print(std::ostream &stream) const = 0;
     };
 
-    struct DefinitionGlobal final : Global
+    class DefinitionGlobal final : public Global
     {
+    public:
         explicit DefinitionGlobal(
             bool interface,
-            bool demangle,
             std::string name,
-            const std::vector<Parameter> &parameters,
+            std::vector<Parameter> parameters,
             bool vararg,
             Field result,
             StatementPtr content);
 
-        bool Interface;
-        bool Demangle;
-        std::string Name;
-        std::vector<Parameter> Parameters;
-        bool Vararg;
-        Field Result;
-        StatementPtr Content;
+        void Gen(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        bool m_Interface;
+        std::string m_Name;
+        std::vector<Parameter> m_Parameters;
+        bool m_VarArg;
+        Field m_Result;
+        StatementPtr m_Content;
     };
 
-    struct Statement
+    class ClassDefinitionGlobal final : public Global
     {
+    public:
+        explicit ClassDefinitionGlobal(
+            std::string class_name,
+            bool mutable_,
+            std::string name,
+            std::vector<Parameter> parameters,
+            bool vararg,
+            Field result,
+            StatementPtr content);
+
+        void Gen(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_ClassName;
+        bool m_Mutable;
+        std::string m_Name;
+        std::vector<Parameter> m_Parameters;
+        bool m_VarArg;
+        Field m_Result;
+        StatementPtr m_Content;
+    };
+
+    class ClassGlobal final : public Global
+    {
+    public:
+        explicit ClassGlobal(std::string name);
+        explicit ClassGlobal(std::string name, std::vector<ClassField> fields, std::vector<ClassFunction> functions);
+
+        void Gen(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Name;
+        bool m_Opaque;
+        std::vector<ClassField> m_Fields;
+        std::vector<ClassFunction> m_Functions;
+    };
+
+    class Statement
+    {
+    public:
         virtual ~Statement() = default;
+        virtual std::ostream &Print(std::ostream &stream) const = 0;
     };
 
-    struct ScopeStatement final : Statement
+    class ScopeStatement final : public Statement
     {
+    public:
         explicit ScopeStatement(std::vector<StatementPtr> content);
 
-        std::vector<StatementPtr> Content;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::vector<StatementPtr> m_Content;
     };
 
-    struct LetStatement final : Statement
+    class LetStatement final : public Statement
     {
+    public:
         explicit LetStatement(Field info, std::string name, ExpressionPtr value);
 
-        Field Info;
-        std::string Name;
-        ExpressionPtr Value;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        Field m_Info;
+        std::string m_Name;
+        ExpressionPtr m_Value;
     };
 
-    struct ForEachStatement final : Statement
+    class ForEachStatement final : public Statement
     {
+    public:
         explicit ForEachStatement(
             bool mutable_,
             bool reference,
@@ -61,79 +121,171 @@ namespace llove
             ExpressionPtr range,
             StatementPtr content);
 
-        bool Mutable;
-        bool Reference;
-        std::string Name;
-        ExpressionPtr Range;
-        StatementPtr Content;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        bool m_Mutable;
+        bool m_Reference;
+        std::string m_Name;
+        ExpressionPtr m_Range;
+        StatementPtr m_Content;
     };
 
-    struct YieldStatement final : Statement
+    class YieldStatement final : public Statement
     {
+    public:
         explicit YieldStatement(ExpressionPtr value);
 
-        ExpressionPtr Value;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Value;
     };
 
-    struct Expression : Statement
+    class Expression : public Statement
     {
     };
 
-    struct IntExpression final : Expression
+    class NullExpression final : public Expression
     {
+    public:
+        explicit NullExpression(TypePtr type);
+
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        TypePtr m_Type;
+    };
+
+    class IntExpression final : public Expression
+    {
+    public:
         explicit IntExpression(uint64_t value, TypePtr type);
 
-        uint64_t Value;
-        TypePtr Type;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        uint64_t m_Value;
+        TypePtr m_Type;
     };
 
-    struct StringExpression final : Expression
+    class StringExpression final : public Expression
     {
+    public:
         explicit StringExpression(std::string value);
 
-        std::string Value;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Value;
     };
 
-    struct RangeExpression final : Expression
+    class RangeExpression final : public Expression
     {
-        explicit RangeExpression(bool include_begin, ExpressionPtr begin, ExpressionPtr end, bool include_end);
+    public:
+        explicit RangeExpression(ExpressionPtr begin, ExpressionPtr end);
 
-        bool IncludeBegin;
-        ExpressionPtr Begin;
-        ExpressionPtr End;
-        bool IncludeEnd;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Begin;
+        ExpressionPtr m_End;
     };
 
-    struct SymbolExpression final : Expression
+    class ArrayExpression final : public Expression
     {
+    public:
+        explicit ArrayExpression(std::vector<ExpressionPtr> values, TypePtr type);
+
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::vector<ExpressionPtr> m_Values;
+        TypePtr m_Type;
+    };
+
+    class StructExpression final : public Expression
+    {
+    public:
+        explicit StructExpression(std::map<std::string, ExpressionPtr> values, TypePtr type);
+
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::map<std::string, ExpressionPtr> m_Values;
+        TypePtr m_Type;
+    };
+
+    class SymbolExpression final : public Expression
+    {
+    public:
         explicit SymbolExpression(std::string name);
 
-        std::string Name;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Name;
     };
 
-    struct BinaryExpression final : Expression
+    class BinaryExpression final : public Expression
     {
+    public:
         explicit BinaryExpression(std::string operator_, ExpressionPtr left, ExpressionPtr right);
 
-        std::string Operator;
-        ExpressionPtr Left;
-        ExpressionPtr Right;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Operator;
+        ExpressionPtr m_Left;
+        ExpressionPtr m_Right;
     };
 
-    struct UnaryExpression final : Expression
+    class UnaryExpression final : public Expression
     {
+    public:
         explicit UnaryExpression(std::string operator_, ExpressionPtr operand, bool suffix);
 
-        std::string Operator;
-        ExpressionPtr Operand;
-        bool Suffix;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Operator;
+        ExpressionPtr m_Operand;
+        bool m_Suffix;
     };
 
-    struct CallExpression final : Expression
+    class CallExpression final : public Expression
     {
+    public:
         explicit CallExpression(ExpressionPtr callee, std::vector<ExpressionPtr> arguments);
 
-        ExpressionPtr Callee;
-        std::vector<ExpressionPtr> Arguments;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Callee;
+        std::vector<ExpressionPtr> m_Arguments;
+    };
+
+    class MemberExpression final : public Expression
+    {
+    public:
+        explicit MemberExpression(ExpressionPtr value, std::string member);
+
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Value;
+        std::string m_Member;
+    };
+
+    class SubscriptExpression final : public Expression
+    {
+    public:
+        explicit SubscriptExpression(ExpressionPtr value, ExpressionPtr index);
+
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Value;
+        ExpressionPtr m_Index;
     };
 }
