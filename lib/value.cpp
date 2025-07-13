@@ -18,6 +18,15 @@ llove::TypePtr llove::Value::GetType() const
     return m_Type;
 }
 
+llove::Field llove::Value::AsField() const
+{
+    return {
+        .Mutable = IsMutable(),
+        .Reference = IsReferenceable(),
+        .Type = GetType(),
+    };
+}
+
 llove::Value::Value(TypePtr type)
     : m_Type(std::move(type))
 {
@@ -27,6 +36,11 @@ llove::RValue::RValue(TypePtr type, llvm::Value *value)
     : Value(std::move(type)),
       m_Value(value)
 {
+}
+
+bool llove::RValue::IsReferenceable() const
+{
+    return false;
 }
 
 bool llove::RValue::IsMutable() const
@@ -49,11 +63,21 @@ llove::ValuePtr llove::RValue::Reference(Builder &builder) const
     Error("cannot reference rvalue");
 }
 
+llvm::Value *llove::RValue::GetPointer() const
+{
+    Error("cannot get pointer to rvalue");
+}
+
 llove::LValue::LValue(TypePtr type, llvm::Value *pointer, const bool mutable_)
     : Value(std::move(type)),
       m_Pointer(pointer),
       m_Mutable(mutable_)
 {
+}
+
+bool llove::LValue::IsReferenceable() const
+{
+    return true;
 }
 
 bool llove::LValue::IsMutable() const
@@ -68,12 +92,16 @@ llvm::Value *llove::LValue::Load(Builder &builder) const
 
 void llove::LValue::Store(Builder &builder, llvm::Value *value, const bool volatile_) const
 {
-    if (!m_Mutable)
-        Error("cannot store value to immutable lvalue");
+    Assert(m_Mutable, "cannot store value to immutable lvalue");
     builder.CreateStore(m_Pointer, value, volatile_);
 }
 
 llove::ValuePtr llove::LValue::Reference(Builder &builder) const
 {
-    return CreateR(builder.GetTypes().GetPtr(m_Type, m_Mutable), m_Pointer);
+    return CreateR(builder.GetTypes().GetPointer(m_Type, m_Mutable), m_Pointer);
+}
+
+llvm::Value *llove::LValue::GetPointer() const
+{
+    return m_Pointer;
 }

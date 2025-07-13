@@ -26,6 +26,8 @@ int main(const int argc, const char *const *argv)
             ptr->Gen(builder);
         }
 
+    builder.Gen("out.o");
+
     stream.close();
     return 0;
 }

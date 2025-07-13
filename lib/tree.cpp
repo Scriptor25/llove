@@ -55,10 +55,15 @@ llove::ScopeStatement::ScopeStatement(std::vector<StatementPtr> content)
 {
 }
 
-llove::LetStatement::LetStatement(Field info, std::string name, ExpressionPtr value)
-    : m_Info(std::move(info)),
-      m_Name(std::move(name)),
-      m_Value(std::move(value))
+llove::ForStatement::ForStatement(
+    StatementPtr prefix,
+    StatementPtr suffix,
+    ExpressionPtr condition,
+    StatementPtr content)
+    : m_Prefix(std::move(prefix)),
+      m_Suffix(std::move(suffix)),
+      m_Condition(std::move(condition)),
+      m_Content(std::move(content))
 {
 }
 
@@ -76,6 +81,20 @@ llove::ForEachStatement::ForEachStatement(
 {
 }
 
+llove::IfStatement::IfStatement(ExpressionPtr condition, StatementPtr then, StatementPtr else_)
+    : m_Condition(std::move(condition)),
+      m_Then(std::move(then)),
+      m_Else(std::move(else_))
+{
+}
+
+llove::LetStatement::LetStatement(Field info, std::string name, ExpressionPtr value)
+    : m_Info(std::move(info)),
+      m_Name(std::move(name)),
+      m_Value(std::move(value))
+{
+}
+
 llove::YieldStatement::YieldStatement(ExpressionPtr value)
     : m_Value(std::move(value))
 {
@@ -86,7 +105,7 @@ llove::NullExpression::NullExpression(TypePtr type)
 {
 }
 
-llove::IntExpression::IntExpression(const uint64_t value, TypePtr type)
+llove::IntExpression::IntExpression(const uint64_t value, IntegerType::Ptr type)
     : m_Value(value),
       m_Type(std::move(type))
 {
@@ -103,13 +122,13 @@ llove::RangeExpression::RangeExpression(ExpressionPtr begin, ExpressionPtr end)
 {
 }
 
-llove::ArrayExpression::ArrayExpression(std::vector<ExpressionPtr> values, TypePtr type)
+llove::ArrayExpression::ArrayExpression(std::vector<ExpressionPtr> values, ArrayType::Ptr type)
     : m_Values(std::move(values)),
       m_Type(std::move(type))
 {
 }
 
-llove::StructExpression::StructExpression(std::map<std::string, ExpressionPtr> values, TypePtr type)
+llove::StructExpression::StructExpression(std::map<std::string, ExpressionPtr> values, StructType::Ptr type)
     : m_Values(std::move(values)),
       m_Type(std::move(type))
 {
@@ -149,5 +168,11 @@ llove::MemberExpression::MemberExpression(ExpressionPtr value, std::string membe
 llove::SubscriptExpression::SubscriptExpression(ExpressionPtr value, ExpressionPtr index)
     : m_Value(std::move(value)),
       m_Index(std::move(index))
+{
+}
+
+llove::CreateExpression::CreateExpression(ClassType::Ptr class_type, std::vector<ExpressionPtr> arguments)
+    : m_ClassType(std::move(class_type)),
+      m_Arguments(std::move(arguments))
 {
 }

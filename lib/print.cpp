@@ -58,19 +58,21 @@ std::ostream &llove::VoidType::Print(std::ostream &stream) const
     return stream << "void";
 }
 
-std::ostream &llove::IntType::Print(std::ostream &stream) const
+std::ostream &llove::IntegerType::Print(std::ostream &stream) const
 {
     return stream << (m_Sign ? 'i' : 'u') << m_Bits;
 }
 
-std::ostream &llove::FltType::Print(std::ostream &stream) const
+std::ostream &llove::FloatType::Print(std::ostream &stream) const
 {
     return stream << 'f' << m_Bits;
 }
 
-std::ostream &llove::PtrType::Print(std::ostream &stream) const
+std::ostream &llove::PointerType::Print(std::ostream &stream) const
 {
-    return stream << m_Base << '[' << (m_Mutable ? "mut" : "") << ']';
+    if (m_Base)
+        return stream << m_Base << '[' << (m_Mutable ? "mut" : "") << ']';
+    return stream << '[' << (m_Mutable ? "mut" : "") << ']';
 }
 
 std::ostream &llove::ArrayType::Print(std::ostream &stream) const
@@ -93,11 +95,6 @@ std::ostream &llove::StructType::Print(std::ostream &stream) const
 std::ostream &llove::ClassType::Print(std::ostream &stream) const
 {
     return stream << "class<" << m_Name << '>';
-}
-
-void llove::ClassType::Set(std::vector<Parameter> fields)
-{
-    m_Fields = std::move(fields);
 }
 
 std::ostream &llove::FunctionType::Print(std::ostream &stream) const
@@ -200,12 +197,18 @@ std::ostream &llove::ScopeStatement::Print(std::ostream &stream) const
     return stream << std::string(depth -= 2, ' ') << '}';
 }
 
-std::ostream &llove::LetStatement::Print(std::ostream &stream) const
+std::ostream &llove::ForStatement::Print(std::ostream &stream) const
 {
-    m_Info.Print(stream << "let ", true, m_Name);
-    if (m_Value)
-        stream << " = " << m_Value;
-    return stream << ';';
+    stream << "for (";
+    if (m_Prefix)
+        stream << m_Prefix;
+    stream << ';';
+    if (m_Condition)
+        stream << ' ' << m_Condition;
+    stream << ';';
+    if (m_Suffix)
+        stream << ' ' << m_Suffix;
+    return stream << ") " << m_Content;
 }
 
 std::ostream &llove::ForEachStatement::Print(std::ostream &stream) const
@@ -219,6 +222,22 @@ std::ostream &llove::ForEachStatement::Print(std::ostream &stream) const
            << m_Range
            << ") "
            << m_Content;
+}
+
+std::ostream &llove::IfStatement::Print(std::ostream &stream) const
+{
+    stream << "if (" << m_Condition << ") " << m_Then;
+    if (m_Else)
+        stream << " else " << m_Else;
+    return stream;
+}
+
+std::ostream &llove::LetStatement::Print(std::ostream &stream) const
+{
+    m_Info.Print(stream << "let ", true, m_Name);
+    if (m_Value)
+        stream << " = " << m_Value;
+    return stream << ';';
 }
 
 std::ostream &llove::YieldStatement::Print(std::ostream &stream) const
@@ -334,6 +353,18 @@ std::ostream &llove::MemberExpression::Print(std::ostream &stream) const
 std::ostream &llove::SubscriptExpression::Print(std::ostream &stream) const
 {
     return stream << m_Value << '[' << m_Index << ']';
+}
+
+std::ostream &llove::CreateExpression::Print(std::ostream &stream) const
+{
+    stream << "new:" << m_ClassType->GetName() << '(';
+    for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
+    {
+        if (i != m_Arguments.begin())
+            stream << ", ";
+        stream << *i;
+    }
+    return stream << ')';
 }
 
 std::ostream &llove::operator<<(std::ostream &stream, const ClassField &field)

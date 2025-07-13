@@ -5,7 +5,6 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
-#include <llove/class.hpp>
 #include <llove/forward.hpp>
 
 namespace llove
@@ -73,11 +72,13 @@ namespace llove
         void ParseClassField(ClassField &field);
         void ParseClassFunction(ClassFunction &function);
 
-        StatementPtr ParseStatement();
+        StatementPtr ParseStatement(bool inline_);
         StatementPtr ParseScopeStatement();
-        StatementPtr ParseLetStatement();
-        StatementPtr ParseForEachStatement();
-        StatementPtr ParseYieldStatement();
+        StatementPtr ParseForStatement(bool inline_);
+        StatementPtr ParseForEachStatement(bool inline_);
+        StatementPtr ParseIfStatement(bool inline_);
+        StatementPtr ParseLetStatement(bool inline_);
+        StatementPtr ParseYieldStatement(bool inline_);
 
         ExpressionPtr ParseExpression();
         ExpressionPtr ParseBinaryExpression();

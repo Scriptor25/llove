@@ -1,16 +1,21 @@
-#include <vector>
 #include <llove/builder.hpp>
-#include <llove/parameter.hpp>
-#include <llove/type.hpp>
+#include <llove/field.hpp>
 
 llvm::Type *llove::Field::Gen(Builder &builder) const
 {
-    return Reference ? builder.GetPtrType(Type->Gen(builder)) : Type->Gen(builder);
+    return Reference ? builder.GetPointerType(Type->Gen(builder)) : Type->Gen(builder);
 }
 
 std::string llove::Field::Mangle() const
 {
     return std::string(Mutable ? "M" : "") + std::string(Reference ? "R" : "") + Type->Mangle();
+}
+
+bool llove::Field::operator==(const Field &other) const
+{
+    return Reference == other.Reference
+           && Mutable == other.Mutable
+           && Type == other.Type;
 }
 
 std::string llove::GetFieldHash(const std::vector<Field> &fields)

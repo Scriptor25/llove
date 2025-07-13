@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <llove/field.hpp>
 #include <llove/forward.hpp>
 #include <llove/parameter.hpp>
 
@@ -22,6 +23,16 @@ namespace llove
         bool VarArg = false;
         Field Result;
         StatementPtr Content;
+    };
+
+    struct ClassFunctionInfo final
+    {
+        bool Expose;
+        bool Mutable;
+        std::string Name;
+        std::vector<Field> Parameters;
+        bool VarArg;
+        Field Result;
     };
 
     std::ostream &operator<<(std::ostream &stream, const ClassField &field);

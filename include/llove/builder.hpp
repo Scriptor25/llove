@@ -1,13 +1,37 @@
 #pragma once
 
+#include <map>
 #include <llove/forward.hpp>
-#include <llove/type.hpp>
+#include <llove/function.hpp>
+#include <llove/operator.hpp>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
 namespace llove
 {
+    struct GenericFunction
+    {
+        bool Interface = false;
+
+        std::string ClassName;
+        bool Mutable = false;
+        bool Expose = false;
+
+        std::string Name;
+        std::vector<Parameter> Parameters;
+        bool VarArg = false;
+        Field Result;
+
+        Statement *Content = nullptr;
+    };
+
+    struct Frame
+    {
+        Field Result;
+        std::map<std::string, ValuePtr> Values;
+    };
+
     class Builder
     {
     public:
@@ -15,28 +39,95 @@ namespace llove
 
         Context &GetTypes() const;
 
+        std::string Mangle(
+            bool interface,
+            const std::string &class_name,
+            bool mutable_,
+            const std::string &name,
+            const std::vector<Parameter> &parameters,
+            bool vararg,
+            const Field &result) const;
+
         llvm::Type *GetVoidType();
         llvm::IntegerType *GetIntType(unsigned bits);
         llvm::Type *GetFltType(unsigned bits);
         llvm::ArrayType *GetArrayType(llvm::Type *base, unsigned size);
-        llvm::PointerType *GetPtrType(llvm::Type *base);
+        llvm::PointerType *GetPointerType();
+        llvm::PointerType *GetPointerType(llvm::Type *base);
         llvm::StructType *GetStructType(const std::vector<llvm::Type *> &fields, bool packed);
         llvm::FunctionType *GetFunctionType(
             llvm::Type *result,
             const std::vector<llvm::Type *> &parameters,
             bool vararg);
 
-        llvm::StructType *GetNamedStructType(const std::string_view &name);
-        llvm::StructType *GetOrCreateNamedStructType(const std::string_view &name);
+        llvm::StructType *GetNamedStructType(const std::string &name);
+        llvm::StructType *GetOrCreateNamedStructType(const std::string &name);
         llvm::StructType *GetOrCreateNamedStructType(
-            const std::string_view &name,
+            const std::string &name,
             const std::vector<llvm::Type *> &fields,
             bool packed);
 
-        llvm::Value *CreateLoad(llvm::Value *pointer, const TypePtr &type);
-        llvm::Value *CreateStore(llvm::Value *pointer, llvm::Value *value, bool volatile_);
+        llvm::Value *CreateAlloca(llvm::Function *parent, const TypePtr &type);
 
-        llvm::Function *CreateFunction(const std::string_view &name, const FunctionType::Ptr &type, bool external);
+        llvm::Value *CreateLoad(llvm::Value *pointer, const TypePtr &type);
+        llvm::Value *CreateStore(llvm::Value *pointer, llvm::Value *value, bool volatile_ = false);
+
+        void CreateRetVoid();
+        void CreateRet(llvm::Value *value);
+
+        llvm::Value *CreateCall(
+            const FunctionType::Ptr &type,
+            llvm::Value *callee,
+            const std::vector<llvm::Value *> &arguments);
+        llvm::Value *CreateCall(llvm::FunctionCallee callee, const std::vector<llvm::Value *> &arguments);
+
+        llvm::Value *CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, unsigned index);
+
+        ValuePtr CreatePointerOffset(const ValuePtr &pointer, const ValuePtr &offset);
+        ValuePtr CreatePointerDifference(const ValuePtr &begin, const ValuePtr &end);
+
+        ValuePtr CreatePointerElement(const ValuePtr &pointer, const ValuePtr &index);
+        ValuePtr CreateArrayElement(ValuePtr array, const ValuePtr &index);
+        llvm::Value *CreateStructGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
+
+        ValuePtr CreateAdd(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFAdd(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateSub(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFSub(const ValuePtr &left, const ValuePtr &right);
+
+        ValuePtr CreateNeg(const ValuePtr &operand);
+
+        llvm::BasicBlock *GetInsertBlock() const;
+        void SetInsertPoint(llvm::BasicBlock *block);
+        void SetInsertPointPastAllocas(llvm::Function *parent);
+        void ClearInsertPoint();
+
+        llvm::Function *GetParent() const;
+
+        llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
+        llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent);
+
+        void AddFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
+        std::vector<FunctionReference> GetFunctions(const std::string &name);
+        std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self);
+
+        Operator::Ptr GetOperator(const std::string &operator_, const Field &left, const Field &right);
+
+        void StackPush(const Field &result = {});
+        void StackPop();
+        void SetValue(const std::string &name, ValuePtr value);
+        ValuePtr GetValue(const std::string &name) const;
+        Field GetResult();
+
+        ValuePtr GenCast(ValuePtr value, TypePtr type);
+        bool IsCastable(bool mutable_, const TypePtr &value_type, const TypePtr &type);
+
+        llvm::Value *CreateGlobalString(const std::string &value);
+
+        llvm::FunctionCallee GenFunction(const GenericFunction &fn);
+        void GenParameters(llvm::Function *parent, const std::vector<Parameter> &parameters, const Field &self = {});
+
+        void Gen(std::string filename);
 
     private:
         Context &m_Types;
@@ -44,5 +135,8 @@ namespace llove
         llvm::LLVMContext m_Context;
         llvm::IRBuilder<> m_Builder;
         llvm::Module m_Module;
+
+        std::vector<FunctionReference> m_Functions;
+        std::vector<Frame> m_Stack;
     };
 }

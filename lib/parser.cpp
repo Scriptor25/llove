@@ -358,11 +358,10 @@ bool llove::Parser::SkipIf(const TokenType type, const std::string &value)
     return false;
 }
 
-llove::Token llove::Parser::Expect(const TokenType type, const std::string &value)
+llove::Token llove::Parser::Expect(TokenType type, const std::string &value)
 {
-    if (At(type, value))
-        return Skip();
-    Error("expected {} : '{}', but is {} : '{}'", type, value, m_Token.Type, m_Token.Value);
+    Assert(At(type, value), "expected {} : '{}', but is {} : '{}'", type, value, m_Token.Type, m_Token.Value);
+    return Skip();
 }
 
 llove::TypePtr llove::Parser::ParseType()
@@ -383,7 +382,7 @@ llove::TypePtr llove::Parser::ParseArrayType()
         else
         {
             const auto mutable_ = SkipIf(TokenType_Sym, "mut");
-            base = m_Types.GetPtr(std::move(base), mutable_);
+            base = m_Types.GetPointer(std::move(base), mutable_);
         }
         Expect(TokenType_Otr, "]");
     }
@@ -394,7 +393,7 @@ llove::TypePtr llove::Parser::ParseBaseType()
 {
     if (SkipIf(TokenType_Otr, "{"))
     {
-        std::vector<Parameter> fields;
+        std::vector<ClassField> fields;
 
         while (!At(TokenType_Otr, "}"))
         {
@@ -408,6 +407,13 @@ llove::TypePtr llove::Parser::ParseBaseType()
         Expect(TokenType_Otr, "}");
 
         return m_Types.GetStruct(std::move(fields));
+    }
+
+    if (SkipIf(TokenType_Otr, "["))
+    {
+        const auto mutable_ = SkipIf(TokenType_Sym, "mut");
+        Expect(TokenType_Otr, "]");
+        return m_Types.GetPointer(mutable_);
     }
 
     if (SkipIf(TokenType_Sym, "class"))
@@ -428,31 +434,31 @@ llove::TypePtr llove::Parser::ParseBaseType()
         if (name == "void")
             return m_Types.GetVoid();
         if (name == "i1")
-            return m_Types.GetInt(true, 1);
+            return m_Types.GetInteger(true, 1);
         if (name == "i8")
-            return m_Types.GetInt(true, 8);
+            return m_Types.GetInteger(true, 8);
         if (name == "i16")
-            return m_Types.GetInt(true, 16);
+            return m_Types.GetInteger(true, 16);
         if (name == "i32")
-            return m_Types.GetInt(true, 32);
+            return m_Types.GetInteger(true, 32);
         if (name == "i64")
-            return m_Types.GetInt(true, 64);
+            return m_Types.GetInteger(true, 64);
         if (name == "u1")
-            return m_Types.GetInt(false, 1);
+            return m_Types.GetInteger(false, 1);
         if (name == "u8")
-            return m_Types.GetInt(false, 8);
+            return m_Types.GetInteger(false, 8);
         if (name == "u16")
-            return m_Types.GetInt(false, 16);
+            return m_Types.GetInteger(false, 16);
         if (name == "u32")
-            return m_Types.GetInt(false, 32);
+            return m_Types.GetInteger(false, 32);
         if (name == "u64")
-            return m_Types.GetInt(false, 64);
+            return m_Types.GetInteger(false, 64);
         if (name == "f16")
-            return m_Types.GetFlt(16);
+            return m_Types.GetFloat(16);
         if (name == "f32")
-            return m_Types.GetFlt(32);
+            return m_Types.GetFloat(32);
         if (name == "f64")
-            return m_Types.GetFlt(64);
+            return m_Types.GetFloat(64);
 
         Error("undefined type '{}'", name);
     }
@@ -669,20 +675,26 @@ void llove::Parser::ParseClassFunction(ClassFunction &function)
     function.Content = ParseScopeStatement();
 }
 
-llove::StatementPtr llove::Parser::ParseStatement()
+llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
 {
     if (At(TokenType_Otr, "{"))
         return ParseScopeStatement();
-    if (At(TokenType_Sym, "let"))
-        return ParseLetStatement();
+    if (At(TokenType_Sym, "for"))
+        return ParseForStatement(inline_);
     if (At(TokenType_Sym, "foreach"))
-        return ParseForEachStatement();
+        return ParseForEachStatement(inline_);
+    if (At(TokenType_Sym, "if"))
+        return ParseIfStatement(inline_);
+    if (At(TokenType_Sym, "let"))
+        return ParseLetStatement(inline_);
     if (At(TokenType_Sym, "yield"))
-        return ParseYieldStatement();
+        return ParseYieldStatement(inline_);
 
     auto expression = ParseExpression();
-    Expect(TokenType_Otr, ";");
+    if (inline_)
+        return expression;
 
+    Expect(TokenType_Otr, ";");
     return expression;
 }
 
@@ -692,29 +704,48 @@ llove::StatementPtr llove::Parser::ParseScopeStatement()
 
     Expect(TokenType_Otr, "{");
     while (!At(TokenType_Otr, "}"))
-        content.emplace_back(ParseStatement());
+        content.emplace_back(ParseStatement(false));
     Expect(TokenType_Otr, "}");
 
     return std::make_unique<ScopeStatement>(std::move(content));
 }
 
-llove::StatementPtr llove::Parser::ParseLetStatement()
+llove::StatementPtr llove::Parser::ParseForStatement(const bool inline_)
 {
-    Expect(TokenType_Sym, "let");
+    Expect(TokenType_Sym, "for");
+    Expect(TokenType_Otr, "(");
 
-    Field info;
-    auto name = ParseField(info, true);
+    StatementPtr prefix, suffix;
+    ExpressionPtr condition;
 
-    ExpressionPtr value;
-    if (SkipIf(TokenType_Opr, "="))
-        value = ParseExpression();
+    if (!SkipIf(TokenType_Otr, ";"))
+    {
+        prefix = ParseStatement(true);
+        Expect(TokenType_Otr, ";");
+    }
 
-    Expect(TokenType_Otr, ";");
+    if (!SkipIf(TokenType_Otr, ";"))
+    {
+        condition = ParseExpression();
+        Expect(TokenType_Otr, ";");
+    }
 
-    return std::make_unique<LetStatement>(std::move(info), std::move(name), std::move(value));
+    if (!SkipIf(TokenType_Otr, ")"))
+    {
+        suffix = ParseStatement(true);
+        Expect(TokenType_Otr, ")");
+    }
+
+    auto content = ParseStatement(inline_);
+
+    return std::make_unique<ForStatement>(
+        std::move(prefix),
+        std::move(suffix),
+        std::move(condition),
+        std::move(content));
 }
 
-llove::StatementPtr llove::Parser::ParseForEachStatement()
+llove::StatementPtr llove::Parser::ParseForEachStatement(const bool inline_)
 {
     Expect(TokenType_Sym, "foreach");
     Expect(TokenType_Otr, "(");
@@ -729,7 +760,7 @@ llove::StatementPtr llove::Parser::ParseForEachStatement()
 
     Expect(TokenType_Otr, ")");
 
-    auto content = ParseStatement();
+    auto content = ParseStatement(inline_);
 
     return std::make_unique<ForEachStatement>(
         mutable_,
@@ -739,14 +770,49 @@ llove::StatementPtr llove::Parser::ParseForEachStatement()
         std::move(content));
 }
 
-llove::StatementPtr llove::Parser::ParseYieldStatement()
+llove::StatementPtr llove::Parser::ParseIfStatement(const bool inline_)
+{
+    Expect(TokenType_Sym, "if");
+    Expect(TokenType_Otr, "(");
+    auto condition = ParseExpression();
+    Expect(TokenType_Otr, ")");
+    auto then = ParseStatement(inline_);
+
+    StatementPtr else_;
+    if (SkipIf(TokenType_Sym, "else"))
+        else_ = ParseStatement(inline_);
+
+    return std::make_unique<IfStatement>(std::move(condition), std::move(then), std::move(else_));
+}
+
+llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
+{
+    Expect(TokenType_Sym, "let");
+
+    Field info;
+    auto name = ParseField(info, true);
+
+    ExpressionPtr value;
+    if (SkipIf(TokenType_Opr, "="))
+        value = ParseExpression();
+
+    if (!inline_)
+        Expect(TokenType_Otr, ";");
+
+    return std::make_unique<LetStatement>(std::move(info), std::move(name), std::move(value));
+}
+
+llove::StatementPtr llove::Parser::ParseYieldStatement(const bool inline_)
 {
     Expect(TokenType_Sym, "yield");
-    if (SkipIf(TokenType_Otr, ";"))
+    if (!inline_ && SkipIf(TokenType_Otr, ";"))
         return std::make_unique<YieldStatement>(nullptr);
 
     auto value = ParseExpression();
-    Expect(TokenType_Otr, ";");
+
+    if (!inline_)
+        Expect(TokenType_Otr, ";");
+
     return std::make_unique<YieldStatement>(std::move(value));
 }
 
@@ -893,9 +959,12 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Int))
     {
         auto value = Skip().IntValue;
-        TypePtr type;
+        IntegerType::Ptr type;
         if (SkipIf(TokenType_Otr, ":"))
-            type = ParseType();
+        {
+            type = As<IntegerType>(ParseType());
+            Assert(type != nullptr, "expected integer type");
+        }
         return std::make_unique<IntExpression>(value, std::move(type));
     }
 
@@ -931,10 +1000,9 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
                 Expect(TokenType_Otr, ",");
         }
         Expect(TokenType_Otr, "]");
+        Expect(TokenType_Otr, ":");
 
-        TypePtr type;
-        if (SkipIf(TokenType_Otr, ":"))
-            type = ParseType();
+        auto type = As<ArrayType>(ParseType());
 
         return std::make_unique<ArrayExpression>(std::move(values), std::move(type));
     }
@@ -945,9 +1013,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         while (!At(TokenType_Otr, "}"))
         {
             auto name = Expect(TokenType_Sym).Value;
-
-            if (values.contains(name))
-                Error("struct expression must not set field '{}' twice", name);
+            Assert(!values.contains(name), "struct expression must not set field '{}' twice", name);
 
             ExpressionPtr value;
             if (SkipIf(TokenType_Otr, ":"))
@@ -960,10 +1026,9 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
                 Expect(TokenType_Otr, ",");
         }
         Expect(TokenType_Otr, "}");
+        Expect(TokenType_Otr, ":");
 
-        TypePtr type;
-        if (SkipIf(TokenType_Otr, ":"))
-            type = ParseType();
+        auto type = As<StructType>(ParseType());
 
         return std::make_unique<StructExpression>(std::move(values), std::move(type));
     }
@@ -974,6 +1039,27 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         if (SkipIf(TokenType_Otr, ":"))
             type = ParseType();
         return std::make_unique<NullExpression>(type);
+    }
+
+    if (SkipIf(TokenType_Sym, "new"))
+    {
+        Expect(TokenType_Otr, ":");
+        auto class_name = Expect(TokenType_Sym).Value;
+        auto class_type = m_Types.GetClass(std::move(class_name));
+
+        std::vector<ExpressionPtr> arguments;
+
+        Expect(TokenType_Otr, "(");
+        while (!At(TokenType_Otr, ")"))
+        {
+            arguments.emplace_back(ParseExpression());
+
+            if (!At(TokenType_Otr, ")"))
+                Expect(TokenType_Otr, ",");
+        }
+        Expect(TokenType_Otr, ")");
+
+        return std::make_unique<CreateExpression>(std::move(class_type), std::move(arguments));
     }
 
     if (At(TokenType_Sym))

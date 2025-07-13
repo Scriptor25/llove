@@ -1,7 +1,11 @@
 #pragma once
 
-#include <map>
+#include <format>
+#include <memory>
+#include <sstream>
+#include <string>
 #include <vector>
+#include <llove/class.hpp>
 #include <llove/forward.hpp>
 #include <llove/parameter.hpp>
 #include <llvm/IR/DerivedTypes.h>
@@ -9,10 +13,23 @@
 
 namespace llove
 {
+    enum TypeId
+    {
+        TypeId_Void,
+        TypeId_Integer,
+        TypeId_Float,
+        TypeId_Pointer,
+        TypeId_Array,
+        TypeId_Struct,
+        TypeId_Class,
+        TypeId_Function,
+    };
+
     class Type
     {
     public:
         virtual ~Type() = default;
+        virtual TypeId GetId() const = 0;
         virtual llvm::Type *Gen(Builder &builder) const = 0;
         virtual std::string Mangle() const = 0;
         virtual std::ostream &Print(std::ostream &stream) const = 0;
@@ -25,6 +42,7 @@ namespace llove
 
         explicit VoidType() = default;
 
+        TypeId GetId() const override;
         llvm::Type *Gen(Builder &builder) const override;
 
         /**
@@ -35,13 +53,17 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
     };
 
-    class IntType final : public Type
+    class IntegerType final : public Type
     {
     public:
-        using Ptr = std::shared_ptr<IntType>;
+        using Ptr = std::shared_ptr<IntegerType>;
 
-        explicit IntType(bool sign, unsigned bits);
+        explicit IntegerType(bool sign, unsigned bits);
 
+        bool IsSigned() const;
+        unsigned GetBits() const;
+
+        TypeId GetId() const override;
         llvm::IntegerType *Gen(Builder &builder) const override;
 
         /**
@@ -56,13 +78,16 @@ namespace llove
         unsigned m_Bits;
     };
 
-    class FltType final : public Type
+    class FloatType final : public Type
     {
     public:
-        using Ptr = std::shared_ptr<FltType>;
+        using Ptr = std::shared_ptr<FloatType>;
 
-        explicit FltType(unsigned bits);
+        explicit FloatType(unsigned bits);
 
+        unsigned GetBits() const;
+
+        TypeId GetId() const override;
         llvm::Type *Gen(Builder &builder) const override;
 
         /**
@@ -76,13 +101,18 @@ namespace llove
         unsigned m_Bits;
     };
 
-    class PtrType final : public Type
+    class PointerType final : public Type
     {
     public:
-        using Ptr = std::shared_ptr<PtrType>;
+        using Ptr = std::shared_ptr<PointerType>;
 
-        explicit PtrType(TypePtr base, bool mutable_);
+        explicit PointerType(TypePtr base, bool mutable_);
 
+        TypePtr GetBase() const;
+        bool IsMutable() const;
+        bool IsOpaque() const;
+
+        TypeId GetId() const override;
         llvm::PointerType *Gen(Builder &builder) const override;
 
         /**
@@ -104,6 +134,10 @@ namespace llove
 
         explicit ArrayType(TypePtr base, unsigned size);
 
+        TypePtr GetBase() const;
+        unsigned GetSize() const;
+
+        TypeId GetId() const override;
         llvm::ArrayType *Gen(Builder &builder) const override;
 
         /**
@@ -123,8 +157,14 @@ namespace llove
     public:
         using Ptr = std::shared_ptr<StructType>;
 
-        explicit StructType(std::vector<Parameter> fields);
+        explicit StructType(std::vector<ClassField> fields);
 
+        unsigned GetFieldIndex(const std::string &name) const;
+
+        unsigned GetFieldCount() const;
+        const Field &GetField(unsigned index) const;
+
+        TypeId GetId() const override;
         llvm::StructType *Gen(Builder &builder) const override;
 
         /**
@@ -135,7 +175,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        std::vector<Parameter> m_Fields;
+        std::vector<ClassField> m_Fields;
     };
 
     class ClassType final : public Type
@@ -144,8 +184,28 @@ namespace llove
         using Ptr = std::shared_ptr<ClassType>;
 
         explicit ClassType(std::string name);
-        explicit ClassType(std::string name, std::vector<Parameter> fields);
+        explicit ClassType(std::string name, std::vector<ClassField> fields, std::vector<ClassFunctionInfo> functions);
 
+        const std::string &GetName() const;
+        bool IsOpaque() const;
+
+        unsigned GetFieldIndex(const std::string &name) const;
+
+        unsigned GetFieldCount() const;
+        const Field &GetField(unsigned index) const;
+
+        const ClassFunctionInfo *GetFunction(
+            const std::string &name,
+            bool mutable_,
+            const std::vector<Field> &parameters,
+            bool vararg) const;
+
+        std::vector<const ClassFunctionInfo *> GetCreates() const;
+
+        void SetFields(Builder &builder, std::vector<ClassField> fields);
+        void SetFunctions(std::vector<ClassFunctionInfo> functions);
+
+        TypeId GetId() const override;
         llvm::StructType *Gen(Builder &builder) const override;
 
         /**
@@ -155,12 +215,11 @@ namespace llove
 
         std::ostream &Print(std::ostream &stream) const override;
 
-        void Set(std::vector<Parameter> fields);
-
     private:
         std::string m_Name;
         bool m_Opaque;
-        std::vector<Parameter> m_Fields;
+        std::vector<ClassField> m_Fields;
+        std::vector<ClassFunctionInfo> m_Functions;
     };
 
     class FunctionType final : public Type
@@ -171,6 +230,14 @@ namespace llove
         explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result);
         explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result, Field self);
 
+        unsigned GetParameterCount() const;
+        const Field &GetParameter(unsigned index) const;
+        bool IsVarArg() const;
+        const Field &GetResult() const;
+        bool HasSelf() const;
+        const Field &GetSelf() const;
+
+        TypeId GetId() const override;
         llvm::FunctionType *Gen(Builder &builder) const override;
 
         /**
@@ -187,3 +254,14 @@ namespace llove
         Field m_Self;
     };
 }
+
+template<>
+struct std::formatter<llove::TypePtr> : std::formatter<std::string_view>
+{
+    auto format(const llove::TypePtr &ptr, std::format_context &ctx) const
+    {
+        std::stringstream stream;
+        ptr->Print(stream);
+        return std::formatter<std::string_view>::format(stream.view(), ctx);
+    }
+};

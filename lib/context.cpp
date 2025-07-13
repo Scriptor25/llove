@@ -1,4 +1,5 @@
 #include <llove/context.hpp>
+#include <llove/error.hpp>
 #include <llove/parameter.hpp>
 
 llove::TypePtr llove::Context::Get(const std::string &id) const
@@ -20,28 +21,33 @@ llove::VoidType::Ptr llove::Context::GetVoid()
     return m_Void = std::make_shared<VoidType>();
 }
 
-llove::IntType::Ptr llove::Context::GetInt(bool sign, unsigned bits)
+llove::IntegerType::Ptr llove::Context::GetInteger(bool sign, unsigned bits)
 {
-    if (auto &type = m_Int[sign][bits])
+    if (auto &type = m_Integer[sign][bits])
         return type;
     else
-        return type = std::make_shared<IntType>(sign, bits);
+        return type = std::make_shared<IntegerType>(sign, bits);
 }
 
-llove::FltType::Ptr llove::Context::GetFlt(unsigned bits)
+llove::FloatType::Ptr llove::Context::GetFloat(unsigned bits)
 {
-    if (auto &type = m_Flt[bits])
+    if (auto &type = m_Float[bits])
         return type;
     else
-        return type = std::make_shared<FltType>(bits);
+        return type = std::make_shared<FloatType>(bits);
 }
 
-llove::PtrType::Ptr llove::Context::GetPtr(TypePtr base, bool mutable_)
+llove::PointerType::Ptr llove::Context::GetPointer(const bool mutable_)
 {
-    if (auto &type = m_Ptr[base][mutable_])
+    return GetPointer(nullptr, mutable_);
+}
+
+llove::PointerType::Ptr llove::Context::GetPointer(TypePtr base, bool mutable_)
+{
+    if (auto &type = m_Pointer[base][mutable_])
         return type;
     else
-        return type = std::make_shared<PtrType>(std::move(base), mutable_);
+        return type = std::make_shared<PointerType>(std::move(base), mutable_);
 }
 
 llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, int64_t size)
@@ -52,17 +58,17 @@ llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, int64_t size)
         return type = std::make_shared<ArrayType>(std::move(base), size);
 }
 
-llove::StructType::Ptr llove::Context::GetStruct(std::vector<Parameter> parameters)
+llove::StructType::Ptr llove::Context::GetStruct(std::vector<ClassField> fields)
 {
-    std::vector<Field> fields;
-    for (const auto &[info_, name_] : parameters)
-        fields.emplace_back(info_);
-    const auto hash = GetFieldHash(fields);
+    std::vector<Field> struct_fields;
+    for (const auto &[info_, name_] : fields)
+        struct_fields.emplace_back(info_);
+    const auto hash = GetFieldHash(struct_fields);
 
     if (auto &type = m_Struct[hash])
         return type;
     else
-        return type = std::make_shared<StructType>(std::move(parameters));
+        return type = std::make_shared<StructType>(std::move(fields));
 }
 
 llove::ClassType::Ptr llove::Context::GetClass(const std::string &name)
@@ -98,4 +104,60 @@ llove::FunctionType::Ptr llove::Context::GetFunction(
         return type;
     else
         return type = std::make_shared<FunctionType>(std::move(parameters), vararg, std::move(result), std::move(self));
+}
+
+bool llove::Context::HasClass(const std::string &name) const
+{
+    return m_Class.contains(name);
+}
+
+llove::TypePtr llove::Context::DetermineHigherOrder(TypePtr left, TypePtr right)
+{
+    if (left == right)
+        return left;
+
+    switch (left->GetId())
+    {
+    case TypeId_Integer:
+        switch (right->GetId())
+        {
+        case TypeId_Integer:
+        {
+            const auto sign = As<IntegerType>(left)->IsSigned() || As<IntegerType>(right)->IsSigned();
+            const auto bits = std::max(As<IntegerType>(left)->GetBits(), As<IntegerType>(right)->GetBits());
+            return GetInteger(sign, bits);
+        }
+        case TypeId_Float:
+        {
+            const auto bits = std::max(As<IntegerType>(left)->GetBits(), As<FloatType>(right)->GetBits());
+            return GetFloat(bits);
+        }
+        default:
+            break;
+        }
+        break;
+
+    case TypeId_Float:
+        switch (right->GetId())
+        {
+        case TypeId_Integer:
+        {
+            const auto bits = std::max(As<FloatType>(left)->GetBits(), As<IntegerType>(right)->GetBits());
+            return GetFloat(bits);
+        }
+        case TypeId_Float:
+        {
+            const auto bits = std::max(As<FloatType>(left)->GetBits(), As<FloatType>(right)->GetBits());
+            return GetFloat(bits);
+        }
+        default:
+            break;
+        }
+        break;
+
+    default:
+        break;
+    }
+
+    Error("cannot determine higher order of types {} and {}", left, right);
 }
