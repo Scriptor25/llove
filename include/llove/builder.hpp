@@ -91,11 +91,42 @@ namespace llove
         llvm::Value *CreateStructGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
 
         ValuePtr CreateAdd(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateFAdd(const ValuePtr &left, const ValuePtr &right);
         ValuePtr CreateSub(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateMul(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateDiv(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateRem(const ValuePtr &left, const ValuePtr &right);
+
+        ValuePtr CreateAnd(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateOr(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateXor(const ValuePtr &left, const ValuePtr &right);
+
+        ValuePtr CreateCmpEQ(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateCmpNE(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateCmpLT(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateCmpGT(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateCmpLE(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateCmpGE(const ValuePtr &left, const ValuePtr &right);
+
+        ValuePtr CreateFAdd(const ValuePtr &left, const ValuePtr &right);
         ValuePtr CreateFSub(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFMul(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFDiv(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFRem(const ValuePtr &left, const ValuePtr &right);
+
+        ValuePtr CreateFCmpEQ(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFCmpNE(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFCmpLT(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFCmpGT(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFCmpLE(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreateFCmpGE(const ValuePtr &left, const ValuePtr &right);
+
+        ValuePtr CreatePCmpEQ(const ValuePtr &left, const ValuePtr &right);
+        ValuePtr CreatePCmpNE(const ValuePtr &left, const ValuePtr &right);
 
         ValuePtr CreateNeg(const ValuePtr &operand);
+
+        void CreateBranch(llvm::BasicBlock *block);
+        void CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
 
         llvm::BasicBlock *GetInsertBlock() const;
         void SetInsertPoint(llvm::BasicBlock *block);
@@ -105,7 +136,7 @@ namespace llove
         llvm::Function *GetParent() const;
 
         llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
-        llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent);
+        llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);
 
         void AddFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
         std::vector<FunctionReference> GetFunctions(const std::string &name);
@@ -119,7 +150,7 @@ namespace llove
         ValuePtr GetValue(const std::string &name) const;
         Field GetResult();
 
-        ValuePtr GenCast(ValuePtr value, TypePtr type);
+        ValuePtr CreateCast(ValuePtr value, TypePtr type);
         bool IsCastable(bool mutable_, const TypePtr &value_type, const TypePtr &type);
 
         llvm::Value *CreateGlobalString(const std::string &value);

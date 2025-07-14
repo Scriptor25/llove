@@ -53,7 +53,7 @@ llove::ValuePtr llove::UserDefinedOperator::operator()(
         }
         else
         {
-            right = builder.GenCast(right, type_);
+            right = builder.CreateCast(right, type_);
             right_value = right->Load(builder);
         }
     }
@@ -71,7 +71,7 @@ llove::ValuePtr llove::UserDefinedOperator::operator()(
         }
         else
         {
-            left = builder.GenCast(left, type_);
+            left = builder.CreateCast(left, type_);
             left_value = left->Load(builder);
         }
 
@@ -87,7 +87,7 @@ llove::ValuePtr llove::UserDefinedOperator::operator()(
         }
         else
         {
-            right = builder.GenCast(right, type_);
+            right = builder.CreateCast(right, type_);
             right_value = right->Load(builder);
         }
     }

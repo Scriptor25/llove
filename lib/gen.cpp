@@ -132,7 +132,52 @@ void llove::ScopeStatement::Gen(Builder &builder) const
 
 void llove::ForStatement::Gen(Builder &builder) const
 {
-    Error("not yet implemented");
+    const auto parent = builder.GetParent();
+    const auto head_block = builder.CreateBlock("head", parent);
+    const auto loop_block = builder.CreateBlock("loop", parent);
+    const auto end_block = builder.CreateBlock("end");
+
+    auto use_end = false;
+
+    builder.StackPush();
+
+    if (m_Prefix)
+        m_Prefix->Gen(builder);
+    builder.CreateBranch(head_block);
+
+    builder.SetInsertPoint(head_block);
+    if (m_Condition)
+    {
+        const auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
+        builder.CreateBranch(condition, loop_block, end_block);
+        use_end = true;
+    }
+    else
+    {
+        builder.CreateBranch(loop_block);
+    }
+
+    builder.SetInsertPoint(loop_block);
+    m_Content->Gen(builder);
+    if (!builder.GetInsertBlock()->getTerminator())
+    {
+        if (m_Suffix)
+            m_Suffix->Gen(builder);
+        builder.CreateBranch(head_block);
+    }
+
+    builder.StackPop();
+
+    if (use_end)
+    {
+        end_block->insertInto(parent);
+        builder.SetInsertPoint(end_block);
+    }
+    else
+    {
+        end_block->deleteValue();
+        builder.ClearInsertPoint();
+    }
 }
 
 void llove::ForEachStatement::Gen(Builder &builder) const
@@ -142,7 +187,45 @@ void llove::ForEachStatement::Gen(Builder &builder) const
 
 void llove::IfStatement::Gen(Builder &builder) const
 {
-    Error("not yet implemented");
+    const auto parent = builder.GetParent();
+    const auto then_block = builder.CreateBlock("then", parent);
+    const auto else_block = builder.CreateBlock("else", parent);
+    const auto end_block = builder.CreateBlock("end");
+
+    auto use_end = false;
+
+    const auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
+    builder.CreateBranch(condition, then_block, else_block);
+
+    builder.SetInsertPoint(then_block);
+    m_Then->Gen(builder);
+    if (!builder.GetInsertBlock()->getTerminator())
+    {
+        builder.CreateBranch(end_block);
+        use_end = true;
+    }
+
+    builder.SetInsertPoint(else_block);
+    if (m_Else)
+    {
+        m_Else->Gen(builder);
+    }
+    if (!builder.GetInsertBlock()->getTerminator())
+    {
+        builder.CreateBranch(end_block);
+        use_end = true;
+    }
+
+    if (use_end)
+    {
+        end_block->insertInto(parent);
+        builder.SetInsertPoint(end_block);
+    }
+    else
+    {
+        end_block->deleteValue();
+        builder.ClearInsertPoint();
+    }
 }
 
 void llove::LetStatement::Gen(Builder &builder) const
@@ -171,7 +254,7 @@ void llove::LetStatement::Gen(Builder &builder) const
         }
         else if (type)
         {
-            value = builder.GenCast(value, type);
+            value = builder.CreateCast(value, type);
         }
 
         const auto pointer = builder.CreateAlloca(builder.GetParent(), type);
@@ -204,7 +287,7 @@ void llove::YieldStatement::Gen(Builder &builder) const
     }
     else
     {
-        value = builder.GenCast(value, type_);
+        value = builder.CreateCast(value, type_);
 
         llvm_value = value->Load(builder);
     }
@@ -320,6 +403,8 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, TypePtr expect
 
 llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect) const
 {
+    // TODO: if no symbol with name exists, return single function with name if exists
+
     auto value = builder.GetValue(m_Name);
     Assert(value != nullptr, "undefined symbol name '{}'", m_Name);
     return value;
@@ -327,6 +412,8 @@ llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect
 
 llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const
 {
+    // TODO: if symbol with name exists, add to candidates
+
     auto candidates = builder.GetFunctions(m_Name);
     Assert(!candidates.empty(), "undefined symbol name '{}'", m_Name);
     return { .Candidates = std::move(candidates) };
@@ -427,7 +514,7 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
         if (i < type->GetParameterCount())
             continue;
 
-        // TODO: find candidate with lowest error score
+        // TODO: select candidate with lowest error score
         callee = &candidate;
         break;
     }
@@ -468,7 +555,7 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
         }
         else
         {
-            argument = builder.GenCast(argument, type_);
+            argument = builder.CreateCast(argument, type_);
             value = argument->Load(builder);
         }
 
@@ -500,11 +587,15 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
     }
     else if (const auto class_type = As<ClassType>(type))
     {
+        // TODO: check if field is accessible
+        // TODO: if no field with name exists, return single function with name if exists and is accessible
         index = class_type->GetFieldIndex(m_Member);
         element = class_type->GetField(index);
     }
     else
+    {
         Error("not yet implemented");
+    }
 
     if (value->IsReferenceable())
     {
@@ -527,6 +618,8 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
 llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const
 {
+    // TODO: if field with name exists and is accessible, add to candidates
+
     auto value = m_Value->GenVal(builder, nullptr);
     return { .Candidates = builder.GetFunctions(m_Member, value->AsField()), .Self = std::move(value) };
 }
@@ -617,7 +710,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
         }
         else
         {
-            argument = builder.GenCast(argument, type_);
+            argument = builder.CreateCast(argument, type_);
             value = argument->Load(builder);
         }
 

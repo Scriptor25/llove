@@ -1,4 +1,5 @@
 interface printf(format: i8[], ...): i32;
+interface putchar(c: i32): i32;
 
 interface strlen(s: i8[]): u64;
 
@@ -34,6 +35,12 @@ class string {
     expose length(): u64;
     expose raw(): i8[mut];
 
+    expose begin(): i8[];
+    expose end(): i8[];
+
+    expose mut begin(): i8[];
+    expose mut end(): i8[];
+
     expose mut clear();
 
     expose mut =(s: i8): mut &string;
@@ -50,13 +57,19 @@ class string {
     expose +(&s: string): string;
 
     let mut beg: i8[mut];
-    let mut end: i8[];
+    let mut end: i8[mut];
+}
+
+define print(&str: string) {
+    for (let mut p = str.begin(); p != str.end(); ++p)
+        putchar(p[0]);
 }
 
 define hello(&name: string) {
-    let raw = name.raw();
-    printf("Hello, %s!\r\n", raw);
-    free(raw);
+    let mut str = new:string("Hello, ");
+    str += name;
+    str += "!\r\n";
+    print(str);
 }
 
 interface main(count: i32, args: i8[][]): i32 {
@@ -94,10 +107,10 @@ define foo(mut bar: i32) {
     bar = bar - 1;
     bar += 1;
     bar -= 1;
-    #bar++;
-    #bar--;
-    #++bar;
-    #--bar;
+    bar++;
+    bar--;
+    ++bar;
+    --bar;
 }
 
 define:string mut create() {
@@ -157,6 +170,22 @@ define:string raw(): i8[mut] {
     buffer[len] = 0;
 
     yield buffer;
+}
+
+define:string begin(): i8[] {
+    yield self.beg;
+}
+
+define:string end(): i8[] {
+    yield self.end;
+}
+
+define:string mut begin(): i8[mut] {
+    yield self.beg;
+}
+
+define:string mut end(): i8[mut] {
+    yield self.end;
 }
 
 define:string mut clear() {

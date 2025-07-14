@@ -24,7 +24,7 @@ message(STATUS "LLVM library directories ${LLVM_LIBRARY_DIRS}")
 file(GLOB_RECURSE EXE_SOURCES src/*.cpp)
 file(GLOB_RECURSE LIB_SOURCES lib/*.cpp)
 
-add_library(lib SHARED)
+add_library(lib)
 set_target_properties(lib PROPERTIES OUTPUT_NAME "llove")
 target_sources(lib PRIVATE ${LIB_SOURCES})
 target_include_directories(lib PUBLIC include ${LLVM_INCLUDE_DIRS})

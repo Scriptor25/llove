@@ -236,15 +236,111 @@ llove::ValuePtr llove::Builder::CreateAdd(const ValuePtr &left, const ValuePtr &
     return Value::CreateR(left->GetType(), value);
 }
 
-llove::ValuePtr llove::Builder::CreateFAdd(const ValuePtr &left, const ValuePtr &right)
-{
-    const auto value = m_Builder.CreateFAdd(left->Load(*this), right->Load(*this));
-    return Value::CreateR(left->GetType(), value);
-}
-
 llove::ValuePtr llove::Builder::CreateSub(const ValuePtr &left, const ValuePtr &right)
 {
     const auto value = m_Builder.CreateSub(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateMul(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateMul(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateDiv(const ValuePtr &left, const ValuePtr &right)
+{
+    llvm::Value *value;
+    if (As<IntegerType>(left->GetType())->IsSigned())
+        value = m_Builder.CreateSDiv(left->Load(*this), right->Load(*this));
+    else
+        value = m_Builder.CreateUDiv(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateRem(const ValuePtr &left, const ValuePtr &right)
+{
+    llvm::Value *value;
+    if (As<IntegerType>(left->GetType())->IsSigned())
+        value = m_Builder.CreateSRem(left->Load(*this), right->Load(*this));
+    else
+        value = m_Builder.CreateURem(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateAnd(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateAnd(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateOr(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateOr(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateXor(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateXor(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateCmpEQ(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateICmpEQ(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateCmpNE(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateICmpNE(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateCmpLT(const ValuePtr &left, const ValuePtr &right)
+{
+    llvm::Value *value;
+    if (As<IntegerType>(left->GetType())->IsSigned())
+        value = m_Builder.CreateICmpSLT(left->Load(*this), right->Load(*this));
+    else
+        value = m_Builder.CreateICmpULT(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateCmpGT(const ValuePtr &left, const ValuePtr &right)
+{
+    llvm::Value *value;
+    if (As<IntegerType>(left->GetType())->IsSigned())
+        value = m_Builder.CreateICmpSGT(left->Load(*this), right->Load(*this));
+    else
+        value = m_Builder.CreateICmpUGT(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateCmpLE(const ValuePtr &left, const ValuePtr &right)
+{
+    llvm::Value *value;
+    if (As<IntegerType>(left->GetType())->IsSigned())
+        value = m_Builder.CreateICmpSLE(left->Load(*this), right->Load(*this));
+    else
+        value = m_Builder.CreateICmpULE(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateCmpGE(const ValuePtr &left, const ValuePtr &right)
+{
+    llvm::Value *value;
+    if (As<IntegerType>(left->GetType())->IsSigned())
+        value = m_Builder.CreateICmpSGE(left->Load(*this), right->Load(*this));
+    else
+        value = m_Builder.CreateICmpUGE(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFAdd(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFAdd(left->Load(*this), right->Load(*this));
     return Value::CreateR(left->GetType(), value);
 }
 
@@ -254,10 +350,88 @@ llove::ValuePtr llove::Builder::CreateFSub(const ValuePtr &left, const ValuePtr 
     return Value::CreateR(left->GetType(), value);
 }
 
+llove::ValuePtr llove::Builder::CreateFMul(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFMul(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFDiv(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFDiv(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFRem(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFRem(left->Load(*this), right->Load(*this));
+    return Value::CreateR(left->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFCmpEQ(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFCmpOEQ(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFCmpNE(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFCmpONE(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFCmpLT(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFCmpOLT(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFCmpGT(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFCmpOGT(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFCmpLE(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFCmpOLE(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateFCmpGE(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto value = m_Builder.CreateFCmpOGE(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreatePCmpEQ(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto left_int = CreateCast(left, m_Types.GetInteger(false, 64));
+    const auto right_int = CreateCast(right, m_Types.GetInteger(false, 64));
+    return CreateCmpEQ(left_int, right_int);
+}
+
+llove::ValuePtr llove::Builder::CreatePCmpNE(const ValuePtr &left, const ValuePtr &right)
+{
+    const auto left_int = CreateCast(left, m_Types.GetInteger(false, 64));
+    const auto right_int = CreateCast(right, m_Types.GetInteger(false, 64));
+    return CreateCmpNE(left_int, right_int);
+}
+
 llove::ValuePtr llove::Builder::CreateNeg(const ValuePtr &operand)
 {
     const auto value = m_Builder.CreateNeg(operand->Load(*this));
     return Value::CreateR(operand->GetType(), value);
+}
+
+void llove::Builder::CreateBranch(llvm::BasicBlock *block)
+{
+    m_Builder.CreateBr(block);
+}
+
+void llove::Builder::CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_)
+{
+    m_Builder.CreateCondBr(condition->Load(*this), then, else_);
 }
 
 llvm::BasicBlock *llove::Builder::GetInsertBlock() const
@@ -414,6 +588,7 @@ llove::Operator::Ptr llove::Builder::GetOperator(
                 continue;
         }
 
+        // TODO: select candidate with lowest error score
         return std::make_unique<UserDefinedOperator>(function.Type, function.Callee);
     }
 
@@ -456,7 +631,7 @@ llove::Field llove::Builder::GetResult()
     return m_Stack.back().Result;
 }
 
-llove::ValuePtr llove::Builder::GenCast(ValuePtr value, TypePtr type)
+llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr type)
 {
     const auto value_type = value->GetType();
     if (value_type == type)
@@ -509,6 +684,9 @@ llove::ValuePtr llove::Builder::GenCast(ValuePtr value, TypePtr type)
     case TypeId_Pointer:
         switch (type->GetId())
         {
+        case TypeId_Integer:
+            result = m_Builder.CreatePtrToInt(llvm_value, llvm_type);
+            break;
         case TypeId_Pointer:
             if (As<PointerType>(value_type)->IsMutable() || !As<PointerType>(type)->IsMutable())
                 result = m_Builder.CreatePointerCast(llvm_value, llvm_type);
@@ -571,6 +749,8 @@ bool llove::Builder::IsCastable(const bool mutable_, const TypePtr &value_type, 
     case TypeId_Pointer:
         switch (type->GetId())
         {
+        case TypeId_Integer:
+            return true;
         case TypeId_Pointer:
             return As<PointerType>(value_type)->IsMutable() || !As<PointerType>(type)->IsMutable();
         default:
