@@ -35,44 +35,16 @@ llove::UDOperator<1>::UDOperator(FunctionType::Ptr type, llvm::Value *callee)
 
 llove::ValuePtr llove::UDOperator<1>::operator()(Builder &builder, ValuePtr operand) const
 {
-    llvm::Value *operand_value;
-
-    if (m_Type->HasSelf())
-    {
-        auto &self = m_Type->GetSelf();
-
-        if (!operand->IsReferenceable())
-        {
-            const auto pointer = builder.CreateAlloca(builder.GetParent(), self.Type);
-            builder.CreateStore(pointer, operand->Load(builder));
-            operand = Value::CreateL(self.Type, pointer, false);
-        }
-        operand_value = operand->GetPointer();
-    }
-    else
-    {
-        if (auto &[mutable_, reference_, type_] = m_Type->GetParameter(0); reference_)
-        {
-            if (!operand->IsReferenceable())
-            {
-                const auto pointer = builder.CreateAlloca(builder.GetParent(), type_);
-                builder.CreateStore(pointer, operand->Load(builder));
-                operand = Value::CreateL(type_, pointer, false);
-            }
-            operand_value = operand->GetPointer();
-        }
-        else
-        {
-            operand = builder.CreateCast(operand, type_);
-            operand_value = operand->Load(builder);
-        }
-    }
+    auto operand_value = (m_Type->HasSelf() ? m_Type->GetSelf() : m_Type->GetParameter(0))
+            .Gen(builder, std::move(operand));
 
     const auto result_value = builder.CreateCall(m_Type, m_Callee, { operand_value });
 
     auto &[mutable_, reference_, type_] = m_Type->GetResult();
+
     if (reference_)
         return Value::CreateL(type_, result_value, mutable_);
+
     return Value::CreateR(type_, result_value);
 }
 
@@ -87,76 +59,24 @@ llove::ValuePtr llove::UDOperator<2>::operator()(
     ValuePtr left,
     ValuePtr right) const
 {
-    llvm::Value *left_value;
-    llvm::Value *right_value;
-
+    llvm::Value *left_value, *right_value;
     if (m_Type->HasSelf())
     {
-        auto &self = m_Type->GetSelf();
-
-        if (!left->IsReferenceable())
-        {
-            const auto pointer = builder.CreateAlloca(builder.GetParent(), self.Type);
-            builder.CreateStore(pointer, left->Load(builder));
-            left = Value::CreateL(self.Type, pointer, false);
-        }
-        left_value = left->GetPointer();
-
-        if (auto &[mutable_, reference_, type_] = m_Type->GetParameter(0); reference_)
-        {
-            if (!right->IsReferenceable())
-            {
-                const auto pointer = builder.CreateAlloca(builder.GetParent(), type_);
-                builder.CreateStore(pointer, right->Load(builder));
-                right = Value::CreateL(type_, pointer, false);
-            }
-            right_value = right->GetPointer();
-        }
-        else
-        {
-            right = builder.CreateCast(right, type_);
-            right_value = right->Load(builder);
-        }
+        left_value = m_Type->GetSelf().Gen(builder, std::move(left));
+        right_value = m_Type->GetParameter(0).Gen(builder, std::move(right));
     }
     else
     {
-        if (auto &[mutable_, reference_, type_] = m_Type->GetParameter(0); reference_)
-        {
-            if (!left->IsReferenceable())
-            {
-                const auto pointer = builder.CreateAlloca(builder.GetParent(), type_);
-                builder.CreateStore(pointer, left->Load(builder));
-                left = Value::CreateL(type_, pointer, false);
-            }
-            left_value = left->GetPointer();
-        }
-        else
-        {
-            left = builder.CreateCast(left, type_);
-            left_value = left->Load(builder);
-        }
-
-        if (auto &[mutable_, reference_, type_] = m_Type->GetParameter(1); reference_)
-        {
-            if (!right->IsReferenceable())
-            {
-                const auto pointer = builder.CreateAlloca(builder.GetParent(), type_);
-                builder.CreateStore(pointer, right->Load(builder));
-                right = Value::CreateL(type_, pointer, false);
-            }
-            right_value = right->GetPointer();
-        }
-        else
-        {
-            right = builder.CreateCast(right, type_);
-            right_value = right->Load(builder);
-        }
+        left_value = m_Type->GetParameter(0).Gen(builder, std::move(left));
+        right_value = m_Type->GetParameter(1).Gen(builder, std::move(right));
     }
 
     const auto result_value = builder.CreateCall(m_Type, m_Callee, { left_value, right_value });
 
     auto &[mutable_, reference_, type_] = m_Type->GetResult();
+
     if (reference_)
         return Value::CreateL(type_, result_value, mutable_);
+
     return Value::CreateR(type_, result_value);
 }

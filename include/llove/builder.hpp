@@ -82,6 +82,7 @@ namespace llove
         llvm::Value *CreateCall(llvm::FunctionCallee callee, const std::vector<llvm::Value *> &arguments);
 
         llvm::Value *CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, unsigned index);
+        llvm::Value *CreateExtractValue(llvm::Value *aggregate, unsigned index);
 
         ValuePtr CreatePointerOffset(const ValuePtr &pointer, const ValuePtr &offset);
         ValuePtr CreatePointerDifference(const ValuePtr &begin, const ValuePtr &end);

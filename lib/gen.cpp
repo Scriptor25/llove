@@ -273,25 +273,10 @@ void llove::YieldStatement::Gen(Builder &builder) const
         return;
     }
 
-    auto [mutable_, reference_, type_] = builder.GetResult();
-    auto value = m_Value->GenVal(builder, type_);
+    const auto result = builder.GetResult();
+    auto value = m_Value->GenVal(builder, result.Type);
 
-    llvm::Value *llvm_value;
-    if (reference_)
-    {
-        Assert(value->IsReferenceable(), "reference from rvalue");
-        Assert(type_ == value->GetType(), "reference type mismatch");
-        Assert(!mutable_ || value->IsMutable(), "reference mutability violation");
-
-        llvm_value = value->GetPointer();
-    }
-    else
-    {
-        value = builder.CreateCast(value, type_);
-        llvm_value = value->Load(builder);
-    }
-
-    builder.CreateRet(llvm_value);
+    builder.CreateRet(result.Gen(builder, std::move(value), true));
 }
 
 void llove::Expression::Gen(Builder &builder) const
@@ -325,7 +310,7 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const
     };
 }
 
-llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
     PointerType::Ptr type;
     if (m_Type)
@@ -338,7 +323,7 @@ llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, TypePtr expect) 
     return Value::CreateR(std::move(type), value);
 }
 
-llove::ValuePtr llove::IntExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::IntExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
     auto type = m_Type;
     if (!type)
@@ -365,7 +350,7 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, TypePtr expect)
     Error("not yet implemented");
 }
 
-llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
     const auto type = m_Type ? m_Type : As<StructType>(expect);
     Assert(type != nullptr, "untyped struct expression");
@@ -376,24 +361,10 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, TypePtr expect
     for (auto &[key_, value_] : m_Values)
     {
         const auto index = type->GetFieldIndex(key_);
-        auto &[mutable_, reference_, type_] = type->GetField(index);
+        auto &field = type->GetField(index);
 
-        auto value = value_->GenVal(builder, type_);
-
-        llvm::Value *llvm_value;
-        if (reference_)
-        {
-            Assert(value->IsReferenceable(), "reference from rvalue");
-            Assert(type_ == value->GetType(), "reference type mismatch");
-            Assert(!mutable_ || value->IsMutable(), "reference mutability violation");
-
-            llvm_value = value->GetPointer();
-        }
-        else
-        {
-            value = builder.CreateCast(value, type_);
-            llvm_value = value->Load(builder);
-        }
+        auto value = value_->GenVal(builder, field.Type);
+        const auto llvm_value = field.Gen(builder, std::move(value), true);
 
         const auto element_pointer = builder.CreateStructGEP(type, pointer, index);
         builder.CreateStore(element_pointer, llvm_value);
@@ -453,7 +424,7 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
     Error("undefined binary operator {} {} {}", left->GetType(), m_Operator, right->GetType());
 }
 
-llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
     auto operand = m_Operand->GenVal(builder, expect);
 
@@ -552,15 +523,8 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
     std::vector<llvm::Value *> llvm_arguments;
 
     if (has_self)
-    {
-        if (!self_->IsReferenceable())
-        {
-            const auto storage = builder.CreateAlloca(builder.GetParent(), self_->GetType());
-            builder.CreateStore(storage, self_->Load(builder));
-            self_ = Value::CreateL(self_->GetType(), storage, false);
-        }
-        llvm_arguments.emplace_back(self_->GetPointer());
-    }
+        // ReSharper disable once CppDFANullDereference
+        llvm_arguments.emplace_back(callee->Type->GetSelf().Gen(builder, self_));
 
     unsigned i;
     // ReSharper disable once CppDFANullDereference
@@ -609,21 +573,26 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
     if (value->IsReferenceable())
     {
-        const auto element_pointer = builder.CreateStructGEP(type, value->GetPointer(), index);
-
-        auto result = Value::CreateL(element.Type, element_pointer, value->IsMutable() && element.Mutable);
+        const auto result = builder.CreateStructGEP(type, value->GetPointer(), index);
 
         if (element.Reference)
         {
-            auto pointer = result->GetPointer();
-            pointer = builder.CreateLoad(pointer, builder.GetTypes().GetPointer(false));
-            result = Value::CreateL(element.Type, pointer, element.Mutable);
+            const auto pointer = builder.CreateLoad(result, builder.GetTypes().GetPointer(false));
+            return Value::CreateL(element.Type, pointer, element.Mutable);
         }
 
-        return result;
+        return Value::CreateL(element.Type, result, value->IsMutable() && element.Mutable);
     }
 
-    Error("not yet implemented");
+    const auto result = builder.CreateExtractValue(value->Load(builder), index);
+
+    if (element.Reference)
+    {
+        const auto pointer = builder.CreateLoad(result, builder.GetTypes().GetPointer(false));
+        return Value::CreateL(element.Type, pointer, element.Mutable);
+    }
+
+    return Value::CreateR(element.Type, result);
 }
 
 llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const
@@ -634,7 +603,7 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const
     return { .Candidates = builder.GetFunctions(m_Member, value->AsField()), .Self = std::move(value) };
 }
 
-llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
     auto value = m_Value->GenVal(builder, expect ? builder.GetTypes().GetPointer(expect, false) : nullptr);
     const auto index = m_Index->GenVal(builder, nullptr);

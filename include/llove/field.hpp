@@ -12,7 +12,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
         llvm::Type *Gen(Builder &builder) const;
-        llvm::Value *Gen(Builder &builder, ValuePtr value) const;
+        llvm::Value *Gen(Builder &builder, ValuePtr value, bool strict = false) const;
         [[nodiscard]] std::string Mangle() const;
         bool operator==(const Field &other) const;
 

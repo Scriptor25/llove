@@ -178,6 +178,11 @@ llvm::Value *llove::Builder::CreateInsertValue(llvm::Value *aggregate, llvm::Val
     return m_Builder.CreateInsertValue(aggregate, value, index);
 }
 
+llvm::Value *llove::Builder::CreateExtractValue(llvm::Value *aggregate, const unsigned index)
+{
+    return m_Builder.CreateExtractValue(aggregate, index);
+}
+
 llove::ValuePtr llove::Builder::CreatePointerOffset(const ValuePtr &pointer, const ValuePtr &offset)
 {
     auto type = As<PointerType>(pointer->GetType());
@@ -924,6 +929,7 @@ llvm::FunctionCallee llove::Builder::GenFunction(const GenericFunction &fn)
     {
         self = {
             .Mutable = fn.Mutable,
+            .Reference = true,
             .Type = m_Types.GetClass(fn.ClassName),
         };
         function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result, self);
