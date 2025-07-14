@@ -288,7 +288,6 @@ void llove::YieldStatement::Gen(Builder &builder) const
     else
     {
         value = builder.CreateCast(value, type_);
-
         llvm_value = value->Load(builder);
     }
 
