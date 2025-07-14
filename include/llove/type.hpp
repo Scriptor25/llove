@@ -198,7 +198,8 @@ namespace llove
             const std::string &name,
             bool mutable_,
             const std::vector<Field> &parameters,
-            bool vararg) const;
+            bool vararg,
+            const Field &result) const;
 
         std::vector<const ClassFunctionInfo *> GetCreates() const;
 

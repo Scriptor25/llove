@@ -26,7 +26,7 @@ namespace llove
         PointerType::Ptr GetPointer(TypePtr base, bool mutable_);
         ArrayType::Ptr GetArray(TypePtr base, int64_t size);
         StructType::Ptr GetStruct(std::vector<ClassField> fields);
-        ClassType::Ptr GetClass(const std::string &name);
+        ClassType::Ptr GetClass(std::string name);
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result);
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result, Field self);
 

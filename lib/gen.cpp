@@ -24,19 +24,19 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const
     std::vector<Field> parameters;
     for (auto &[info_, name_] : m_Parameters)
         parameters.emplace_back(info_);
-    const auto class_function = class_type->GetFunction(m_Name, m_Mutable, parameters, m_VarArg);
+    const auto class_function = class_type->GetFunction(m_Name, m_Mutable, parameters, m_VarArg, m_Result);
 
     Assert(class_function != nullptr, "class function prototype mismatch");
 
     builder.GenFunction(
         {
             .ClassName = m_ClassName,
-            .Mutable = class_function->Mutable,
+            .Mutable = m_Mutable,
             .Expose = class_function->Expose,
-            .Name = class_function->Name,
+            .Name = m_Name,
             .Parameters = m_Parameters,
-            .VarArg = class_function->VarArg,
-            .Result = class_function->Result,
+            .VarArg = m_VarArg,
+            .Result = m_Result,
             .Content = m_Content.get(),
         }
     );
@@ -454,7 +454,16 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
 
 llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, TypePtr expect) const
 {
-    Error("not yet implemented");
+    auto operand = m_Operand->GenVal(builder, expect);
+
+    if (const auto operator_ = builder.GetOperator(m_Operator, operand->AsField(), m_Suffix))
+        return (*operator_)(builder, std::move(operand));
+
+    Error(
+        "undefined unary operator {}{}{}",
+        m_Suffix ? std::string{} : m_Operator,
+        operand->GetType(),
+        m_Suffix ? m_Operator : std::string{});
 }
 
 llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) const
@@ -470,6 +479,7 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
 
     const auto has_self = self_ != nullptr;
 
+    auto lowest_error = ~0u;
     const FunctionReference *callee = nullptr;
 
     for (const auto &candidate : candidates_)
@@ -478,18 +488,28 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
 
         if (type->HasSelf() != has_self)
             continue;
+
+        auto error = 0u;
+
         if (has_self)
         {
             auto &function_self = type->GetSelf();
             if (function_self.Type != self_->GetType())
                 continue;
-            if (function_self.Mutable && !self_->IsMutable())
+            if (function_self.Mutable && (!self_->IsReferenceable() || !self_->IsMutable()))
                 continue;
+
+            if (!self_->IsReferenceable())
+                error += 20u;
         }
+
         if (type->GetParameterCount() > arguments.size())
             continue;
         if (!type->IsVarArg() && type->GetParameterCount() < arguments.size())
             continue;
+
+        if (type->GetParameterCount() != arguments.size())
+            error += 2u;
 
         unsigned i;
         for (i = 0; i < type->GetParameterCount(); ++i)
@@ -500,23 +520,30 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
             {
                 if (type_ != argument->GetType())
                     break;
-                if (mutable_)
-                {
-                    if (!argument->IsReferenceable())
-                        break;
-                    if (!argument->IsMutable())
-                        break;
-                }
+                if (mutable_ && (!argument->IsReferenceable() || !argument->IsMutable()))
+                    break;
+
+                if (!argument->IsReferenceable())
+                    error += 10u;
             }
-            else if (!builder.IsCastable(argument->IsMutable(), argument->GetType(), type_))
-                break;
+            else if (type_ != argument->GetType())
+            {
+                if (!builder.IsCastable(argument->IsMutable(), argument->GetType(), type_))
+                    break;
+
+                error += 5u;
+            }
         }
         if (i < type->GetParameterCount())
             continue;
 
-        // TODO: select candidate with lowest error score
+        if (error > lowest_error)
+            continue;
+
+        Assert(error != lowest_error, "ambiguous candidates");
+
+        lowest_error = error;
         callee = &candidate;
-        break;
     }
 
     Assert(callee != nullptr, "no suitable callee candidate");
@@ -531,7 +558,6 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
             builder.CreateStore(storage, self_->Load(builder));
             self_ = Value::CreateL(self_->GetType(), storage, false);
         }
-
         llvm_arguments.emplace_back(self_->GetPointer());
     }
 
@@ -539,27 +565,10 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
     // ReSharper disable once CppDFANullDereference
     for (i = 0; i < callee->Type->GetParameterCount(); ++i)
     {
-        auto &[mutable_, reference_, type_] = callee->Type->GetParameter(i);
-        auto argument = arguments.at(i);
+        auto &parameter = callee->Type->GetParameter(i);
+        const auto &argument = arguments.at(i);
 
-        llvm::Value *value;
-        if (reference_)
-        {
-            if (!argument->IsReferenceable())
-            {
-                const auto pointer = builder.CreateAlloca(builder.GetParent(), type_);
-                builder.CreateStore(pointer, argument->Load(builder));
-                argument = Value::CreateL(type_, pointer, false);
-            }
-            value = argument->GetPointer();
-        }
-        else
-        {
-            argument = builder.CreateCast(argument, type_);
-            value = argument->Load(builder);
-        }
-
-        llvm_arguments.emplace_back(value);
+        llvm_arguments.emplace_back(parameter.Gen(builder, argument));
     }
     for (; i < arguments.size(); ++i)
         llvm_arguments.emplace_back(arguments.at(i)->Load(builder));
@@ -627,14 +636,14 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const
 llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, TypePtr expect) const
 {
     auto value = m_Value->GenVal(builder, expect ? builder.GetTypes().GetPointer(expect, false) : nullptr);
-    auto index = m_Index->GenVal(builder, nullptr);
+    const auto index = m_Index->GenVal(builder, nullptr);
 
     switch (value->GetType()->GetId())
     {
     case TypeId_Pointer:
-        return builder.CreatePointerElement(std::move(value), std::move(index));
+        return builder.CreatePointerElement(value, index);
     case TypeId_Array:
-        return builder.CreateArrayElement(std::move(value), std::move(index));
+        return builder.CreateArrayElement(std::move(value), index);
     default:
         Error("subscript on non-pointer and non-array value of type {}", value->GetType());
     }
@@ -646,6 +655,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     for (auto &argument : m_Arguments)
         arguments.emplace_back(argument->GenVal(builder, nullptr));
 
+    auto lowest_error = ~0u;
     const ClassFunctionInfo *create = nullptr;
 
     for (const auto candidates = m_ClassType->GetCreates();
@@ -656,6 +666,11 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
         if (!candidate->VarArg && candidate->Parameters.size() < arguments.size())
             continue;
 
+        auto error = 0u;
+
+        if (candidate->Parameters.size() != arguments.size())
+            error += 2u;
+
         unsigned i;
         for (i = 0; i < candidate->Parameters.size(); ++i)
         {
@@ -665,22 +680,30 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
             {
                 if (type_ != argument->GetType())
                     break;
-                if (mutable_)
-                {
-                    if (!argument->IsReferenceable())
-                        break;
-                    if (!argument->IsMutable())
-                        break;
-                }
+                if (mutable_ && (!argument->IsReferenceable() || !argument->IsMutable()))
+                    break;
+
+                if (!argument->IsReferenceable())
+                    error += 10u;
             }
-            else if (!builder.IsCastable(argument->IsMutable(), argument->GetType(), type_))
-                break;
+            else if (type_ != argument->GetType())
+            {
+                if (!builder.IsCastable(argument->IsMutable(), argument->GetType(), type_))
+                    break;
+
+                error += 5u;
+            }
         }
         if (i < candidate->Parameters.size())
             continue;
 
+        if (error > lowest_error)
+            continue;
+
+        Assert(error != lowest_error, "ambiguous candidates");
+
+        lowest_error = error;
         create = candidate;
-        break;
     }
 
     Assert(create != nullptr, "no suitable create candidate");
@@ -694,27 +717,10 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     // ReSharper disable once CppDFANullDereference
     for (i = 0; i < create->Parameters.size(); ++i)
     {
-        auto &[mutable_, reference_, type_] = create->Parameters.at(i);
-        auto argument = arguments.at(i);
+        auto &parameter = create->Parameters.at(i);
+        const auto &argument = arguments.at(i);
 
-        llvm::Value *value;
-        if (reference_)
-        {
-            if (!argument->IsReferenceable())
-            {
-                const auto pointer = builder.CreateAlloca(builder.GetParent(), type_);
-                builder.CreateStore(pointer, argument->Load(builder));
-                argument = Value::CreateL(type_, pointer, false);
-            }
-            value = argument->GetPointer();
-        }
-        else
-        {
-            argument = builder.CreateCast(argument, type_);
-            value = argument->Load(builder);
-        }
-
-        llvm_arguments.emplace_back(value);
+        llvm_arguments.emplace_back(parameter.Gen(builder, argument));
     }
     for (; i < arguments.size(); ++i)
     {

@@ -1,9 +1,27 @@
 #include <llove/builder.hpp>
 #include <llove/field.hpp>
+#include <llove/value.hpp>
 
 llvm::Type *llove::Field::Gen(Builder &builder) const
 {
     return Reference ? builder.GetPointerType(Type->Gen(builder)) : Type->Gen(builder);
+}
+
+llvm::Value *llove::Field::Gen(Builder &builder, ValuePtr value) const
+{
+    if (Reference)
+    {
+        if (!value->IsReferenceable())
+        {
+            const auto pointer = builder.CreateAlloca(builder.GetParent(), Type);
+            builder.CreateStore(pointer, value->Load(builder));
+            value = Value::CreateL(Type, pointer, false);
+        }
+        return value->GetPointer();
+    }
+
+    value = builder.CreateCast(value, Type);
+    return value->Load(builder);
 }
 
 std::string llove::Field::Mangle() const

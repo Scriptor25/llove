@@ -71,12 +71,12 @@ llove::StructType::Ptr llove::Context::GetStruct(std::vector<ClassField> fields)
         return type = std::make_shared<StructType>(std::move(fields));
 }
 
-llove::ClassType::Ptr llove::Context::GetClass(const std::string &name)
+llove::ClassType::Ptr llove::Context::GetClass(std::string name)
 {
     if (auto &type = m_Class[name])
         return type;
     else
-        return type = std::make_shared<ClassType>(name);
+        return type = std::make_shared<ClassType>(std::move(name));
 }
 
 llove::FunctionType::Ptr llove::Context::GetFunction(std::vector<Field> parameters, bool vararg, Field result)

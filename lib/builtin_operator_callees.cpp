@@ -4,6 +4,141 @@
 #include <llove/operator.hpp>
 #include <llove/value.hpp>
 
+static llove::ValuePtr operator_neg(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
+{
+    switch (operand->GetType()->GetId())
+    {
+    case llove::TypeId_Integer:
+        return builder.CreateNeg(operand);
+    case llove::TypeId_Float:
+        return builder.CreateFNeg(operand);
+    default:
+        break;
+    }
+
+    llove::Error("not yet implemented");
+}
+
+static llove::ValuePtr operator_not(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
+{
+    switch (operand->GetType()->GetId())
+    {
+    case llove::TypeId_Integer:
+    case llove::TypeId_Float:
+    case llove::TypeId_Pointer:
+        return builder.CreateNot(operand);
+    default:
+        break;
+    }
+
+    llove::Error("not yet implemented");
+}
+
+static llove::ValuePtr operator_inv(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
+{
+    switch (operand->GetType()->GetId())
+    {
+    case llove::TypeId_Integer:
+        return builder.CreateInv(operand);
+    default:
+        break;
+    }
+
+    llove::Error("not yet implemented");
+}
+
+static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr operand, const bool suffix)
+{
+    const auto pre = suffix ? operand->Load(builder) : nullptr;
+
+    llove::ValuePtr result;
+    switch (operand->GetType()->GetId())
+    {
+    case llove::TypeId_Integer:
+    {
+        const auto one_value = llvm::ConstantInt::get(operand->GetType()->Gen(builder), 1, false);
+        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
+        result = builder.CreateAdd(operand, one);
+        break;
+    }
+    case llove::TypeId_Float:
+    {
+        const auto one_value = llvm::ConstantFP::get(operand->GetType()->Gen(builder), 1.0);
+        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
+        result = builder.CreateFAdd(operand, one);
+        break;
+    }
+    case llove::TypeId_Pointer:
+    {
+        const auto one_value = llvm::ConstantInt::get(builder.GetIntType(64), 1, false);
+        const auto one = llove::Value::CreateR(builder.GetTypes().GetInteger(false, 64), one_value);
+        result = builder.CreatePointerOffset(operand, one);
+        break;
+    }
+    default:
+        llove::Error("not yet implemented");
+    }
+
+    operand->Store(builder, result->Load(builder));
+
+    if (suffix)
+        return llove::Value::CreateR(operand->GetType(), pre);
+
+    return operand;
+}
+
+static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr operand, const bool suffix)
+{
+    const auto pre = suffix ? operand->Load(builder) : nullptr;
+
+    llove::ValuePtr result;
+    switch (operand->GetType()->GetId())
+    {
+    case llove::TypeId_Integer:
+    {
+        const auto one_value = llvm::ConstantInt::get(operand->GetType()->Gen(builder), 1, false);
+        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
+        result = builder.CreateSub(operand, one);
+        break;
+    }
+    case llove::TypeId_Float:
+    {
+        const auto one_value = llvm::ConstantFP::get(operand->GetType()->Gen(builder), 1.0);
+        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
+        result = builder.CreateFSub(operand, one);
+        break;
+    }
+    case llove::TypeId_Pointer:
+    {
+        const auto one_value = llvm::ConstantInt::get(builder.GetIntType(64), -1, false);
+        const auto one = llove::Value::CreateR(builder.GetTypes().GetInteger(true, 64), one_value);
+        result = builder.CreatePointerOffset(operand, one);
+        break;
+    }
+    default:
+        llove::Error("not yet implemented");
+    }
+
+    operand->Store(builder, result->Load(builder));
+
+    if (suffix)
+        return llove::Value::CreateR(operand->GetType(), pre);
+
+    return operand;
+}
+
+static llove::ValuePtr operator_deref(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
+{
+    const auto type = llove::As<llove::PointerType>(operand->GetType());
+    llove::Assert(type != nullptr, "cannot dereference non-pointer value");
+    return llove::Value::CreateL(type->GetBase(), operand->Load(builder), type->IsMutable());
+}
+
+static llove::ValuePtr operator_ref(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
+{
+    return operand->Reference(builder);
+}
+
 static llove::ValuePtr operator_copy(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
 {
     right = builder.CreateCast(std::move(right), left->GetType());
@@ -330,7 +465,20 @@ static llove::ValuePtr operator_ge(llove::Builder &builder, llove::ValuePtr left
     llove::Error("not yet implemented");
 }
 
-std::map<std::string, llove::BuiltinOperator::CalleeType> llove::BuiltinOperatorCallees
+const std::map<std::string_view, llove::BIOperator<1>::CalleeType> llove::BIUnOperatorCallees
+{
+    { "-", operator_neg },
+    { "!", operator_not },
+    { "~", operator_inv },
+
+    { "++", operator_inc },
+    { "--", operator_dec },
+
+    { "*", operator_deref },
+    { "&", operator_ref },
+};
+
+const std::map<std::string_view, llove::BIOperator<2>::CalleeType> llove::BIBiOperatorCallees
 {
     { "=", operator_copy },
 

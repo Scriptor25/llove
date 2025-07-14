@@ -419,10 +419,10 @@ llove::TypePtr llove::Parser::ParseBaseType()
     if (SkipIf(TokenType_Sym, "class"))
     {
         Expect(TokenType_Opr, "<");
-        const auto name = Expect(TokenType_Sym).Value;
+        auto name = Expect(TokenType_Sym).Value;
         Expect(TokenType_Opr, ">");
 
-        return m_Types.GetClass(name);
+        return m_Types.GetClass(std::move(name));
     }
 
     if (At(TokenType_Sym))
@@ -974,7 +974,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         return std::make_unique<StringExpression>(std::move(value));
     }
 
-    if (At(TokenType_Opr, "-", "~", "!", "++", "--"))
+    if (At(TokenType_Opr, "-", "!", "~", "++", "--", "*", "&"))
     {
         auto operator_ = Skip().Value;
         auto operand = ParseOperandExpression();

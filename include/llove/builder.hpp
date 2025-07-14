@@ -124,6 +124,10 @@ namespace llove
         ValuePtr CreatePCmpNE(const ValuePtr &left, const ValuePtr &right);
 
         ValuePtr CreateNeg(const ValuePtr &operand);
+        ValuePtr CreateFNeg(const ValuePtr &operand);
+
+        ValuePtr CreateNot(const ValuePtr &operand);
+        ValuePtr CreateInv(const ValuePtr &operand);
 
         void CreateBranch(llvm::BasicBlock *block);
         void CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
@@ -142,7 +146,8 @@ namespace llove
         std::vector<FunctionReference> GetFunctions(const std::string &name);
         std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self);
 
-        Operator::Ptr GetOperator(const std::string &operator_, const Field &left, const Field &right);
+        Operator<1>::Ptr GetOperator(const std::string &operator_, const Field &operand, bool suffix);
+        Operator<2>::Ptr GetOperator(const std::string &operator_, const Field &left, const Field &right);
 
         void StackPush(const Field &result = {});
         void StackPop();
@@ -158,7 +163,7 @@ namespace llove
         llvm::FunctionCallee GenFunction(const GenericFunction &fn);
         void GenParameters(llvm::Function *parent, const std::vector<Parameter> &parameters, const Field &self = {});
 
-        void Gen(std::string filename);
+        void Gen(const std::string &filename);
 
     private:
         Context &m_Types;

@@ -236,7 +236,8 @@ const llove::ClassFunctionInfo *llove::ClassType::GetFunction(
     const std::string &name,
     const bool mutable_,
     const std::vector<Field> &parameters,
-    const bool vararg) const
+    const bool vararg,
+    const Field &result) const
 {
     for (auto &function : m_Functions)
     {
@@ -247,6 +248,8 @@ const llove::ClassFunctionInfo *llove::ClassType::GetFunction(
         if (function.VarArg != vararg)
             continue;
         if (function.Parameters.size() != parameters.size())
+            continue;
+        if (function.Result != result)
             continue;
         unsigned i;
         for (i = 0; i < function.Parameters.size(); ++i)

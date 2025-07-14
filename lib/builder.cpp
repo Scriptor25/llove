@@ -4,6 +4,7 @@
 #include <llove/tree.hpp>
 #include <llove/type.hpp>
 #include <llove/value.hpp>
+#include <ranges>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
@@ -424,6 +425,24 @@ llove::ValuePtr llove::Builder::CreateNeg(const ValuePtr &operand)
     return Value::CreateR(operand->GetType(), value);
 }
 
+llove::ValuePtr llove::Builder::CreateFNeg(const ValuePtr &operand)
+{
+    const auto value = m_Builder.CreateFNeg(operand->Load(*this));
+    return Value::CreateR(operand->GetType(), value);
+}
+
+llove::ValuePtr llove::Builder::CreateNot(const ValuePtr &operand)
+{
+    const auto value = m_Builder.CreateIsNull(operand->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llove::ValuePtr llove::Builder::CreateInv(const ValuePtr &operand)
+{
+    const auto value = m_Builder.CreateNot(operand->Load(*this));
+    return Value::CreateR(operand->GetType(), value);
+}
+
 void llove::Builder::CreateBranch(llvm::BasicBlock *block)
 {
     m_Builder.CreateBr(block);
@@ -530,17 +549,93 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::st
     return functions;
 }
 
-llove::Operator::Ptr llove::Builder::GetOperator(
+llove::Operator<1>::Ptr llove::Builder::GetOperator(const std::string &operator_, const Field &operand, bool suffix)
+{
+    auto lowest_error = ~0u;
+    Operator<1>::Ptr candidate;
+
+    for (auto &function : m_Functions)
+    {
+        if (function.Name != operator_)
+            continue;
+        if (suffix != function.Type->IsVarArg())
+            continue;
+
+        auto error = 0u;
+
+        if (function.Type->HasSelf())
+        {
+            if (function.Type->GetParameterCount() != 0)
+                continue;
+
+            auto &self = function.Type->GetSelf();
+            if (self.Type != operand.Type)
+                continue;
+            if (self.Mutable && (!operand.Reference || !operand.Mutable))
+                continue;
+
+            if (!operand.Reference)
+                error += 10u;
+        }
+        else
+        {
+            if (function.Type->GetParameterCount() != 1)
+                continue;
+
+            if (auto &[mutable_, reference_, type_] = function.Type->GetParameter(0); reference_)
+            {
+                if (type_ != operand.Type)
+                    continue;
+                if (mutable_ && (!operand.Reference || !operand.Mutable))
+                    continue;
+
+                if (!operand.Reference)
+                    error += 10u;
+            }
+            else if (type_ != operand.Type)
+            {
+                if (!IsCastable(operand.Mutable, operand.Type, type_))
+                    continue;
+
+                error += 10u;
+            }
+        }
+
+        if (error > lowest_error)
+            continue;
+
+        Assert(error != lowest_error, "ambiguous candidates");
+
+        lowest_error = error;
+        candidate = std::make_unique<UDOperator<1>>(function.Type, function.Callee);
+    }
+
+    if (candidate)
+        return candidate;
+
+    if (BIUnOperatorCallees.contains(operator_))
+        return std::make_unique<BIOperator<1>>(BIUnOperatorCallees.at(operator_), suffix);
+
+    return nullptr;
+}
+
+llove::Operator<2>::Ptr llove::Builder::GetOperator(
     const std::string &operator_,
     const Field &left,
     const Field &right)
 {
+    auto lowest_error = ~0u;
+    Operator<2>::Ptr candidate;
+
     for (auto &function : m_Functions)
     {
         if (function.Name != operator_)
             continue;
         if (function.Type->IsVarArg())
             continue;
+
+        auto error = 0u;
+
         if (function.Type->HasSelf())
         {
             if (function.Type->GetParameterCount() != 1)
@@ -552,15 +647,26 @@ llove::Operator::Ptr llove::Builder::GetOperator(
             if (self.Mutable && (!left.Reference || !left.Mutable))
                 continue;
 
+            if (!left.Reference)
+                error += 10u;
+
             if (auto &[mutable_, reference_, type_] = function.Type->GetParameter(0); reference_)
             {
                 if (type_ != right.Type)
                     continue;
                 if (mutable_ && (!right.Reference || !right.Mutable))
                     continue;
+
+                if (!right.Reference)
+                    error += 10u;
             }
-            else if (!IsCastable(right.Mutable, right.Type, type_))
-                continue;
+            else if (type_ != right.Type)
+            {
+                if (!IsCastable(right.Mutable, right.Type, type_))
+                    continue;
+
+                error += 10u;
+            }
         }
         else
         {
@@ -573,9 +679,17 @@ llove::Operator::Ptr llove::Builder::GetOperator(
                     continue;
                 if (mutable_ && (!left.Reference || !left.Mutable))
                     continue;
+
+                if (!left.Reference)
+                    error += 10u;
             }
-            else if (!IsCastable(left.Mutable, left.Type, type_))
-                continue;
+            else if (type_ != left.Type)
+            {
+                if (!IsCastable(left.Mutable, left.Type, type_))
+                    continue;
+
+                error += 10u;
+            }
 
             if (auto &[mutable_, reference_, type_] = function.Type->GetParameter(1); reference_)
             {
@@ -583,17 +697,33 @@ llove::Operator::Ptr llove::Builder::GetOperator(
                     continue;
                 if (mutable_ && (!right.Reference || !right.Mutable))
                     continue;
+
+                if (!right.Reference)
+                    error += 10u;
             }
-            else if (!IsCastable(right.Mutable, right.Type, type_))
-                continue;
+            else if (type_ != right.Type)
+            {
+                if (!IsCastable(right.Mutable, right.Type, type_))
+                    continue;
+
+                error += 10u;
+            }
         }
 
-        // TODO: select candidate with lowest error score
-        return std::make_unique<UserDefinedOperator>(function.Type, function.Callee);
+        if (error > lowest_error)
+            continue;
+
+        Assert(error != lowest_error, "ambiguous candidates");
+
+        lowest_error = error;
+        candidate = std::make_unique<UDOperator<2>>(function.Type, function.Callee);
     }
 
-    if (BuiltinOperatorCallees.contains(operator_))
-        return std::make_unique<BuiltinOperator>(BuiltinOperatorCallees.at(operator_));
+    if (candidate)
+        return candidate;
+
+    if (BIBiOperatorCallees.contains(operator_))
+        return std::make_unique<BIOperator<2>>(BIBiOperatorCallees.at(operator_));
 
     return nullptr;
 }
@@ -605,7 +735,7 @@ void llove::Builder::StackPush(const Field &result)
 
 void llove::Builder::StackPop()
 {
-    // TODO: append automatic delete calls for unused values
+    // TODO: append automatic delete calls for orphan values
     m_Stack.pop_back();
 }
 
@@ -618,9 +748,9 @@ llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
 {
     if (m_Stack.empty())
         return nullptr;
-    for (auto i = m_Stack.rbegin(); i != m_Stack.rend(); ++i)
-        if (i->Values.contains(name))
-            return i->Values.at(name);
+    for (auto &[result_, values_] : std::ranges::reverse_view(m_Stack))
+        if (values_.contains(name))
+            return values_.at(name);
     return nullptr;
 }
 
@@ -728,7 +858,6 @@ bool llove::Builder::IsCastable(const bool mutable_, const TypePtr &value_type, 
         switch (type->GetId())
         {
         case TypeId_Integer:
-            return true;
         case TypeId_Float:
             return true;
         default:
@@ -739,7 +868,6 @@ bool llove::Builder::IsCastable(const bool mutable_, const TypePtr &value_type, 
         switch (type->GetId())
         {
         case TypeId_Integer:
-            return true;
         case TypeId_Float:
             return true;
         default:
@@ -806,7 +934,7 @@ llvm::FunctionCallee llove::Builder::GenFunction(const GenericFunction &fn)
     AddFunction(fn.Expose, fn.Name, function_type, function);
 
     if (!fn.Content)
-        return llvm::FunctionCallee(function_type->Gen(*this), function);
+        return { function_type->Gen(*this), function };
 
     const auto entry_block = CreateBlock("entry", function);
 
@@ -837,7 +965,7 @@ llvm::FunctionCallee llove::Builder::GenFunction(const GenericFunction &fn)
     const auto error = verifyFunction(*function, &llvm::errs());
     Assert(!error, "function has errors");
 
-    return llvm::FunctionCallee(function_type->Gen(*this), function);
+    return { function_type->Gen(*this), function };
 }
 
 void llove::Builder::GenParameters(llvm::Function *parent, const std::vector<Parameter> &parameters, const Field &self)
@@ -853,7 +981,7 @@ void llove::Builder::GenParameters(llvm::Function *parent, const std::vector<Par
         SetValue("self", Value::CreateL(self.Type, argument, self.Mutable));
     }
 
-    for (unsigned i = 0; i < (parent->arg_size() - offset); ++i)
+    for (unsigned i = 0; i < parent->arg_size() - offset; ++i)
     {
         auto &[info_, name_] = parameters.at(i);
 
@@ -875,8 +1003,10 @@ void llove::Builder::GenParameters(llvm::Function *parent, const std::vector<Par
     }
 }
 
-void llove::Builder::Gen(std::string filename)
+void llove::Builder::Gen(const std::string &filename)
 {
+    m_Module.print(llvm::outs(), nullptr);
+
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();
@@ -891,7 +1021,7 @@ void llove::Builder::Gen(std::string filename)
     Assert(target != nullptr, "failed to get target for triple '{}': {}", target_triple, target_error);
 
     const std::string cpu = "generic";
-    const std::string features = "";
+    const std::string features;
     const llvm::TargetOptions options;
 
     const auto target_machine = target->createTargetMachine(target_triple, cpu, features, options, llvm::Reloc::PIC_);

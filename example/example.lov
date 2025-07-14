@@ -38,8 +38,8 @@ class string {
     expose begin(): i8[];
     expose end(): i8[];
 
-    expose mut begin(): i8[];
-    expose mut end(): i8[];
+    expose mut begin(): i8[mut];
+    expose mut end(): i8[mut];
 
     expose mut clear();
 
@@ -62,14 +62,11 @@ class string {
 
 define print(&str: string) {
     for (let mut p = str.begin(); p != str.end(); ++p)
-        putchar(p[0]);
+        putchar(*p);
 }
 
 define hello(&name: string) {
-    let mut str = new:string("Hello, ");
-    str += name;
-    str += "!\r\n";
-    print(str);
+    print(new:string("Hello, ") + name + "!\r\n");
 }
 
 interface main(count: i32, args: i8[][]): i32 {
@@ -122,7 +119,7 @@ define:string mut create(s: i8) {
     self.beg = malloc(1);
     self.end = self.beg + 1;
 
-    self.beg[0] = s;
+    memcpy(self.beg, &s, 1);
 }
 
 define:string mut create(s: i8[]) {
@@ -199,7 +196,7 @@ define:string mut =(s: i8): mut &string {
     self.beg = realloc(self.beg, 1);
     self.end = self.beg + 1;
 
-    self.beg[0] = s;
+    memcpy(self.beg, &s, 1);
 
     yield self;
 }
@@ -245,7 +242,7 @@ define:string mut +=(s: i8): mut &string {
     self.beg = realloc(self.beg, len + 1);
     self.end = self.beg + len + 1;
 
-    self.beg[len] = s;
+    memcpy(self.beg + len, &s, 1);
 
     yield self;
 }
