@@ -959,12 +959,14 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Int))
     {
         auto value = Skip().IntValue;
+
         IntegerType::Ptr type;
         if (SkipIf(TokenType_Otr, ":"))
         {
             type = As<IntegerType>(ParseType());
             Assert(type != nullptr, "expected integer type");
         }
+
         return std::make_unique<IntExpression>(value, std::move(type));
     }
 
@@ -1000,9 +1002,13 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
                 Expect(TokenType_Otr, ",");
         }
         Expect(TokenType_Otr, "]");
-        Expect(TokenType_Otr, ":");
 
-        auto type = As<ArrayType>(ParseType());
+        ArrayType::Ptr type;
+        if (SkipIf(TokenType_Otr, ":"))
+        {
+            type = As<ArrayType>(ParseType());
+            Assert(type != nullptr, "expected array type");
+        }
 
         return std::make_unique<ArrayExpression>(std::move(values), std::move(type));
     }
@@ -1026,9 +1032,13 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
                 Expect(TokenType_Otr, ",");
         }
         Expect(TokenType_Otr, "}");
-        Expect(TokenType_Otr, ":");
 
-        auto type = As<StructType>(ParseType());
+        StructType::Ptr type;
+        if (SkipIf(TokenType_Otr, ":"))
+        {
+            type = As<StructType>(ParseType());
+            Assert(type != nullptr, "expected struct type");
+        }
 
         return std::make_unique<StructExpression>(std::move(values), std::move(type));
     }

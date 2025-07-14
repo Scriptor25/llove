@@ -371,15 +371,15 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, TypePtr expect
     const auto type = m_Type ? m_Type : As<StructType>(expect);
     Assert(type != nullptr, "untyped struct expression");
 
-    const auto aggregate_type = type->Gen(builder);
-    llvm::Value *aggregate = llvm::ConstantStruct::get(aggregate_type);
+    const auto pointer = builder.CreateAlloca(builder.GetParent(), type);
+    builder.CreateStore(pointer, llvm::Constant::getNullValue(type->Gen(builder)));
 
     for (auto &[key_, value_] : m_Values)
     {
         const auto index = type->GetFieldIndex(key_);
         auto &[mutable_, reference_, type_] = type->GetField(index);
 
-        const auto value = value_->GenVal(builder, type_);
+        auto value = value_->GenVal(builder, type_);
 
         llvm::Value *llvm_value;
         if (reference_)
@@ -392,13 +392,15 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, TypePtr expect
         }
         else
         {
+            value = builder.CreateCast(value, type_);
             llvm_value = value->Load(builder);
         }
 
-        builder.CreateInsertValue(aggregate, llvm_value, index);
+        const auto element_pointer = builder.CreateStructGEP(type, pointer, index);
+        builder.CreateStore(element_pointer, llvm_value);
     }
 
-    return Value::CreateR(type, aggregate);
+    return Value::CreateL(type, pointer, false);
 }
 
 llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect) const
