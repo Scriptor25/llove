@@ -1,5 +1,6 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/error.hpp>
 #include <llove/value.hpp>
 
 llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
@@ -48,7 +49,7 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
     if (callee)
     {
         auto argument = callee->Type->HasSelf()
-                            ? callee->Type->GetSelf().GenCast(*this, value, true)
+                            ? callee->Type->GetSelf().GenCast(*this, value)
                             : callee->Type->GetParameter(0).GenCast(*this, value);
 
         const auto result = CreateCall(callee->Type, callee->Callee, { argument });

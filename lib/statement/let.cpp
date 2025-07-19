@@ -1,0 +1,178 @@
+#include <llove/builder.hpp>
+#include <llove/context.hpp>
+#include <llove/error.hpp>
+#include <llove/tree.hpp>
+#include <llove/value.hpp>
+
+llove::LetStatement::LetStatement(
+    Field info,
+    std::string name,
+    ExpressionPtr value,
+    std::vector<ExpressionPtr> arguments)
+    : m_Info(std::move(info)),
+      m_Name(std::move(name)),
+      m_Value(std::move(value)),
+      m_Arguments(std::move(arguments))
+{
+}
+
+void llove::LetStatement::Gen(Builder &builder) const
+{
+    Assert(m_Info.Type != nullptr || m_Value != nullptr, "missing type or value");
+
+    auto value = m_Value ? m_Value->GenVal(builder, m_Info.Type) : nullptr;
+    auto type = m_Info.Type ? m_Info.Type : value->GetType();
+
+    std::vector<ValuePtr> arguments;
+    for (auto &argument : m_Arguments)
+        arguments.emplace_back(argument->GenVal(builder, nullptr));
+
+    ValuePtr storage;
+    if (m_Info.Reference)
+    {
+        Assert(arguments.empty(), "cannot construct reference");
+        Assert(value != nullptr, "missing initializer value");
+        Assert(value->IsReferenceable(), "reference from rvalue");
+        Assert(type == value->GetType(), "reference type mismatch");
+        Assert(!m_Info.Mutable || value->IsMutable(), "reference mutability violation");
+
+        storage = Value::CreateL(std::move(type), value->GetPointer(), m_Info.Mutable);
+    }
+    else
+    {
+        const auto pointer = builder.CreateAlloca(type);
+
+        if (type && type->GetId() == TypeId_Class)
+        {
+            const Field self
+            {
+                .Mutable = true,
+                .Reference = true,
+                .Type = type,
+            };
+
+            const auto class_type = As<ClassType>(type);
+            const auto constructors = class_type->GetConstructors();
+
+            if (arguments.empty())
+            {
+                std::vector<Field> argument_fields;
+                if (value)
+                    argument_fields.emplace_back(value->AsField());
+
+                if (const auto candidate = builder.FindFunction(constructors, argument_fields, class_type, self))
+                {
+                    std::vector<Parameter> parameters;
+                    for (auto &parameter : candidate->Parameters)
+                        parameters.emplace_back(parameter);
+
+                    const auto &reference = builder.GenFunction(
+                        {
+                            .Class = class_type,
+                            .Mutable = candidate->Mutable,
+                            .Expose = candidate->Expose,
+                            .Name = candidate->Name,
+                            .Parameters = parameters,
+                            .VarArg = candidate->VarArg,
+                            .Result = candidate->Result,
+                        });
+
+                    builder.CreateCall(
+                        reference.Type,
+                        reference.Callee,
+                        { value },
+                        Value::CreateL(class_type, pointer, true));
+                }
+                else
+                {
+                    if (value)
+                    {
+                        value = builder.CreateCast(std::move(value), type);
+                    }
+                    else
+                    {
+                        const auto null = llvm::Constant::getNullValue(type->Gen(builder));
+                        value = Value::CreateR(std::move(type), null);
+                    }
+                    builder.CreateStore(pointer, value);
+                }
+            }
+            else
+            {
+                std::vector<Field> argument_fields;
+                for (const auto &argument : arguments)
+                    argument_fields.emplace_back(argument->AsField());
+
+                const auto candidate = builder.FindFunction(
+                    constructors,
+                    argument_fields,
+                    class_type,
+                    self);
+                Assert(candidate != nullptr, "no suitable candidate");
+
+                std::vector<Parameter> parameters;
+                for (auto &parameter : candidate->Parameters)
+                    parameters.emplace_back(parameter);
+
+                const auto &reference = builder.GenFunction(
+                    {
+                        .Class = class_type,
+                        .Mutable = candidate->Mutable,
+                        .Expose = candidate->Expose,
+                        .Name = candidate->Name,
+                        .Parameters = parameters,
+                        .VarArg = candidate->VarArg,
+                        .Result = candidate->Result,
+                    });
+
+                builder.CreateCall(
+                    reference.Type,
+                    reference.Callee,
+                    std::move(arguments),
+                    Value::CreateL(class_type, pointer, true));
+            }
+        }
+        else
+        {
+            if (!value)
+            {
+                Assert(arguments.empty(), "cannot construct non-class value");
+                Assert(type != nullptr, "missing type");
+
+                const auto null = llvm::Constant::getNullValue(type->Gen(builder));
+                value = Value::CreateR(std::move(type), null);
+            }
+            else
+            {
+                value = builder.CreateCast(std::move(value), type);
+            }
+
+            builder.CreateStore(pointer, value);
+        }
+
+        storage = Value::CreateL(std::move(type), pointer, m_Info.Mutable);
+    }
+
+    builder.SetValue(m_Name, std::move(storage));
+}
+
+std::ostream &llove::LetStatement::Print(std::ostream &stream) const
+{
+    m_Info.Print(stream << "let ", true, m_Name);
+    if (m_Value)
+    {
+        stream << " = " << m_Value;
+    }
+    else if (!m_Arguments.empty())
+    {
+        stream << '(';
+        for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
+        {
+            if (i != m_Arguments.begin())
+                stream << ", ";
+            stream << *i;
+        }
+        stream << ')';
+    }
+    return stream << ';';
+}

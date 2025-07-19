@@ -51,7 +51,7 @@ const llove::FunctionReference *llove::Builder::FindFunction(
 
         auto error = 0u;
 
-        if (has_self && Field::GetCastError(*this, function_type->GetSelf(), self, error, { .Allocate = 20u }))
+        if (has_self && Field::GetCastError(*this, function_type->GetSelf(), self, error))
             continue;
 
         if (function_type->GetParameterCount() > arguments.size())
@@ -92,26 +92,26 @@ const llove::ClassFunctionReference *llove::Builder::FindFunction(
 
     for (const auto &function : functions)
     {
-        auto error = 0u;
-
-        Field class_
+        const Field class_
         {
             .Mutable = function.Mutable,
             .Reference = true,
             .Type = class_type,
         };
 
-        if (Field::GetCastError(*this, class_, self, error, { .Allocate = 20u }))
+        if (!Field::IsAssignable(class_, self))
             continue;
 
         const auto parameter_count = function.Parameters.size();
+        const auto argument_count = arguments.size();
 
-        if (parameter_count > arguments.size())
+        if (parameter_count > argument_count)
             continue;
-        if (!function.VarArg && parameter_count < arguments.size())
+        if (!function.VarArg && parameter_count < argument_count)
             continue;
 
-        if (parameter_count != arguments.size())
+        auto error = 0u;
+        if (parameter_count != argument_count)
             error += 2u;
 
         unsigned i;

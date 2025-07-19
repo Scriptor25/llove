@@ -168,6 +168,7 @@ llove::Token llove::Parser::Next()
             case '>':
             case '!':
             case '~':
+            case '$':
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
                 m_Buffer = m_Stream.get();
@@ -563,7 +564,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
 llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
 {
     auto class_name = Expect(TokenType_Sym).Value;
-    auto class_type = m_Types.GetClass(class_name);
+    auto class_type = m_Types.GetClass(std::move(class_name));
 
     auto mutable_ = SkipIf(TokenType_Sym, "mut");
     auto name = At(TokenType_Opr) ? Skip().Value : Expect(TokenType_Sym).Value;
@@ -610,9 +611,8 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
 {
     Expect(TokenType_Sym, "class");
     auto name = Expect(TokenType_Sym).Value;
-
-    const auto type = m_Types.GetClass(name);
-    m_Types.Set(name, type);
+    auto type = m_Types.GetClass(std::move(name));
+    m_Types.Set(type->GetName(), type);
 
     if (SkipIf(TokenType_Otr, ";"))
         return std::make_unique<ClassGlobal>(std::move(type));
@@ -994,7 +994,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         return std::make_unique<StringExpression>(std::move(value));
     }
 
-    if (At(TokenType_Opr, "-", "!", "~", "++", "--", "*", "&"))
+    if (At(TokenType_Opr, "-", "!", "~", "++", "--", "*", "&", "$"))
     {
         auto operator_ = Skip().Value;
         auto operand = ParseOperandExpression();

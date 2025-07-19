@@ -1,6 +1,5 @@
 #include <llove/context.hpp>
 #include <llove/error.hpp>
-#include <llove/parameter.hpp>
 
 llove::TypePtr llove::Context::Get(const std::string &id) const
 {
@@ -50,7 +49,7 @@ llove::PointerType::Ptr llove::Context::GetPointer(TypePtr base, bool mutable_)
         return type = std::make_shared<PointerType>(std::move(base), mutable_);
 }
 
-llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, int64_t size)
+llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, unsigned size)
 {
     if (auto &type = m_Array[base][size])
         return type;
@@ -111,7 +110,7 @@ bool llove::Context::HasClass(const std::string &name) const
     return m_Class.contains(name);
 }
 
-llove::TypePtr llove::Context::DetermineHigherOrder(TypePtr left, TypePtr right)
+llove::TypePtr llove::Context::DetermineHigherOrder(const TypePtr &left, const TypePtr &right)
 {
     if (left == right)
         return left;

@@ -7,13 +7,6 @@
 
 namespace llove
 {
-    struct Penalties final
-    {
-        unsigned Allocate = 10u;
-        unsigned Cast = 5u;
-        unsigned NonReference = 1u;
-    };
-
     struct Field final
     {
         /**
@@ -21,15 +14,13 @@ namespace llove
          * @param dst destination field
          * @param src source field
          * @param error error score reference
-         * @param penalties penalties for certain situations
          * @return true if not permitted
          */
         [[nodiscard]] static bool GetCastError(
             const Builder &builder,
             const Field &dst,
             const Field &src,
-            unsigned &error,
-            const Penalties &penalties = {});
+            unsigned &error);
         [[nodiscard]] static bool IsCastable(
             const Builder &builder,
             const Field &dst,
@@ -41,10 +32,12 @@ namespace llove
         std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
         llvm::Type *GenType(Builder &builder) const;
-        llvm::Value *GenCast(Builder &builder, ValuePtr value, bool strict = false) const;
+        llvm::Value *GenCast(Builder &builder, ValuePtr value) const;
 
         [[nodiscard]] std::string Mangle() const;
+
         bool operator==(const Field &other) const;
+        explicit operator bool() const;
 
         bool Mutable = false;
         bool Reference = false;

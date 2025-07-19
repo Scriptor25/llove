@@ -14,7 +14,7 @@ namespace llove
     {
         bool Interface = false;
 
-        ClassType::Ptr ClassType;
+        ClassType::Ptr Class;
         bool Mutable = false;
         bool Expose = false;
 
@@ -28,14 +28,14 @@ namespace llove
 
     struct DestructorReference final
     {
-        llvm::Value *Self;
+        llvm::Value *Self = nullptr;
         llvm::FunctionCallee Callee;
     };
 
     struct Frame
     {
         std::vector<DestructorReference> Destructors;
-        std::map<std::string, ValuePtr> Values;
+        std::map<std::string, std::pair<bool, ValuePtr>> Values;
     };
 
     class Builder
@@ -87,7 +87,6 @@ namespace llove
             llvm::Value *callee,
             const std::vector<llvm::Value *> &arguments);
         llvm::Value *CreateCall(llvm::FunctionCallee callee, const std::vector<llvm::Value *> &arguments);
-
         ValuePtr CreateCall(
             const FunctionType::Ptr &type,
             llvm::Value *callee,
@@ -156,7 +155,7 @@ namespace llove
         llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);
 
-        void PushFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
+        FunctionReference &PushFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
         std::vector<FunctionReference> GetFunctions(const std::string &name);
         std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self);
 
@@ -170,7 +169,7 @@ namespace llove
             const std::vector<Field> &arguments,
             bool has_self,
             const Field &self = {}) const;
-        const llove::ClassFunctionReference *FindFunction(
+        const ClassFunctionReference *FindFunction(
             const std::vector<ClassFunctionReference> &functions,
             const std::vector<Field> &arguments,
             const ClassType::Ptr &class_type,
@@ -193,7 +192,7 @@ namespace llove
 
         llvm::Value *CreateGlobalString(const std::string &value);
 
-        llvm::FunctionCallee GenFunction(const GenericFunction &fn);
+        FunctionReference &GenFunction(const GenericFunction &fn);
         void GenParameters(llvm::Function *function, const std::vector<Parameter> &parameters, const Field &self = {});
 
         void Seal(const std::string &filename);

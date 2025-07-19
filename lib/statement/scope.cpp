@@ -1,0 +1,32 @@
+#include <llove/builder.hpp>
+#include <llove/tree.hpp>
+
+llove::StatementPtr llove::ScopeStatement::Wrap(StatementPtr ptr)
+{
+    std::vector<StatementPtr> content;
+    content.emplace_back(std::move(ptr));
+    return std::make_unique<ScopeStatement>(std::move(content));
+}
+
+llove::ScopeStatement::ScopeStatement(std::vector<StatementPtr> content)
+    : m_Content(std::move(content))
+{
+}
+
+void llove::ScopeStatement::Gen(Builder &builder) const
+{
+    builder.PushFrame();
+    for (auto &ptr : m_Content)
+        ptr->Gen(builder);
+    builder.PopFrame();
+}
+
+std::ostream &llove::ScopeStatement::Print(std::ostream &stream) const
+{
+    const auto cur = std::string(PrintDepth += 2, ' ');
+
+    stream << '{' << std::endl;
+    for (auto &ptr : m_Content)
+        stream << cur << ptr << std::endl;
+    return stream << std::string(PrintDepth -= 2, ' ') << '}';
+}

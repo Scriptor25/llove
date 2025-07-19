@@ -14,6 +14,16 @@ namespace llove
         std::string Name;
     };
 
+    struct ClassFunctionReference final
+    {
+        bool Expose = false;
+        bool Mutable = false;
+        std::string Name;
+        std::vector<Field> Parameters;
+        bool VarArg = false;
+        Field Result;
+    };
+
     struct ClassFunction final
     {
         bool Expose = false;
@@ -23,16 +33,6 @@ namespace llove
         bool VarArg = false;
         Field Result;
         StatementPtr Content;
-    };
-
-    struct ClassFunctionReference final
-    {
-        bool Expose;
-        bool Mutable;
-        std::string Name;
-        std::vector<Field> Parameters;
-        bool VarArg;
-        Field Result;
     };
 
     std::ostream &operator<<(std::ostream &stream, const ClassFieldReference &field);

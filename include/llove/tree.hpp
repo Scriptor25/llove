@@ -21,27 +21,23 @@ namespace llove
         virtual std::ostream &Print(std::ostream &stream) const = 0;
     };
 
-    class DefinitionGlobal final : public Global
+    class ClassGlobal final : public Global
     {
     public:
-        explicit DefinitionGlobal(
-            bool interface,
-            std::string name,
-            std::vector<Parameter> parameters,
-            bool vararg,
-            Field result,
-            StatementPtr content);
+        explicit ClassGlobal(ClassType::Ptr type);
+        explicit ClassGlobal(
+            ClassType::Ptr type,
+            std::vector<ClassFieldReference> fields,
+            std::vector<ClassFunction> functions);
 
         void Gen(Builder &builder) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        bool m_Interface;
-        std::string m_Name;
-        std::vector<Parameter> m_Parameters;
-        bool m_VarArg;
-        Field m_Result;
-        StatementPtr m_Content;
+        ClassType::Ptr m_Type;
+        bool m_Opaque;
+        std::vector<ClassFieldReference> m_Fields;
+        std::vector<ClassFunction> m_Functions;
     };
 
     class ClassDefinitionGlobal final : public Global
@@ -69,23 +65,27 @@ namespace llove
         StatementPtr m_Content;
     };
 
-    class ClassGlobal final : public Global
+    class DefinitionGlobal final : public Global
     {
     public:
-        explicit ClassGlobal(ClassType::Ptr type);
-        explicit ClassGlobal(
-            ClassType::Ptr type,
-            std::vector<ClassFieldReference> fields,
-            std::vector<ClassFunction> functions);
+        explicit DefinitionGlobal(
+            bool interface,
+            std::string name,
+            std::vector<Parameter> parameters,
+            bool vararg,
+            Field result,
+            StatementPtr content);
 
         void Gen(Builder &builder) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        ClassType::Ptr m_Type;
-        bool m_Opaque;
-        std::vector<ClassFieldReference> m_Fields;
-        std::vector<ClassFunction> m_Functions;
+        bool m_Interface;
+        std::string m_Name;
+        std::vector<Parameter> m_Parameters;
+        bool m_VarArg;
+        Field m_Result;
+        StatementPtr m_Content;
     };
 
     class Statement
@@ -94,20 +94,6 @@ namespace llove
         virtual ~Statement() = default;
         virtual void Gen(Builder &builder) const = 0;
         virtual std::ostream &Print(std::ostream &stream) const = 0;
-    };
-
-    class ScopeStatement final : public Statement
-    {
-    public:
-        static StatementPtr Wrap(StatementPtr ptr);
-
-        explicit ScopeStatement(std::vector<StatementPtr> content);
-
-        void Gen(Builder &builder) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        std::vector<StatementPtr> m_Content;
     };
 
     class ForStatement final : public Statement
@@ -175,6 +161,20 @@ namespace llove
         std::vector<ExpressionPtr> m_Arguments;
     };
 
+    class ScopeStatement final : public Statement
+    {
+    public:
+        static StatementPtr Wrap(StatementPtr ptr);
+
+        explicit ScopeStatement(std::vector<StatementPtr> content);
+
+        void Gen(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::vector<StatementPtr> m_Content;
+    };
+
     class YieldStatement final : public Statement
     {
     public:
@@ -201,56 +201,6 @@ namespace llove
         virtual CalleeInfo GenCallee(Builder &builder) const;
     };
 
-    class NullExpression final : public Expression
-    {
-    public:
-        explicit NullExpression(TypePtr type);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        TypePtr m_Type;
-    };
-
-    class IntExpression final : public Expression
-    {
-    public:
-        explicit IntExpression(uint64_t value, IntegerType::Ptr type);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        uint64_t m_Value;
-        IntegerType::Ptr m_Type;
-    };
-
-    class StringExpression final : public Expression
-    {
-    public:
-        explicit StringExpression(std::string value);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        std::string m_Value;
-    };
-
-    class RangeExpression final : public Expression
-    {
-    public:
-        explicit RangeExpression(ExpressionPtr begin, ExpressionPtr end);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        ExpressionPtr m_Begin;
-        ExpressionPtr m_End;
-    };
-
     class ArrayExpression final : public Expression
     {
     public:
@@ -262,32 +212,6 @@ namespace llove
     private:
         std::vector<ExpressionPtr> m_Values;
         ArrayType::Ptr m_Type;
-    };
-
-    class StructExpression final : public Expression
-    {
-    public:
-        explicit StructExpression(std::map<std::string, ExpressionPtr> values, StructType::Ptr type);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        std::map<std::string, ExpressionPtr> m_Values;
-        StructType::Ptr m_Type;
-    };
-
-    class SymbolExpression final : public Expression
-    {
-    public:
-        explicit SymbolExpression(std::string name);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        CalleeInfo GenCallee(Builder &builder) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        std::string m_Name;
     };
 
     class BinaryExpression final : public Expression
@@ -304,20 +228,6 @@ namespace llove
         ExpressionPtr m_Right;
     };
 
-    class UnaryExpression final : public Expression
-    {
-    public:
-        explicit UnaryExpression(std::string operator_, ExpressionPtr operand, bool suffix);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        std::string m_Operator;
-        ExpressionPtr m_Operand;
-        bool m_Suffix;
-    };
-
     class CallExpression final : public Expression
     {
     public:
@@ -329,6 +239,19 @@ namespace llove
     private:
         ExpressionPtr m_Callee;
         std::vector<ExpressionPtr> m_Arguments;
+    };
+
+    class IntExpression final : public Expression
+    {
+    public:
+        explicit IntExpression(uint64_t value, IntegerType::Ptr type);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        uint64_t m_Value;
+        IntegerType::Ptr m_Type;
     };
 
     class MemberExpression final : public Expression
@@ -345,6 +268,56 @@ namespace llove
         std::string m_Member;
     };
 
+    class NullExpression final : public Expression
+    {
+    public:
+        explicit NullExpression(TypePtr type);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        TypePtr m_Type;
+    };
+
+    class RangeExpression final : public Expression
+    {
+    public:
+        explicit RangeExpression(ExpressionPtr begin, ExpressionPtr end);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Begin;
+        ExpressionPtr m_End;
+    };
+
+    class StringExpression final : public Expression
+    {
+    public:
+        explicit StringExpression(std::string value);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Value;
+    };
+
+    class StructExpression final : public Expression
+    {
+    public:
+        explicit StructExpression(std::map<std::string, ExpressionPtr> values, StructType::Ptr type);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::map<std::string, ExpressionPtr> m_Values;
+        StructType::Ptr m_Type;
+    };
+
     class SubscriptExpression final : public Expression
     {
     public:
@@ -357,4 +330,33 @@ namespace llove
         ExpressionPtr m_Value;
         ExpressionPtr m_Index;
     };
+
+    class SymbolExpression final : public Expression
+    {
+    public:
+        explicit SymbolExpression(std::string name);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        CalleeInfo GenCallee(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Name;
+    };
+
+    class UnaryExpression final : public Expression
+    {
+    public:
+        explicit UnaryExpression(std::string operator_, ExpressionPtr operand, bool suffix);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Operator;
+        ExpressionPtr m_Operand;
+        bool m_Suffix;
+    };
+
+    extern unsigned PrintDepth;
 }

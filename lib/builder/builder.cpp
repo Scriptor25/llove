@@ -94,7 +94,11 @@ llvm::BasicBlock *llove::Builder::CreateBlock(const std::string &name, llvm::Fun
     return llvm::BasicBlock::Create(m_Context, name, parent);
 }
 
-void llove::Builder::PushFunction(const bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee)
+llove::FunctionReference &llove::Builder::PushFunction(
+    const bool expose,
+    std::string name,
+    FunctionType::Ptr type,
+    llvm::Function *callee)
 {
     for (auto &function : m_Functions)
     {
@@ -102,10 +106,11 @@ void llove::Builder::PushFunction(const bool expose, std::string name, FunctionT
             continue;
         if (function.Type != type)
             continue;
-        return;
+        Assert(expose == function.Expose && callee == function.Callee, "function prototype generation mismatch");
+        return function;
     }
 
-    m_Functions.emplace_back(
+    return m_Functions.emplace_back(
         FunctionReference
         {
             .Expose = expose,
@@ -146,7 +151,20 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::st
 
 void llove::Builder::PushFrame()
 {
-    m_Stack.emplace_back();
+    if (m_Stack.empty())
+    {
+        m_Stack.emplace_back();
+        return;
+    }
+
+    auto &[
+        destructors,
+        values
+    ] = m_Stack.emplace_back(m_Stack.back());
+
+    destructors.clear();
+    for (const auto &key : values | std::views::keys)
+        values[key].first = false;
 }
 
 void llove::Builder::PopFrame()
@@ -158,8 +176,8 @@ void llove::Builder::PopFrame()
         if (const auto instruction = block->getTerminator())
             m_Builder.SetInsertPoint(instruction);
 
-        for (auto &[self_, callee_] : m_Stack.back().Destructors)
-            CreateCall(callee_, { self_ });
+        for (auto &[self, callee] : m_Stack.back().Destructors)
+            CreateCall(callee, { self });
     }
 
     m_Stack.pop_back();
@@ -168,15 +186,17 @@ void llove::Builder::PopFrame()
 void llove::Builder::SetValue(const std::string &name, ValuePtr value)
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    m_Stack.back().Values[name] = std::move(value);
+    Assert(
+        !m_Stack.back().Values.contains(name) || !m_Stack.back().Values.at(name).first,
+        "redefining named value in scope");
+    m_Stack.back().Values[name] = { true, std::move(value) };
 }
 
 llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    for (auto &[destructors_, values_] : std::ranges::reverse_view(m_Stack))
-        if (values_.contains(name))
-            return values_.at(name);
+    if (m_Stack.back().Values.contains(name))
+        return m_Stack.back().Values.at(name).second;
     return nullptr;
 }
 
@@ -189,12 +209,13 @@ void llove::Builder::PushDestructor(llvm::Value *self, llvm::FunctionCallee call
 void llove::Builder::PopDestructor(const llvm::Value *self)
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    for (auto i = m_Stack.back().Destructors.begin(); i != m_Stack.back().Destructors.end(); ++i)
-        if (i->Self == self)
-        {
-            m_Stack.back().Destructors.erase(i);
-            break;
-        }
+    for (auto &[destructors, _] : std::ranges::reverse_view(m_Stack))
+        for (auto i = destructors.begin(); i != destructors.end(); ++i)
+            if (i->Self == self)
+            {
+                destructors.erase(i);
+                return;
+            }
 }
 
 llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
@@ -202,11 +223,11 @@ llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
     return m_Builder.CreateGlobalStringPtr(value, {}, 0, &m_Module);
 }
 
-llvm::FunctionCallee llove::Builder::GenFunction(const GenericFunction &fn)
+llove::FunctionReference &llove::Builder::GenFunction(const GenericFunction &fn)
 {
     const auto mangled = Mangle(
         fn.Interface,
-        fn.ClassType,
+        fn.Class,
         fn.Mutable,
         fn.Name,
         fn.Parameters,
@@ -214,18 +235,18 @@ llvm::FunctionCallee llove::Builder::GenFunction(const GenericFunction &fn)
         fn.Result);
 
     std::vector<Field> type_parameters;
-    for (auto &[info_, name_] : fn.Parameters)
-        type_parameters.emplace_back(info_);
+    for (auto &[info, name] : fn.Parameters)
+        type_parameters.emplace_back(info);
 
     Field self;
     FunctionType::Ptr function_type;
 
-    if (fn.ClassType)
+    if (fn.Class)
     {
         self = {
             .Mutable = fn.Mutable,
             .Reference = true,
-            .Type = fn.ClassType,
+            .Type = fn.Class,
         };
         function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result, self);
     }
@@ -235,11 +256,10 @@ llvm::FunctionCallee llove::Builder::GenFunction(const GenericFunction &fn)
     }
 
     const auto function = GetOrCreateFunction(mangled, function_type, fn.Interface);
-
-    PushFunction(fn.Expose, fn.Name, function_type, function);
+    auto &reference = PushFunction(fn.Expose, fn.Name, function_type, function);
 
     if (!fn.Content)
-        return { function_type->Gen(*this), function };
+        return reference;
 
     m_Parent = function;
     m_Result = fn.Result;
@@ -268,7 +288,7 @@ llvm::FunctionCallee llove::Builder::GenFunction(const GenericFunction &fn)
     const auto error = verifyFunction(*function, &llvm::errs());
     Assert(!error, "function has errors");
 
-    return { function_type->Gen(*this), function };
+    return reference;
 }
 
 void llove::Builder::GenParameters(
@@ -277,7 +297,7 @@ void llove::Builder::GenParameters(
     const Field &self)
 {
     auto offset = 0u;
-    if (self.Type)
+    if (self)
     {
         offset = 1u;
 
@@ -294,35 +314,50 @@ void llove::Builder::GenParameters(
         const auto argument = function->getArg(i + offset);
         argument->setName(name_);
 
-        llvm::Value *pointer;
+        ValuePtr storage;
         if (info_.Reference)
         {
-            pointer = argument;
+            storage = Value::CreateL(info_.Type, argument, info_.Mutable);
+        }
+        else if (info_.Type->GetId() == TypeId_Class)
+        {
+            const auto pointer = CreateAlloca(info_.Type, function);
+            m_Builder.CreateStore(argument, pointer);
+
+            storage = Value::CreateL(info_.Type, pointer, info_.Mutable);
+
+            auto class_type = As<ClassType>(info_.Type);
+            if (const auto destructor = class_type->GetDestructor())
+            {
+                const auto &reference = GenFunction(
+                    {
+                        .Class = std::move(class_type),
+                        .Mutable = destructor->Mutable,
+                        .Expose = destructor->Expose,
+                        .Name = destructor->Name,
+                        .Result = destructor->Result,
+                    });
+
+                PushDestructor(
+                    pointer,
+                    {
+                        reference.Type->Gen(*this),
+                        reference.Callee,
+                    });
+            }
+        }
+        else if (info_.Mutable)
+        {
+            const auto pointer = CreateAlloca(info_.Type, function);
+            m_Builder.CreateStore(argument, pointer);
+
+            storage = Value::CreateL(info_.Type, pointer, info_.Mutable);
         }
         else
         {
-            pointer = CreateAlloca(info_.Type, function);
-            m_Builder.CreateStore(argument, pointer);
-
-            if (info_.Type->GetId() == TypeId_Class)
-            {
-                auto class_type = As<ClassType>(info_.Type);
-                if (const auto destructor = class_type->GetDestructor())
-                {
-                    const auto destructor_callee = GenFunction(
-                        {
-                            .ClassType = std::move(class_type),
-                            .Mutable = destructor->Mutable,
-                            .Expose = destructor->Expose,
-                            .Name = destructor->Name,
-                            .VarArg = destructor->VarArg,
-                            .Result = destructor->Result,
-                        });
-                    PushDestructor(pointer, destructor_callee);
-                }
-            }
+            storage = Value::CreateR(info_.Type, argument);
         }
 
-        SetValue(name_, Value::CreateL(info_.Type, pointer, info_.Mutable));
+        SetValue(name_, storage);
     }
 }

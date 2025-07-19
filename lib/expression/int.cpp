@@ -1,0 +1,29 @@
+#include <llove/builder.hpp>
+#include <llove/context.hpp>
+#include <llove/tree.hpp>
+#include <llove/value.hpp>
+#include <llvm/IR/Constants.h>
+
+llove::IntExpression::IntExpression(const uint64_t value, IntegerType::Ptr type)
+    : m_Value(value),
+      m_Type(std::move(type))
+{
+}
+
+llove::ValuePtr llove::IntExpression::GenVal(Builder &builder, const TypePtr expect) const
+{
+    auto type = m_Type;
+    if (!type)
+        type = As<IntegerType>(expect);
+    if (!type)
+        type = builder.GetTypes().GetInteger(false, 64);
+    const auto value = llvm::ConstantInt::get(type->Gen(builder), m_Value, type->IsSigned());
+    return Value::CreateR(std::move(type), value);
+}
+
+std::ostream &llove::IntExpression::Print(std::ostream &stream) const
+{
+    if (m_Type)
+        return stream << m_Value << ':' << m_Type;
+    return stream << m_Value;
+}
