@@ -8,7 +8,7 @@
 
 namespace llove
 {
-    struct ClassField final
+    struct ClassFieldReference final
     {
         Field Info;
         std::string Name;
@@ -25,7 +25,7 @@ namespace llove
         StatementPtr Content;
     };
 
-    struct ClassFunctionInfo final
+    struct ClassFunctionReference final
     {
         bool Expose;
         bool Mutable;
@@ -35,6 +35,6 @@ namespace llove
         Field Result;
     };
 
-    std::ostream &operator<<(std::ostream &stream, const ClassField &field);
+    std::ostream &operator<<(std::ostream &stream, const ClassFieldReference &field);
     std::ostream &operator<<(std::ostream &stream, const ClassFunction &function);
 }

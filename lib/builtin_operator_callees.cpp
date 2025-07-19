@@ -79,7 +79,7 @@ static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr ope
         llove::Error("not yet implemented");
     }
 
-    operand->Store(builder, result->Load(builder));
+    operand->Store(builder, result);
 
     if (suffix)
         return llove::Value::CreateR(operand->GetType(), pre);
@@ -119,7 +119,7 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
         llove::Error("not yet implemented");
     }
 
-    operand->Store(builder, result->Load(builder));
+    operand->Store(builder, result);
 
     if (suffix)
         return llove::Value::CreateR(operand->GetType(), pre);
@@ -142,7 +142,7 @@ static llove::ValuePtr operator_ref(llove::Builder &builder, const llove::ValueP
 static llove::ValuePtr operator_copy(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
 {
     right = builder.CreateCast(std::move(right), left->GetType());
-    left->Store(builder, right->Load(builder));
+    left->Store(builder, right);
     return left;
 }
 

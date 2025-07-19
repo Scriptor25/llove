@@ -19,14 +19,14 @@ llove::DefinitionGlobal::DefinitionGlobal(
 }
 
 llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
-    std::string class_name,
+    ClassType::Ptr class_type,
     const bool mutable_,
     std::string name,
     std::vector<Parameter> parameters,
     const bool vararg,
     Field result,
     StatementPtr content)
-    : m_ClassName(std::move(class_name)),
+    : m_ClassType(std::move(class_type)),
       m_Mutable(mutable_),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
@@ -36,18 +36,28 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
 {
 }
 
-llove::ClassGlobal::ClassGlobal(std::string name)
-    : m_Name(std::move(name)),
+llove::ClassGlobal::ClassGlobal(ClassType::Ptr type)
+    : m_Type(std::move(type)),
       m_Opaque(true)
 {
 }
 
-llove::ClassGlobal::ClassGlobal(std::string name, std::vector<ClassField> fields, std::vector<ClassFunction> functions)
-    : m_Name(std::move(name)),
+llove::ClassGlobal::ClassGlobal(
+    ClassType::Ptr type,
+    std::vector<ClassFieldReference> fields,
+    std::vector<ClassFunction> functions)
+    : m_Type(std::move(type)),
       m_Opaque(false),
       m_Fields(std::move(fields)),
       m_Functions(std::move(functions))
 {
+}
+
+llove::StatementPtr llove::ScopeStatement::Wrap(StatementPtr ptr)
+{
+    std::vector<StatementPtr> content;
+    content.emplace_back(std::move(ptr));
+    return std::make_unique<ScopeStatement>(std::move(content));
 }
 
 llove::ScopeStatement::ScopeStatement(std::vector<StatementPtr> content)
@@ -88,10 +98,15 @@ llove::IfStatement::IfStatement(ExpressionPtr condition, StatementPtr then, Stat
 {
 }
 
-llove::LetStatement::LetStatement(Field info, std::string name, ExpressionPtr value)
+llove::LetStatement::LetStatement(
+    Field info,
+    std::string name,
+    ExpressionPtr value,
+    std::vector<ExpressionPtr> arguments)
     : m_Info(std::move(info)),
       m_Name(std::move(name)),
-      m_Value(std::move(value))
+      m_Value(std::move(value)),
+      m_Arguments(std::move(arguments))
 {
 }
 
@@ -168,11 +183,5 @@ llove::MemberExpression::MemberExpression(ExpressionPtr value, std::string membe
 llove::SubscriptExpression::SubscriptExpression(ExpressionPtr value, ExpressionPtr index)
     : m_Value(std::move(value)),
       m_Index(std::move(index))
-{
-}
-
-llove::CreateExpression::CreateExpression(ClassType::Ptr class_type, std::vector<ExpressionPtr> arguments)
-    : m_ClassType(std::move(class_type)),
-      m_Arguments(std::move(arguments))
 {
 }

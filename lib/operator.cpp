@@ -36,7 +36,7 @@ llove::UDOperator<1>::UDOperator(FunctionType::Ptr type, llvm::Value *callee)
 llove::ValuePtr llove::UDOperator<1>::operator()(Builder &builder, ValuePtr operand) const
 {
     auto operand_value = (m_Type->HasSelf() ? m_Type->GetSelf() : m_Type->GetParameter(0))
-            .Gen(builder, std::move(operand));
+            .GenCast(builder, std::move(operand));
 
     const auto result_value = builder.CreateCall(m_Type, m_Callee, { operand_value });
 
@@ -62,13 +62,13 @@ llove::ValuePtr llove::UDOperator<2>::operator()(
     llvm::Value *left_value, *right_value;
     if (m_Type->HasSelf())
     {
-        left_value = m_Type->GetSelf().Gen(builder, std::move(left));
-        right_value = m_Type->GetParameter(0).Gen(builder, std::move(right));
+        left_value = m_Type->GetSelf().GenCast(builder, std::move(left));
+        right_value = m_Type->GetParameter(0).GenCast(builder, std::move(right));
     }
     else
     {
-        left_value = m_Type->GetParameter(0).Gen(builder, std::move(left));
-        right_value = m_Type->GetParameter(1).Gen(builder, std::move(right));
+        left_value = m_Type->GetParameter(0).GenCast(builder, std::move(left));
+        right_value = m_Type->GetParameter(1).GenCast(builder, std::move(right));
     }
 
     const auto result_value = builder.CreateCall(m_Type, m_Callee, { left_value, right_value });

@@ -393,7 +393,7 @@ llove::TypePtr llove::Parser::ParseBaseType()
 {
     if (SkipIf(TokenType_Otr, "{"))
     {
-        std::vector<ClassField> fields;
+        std::vector<ClassFieldReference> fields;
 
         while (!At(TokenType_Otr, "}"))
         {
@@ -563,6 +563,8 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
 llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
 {
     auto class_name = Expect(TokenType_Sym).Value;
+    auto class_type = m_Types.GetClass(class_name);
+
     auto mutable_ = SkipIf(TokenType_Sym, "mut");
     auto name = At(TokenType_Opr) ? Skip().Value : Expect(TokenType_Sym).Value;
 
@@ -595,7 +597,7 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
     auto content = ParseScopeStatement();
 
     return std::make_unique<ClassDefinitionGlobal>(
-        std::move(class_name),
+        std::move(class_type),
         mutable_,
         std::move(name),
         std::move(parameters),
@@ -613,9 +615,9 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
     m_Types.Set(name, type);
 
     if (SkipIf(TokenType_Otr, ";"))
-        return std::make_unique<ClassGlobal>(std::move(name));
+        return std::make_unique<ClassGlobal>(std::move(type));
 
-    std::vector<ClassField> fields;
+    std::vector<ClassFieldReference> fields;
     std::vector<ClassFunction> functions;
 
     Expect(TokenType_Otr, "{");
@@ -631,10 +633,10 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
     }
     Expect(TokenType_Otr, "}");
 
-    return std::make_unique<ClassGlobal>(std::move(name), std::move(fields), std::move(functions));
+    return std::make_unique<ClassGlobal>(std::move(type), std::move(fields), std::move(functions));
 }
 
-void llove::Parser::ParseClassField(ClassField &field)
+void llove::Parser::ParseClassField(ClassFieldReference &field)
 {
     Expect(TokenType_Sym, "let");
     field.Name = ParseField(field.Info, true);
@@ -736,7 +738,7 @@ llove::StatementPtr llove::Parser::ParseForStatement(const bool inline_)
         Expect(TokenType_Otr, ")");
     }
 
-    auto content = ParseStatement(inline_);
+    auto content = ScopeStatement::Wrap(ParseStatement(inline_));
 
     return std::make_unique<ForStatement>(
         std::move(prefix),
@@ -760,7 +762,7 @@ llove::StatementPtr llove::Parser::ParseForEachStatement(const bool inline_)
 
     Expect(TokenType_Otr, ")");
 
-    auto content = ParseStatement(inline_);
+    auto content = ScopeStatement::Wrap(ParseStatement(inline_));
 
     return std::make_unique<ForEachStatement>(
         mutable_,
@@ -776,11 +778,11 @@ llove::StatementPtr llove::Parser::ParseIfStatement(const bool inline_)
     Expect(TokenType_Otr, "(");
     auto condition = ParseExpression();
     Expect(TokenType_Otr, ")");
-    auto then = ParseStatement(inline_);
+    auto then = ScopeStatement::Wrap(ParseStatement(inline_));
 
     StatementPtr else_;
     if (SkipIf(TokenType_Sym, "else"))
-        else_ = ParseStatement(inline_);
+        else_ = ScopeStatement::Wrap(ParseStatement(inline_));
 
     return std::make_unique<IfStatement>(std::move(condition), std::move(then), std::move(else_));
 }
@@ -793,13 +795,29 @@ llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
     auto name = ParseField(info, true);
 
     ExpressionPtr value;
+    std::vector<ExpressionPtr> arguments;
+
     if (SkipIf(TokenType_Opr, "="))
+    {
         value = ParseExpression();
+    }
+    else if (SkipIf(TokenType_Otr, "("))
+    {
+        while (!At(TokenType_Otr, ")"))
+        {
+            arguments.emplace_back(ParseExpression());
+
+            if (!At(TokenType_Otr, ")"))
+                Expect(TokenType_Otr, ",");
+        }
+
+        Expect(TokenType_Otr, ")");
+    }
 
     if (!inline_)
         Expect(TokenType_Otr, ";");
 
-    return std::make_unique<LetStatement>(std::move(info), std::move(name), std::move(value));
+    return std::make_unique<LetStatement>(std::move(info), std::move(name), std::move(value), std::move(arguments));
 }
 
 llove::StatementPtr llove::Parser::ParseYieldStatement(const bool inline_)
@@ -1049,27 +1067,6 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         if (SkipIf(TokenType_Otr, ":"))
             type = ParseType();
         return std::make_unique<NullExpression>(type);
-    }
-
-    if (SkipIf(TokenType_Sym, "new"))
-    {
-        Expect(TokenType_Otr, ":");
-        auto class_name = Expect(TokenType_Sym).Value;
-        auto class_type = m_Types.GetClass(std::move(class_name));
-
-        std::vector<ExpressionPtr> arguments;
-
-        Expect(TokenType_Otr, "(");
-        while (!At(TokenType_Otr, ")"))
-        {
-            arguments.emplace_back(ParseExpression());
-
-            if (!At(TokenType_Otr, ")"))
-                Expect(TokenType_Otr, ",");
-        }
-        Expect(TokenType_Otr, ")");
-
-        return std::make_unique<CreateExpression>(std::move(class_type), std::move(arguments));
     }
 
     if (At(TokenType_Sym))

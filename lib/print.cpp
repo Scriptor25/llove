@@ -142,7 +142,7 @@ std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const
 {
     stream
             << "define:"
-            << m_ClassName
+            << m_ClassType->GetName()
             << ' '
             << (m_Mutable ? "mut " : "")
             << m_Name
@@ -171,7 +171,7 @@ static unsigned depth = 0;
 
 std::ostream &llove::ClassGlobal::Print(std::ostream &stream) const
 {
-    stream << "class " << m_Name;
+    stream << "class " << m_Type->GetName();
     if (m_Opaque)
         return stream << ";";
 
@@ -236,7 +236,20 @@ std::ostream &llove::LetStatement::Print(std::ostream &stream) const
 {
     m_Info.Print(stream << "let ", true, m_Name);
     if (m_Value)
+    {
         stream << " = " << m_Value;
+    }
+    else if (!m_Arguments.empty())
+    {
+        stream << '(';
+        for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
+        {
+            if (i != m_Arguments.begin())
+                stream << ", ";
+            stream << *i;
+        }
+        stream << ')';
+    }
     return stream << ';';
 }
 
@@ -355,19 +368,7 @@ std::ostream &llove::SubscriptExpression::Print(std::ostream &stream) const
     return stream << m_Value << '[' << m_Index << ']';
 }
 
-std::ostream &llove::CreateExpression::Print(std::ostream &stream) const
-{
-    stream << "new:" << m_ClassType->GetName() << '(';
-    for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
-    {
-        if (i != m_Arguments.begin())
-            stream << ", ";
-        stream << *i;
-    }
-    return stream << ')';
-}
-
-std::ostream &llove::operator<<(std::ostream &stream, const ClassField &field)
+std::ostream &llove::operator<<(std::ostream &stream, const ClassFieldReference &field)
 {
     return field.Info.Print(stream << "let ", true, field.Name) << ';';
 }

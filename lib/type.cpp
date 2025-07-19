@@ -1,5 +1,6 @@
 #include <utility>
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
@@ -144,7 +145,7 @@ std::string llove::ArrayType::Mangle() const
     return 'a' + std::to_string(m_Size) + '_' + m_Base->Mangle();
 }
 
-llove::StructType::StructType(std::vector<ClassField> fields)
+llove::StructType::StructType(std::vector<ClassFieldReference> fields)
     : m_Fields(std::move(fields))
 {
 }
@@ -176,7 +177,7 @@ llvm::StructType *llove::StructType::Gen(Builder &builder) const
 {
     std::vector<llvm::Type *> fields;
     for (auto &[info_, name_] : m_Fields)
-        fields.emplace_back(info_.Gen(builder));
+        fields.emplace_back(info_.GenType(builder));
 
     // TODO: packed struct
     return builder.GetStructType(fields, true);
@@ -196,7 +197,10 @@ llove::ClassType::ClassType(std::string name)
 {
 }
 
-llove::ClassType::ClassType(std::string name, std::vector<ClassField> fields, std::vector<ClassFunctionInfo> functions)
+llove::ClassType::ClassType(
+    std::string name,
+    std::vector<ClassFieldReference> fields,
+    std::vector<ClassFunctionReference> functions)
     : m_Name(std::move(name)),
       m_Opaque(false),
       m_Fields(std::move(fields)),
@@ -232,7 +236,7 @@ const llove::Field &llove::ClassType::GetField(const unsigned index) const
     return m_Fields.at(index).Info;
 }
 
-const llove::ClassFunctionInfo *llove::ClassType::GetFunction(
+const llove::ClassFunctionReference *llove::ClassType::GetFunction(
     const std::string &name,
     const bool mutable_,
     const std::vector<Field> &parameters,
@@ -263,16 +267,24 @@ const llove::ClassFunctionInfo *llove::ClassType::GetFunction(
     return nullptr;
 }
 
-std::vector<const llove::ClassFunctionInfo *> llove::ClassType::GetCreates() const
+std::vector<llove::ClassFunctionReference> llove::ClassType::GetConstructors() const
 {
-    std::vector<const ClassFunctionInfo *> creates;
+    std::vector<ClassFunctionReference> constructors;
     for (auto &function : m_Functions)
         if (function.Name == "create")
-            creates.emplace_back(&function);
-    return creates;
+            constructors.emplace_back(function);
+    return constructors;
 }
 
-void llove::ClassType::SetFields(Builder &builder, std::vector<ClassField> fields)
+std::optional<llove::ClassFunctionReference> llove::ClassType::GetDestructor() const
+{
+    for (auto &function : m_Functions)
+        if (function.Name == "delete")
+            return function;
+    return {};
+}
+
+void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReference> fields)
 {
     m_Opaque = fields.empty();
     m_Fields = std::move(fields);
@@ -285,13 +297,13 @@ void llove::ClassType::SetFields(Builder &builder, std::vector<ClassField> field
 
     std::vector<llvm::Type *> elements;
     for (auto &[info_, name_] : m_Fields)
-        elements.emplace_back(info_.Gen(builder));
+        elements.emplace_back(info_.GenType(builder));
 
     // TODO: packed struct
     builder.GetOrCreateNamedStructType(m_Name, elements, true);
 }
 
-void llove::ClassType::SetFunctions(std::vector<ClassFunctionInfo> functions)
+void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> functions)
 {
     m_Functions = std::move(functions);
 }
@@ -308,7 +320,7 @@ llvm::StructType *llove::ClassType::Gen(Builder &builder) const
 
     std::vector<llvm::Type *> elements;
     for (auto &[info_, name_] : m_Fields)
-        elements.emplace_back(info_.Gen(builder));
+        elements.emplace_back(info_.GenType(builder));
 
     // TODO: packed struct
     return builder.GetOrCreateNamedStructType(m_Name, elements, true);
@@ -375,9 +387,9 @@ llvm::FunctionType *llove::FunctionType::Gen(Builder &builder) const
     if (m_Self.Type)
         parameters.emplace_back(builder.GetPointerType(m_Self.Type->Gen(builder)));
     for (auto &parameter : m_Parameters)
-        parameters.emplace_back(parameter.Gen(builder));
+        parameters.emplace_back(parameter.GenType(builder));
 
-    return builder.GetFunctionType(m_Result.Gen(builder), parameters, m_VarArg);
+    return builder.GetFunctionType(m_Result.GenType(builder), parameters, m_VarArg);
 }
 
 std::string llove::FunctionType::Mangle() const

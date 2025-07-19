@@ -18,6 +18,7 @@ namespace llove
         [[nodiscard]] virtual bool IsMutable() const = 0;
         virtual llvm::Value *Load(Builder &builder) const = 0;
         virtual void Store(Builder &builder, llvm::Value *value, bool volatile_ = false) const = 0;
+        virtual void Store(Builder &builder, ValuePtr value, bool volatile_ = false) const = 0;
         virtual ValuePtr Reference(Builder &builder) const = 0;
         [[nodiscard]] virtual llvm::Value *GetPointer() const = 0;
 
@@ -38,6 +39,7 @@ namespace llove
         [[nodiscard]] bool IsMutable() const override;
         llvm::Value *Load(Builder &builder) const override;
         void Store(Builder &builder, llvm::Value *value, bool volatile_) const override;
+        void Store(Builder &builder, ValuePtr value, bool volatile_) const override;
         ValuePtr Reference(Builder &builder) const override;
         [[nodiscard]] llvm::Value *GetPointer() const override;
 
@@ -54,6 +56,7 @@ namespace llove
         [[nodiscard]] bool IsMutable() const override;
         llvm::Value *Load(Builder &builder) const override;
         void Store(Builder &builder, llvm::Value *value, bool volatile_) const override;
+        void Store(Builder &builder, ValuePtr value, bool volatile_) const override;
         ValuePtr Reference(Builder &builder) const override;
         [[nodiscard]] llvm::Value *GetPointer() const override;
 

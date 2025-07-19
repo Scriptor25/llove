@@ -15,9 +15,9 @@ namespace llove
     struct Field;
     struct Parameter;
 
-    struct ClassField;
+    struct ClassFieldReference;
     struct ClassFunction;
-    struct ClassFunctionInfo;
+    struct ClassFunctionReference;
 
     class Global;
     class Statement;

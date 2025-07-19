@@ -20,17 +20,16 @@ void llove::DefinitionGlobal::Gen(Builder &builder) const
 
 void llove::ClassDefinitionGlobal::Gen(Builder &builder) const
 {
-    const auto class_type = builder.GetTypes().GetClass(m_ClassName);
     std::vector<Field> parameters;
     for (auto &[info_, name_] : m_Parameters)
         parameters.emplace_back(info_);
-    const auto class_function = class_type->GetFunction(m_Name, m_Mutable, parameters, m_VarArg, m_Result);
+    const auto class_function = m_ClassType->GetFunction(m_Name, m_Mutable, parameters, m_VarArg, m_Result);
 
     Assert(class_function != nullptr, "class function prototype mismatch");
 
     builder.GenFunction(
         {
-            .ClassName = m_ClassName,
+            .ClassType = m_ClassType,
             .Mutable = m_Mutable,
             .Expose = class_function->Expose,
             .Name = m_Name,
@@ -47,21 +46,19 @@ void llove::ClassGlobal::Gen(Builder &builder) const
     if (m_Opaque)
         return;
 
-    const auto class_type = builder.GetTypes().GetClass(m_Name);
-
-    std::vector<ClassField> class_fields;
+    std::vector<ClassFieldReference> class_fields;
     for (auto &[info_, name_] : m_Fields)
         class_fields.emplace_back(info_, name_);
-    class_type->SetFields(builder, std::move(class_fields));
+    m_Type->SetFields(builder, std::move(class_fields));
 
-    std::vector<ClassFunctionInfo> class_functions;
+    std::vector<ClassFunctionReference> class_functions;
     for (auto &function : m_Functions)
     {
         std::vector<Field> parameters;
         for (const auto &[info_, name_] : function.Parameters)
             parameters.emplace_back(info_);
         class_functions.emplace_back(
-            ClassFunctionInfo
+            ClassFunctionReference
             {
                 .Expose = function.Expose,
                 .Mutable = function.Mutable,
@@ -72,7 +69,8 @@ void llove::ClassGlobal::Gen(Builder &builder) const
             }
         );
     }
-    class_type->SetFunctions(std::move(class_functions));
+
+    m_Type->SetFunctions(std::move(class_functions));
 
     for (auto &[
              expose_,
@@ -86,7 +84,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
     {
         builder.GenFunction(
             {
-                .ClassName = m_Name,
+                .ClassType = m_Type,
                 .Mutable = mutable_,
                 .Expose = expose_,
                 .Name = name_,
@@ -109,7 +107,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
     {
         builder.GenFunction(
             {
-                .ClassName = m_Name,
+                .ClassType = m_Type,
                 .Mutable = mutable_,
                 .Expose = expose_,
                 .Name = name_,
@@ -124,10 +122,10 @@ void llove::ClassGlobal::Gen(Builder &builder) const
 
 void llove::ScopeStatement::Gen(Builder &builder) const
 {
-    builder.StackPush();
+    builder.PushFrame();
     for (auto &ptr : m_Content)
         ptr->Gen(builder);
-    builder.StackPop();
+    builder.PopFrame();
 }
 
 void llove::ForStatement::Gen(Builder &builder) const
@@ -139,7 +137,7 @@ void llove::ForStatement::Gen(Builder &builder) const
 
     auto use_end = false;
 
-    builder.StackPush();
+    builder.PushFrame();
 
     if (m_Prefix)
         m_Prefix->Gen(builder);
@@ -159,14 +157,12 @@ void llove::ForStatement::Gen(Builder &builder) const
 
     builder.SetInsertPoint(loop_block);
     m_Content->Gen(builder);
-    if (!builder.GetInsertBlock()->getTerminator())
+    if (builder.NoTerminator())
     {
         if (m_Suffix)
             m_Suffix->Gen(builder);
         builder.CreateBranch(head_block);
     }
-
-    builder.StackPop();
 
     if (use_end)
     {
@@ -178,6 +174,8 @@ void llove::ForStatement::Gen(Builder &builder) const
         end_block->deleteValue();
         builder.ClearInsertPoint();
     }
+
+    builder.PopFrame();
 }
 
 void llove::ForEachStatement::Gen(Builder &builder) const
@@ -199,7 +197,7 @@ void llove::IfStatement::Gen(Builder &builder) const
 
     builder.SetInsertPoint(then_block);
     m_Then->Gen(builder);
-    if (!builder.GetInsertBlock()->getTerminator())
+    if (builder.NoTerminator())
     {
         builder.CreateBranch(end_block);
         use_end = true;
@@ -210,7 +208,7 @@ void llove::IfStatement::Gen(Builder &builder) const
     {
         m_Else->Gen(builder);
     }
-    if (!builder.GetInsertBlock()->getTerminator())
+    if (builder.NoTerminator())
     {
         builder.CreateBranch(end_block);
         use_end = true;
@@ -230,38 +228,105 @@ void llove::IfStatement::Gen(Builder &builder) const
 
 void llove::LetStatement::Gen(Builder &builder) const
 {
+    Assert(m_Info.Type != nullptr || m_Value != nullptr, "missing type or value");
+
     auto value = m_Value ? m_Value->GenVal(builder, m_Info.Type) : nullptr;
-    Assert(m_Info.Type != nullptr || value != nullptr, "missing type or value");
-    const auto type = m_Info.Type ? m_Info.Type : value->GetType();
+    auto type = m_Info.Type ? m_Info.Type : value->GetType();
+
+    std::vector<ValuePtr> arguments;
+    for (auto &argument : m_Arguments)
+        arguments.emplace_back(argument->GenVal(builder, nullptr));
 
     ValuePtr storage;
     if (m_Info.Reference)
     {
+        Assert(arguments.empty(), "cannot construct reference");
         Assert(value != nullptr, "missing value");
         Assert(value->IsReferenceable(), "reference from rvalue");
         Assert(type == value->GetType(), "reference type mismatch");
         Assert(!m_Info.Mutable || value->IsMutable(), "reference mutability violation");
 
-        storage = Value::CreateL(type, value->GetPointer(), m_Info.Mutable);
+        storage = Value::CreateL(std::move(type), value->GetPointer(), m_Info.Mutable);
     }
     else
     {
-        if (!value)
+        const auto pointer = builder.CreateAlloca(type);
+
+        if (type && type->GetId() == TypeId_Class)
         {
-            Assert(type != nullptr, "missing type");
-            const auto empty = llvm::Constant::getNullValue(type->Gen(builder));
-            value = Value::CreateR(type, empty);
+            const Field self
+            {
+                .Mutable = m_Info.Mutable,
+                .Reference = true,
+                .Type = type,
+            };
+
+            const auto class_type = As<ClassType>(type);
+            const auto constructors = class_type->GetConstructors();
+
+            if (arguments.empty())
+            {
+                std::vector<Field> argument_fields;
+                if (value)
+                    argument_fields.emplace_back(value->AsField());
+
+                if (auto candidate = builder.FindFunction(constructors, argument_fields, class_type, self))
+                {
+                    // construct from single argument value
+                    Error("TODO");
+                }
+                else
+                {
+                    if (value)
+                    {
+                        value = builder.CreateCast(std::move(value), type);
+                    }
+                    else
+                    {
+                        const auto null = llvm::Constant::getNullValue(type->Gen(builder));
+                        value = Value::CreateR(std::move(type), null);
+                    }
+                    builder.CreateStore(pointer, value);
+                }
+            }
+            else
+            {
+                std::vector<Field> argument_fields;
+                for (const auto &argument : arguments)
+                    argument_fields.emplace_back(argument->AsField());
+
+                const auto candidate = builder.FindFunction(
+                    constructors,
+                    argument_fields,
+                    class_type,
+                    self);
+                Assert(candidate != nullptr, "no suitable candidate");
+
+                // construct from arguments
+                Error("TODO");
+            }
         }
-        else if (type)
+        else
         {
-            value = builder.CreateCast(value, type);
+            if (!value)
+            {
+                Assert(arguments.empty(), "cannot construct non-class value");
+                Assert(type != nullptr, "missing type");
+
+                const auto null = llvm::Constant::getNullValue(type->Gen(builder));
+                value = Value::CreateR(std::move(type), null);
+            }
+            else
+            {
+                value = builder.CreateCast(std::move(value), type);
+            }
+
+            builder.CreateStore(pointer, value);
         }
 
-        const auto pointer = builder.CreateAlloca(builder.GetParent(), type);
-        builder.CreateStore(pointer, value->Load(builder));
-
-        storage = Value::CreateL(type, pointer, m_Info.Mutable);
+        storage = Value::CreateL(std::move(type), pointer, m_Info.Mutable);
     }
+
     builder.SetValue(m_Name, std::move(storage));
 }
 
@@ -273,10 +338,10 @@ void llove::YieldStatement::Gen(Builder &builder) const
         return;
     }
 
-    const auto result = builder.GetResult();
+    auto &result = builder.GetResult();
     auto value = m_Value->GenVal(builder, result.Type);
 
-    builder.CreateRet(result.Gen(builder, std::move(value), true));
+    builder.CreateRet(result.GenCast(builder, std::move(value), true));
 }
 
 void llove::Expression::Gen(Builder &builder) const
@@ -295,8 +360,6 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const
 
     Assert(is_function_pointer, "not a function pointer");
 
-    const auto callee = value->Load(builder);
-
     return {
         .Candidates = {
             FunctionReference
@@ -304,7 +367,7 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const
                 .Expose = false,
                 .Name = {},
                 .Type = As<FunctionType>(pointer_type->GetBase()),
-                .Callee = callee,
+                .Callee = value->Load(builder),
             }
         }
     };
@@ -355,7 +418,7 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
     const auto type = m_Type ? m_Type : As<StructType>(expect);
     Assert(type != nullptr, "untyped struct expression");
 
-    const auto pointer = builder.CreateAlloca(builder.GetParent(), type);
+    const auto pointer = builder.CreateAlloca(type);
     builder.CreateStore(pointer, llvm::Constant::getNullValue(type->Gen(builder)));
 
     for (auto &[key_, value_] : m_Values)
@@ -364,7 +427,7 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
         auto &field = type->GetField(index);
 
         auto value = value_->GenVal(builder, field.Type);
-        const auto llvm_value = field.Gen(builder, std::move(value), true);
+        const auto llvm_value = field.GenCast(builder, std::move(value), true);
 
         const auto element_pointer = builder.CreateStructGEP(type, pointer, index);
         builder.CreateStore(element_pointer, llvm_value);
@@ -410,14 +473,14 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
     auto left = m_Left->GenVal(builder, nullptr);
     auto right = m_Right->GenVal(builder, left->GetType());
 
-    if (const auto operator_ = builder.GetOperator(m_Operator, left->AsField(), right->AsField()))
+    if (const auto operator_ = builder.FindOperator(m_Operator, left->AsField(), right->AsField()))
         return (*operator_)(builder, std::move(left), std::move(right));
 
     if (assign.contains(m_Operator))
-        if (const auto operator_ = builder.GetOperator(assign.at(m_Operator), left->AsField(), right->AsField()))
+        if (const auto operator_ = builder.FindOperator(assign.at(m_Operator), left->AsField(), right->AsField()))
         {
             const auto value = (*operator_)(builder, left, std::move(right));
-            left->Store(builder, value->Load(builder));
+            left->Store(builder, value);
             return left;
         }
 
@@ -428,7 +491,7 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
 {
     auto operand = m_Operand->GenVal(builder, expect);
 
-    if (const auto operator_ = builder.GetOperator(m_Operator, operand->AsField(), m_Suffix))
+    if (const auto operator_ = builder.FindOperator(m_Operator, operand->AsField(), m_Suffix))
         return (*operator_)(builder, std::move(operand));
 
     Error(
@@ -440,110 +503,25 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
 
 llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) const
 {
-    auto [
-        candidates_,
-        self_
-    ] = m_Callee->GenCallee(builder);
+    auto [functions, self] = m_Callee->GenCallee(builder);
 
     std::vector<ValuePtr> arguments;
+    std::vector<Field> argument_fields;
     for (auto &argument : m_Arguments)
-        arguments.emplace_back(argument->GenVal(builder, nullptr));
-
-    const auto has_self = self_ != nullptr;
-
-    auto lowest_error = ~0u;
-    const FunctionReference *callee = nullptr;
-
-    for (const auto &candidate : candidates_)
     {
-        const auto type = candidate.Type;
-
-        if (type->HasSelf() != has_self)
-            continue;
-
-        auto error = 0u;
-
-        if (has_self)
-        {
-            auto &function_self = type->GetSelf();
-            if (function_self.Type != self_->GetType())
-                continue;
-            if (function_self.Mutable && (!self_->IsReferenceable() || !self_->IsMutable()))
-                continue;
-
-            if (!self_->IsReferenceable())
-                error += 20u;
-        }
-
-        if (type->GetParameterCount() > arguments.size())
-            continue;
-        if (!type->IsVarArg() && type->GetParameterCount() < arguments.size())
-            continue;
-
-        if (type->GetParameterCount() != arguments.size())
-            error += 2u;
-
-        unsigned i;
-        for (i = 0; i < type->GetParameterCount(); ++i)
-        {
-            auto &[mutable_, reference_, type_] = type->GetParameter(i);
-            const auto &argument = arguments.at(i);
-            if (reference_)
-            {
-                if (type_ != argument->GetType())
-                    break;
-                if (mutable_ && (!argument->IsReferenceable() || !argument->IsMutable()))
-                    break;
-
-                if (!argument->IsReferenceable())
-                    error += 10u;
-            }
-            else if (type_ != argument->GetType())
-            {
-                if (!builder.IsCastable(argument->IsMutable(), argument->GetType(), type_))
-                    break;
-
-                error += 5u;
-            }
-        }
-        if (i < type->GetParameterCount())
-            continue;
-
-        if (error > lowest_error)
-            continue;
-
-        Assert(error != lowest_error, "ambiguous candidates");
-
-        lowest_error = error;
-        callee = &candidate;
+        auto value = argument->GenVal(builder, nullptr);
+        arguments.emplace_back(value);
+        argument_fields.emplace_back(value->AsField());
     }
 
-    Assert(callee != nullptr, "no suitable callee candidate");
+    const auto candidate = builder.FindFunction(
+        functions,
+        argument_fields,
+        self != nullptr,
+        self ? self->AsField() : Field{});
+    Assert(candidate != nullptr, "no suitable candidate");
 
-    std::vector<llvm::Value *> llvm_arguments;
-
-    if (has_self)
-        // ReSharper disable once CppDFANullDereference
-        llvm_arguments.emplace_back(callee->Type->GetSelf().Gen(builder, self_));
-
-    unsigned i;
-    // ReSharper disable once CppDFANullDereference
-    for (i = 0; i < callee->Type->GetParameterCount(); ++i)
-    {
-        auto &parameter = callee->Type->GetParameter(i);
-        const auto &argument = arguments.at(i);
-
-        llvm_arguments.emplace_back(parameter.Gen(builder, argument));
-    }
-    for (; i < arguments.size(); ++i)
-        llvm_arguments.emplace_back(arguments.at(i)->Load(builder));
-
-    const auto result_value = builder.CreateCall(callee->Type, callee->Callee, llvm_arguments);
-
-    auto &[mutable_, reference_, type_] = callee->Type->GetResult();
-    if (reference_)
-        return Value::CreateL(type_, result_value, mutable_);
-    return Value::CreateR(type_, result_value);
+    return builder.CreateCall(candidate->Type, candidate->Callee, std::move(arguments), std::move(self));
 }
 
 llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect) const
@@ -617,100 +595,4 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
     default:
         Error("subscript on non-pointer and non-array value of type {}", value->GetType());
     }
-}
-
-llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect) const
-{
-    std::vector<ValuePtr> arguments;
-    for (auto &argument : m_Arguments)
-        arguments.emplace_back(argument->GenVal(builder, nullptr));
-
-    auto lowest_error = ~0u;
-    const ClassFunctionInfo *create = nullptr;
-
-    for (const auto candidates = m_ClassType->GetCreates();
-         const auto candidate : candidates)
-    {
-        if (candidate->Parameters.size() > arguments.size())
-            continue;
-        if (!candidate->VarArg && candidate->Parameters.size() < arguments.size())
-            continue;
-
-        auto error = 0u;
-
-        if (candidate->Parameters.size() != arguments.size())
-            error += 2u;
-
-        unsigned i;
-        for (i = 0; i < candidate->Parameters.size(); ++i)
-        {
-            auto &[mutable_, reference_, type_] = candidate->Parameters.at(i);
-            const auto &argument = arguments.at(i);
-            if (reference_)
-            {
-                if (type_ != argument->GetType())
-                    break;
-                if (mutable_ && (!argument->IsReferenceable() || !argument->IsMutable()))
-                    break;
-
-                if (!argument->IsReferenceable())
-                    error += 10u;
-            }
-            else if (type_ != argument->GetType())
-            {
-                if (!builder.IsCastable(argument->IsMutable(), argument->GetType(), type_))
-                    break;
-
-                error += 5u;
-            }
-        }
-        if (i < candidate->Parameters.size())
-            continue;
-
-        if (error > lowest_error)
-            continue;
-
-        Assert(error != lowest_error, "ambiguous candidates");
-
-        lowest_error = error;
-        create = candidate;
-    }
-
-    Assert(create != nullptr, "no suitable create candidate");
-
-    std::vector<llvm::Value *> llvm_arguments;
-
-    const auto self = builder.CreateAlloca(builder.GetParent(), m_ClassType);
-    llvm_arguments.emplace_back(self);
-
-    unsigned i;
-    // ReSharper disable once CppDFANullDereference
-    for (i = 0; i < create->Parameters.size(); ++i)
-    {
-        auto &parameter = create->Parameters.at(i);
-        const auto &argument = arguments.at(i);
-
-        llvm_arguments.emplace_back(parameter.Gen(builder, argument));
-    }
-    for (; i < arguments.size(); ++i)
-    {
-        llvm_arguments.emplace_back(arguments.at(i)->Load(builder));
-    }
-
-    std::vector<Parameter> parameters;
-    for (auto &parameter : create->Parameters)
-        parameters.emplace_back(parameter, std::string{});
-    const auto callee = builder.GenFunction(
-        {
-            .ClassName = m_ClassType->GetName(),
-            .Mutable = create->Mutable,
-            .Expose = create->Expose,
-            .Name = create->Name,
-            .Parameters = std::move(parameters),
-            .VarArg = create->VarArg,
-            .Result = create->Result,
-        });
-    builder.CreateCall(callee, llvm_arguments);
-
-    return Value::CreateL(m_ClassType, self, true);
 }

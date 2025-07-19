@@ -157,7 +157,7 @@ namespace llove
     public:
         using Ptr = std::shared_ptr<StructType>;
 
-        explicit StructType(std::vector<ClassField> fields);
+        explicit StructType(std::vector<ClassFieldReference> fields);
 
         unsigned GetFieldIndex(const std::string &name) const;
 
@@ -175,7 +175,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        std::vector<ClassField> m_Fields;
+        std::vector<ClassFieldReference> m_Fields;
     };
 
     class ClassType final : public Type
@@ -184,7 +184,10 @@ namespace llove
         using Ptr = std::shared_ptr<ClassType>;
 
         explicit ClassType(std::string name);
-        explicit ClassType(std::string name, std::vector<ClassField> fields, std::vector<ClassFunctionInfo> functions);
+        explicit ClassType(
+            std::string name,
+            std::vector<ClassFieldReference> fields,
+            std::vector<ClassFunctionReference> functions);
 
         const std::string &GetName() const;
         bool IsOpaque() const;
@@ -194,17 +197,18 @@ namespace llove
         unsigned GetFieldCount() const;
         const Field &GetField(unsigned index) const;
 
-        const ClassFunctionInfo *GetFunction(
+        const ClassFunctionReference *GetFunction(
             const std::string &name,
             bool mutable_,
             const std::vector<Field> &parameters,
             bool vararg,
             const Field &result) const;
 
-        std::vector<const ClassFunctionInfo *> GetCreates() const;
+        std::vector<ClassFunctionReference> GetConstructors() const;
+        std::optional<ClassFunctionReference> GetDestructor() const;
 
-        void SetFields(Builder &builder, std::vector<ClassField> fields);
-        void SetFunctions(std::vector<ClassFunctionInfo> functions);
+        void SetFields(Builder &builder, std::vector<ClassFieldReference> fields);
+        void SetFunctions(std::vector<ClassFunctionReference> functions);
 
         TypeId GetId() const override;
         llvm::StructType *Gen(Builder &builder) const override;
@@ -219,8 +223,8 @@ namespace llove
     private:
         std::string m_Name;
         bool m_Opaque;
-        std::vector<ClassField> m_Fields;
-        std::vector<ClassFunctionInfo> m_Functions;
+        std::vector<ClassFieldReference> m_Fields;
+        std::vector<ClassFunctionReference> m_Functions;
     };
 
     class FunctionType final : public Type

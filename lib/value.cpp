@@ -58,6 +58,11 @@ void llove::RValue::Store(Builder &builder, llvm::Value *value, bool volatile_) 
     Error("cannot store value to rvalue");
 }
 
+void llove::RValue::Store(Builder &builder, ValuePtr value, bool volatile_) const
+{
+    Error("cannot store value to rvalue");
+}
+
 llove::ValuePtr llove::RValue::Reference(Builder &builder) const
 {
     Error("cannot reference rvalue");
@@ -93,6 +98,14 @@ llvm::Value *llove::LValue::Load(Builder &builder) const
 void llove::LValue::Store(Builder &builder, llvm::Value *value, const bool volatile_) const
 {
     Assert(m_Mutable, "cannot store value to immutable lvalue");
+    Assert(m_Type->Gen(builder) == value->getType(), "store type mismatch");
+    builder.CreateStore(m_Pointer, value, volatile_);
+}
+
+void llove::LValue::Store(Builder &builder, const ValuePtr value, const bool volatile_) const
+{
+    Assert(m_Mutable, "cannot store value to immutable lvalue");
+    Assert(m_Type == value->GetType(), "store type mismatch");
     builder.CreateStore(m_Pointer, value, volatile_);
 }
 

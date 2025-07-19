@@ -10,11 +10,11 @@
 
 namespace llove
 {
-    struct GenericFunction
+    struct GenericFunction final
     {
         bool Interface = false;
 
-        std::string ClassName;
+        ClassType::Ptr ClassType;
         bool Mutable = false;
         bool Expose = false;
 
@@ -26,9 +26,15 @@ namespace llove
         Statement *Content = nullptr;
     };
 
+    struct DestructorReference final
+    {
+        llvm::Value *Self;
+        llvm::FunctionCallee Callee;
+    };
+
     struct Frame
     {
-        Field Result;
+        std::vector<DestructorReference> Destructors;
         std::map<std::string, ValuePtr> Values;
     };
 
@@ -39,14 +45,14 @@ namespace llove
 
         Context &GetTypes() const;
 
-        std::string Mangle(
+        static std::string Mangle(
             bool interface,
-            const std::string &class_name,
+            const ClassType::Ptr &class_type,
             bool mutable_,
             const std::string &name,
             const std::vector<Parameter> &parameters,
             bool vararg,
-            const Field &result) const;
+            const Field &result);
 
         llvm::Type *GetVoidType();
         llvm::IntegerType *GetIntType(unsigned bits);
@@ -67,10 +73,11 @@ namespace llove
             const std::vector<llvm::Type *> &fields,
             bool packed);
 
-        llvm::Value *CreateAlloca(llvm::Function *parent, const TypePtr &type);
+        llvm::Value *CreateAlloca(const TypePtr &type, llvm::Function *parent = nullptr);
 
         llvm::Value *CreateLoad(llvm::Value *pointer, const TypePtr &type);
         llvm::Value *CreateStore(llvm::Value *pointer, llvm::Value *value, bool volatile_ = false);
+        llvm::Value *CreateStore(llvm::Value *pointer, const ValuePtr &value, bool volatile_ = false);
 
         void CreateRetVoid();
         void CreateRet(llvm::Value *value);
@@ -80,6 +87,12 @@ namespace llove
             llvm::Value *callee,
             const std::vector<llvm::Value *> &arguments);
         llvm::Value *CreateCall(llvm::FunctionCallee callee, const std::vector<llvm::Value *> &arguments);
+
+        ValuePtr CreateCall(
+            const FunctionType::Ptr &type,
+            llvm::Value *callee,
+            std::vector<ValuePtr> arguments,
+            ValuePtr self);
 
         llvm::Value *CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, unsigned index);
         llvm::Value *CreateExtractValue(llvm::Value *aggregate, unsigned index);
@@ -133,38 +146,57 @@ namespace llove
         void CreateBranch(llvm::BasicBlock *block);
         void CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
 
-        llvm::BasicBlock *GetInsertBlock() const;
         void SetInsertPoint(llvm::BasicBlock *block);
-        void SetInsertPointPastAllocas(llvm::Function *parent);
         void ClearInsertPoint();
+        bool NoTerminator() const;
 
         llvm::Function *GetParent() const;
+        const Field &GetResult() const;
 
         llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);
 
-        void AddFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
+        void PushFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
         std::vector<FunctionReference> GetFunctions(const std::string &name);
         std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self);
 
-        Operator<1>::Ptr GetOperator(const std::string &operator_, const Field &operand, bool suffix);
-        Operator<2>::Ptr GetOperator(const std::string &operator_, const Field &left, const Field &right);
+        bool HasFunction(
+            const std::vector<FunctionReference> &functions,
+            const std::vector<Field> &arguments,
+            bool has_self,
+            const Field &self = {}) const;
+        const FunctionReference *FindFunction(
+            const std::vector<FunctionReference> &functions,
+            const std::vector<Field> &arguments,
+            bool has_self,
+            const Field &self = {}) const;
+        const llove::ClassFunctionReference *FindFunction(
+            const std::vector<ClassFunctionReference> &functions,
+            const std::vector<Field> &arguments,
+            const ClassType::Ptr &class_type,
+            const Field &self) const;
 
-        void StackPush(const Field &result = {});
-        void StackPop();
+        Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
+        Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
+
+        void PushFrame();
+        void PopFrame();
+
         void SetValue(const std::string &name, ValuePtr value);
         ValuePtr GetValue(const std::string &name) const;
-        Field GetResult();
 
-        ValuePtr CreateCast(ValuePtr value, TypePtr type);
-        bool IsCastable(bool mutable_, const TypePtr &value_type, const TypePtr &type);
+        void PushDestructor(llvm::Value *self, llvm::FunctionCallee callee);
+        void PopDestructor(const llvm::Value *self);
+
+        ValuePtr CreateCast(ValuePtr value, TypePtr dst);
+        bool IsCastable(const Field &src, const Field &dst) const;
 
         llvm::Value *CreateGlobalString(const std::string &value);
 
         llvm::FunctionCallee GenFunction(const GenericFunction &fn);
-        void GenParameters(llvm::Function *parent, const std::vector<Parameter> &parameters, const Field &self = {});
+        void GenParameters(llvm::Function *function, const std::vector<Parameter> &parameters, const Field &self = {});
 
-        void Gen(const std::string &filename);
+        void Seal(const std::string &filename);
 
     private:
         Context &m_Types;
@@ -174,6 +206,9 @@ namespace llove
         llvm::Module m_Module;
 
         std::vector<FunctionReference> m_Functions;
+
+        llvm::Function *m_Parent;
+        Field m_Result;
         std::vector<Frame> m_Stack;
     };
 }

@@ -48,7 +48,7 @@ namespace llove
     {
     public:
         explicit ClassDefinitionGlobal(
-            std::string class_name,
+            ClassType::Ptr class_type,
             bool mutable_,
             std::string name,
             std::vector<Parameter> parameters,
@@ -60,7 +60,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        std::string m_ClassName;
+        ClassType::Ptr m_ClassType;
         bool m_Mutable;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
@@ -72,16 +72,19 @@ namespace llove
     class ClassGlobal final : public Global
     {
     public:
-        explicit ClassGlobal(std::string name);
-        explicit ClassGlobal(std::string name, std::vector<ClassField> fields, std::vector<ClassFunction> functions);
+        explicit ClassGlobal(ClassType::Ptr type);
+        explicit ClassGlobal(
+            ClassType::Ptr type,
+            std::vector<ClassFieldReference> fields,
+            std::vector<ClassFunction> functions);
 
         void Gen(Builder &builder) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        std::string m_Name;
+        ClassType::Ptr m_Type;
         bool m_Opaque;
-        std::vector<ClassField> m_Fields;
+        std::vector<ClassFieldReference> m_Fields;
         std::vector<ClassFunction> m_Functions;
     };
 
@@ -96,6 +99,8 @@ namespace llove
     class ScopeStatement final : public Statement
     {
     public:
+        static StatementPtr Wrap(StatementPtr ptr);
+
         explicit ScopeStatement(std::vector<StatementPtr> content);
 
         void Gen(Builder &builder) const override;
@@ -158,7 +163,7 @@ namespace llove
     class LetStatement final : public Statement
     {
     public:
-        explicit LetStatement(Field info, std::string name, ExpressionPtr value);
+        explicit LetStatement(Field info, std::string name, ExpressionPtr value, std::vector<ExpressionPtr> arguments);
 
         void Gen(Builder &builder) const override;
         std::ostream &Print(std::ostream &stream) const override;
@@ -167,6 +172,7 @@ namespace llove
         Field m_Info;
         std::string m_Name;
         ExpressionPtr m_Value;
+        std::vector<ExpressionPtr> m_Arguments;
     };
 
     class YieldStatement final : public Statement
@@ -350,18 +356,5 @@ namespace llove
     private:
         ExpressionPtr m_Value;
         ExpressionPtr m_Index;
-    };
-
-    class CreateExpression final : public Expression
-    {
-    public:
-        explicit CreateExpression(ClassType::Ptr class_type, std::vector<ExpressionPtr> arguments);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        ClassType::Ptr m_ClassType;
-        std::vector<ExpressionPtr> m_Arguments;
     };
 }

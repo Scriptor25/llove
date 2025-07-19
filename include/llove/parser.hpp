@@ -69,7 +69,7 @@ namespace llove
         GlobalPtr ParseClassDefinitionGlobal();
         GlobalPtr ParseClassGlobal();
 
-        void ParseClassField(ClassField &field);
+        void ParseClassField(ClassFieldReference &field);
         void ParseClassFunction(ClassFunction &function);
 
         StatementPtr ParseStatement(bool inline_);

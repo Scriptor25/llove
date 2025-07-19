@@ -52,12 +52,37 @@ class string {
     expose mut +=(s: i8[]): mut &string;
     expose mut +=(&s: string): mut &string;
 
-    expose +(s: i8): string;
-    expose +(s: i8[]): string;
-    expose +(&s: string): string;
-
     let mut beg: i8[mut];
     let mut end: i8[mut];
+}
+
+define +(&l: string, r: i8): string {
+    let mut str: string(l);
+    str += r;
+    yield str;
+}
+
+define +(l: i8, &r: string): string {
+    let mut str: string(l);
+    str += r;
+    yield str;
+}
+
+define +(l: i8[], &r: string): string {
+    let mut str: string(l);
+    str += r;
+    yield str;
+}
+
+define +(&l: string, &r: string): string {
+    let mut str: string(l);
+    str += r;
+    yield str;
+}
+
+define cast(src: i8[]): string {
+    let dst: string(src);
+    yield dst;
 }
 
 define print(&str: string) {
@@ -66,7 +91,7 @@ define print(&str: string) {
 }
 
 define hello(&name: string) {
-    print(new:string("Hello, ") + name + "!\r\n");
+    print("Hello, " + name + "!\r\n");
 }
 
 type vec3 = {
@@ -109,7 +134,7 @@ interface main(count: i32, args: i8[][]): i32 {
     printf("fib(%d) = %d\r\n", n, f);
 
     # dynamic string example
-    hello(new:string("world"));
+    hello("world");
 
     # user-defined operator example
     let u: vec3 = { x: 1, y: 2, z: 3 };
@@ -125,6 +150,8 @@ interface main(count: i32, args: i8[][]): i32 {
 define:string mut create() {
     self.beg = null;
     self.end = null;
+
+    printf("string create void");
 }
 
 define:string mut create(s: i8) {
@@ -132,6 +159,8 @@ define:string mut create(s: i8) {
     self.end = self.beg + 1;
 
     memcpy(self.beg, &s, 1);
+
+    printf("string create i8");
 }
 
 define:string mut create(s: i8[]) {
@@ -141,6 +170,8 @@ define:string mut create(s: i8[]) {
     self.end = self.beg + len;
 
     memcpy(self.beg, s, len);
+
+    printf("string create i8[]");
 }
 
 define:string mut create(mut s: string) {
@@ -149,6 +180,8 @@ define:string mut create(mut s: string) {
 
     s.beg = null;
     s.end = null;
+
+    printf("string create string");
 }
 
 define:string mut create(&s: string) {
@@ -158,6 +191,8 @@ define:string mut create(&s: string) {
     self.end = self.beg + len;
 
     memcpy(self.beg, s.beg, len);
+
+    printf("string create &string");
 }
 
 define:string mut delete() {
@@ -165,6 +200,8 @@ define:string mut delete() {
 
     self.beg = null;
     self.end = null;
+
+    printf("string delete");
 }
 
 define:string length(): u64 {
@@ -281,22 +318,4 @@ define:string mut +=(&s: string): mut &string {
     memcpy(self.beg + len, s.beg, slen);
 
     yield self;
-}
-
-define:string +(s: i8): string {
-    let mut r = self;
-    r += s;
-    yield r;
-}
-
-define:string +(s: i8[]): string {
-    let mut r = self;
-    r += s;
-    yield r;
-}
-
-define:string +(&s: string): string {
-    let mut r = self;
-    r += s;
-    yield r;
 }
