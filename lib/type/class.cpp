@@ -47,7 +47,7 @@ const llove::Field &llove::ClassType::GetField(const unsigned index) const
     return m_Fields.at(index).Info;
 }
 
-const llove::ClassFunctionReference *llove::ClassType::GetFunction(
+std::optional<llove::ClassFunctionReference> llove::ClassType::GetFunction(
     const std::string &name,
     const bool mutable_,
     const std::vector<Field> &parameters,
@@ -72,10 +72,26 @@ const llove::ClassFunctionReference *llove::ClassType::GetFunction(
                 break;
         if (i < function.Parameters.size())
             continue;
-        return &function;
+        return function;
     }
+    return std::nullopt;
+}
 
-    return nullptr;
+bool llove::ClassType::HasFunction(const std::string &name) const
+{
+    for (auto &function : m_Functions)
+        if (function.Name == name)
+            return true;
+    return false;
+}
+
+std::vector<llove::ClassFunctionReference> llove::ClassType::GetFunctions(const std::string &name) const
+{
+    std::vector<ClassFunctionReference> functions;
+    for (auto &function : m_Functions)
+        if (function.Name == name)
+            functions.push_back(function);
+    return functions;
 }
 
 std::vector<llove::ClassFunctionReference> llove::ClassType::GetConstructors() const

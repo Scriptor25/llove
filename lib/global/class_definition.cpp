@@ -27,7 +27,7 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const
         parameters.emplace_back(info_);
     const auto class_function = m_ClassType->GetFunction(m_Name, m_Mutable, parameters, m_VarArg, m_Result);
 
-    Assert(class_function != nullptr, "class function prototype mismatch");
+    Assert(class_function.has_value(), "class function prototype mismatch");
 
     builder.GenFunction(
         {

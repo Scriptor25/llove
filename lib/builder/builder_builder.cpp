@@ -106,6 +106,16 @@ llvm::Value *llove::Builder::CreatePointerOffset(llvm::Type *element_type, llvm:
     return m_Builder.CreateConstGEP1_64(element_type, pointer, offset);
 }
 
+llove::ValuePtr llove::Builder::CreatePointerOffset(const ValuePtr &pointer, const unsigned offset)
+{
+    auto type = As<PointerType>(pointer->GetType());
+    const auto element_pointer = m_Builder.CreateConstGEP1_64(
+        type->GetBase()->Gen(*this),
+        pointer->Load(*this),
+        offset);
+    return Value::CreateR(std::move(type), element_pointer);
+}
+
 llove::ValuePtr llove::Builder::CreatePointerOffset(const ValuePtr &pointer, const ValuePtr &offset)
 {
     auto type = As<PointerType>(pointer->GetType());
@@ -388,42 +398,6 @@ llove::ValuePtr llove::Builder::CreateInv(const ValuePtr &operand)
 {
     const auto value = m_Builder.CreateNot(operand->Load(*this));
     return Value::CreateR(operand->GetType(), value);
-}
-
-llvm::Value *llove::Builder::CreateIncrement(const TypePtr &type, llvm::Value *value)
-{
-    switch (type->GetId())
-    {
-    case TypeId_Integer:
-    {
-        const auto one = llvm::ConstantInt::get(value->getType(), 1);
-        return m_Builder.CreateAdd(value, one);
-    }
-    case TypeId_Float:
-    {
-        const auto one = llvm::ConstantFP::get(value->getType(), 1.0);
-        return m_Builder.CreateFAdd(value, one);
-    }
-    case TypeId_Pointer:
-        return CreatePointerOffset(As<PointerType>(type)->GetBase()->Gen(*this), value, 1);
-    default:
-        Error("increment value of type {} not implemented", type);
-    }
-}
-
-llvm::Value *llove::Builder::CreateCompareNE(TypePtr type, llvm::Value *left, llvm::Value *right)
-{
-    switch (type->GetId())
-    {
-    case TypeId_Integer:
-        return m_Builder.CreateICmpNE(left, right);
-    case TypeId_Float:
-        return m_Builder.CreateFCmpONE(left, right);
-    case TypeId_Pointer:
-        return CreatePCmpNE(left, right);
-    default:
-        Error("compare not-equal values of type {} not implemented", type);
-    }
 }
 
 void llove::Builder::CreateBranch(llvm::BasicBlock *block)

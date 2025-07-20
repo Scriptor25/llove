@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <llove/forward.hpp>
 #include <llove/function.hpp>
 #include <llove/operator.hpp>
@@ -34,8 +35,9 @@ namespace llove
 
     struct Frame
     {
-        std::vector<DestructorReference> Destructors;
-        std::map<std::string, std::pair<bool, ValuePtr>> Values;
+        bool Valid = true;
+        std::map<llvm::Value *, llvm::FunctionCallee> Destructors;
+        std::map<std::string, ValuePtr> Values;
     };
 
     class Builder
@@ -98,6 +100,7 @@ namespace llove
         llvm::Value *CreateExtractValue(const ValuePtr &aggregate, unsigned index);
 
         llvm::Value *CreatePointerOffset(llvm::Type *element_type, llvm::Value *pointer, unsigned offset);
+        ValuePtr CreatePointerOffset(const ValuePtr &pointer, unsigned offset);
         ValuePtr CreatePointerOffset(const ValuePtr &pointer, const ValuePtr &offset);
         ValuePtr CreatePointerDifference(const ValuePtr &begin, const ValuePtr &end);
 
@@ -147,9 +150,6 @@ namespace llove
         ValuePtr CreateNot(const ValuePtr &operand);
         ValuePtr CreateInv(const ValuePtr &operand);
 
-        llvm::Value *CreateIncrement(const TypePtr &type, llvm::Value *value);
-        llvm::Value *CreateCompareNE(TypePtr type, llvm::Value * left, llvm::Value *right);
-
         void CreateBranch(llvm::BasicBlock *block);
         void CreateBranch(llvm::Value *condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
         void CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
@@ -165,24 +165,23 @@ namespace llove
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);
 
         FunctionReference &PushFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
-        std::vector<FunctionReference> GetFunctions(const std::string &name);
-        std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self);
+        [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name) const;
+        [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self) const;
 
         bool HasFunction(
             const std::vector<FunctionReference> &functions,
             const std::vector<Field> &arguments,
             bool has_self,
             const Field &self = {}) const;
-        const FunctionReference *FindFunction(
+        std::optional<FunctionReference> FindFunction(
             const std::vector<FunctionReference> &functions,
             const std::vector<Field> &arguments,
-            bool has_self,
             const Field &self = {}) const;
-        const ClassFunctionReference *FindFunction(
+        std::optional<FunctionReference> FindFunction(
             const std::vector<ClassFunctionReference> &functions,
             const std::vector<Field> &arguments,
             const ClassType::Ptr &class_type,
-            const Field &self) const;
+            const Field &self);
 
         Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
         Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
@@ -195,7 +194,7 @@ namespace llove
         ValuePtr GetValue(const std::string &name) const;
 
         void PushDestructor(llvm::Value *self, llvm::FunctionCallee callee);
-        void PopDestructor(const llvm::Value *self);
+        void CallDestructors(const std::set<llvm::Value *> &mask, bool propagate);
 
         ValuePtr CreateCast(ValuePtr value, TypePtr dst);
         bool IsCastable(const Field &src, const Field &dst) const;

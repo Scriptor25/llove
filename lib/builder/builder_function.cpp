@@ -13,7 +13,7 @@ bool llove::Builder::HasFunction(
         if (function_type->HasSelf() != has_self)
             continue;
 
-        if (has_self && !Field::IsCastable(*this, function_type->GetSelf(), self))
+        if (has_self && !Field::IsCastable(*this, function_type->GetSelf(), self, true))
             continue;
 
         if (function_type->GetParameterCount() > arguments.size())
@@ -23,7 +23,7 @@ bool llove::Builder::HasFunction(
 
         unsigned i;
         for (i = 0; i < function_type->GetParameterCount(); ++i)
-            if (!Field::IsCastable(*this, function_type->GetParameter(i), arguments.at(i)))
+            if (!Field::IsCastable(*this, function_type->GetParameter(i), arguments.at(i), false))
                 break;
         if (i < function_type->GetParameterCount())
             continue;
@@ -34,14 +34,15 @@ bool llove::Builder::HasFunction(
     return false;
 }
 
-const llove::FunctionReference *llove::Builder::FindFunction(
+std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     const std::vector<FunctionReference> &functions,
     const std::vector<Field> &arguments,
-    const bool has_self,
     const Field &self) const
 {
     auto lowest_error = ~0u;
-    const FunctionReference *callee = nullptr;
+    std::optional<FunctionReference> callee;
+
+    const auto has_self = static_cast<bool>(self);
 
     for (const auto &function : functions)
     {
@@ -51,7 +52,7 @@ const llove::FunctionReference *llove::Builder::FindFunction(
 
         auto error = 0u;
 
-        if (has_self && Field::GetCastError(*this, function_type->GetSelf(), self, error))
+        if (has_self && Field::GetCastError(*this, function_type->GetSelf(), self, error, true))
             continue;
 
         if (function_type->GetParameterCount() > arguments.size())
@@ -64,7 +65,7 @@ const llove::FunctionReference *llove::Builder::FindFunction(
 
         unsigned i;
         for (i = 0; i < function_type->GetParameterCount(); ++i)
-            if (Field::GetCastError(*this, function_type->GetParameter(i), arguments.at(i), error))
+            if (Field::GetCastError(*this, function_type->GetParameter(i), arguments.at(i), error, false))
                 break;
         if (i < function_type->GetParameterCount())
             continue;
@@ -75,20 +76,20 @@ const llove::FunctionReference *llove::Builder::FindFunction(
         Assert(error != lowest_error, "ambiguous candidates");
 
         lowest_error = error;
-        callee = &function;
+        callee = function;
     }
 
     return callee;
 }
 
-const llove::ClassFunctionReference *llove::Builder::FindFunction(
+std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     const std::vector<ClassFunctionReference> &functions,
     const std::vector<Field> &arguments,
     const ClassType::Ptr &class_type,
-    const Field &self) const
+    const Field &self)
 {
     auto lowest_error = ~0u;
-    const ClassFunctionReference *candidate = nullptr;
+    std::optional<ClassFunctionReference> candidate;
 
     for (const auto &function : functions)
     {
@@ -99,7 +100,9 @@ const llove::ClassFunctionReference *llove::Builder::FindFunction(
             .Type = class_type,
         };
 
-        if (!Field::IsAssignable(class_, self))
+        auto error = 0u;
+
+        if (Field::GetCastError(*this, class_, self, error, true))
             continue;
 
         const auto parameter_count = function.Parameters.size();
@@ -110,13 +113,12 @@ const llove::ClassFunctionReference *llove::Builder::FindFunction(
         if (!function.VarArg && parameter_count < argument_count)
             continue;
 
-        auto error = 0u;
         if (parameter_count != argument_count)
             error += 2u;
 
         unsigned i;
         for (i = 0; i < parameter_count; ++i)
-            if (Field::GetCastError(*this, function.Parameters.at(i), arguments.at(i), error))
+            if (Field::GetCastError(*this, function.Parameters.at(i), arguments.at(i), error, false))
                 break;
         if (i < parameter_count)
             continue;
@@ -127,8 +129,24 @@ const llove::ClassFunctionReference *llove::Builder::FindFunction(
         Assert(error != lowest_error, "ambiguous candidates");
 
         lowest_error = error;
-        candidate = &function;
+        candidate = function;
     }
 
-    return candidate;
+    if (!candidate.has_value())
+        return std::nullopt;
+
+    std::vector<Parameter> parameters;
+    for (auto &parameter : candidate->Parameters)
+        parameters.emplace_back(parameter);
+
+    return GenFunction(
+        {
+            .Class = class_type,
+            .Mutable = candidate->Mutable,
+            .Expose = candidate->Expose,
+            .Name = candidate->Name,
+            .Parameters = std::move(parameters),
+            .VarArg = candidate->VarArg,
+            .Result = candidate->Result,
+        });
 }

@@ -25,28 +25,30 @@ void llove::ForEachStatement::Gen(Builder &builder) const
     const auto range = m_Range->GenVal(builder, nullptr);
     const auto type = range->GetType();
 
-    TypePtr iterator_type;
-    llvm::Value *begin;
-    llvm::Value *end;
+    ValuePtr begin;
+    ValuePtr end;
 
     switch (type->GetId())
     {
     case TypeId_Array:
     {
         const auto array_type = As<ArrayType>(type);
-        iterator_type = builder.GetTypes().GetPointer(array_type->GetBase(), range->IsMutable());
+        const auto base_type = array_type->GetBase();
+        auto iterator_type = builder.GetTypes().GetPointer(base_type, range->IsMutable());
 
         if (range->IsReferenceable())
         {
-            begin = range->GetPointer();
+            const auto pointer = range->GetPointer();
+            begin = Value::CreateR(std::move(iterator_type), pointer);
         }
         else
         {
-            begin = builder.CreateAlloca(type);
-            builder.CreateStore(begin, range);
+            const auto pointer = builder.CreateAlloca(type);
+            builder.CreateStore(pointer, range);
+            begin = Value::CreateR(std::move(iterator_type), pointer);
         }
 
-        end = builder.CreatePointerOffset(array_type->GetBase()->Gen(builder), begin, array_type->GetSize());
+        end = builder.CreatePointerOffset(begin, array_type->GetSize());
         break;
     }
     case TypeId_Struct:
@@ -71,62 +73,77 @@ void llove::ForEachStatement::Gen(Builder &builder) const
 
         if (range->IsReferenceable())
         {
-            auto pointer = builder.CreateStructGEP(struct_type, range->GetPointer(), begin_index);
+            auto begin_pointer = builder.CreateStructGEP(struct_type, range->GetPointer(), begin_index);
             if (begin_reference)
-                pointer = builder.CreateLoad(pointer, builder.GetTypes().GetPointer(begin_type, begin_mutable));
-            begin = builder.CreateLoad(pointer, begin_type);
+            {
+                begin_pointer = builder.CreateLoad(
+                    begin_pointer,
+                    builder.GetTypes().GetPointer(begin_type, begin_mutable));
+                begin = Value::CreateL(begin_type, begin_pointer, begin_mutable);
+            }
+            else
+            {
+                begin = Value::CreateL(begin_type, begin_pointer, range->IsMutable() && begin_mutable);
+            }
+
+            auto end_pointer = builder.CreateStructGEP(struct_type, range->GetPointer(), end_index);
+            if (end_reference)
+            {
+                end_pointer = builder.CreateLoad(
+                    end_pointer,
+                    builder.GetTypes().GetPointer(end_type, end_mutable));
+                end = Value::CreateL(end_type, end_pointer, end_mutable);
+            }
+            else
+            {
+                end = Value::CreateL(end_type, end_pointer, range->IsMutable() && end_mutable);
+            }
         }
         else
         {
-            begin = builder.CreateExtractValue(range, begin_index);
+            auto begin_value = builder.CreateExtractValue(range, begin_index);
             if (begin_reference)
-                begin = builder.CreateLoad(begin, builder.GetTypes().GetPointer(begin_type, begin_mutable));
+            {
+                begin_value = builder.CreateLoad(
+                    begin_value,
+                    builder.GetTypes().GetPointer(begin_type, begin_mutable));
+                begin = Value::CreateL(begin_type, begin_value, begin_mutable);
+            }
+            else
+            {
+                begin = Value::CreateR(begin_type, begin_value);
+            }
+
+            auto end_value = builder.CreateExtractValue(range, end_index);
+            if (end_reference)
+            {
+                end_value = builder.CreateLoad(
+                    end_value,
+                    builder.GetTypes().GetPointer(end_type, end_mutable));
+                end = Value::CreateL(end_type, end_value, end_mutable);
+            }
+            else
+            {
+                end = Value::CreateR(end_type, end_value);
+            }
         }
+
         if (begin_type->GetId() == TypeId_Function)
         {
             const auto fn_type = As<FunctionType>(begin_type);
             Assert(!fn_type->IsVarArg(), "invalid vararg");
             Assert(fn_type->GetParameterCount() == 0, "invalid parameter count");
 
-            begin = builder.CreateCall(fn_type, begin, {});
-            if (fn_type->GetResult().Reference)
-                begin = builder.CreateLoad(begin, fn_type->GetResult().Type);
-
-            iterator_type = fn_type->GetResult().Type;
-        }
-        else
-        {
-            iterator_type = begin_type;
+            begin = builder.CreateCall(fn_type, begin->Load(builder), {}, {});
         }
 
-        if (range->IsReferenceable())
-        {
-            auto pointer = builder.CreateStructGEP(struct_type, range->GetPointer(), end_index);
-            if (end_reference)
-                pointer = builder.CreateLoad(pointer, builder.GetTypes().GetPointer(end_type, end_mutable));
-            end = builder.CreateLoad(pointer, end_type);
-        }
-        else
-        {
-            end = builder.CreateExtractValue(range, end_index);
-            if (end_reference)
-                end = builder.CreateLoad(end, builder.GetTypes().GetPointer(end_type, end_mutable));
-        }
         if (end_type->GetId() == TypeId_Function)
         {
             const auto fn_type = As<FunctionType>(end_type);
             Assert(!fn_type->IsVarArg(), "invalid vararg");
             Assert(fn_type->GetParameterCount() == 0, "invalid parameter count");
 
-            end = builder.CreateCall(fn_type, end, {});
-            if (fn_type->GetResult().Reference)
-                end = builder.CreateLoad(end, fn_type->GetResult().Type);
-
-            Assert(fn_type->GetResult().Type == iterator_type, "iterator type mismatch");
-        }
-        else
-        {
-            Assert(end_type == iterator_type, "iterator type mismatch");
+            end = builder.CreateCall(fn_type, end->Load(builder), {}, {});
         }
 
         break;
@@ -134,21 +151,51 @@ void llove::ForEachStatement::Gen(Builder &builder) const
     case TypeId_Range:
     {
         const auto range_type = As<RangeType>(type);
-        iterator_type = range_type->GetEntry();
+        const auto iterator_type = range_type->GetEntry();
 
-        const auto value = range->Load(builder);
-        begin = builder.CreateExtractValue(value, 0);
-        end = builder.CreateExtractValue(value, 1);
+        if (range->IsReferenceable())
+        {
+            const auto begin_pointer = builder.CreateStructGEP(range_type, range->GetPointer(), 0);
+            const auto end_pointer = builder.CreateStructGEP(range_type, range->GetPointer(), 1);
+
+            begin = Value::CreateL(iterator_type, begin_pointer, false);
+            end = Value::CreateL(iterator_type, end_pointer, false);
+        }
+        else
+        {
+            const auto value = range->Load(builder);
+
+            begin = Value::CreateR(iterator_type, builder.CreateExtractValue(value, 0));
+            end = Value::CreateR(iterator_type, builder.CreateExtractValue(value, 1));
+        }
+
         break;
     }
     case TypeId_Class:
-        Error("not implemented");
+    {
+        const auto class_type = As<ClassType>(type);
+
+        auto begin_function = builder.FindFunction(class_type->GetFunctions("begin"), {}, class_type, range->AsField());
+        auto end_function = builder.FindFunction(class_type->GetFunctions("end"), {}, class_type, range->AsField());
+
+        Assert(begin_function.has_value(), "class is missing function 'begin'");
+        Assert(end_function.has_value(), "class is missing function 'end'");
+
+        begin = builder.CreateCall(begin_function->Type, begin_function->Callee, {}, range);
+        end = builder.CreateCall(end_function->Type, end_function->Callee, {}, range);
+
+        break;
+    }
     default:
         Error("iterating over value of type {} not implemented", type);
     }
 
-    const auto iterator_pointer = builder.CreateAlloca(iterator_type);
-    builder.CreateStore(iterator_pointer, begin);
+    ValuePtr iterator;
+    {
+        const auto pointer = builder.CreateAlloca(begin->GetType());
+        builder.CreateStore(pointer, begin);
+        iterator = Value::CreateL(begin->GetType(), pointer, true);
+    }
 
     const auto parent = builder.GetParent();
     const auto head_block = builder.CreateBlock("head", parent);
@@ -158,29 +205,59 @@ void llove::ForEachStatement::Gen(Builder &builder) const
     builder.CreateBranch(head_block);
 
     builder.SetInsertPoint(head_block);
-    const auto pos = builder.CreateLoad(iterator_pointer, iterator_type);
-    const auto condition = builder.CreateCompareNE(iterator_type, pos, end);
+
     if (m_Name.front() != '_')
     {
-        const auto operator_ = builder.FindOperator("*", { false, true, iterator_type }, false);
-        Assert(operator_ != nullptr, "not implemented");
+        const auto operator_ = builder.FindOperator("*", iterator->AsField(), false);
+        Assert(operator_ != nullptr, "operator '*' not implemented for {}", iterator->AsField());
 
-        auto value = (*operator_)(builder, Value::CreateL(iterator_type, iterator_pointer, false));
+        auto value = (*operator_)(builder, iterator);
 
         if (m_Reference)
         {
             Assert(value->IsReferenceable(), "value is not referenceable");
             Assert(!m_Mutable || value->IsMutable(), "reference mutability violation");
+
+            value = Value::CreateL(value->GetType(), value->GetPointer(), m_Mutable);
+        }
+        else if (m_Mutable)
+        {
+            auto pointer = builder.CreateAlloca(value->GetType());
+            builder.CreateStore(pointer, value);
+
+            value = Value::CreateL(value->GetType(), pointer, true);
+        }
+        else
+        {
+            value = Value::CreateR(value->GetType(), value->Load(builder));
         }
 
         builder.SetValue(m_Name, std::move(value));
     }
-    builder.CreateBranch(condition, loop_block, end_block);
+
+    {
+        const auto operator_ = builder.FindOperator("!=", iterator->AsField(), end->AsField());
+        Assert(
+            operator_ != nullptr,
+            "operator '!=' not implemented for {} and {}",
+            iterator->AsField(),
+            end->AsField());
+
+        const auto condition = (*operator_)(builder, iterator, end);
+        builder.CreateBranch(condition, loop_block, end_block);
+    }
 
     builder.SetInsertPoint(loop_block);
+
     m_Content->Gen(builder);
-    const auto next_pos = builder.CreateIncrement(iterator_type, pos);
-    builder.CreateStore(iterator_pointer, next_pos);
+
+    {
+        const auto operator_ = builder.FindOperator("++", iterator->AsField(), false);
+        Assert(operator_ != nullptr, "operator '++' not implemented for {}", iterator->AsField());
+
+        (void) (*operator_)(builder, iterator);
+    }
+
     if (builder.NoTerminator())
         builder.CreateBranch(head_block);
 

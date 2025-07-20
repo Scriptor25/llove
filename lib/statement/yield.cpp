@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
@@ -11,18 +12,20 @@ void llove::YieldStatement::Gen(Builder &builder) const
 {
     if (!m_Value)
     {
+        builder.CallDestructors({}, true);
         builder.CreateRetVoid();
         return;
     }
 
     auto &result = builder.GetResult();
-    auto value = m_Value->GenVal(builder, result.Type);
+    const auto value = m_Value->GenVal(builder, result.Type);
+    const auto result_value = result.GenCast(builder, value);
 
+    std::set<llvm::Value *> mask;
     if (!result.Reference && value->IsReferenceable())
-        builder.PopDestructor(value->GetPointer());
+        mask.emplace(value->GetPointer());
 
-    const auto result_value = result.GenCast(builder, std::move(value));
-
+    builder.CallDestructors(mask, true);
     builder.CreateRet(result_value);
 }
 

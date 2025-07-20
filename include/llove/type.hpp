@@ -221,13 +221,15 @@ namespace llove
         [[nodiscard]] unsigned GetFieldCount() const;
         [[nodiscard]] const Field &GetField(unsigned index) const;
 
-        [[nodiscard]] const ClassFunctionReference *GetFunction(
+        [[nodiscard]] std::optional<ClassFunctionReference> GetFunction(
             const std::string &name,
             bool mutable_,
             const std::vector<Field> &parameters,
             bool vararg,
             const Field &result) const;
 
+        [[nodiscard]] bool HasFunction(const std::string &name) const;
+        [[nodiscard]] std::vector<ClassFunctionReference> GetFunctions(const std::string &name) const;
         [[nodiscard]] std::vector<ClassFunctionReference> GetConstructors() const;
         [[nodiscard]] std::optional<ClassFunctionReference> GetDestructor() const;
 

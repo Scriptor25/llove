@@ -66,24 +66,9 @@ void llove::LetStatement::Gen(Builder &builder) const
 
                 if (const auto candidate = builder.FindFunction(constructors, argument_fields, class_type, self))
                 {
-                    std::vector<Parameter> parameters;
-                    for (auto &parameter : candidate->Parameters)
-                        parameters.emplace_back(parameter);
-
-                    const auto &reference = builder.GenFunction(
-                        {
-                            .Class = class_type,
-                            .Mutable = candidate->Mutable,
-                            .Expose = candidate->Expose,
-                            .Name = candidate->Name,
-                            .Parameters = parameters,
-                            .VarArg = candidate->VarArg,
-                            .Result = candidate->Result,
-                        });
-
                     builder.CreateCall(
-                        reference.Type,
-                        reference.Callee,
+                        candidate->Type,
+                        candidate->Callee,
                         std::move(argument_values),
                         Value::CreateL(class_type, pointer, true));
                 }
@@ -112,28 +97,32 @@ void llove::LetStatement::Gen(Builder &builder) const
                     argument_fields,
                     class_type,
                     self);
-                Assert(candidate != nullptr, "no suitable candidate");
-
-                std::vector<Parameter> parameters;
-                for (auto &parameter : candidate->Parameters)
-                    parameters.emplace_back(parameter);
-
-                const auto &reference = builder.GenFunction(
-                    {
-                        .Class = class_type,
-                        .Mutable = candidate->Mutable,
-                        .Expose = candidate->Expose,
-                        .Name = candidate->Name,
-                        .Parameters = parameters,
-                        .VarArg = candidate->VarArg,
-                        .Result = candidate->Result,
-                    });
+                Assert(candidate.has_value(), "no suitable candidate");
 
                 builder.CreateCall(
-                    reference.Type,
-                    reference.Callee,
+                    candidate->Type,
+                    candidate->Callee,
                     std::move(arguments),
                     Value::CreateL(class_type, pointer, true));
+            }
+
+            if (auto destructor = class_type->GetDestructor())
+            {
+                auto &reference = builder.GenFunction(
+                    {
+                        .Class = class_type,
+                        .Mutable = destructor->Mutable,
+                        .Expose = destructor->Expose,
+                        .Name = destructor->Name,
+                        .VarArg = destructor->VarArg,
+                        .Result = destructor->Result,
+                    });
+                builder.PushDestructor(
+                    pointer,
+                    {
+                        reference.Type->GenFunction(builder),
+                        reference.Callee,
+                    });
             }
         }
         else

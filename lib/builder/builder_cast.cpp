@@ -27,18 +27,18 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
         {
             if (function_type->GetParameterCount() != 0)
                 continue;
-            if (!Field::IsAssignable(dst_fld, function_type->GetResult()))
+            if (!Field::IsCastable(*this, dst_fld, function_type->GetResult(), true))
                 continue;
-            if (!Field::IsAssignable(function_type->GetSelf(), src_fld))
+            if (!Field::IsCastable(*this, function_type->GetSelf(), src_fld, true))
                 continue;
         }
         else
         {
             if (function_type->GetParameterCount() != 1)
                 continue;
-            if (!Field::IsAssignable(dst_fld, function_type->GetResult()))
+            if (!Field::IsCastable(*this, dst_fld, function_type->GetResult(), true))
                 continue;
-            if (!Field::IsAssignable(function_type->GetParameter(0), src_fld))
+            if (!Field::IsCastable(*this, function_type->GetParameter(0), src_fld, true))
                 continue;
         }
 
@@ -156,18 +156,18 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst) const
         {
             if (function_type->GetParameterCount() != 0)
                 continue;
-            if (!Field::IsAssignable(dst, res))
+            if (!Field::IsCastable(*this, dst, res, true))
                 continue;
-            if (!Field::IsAssignable(function_type->GetSelf(), src))
+            if (!Field::IsCastable(*this, function_type->GetSelf(), src, true))
                 continue;
         }
         else
         {
             if (function_type->GetParameterCount() != 1)
                 continue;
-            if (!Field::IsAssignable(dst, res))
+            if (!Field::IsCastable(*this, dst, res, true))
                 continue;
-            if (!Field::IsAssignable(function_type->GetParameter(0), src))
+            if (!Field::IsCastable(*this, function_type->GetParameter(0), src, true))
                 continue;
         }
         return true;

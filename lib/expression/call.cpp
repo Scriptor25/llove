@@ -25,9 +25,8 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
     const auto candidate = builder.FindFunction(
         functions,
         argument_fields,
-        self != nullptr,
         self ? self->AsField() : Field{});
-    Assert(candidate != nullptr, "no suitable candidate");
+    Assert(candidate.has_value(), "no suitable candidate");
 
     return builder.CreateCall(candidate->Type, candidate->Callee, std::move(arguments), std::move(self));
 }

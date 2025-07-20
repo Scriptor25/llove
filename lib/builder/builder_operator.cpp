@@ -21,14 +21,14 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &operator
         {
             if (function_type->GetParameterCount() != 0)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetSelf(), operand, error))
+            if (Field::GetCastError(*this, function_type->GetSelf(), operand, error, true))
                 continue;
         }
         else
         {
             if (function_type->GetParameterCount() != 1)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(0), operand, error))
+            if (Field::GetCastError(*this, function_type->GetParameter(0), operand, error, false))
                 continue;
         }
 
@@ -73,18 +73,18 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
         {
             if (function_type->GetParameterCount() != 1)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetSelf(), left, error))
+            if (Field::GetCastError(*this, function_type->GetSelf(), left, error, true))
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(0), right, error))
+            if (Field::GetCastError(*this, function_type->GetParameter(0), right, error, false))
                 continue;
         }
         else
         {
             if (function_type->GetParameterCount() != 2)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(0), left, error))
+            if (Field::GetCastError(*this, function_type->GetParameter(0), left, error, false))
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(1), right, error))
+            if (Field::GetCastError(*this, function_type->GetParameter(1), right, error, false))
                 continue;
         }
 

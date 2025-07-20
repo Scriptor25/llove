@@ -15,6 +15,7 @@ class string {
 
     expose mut delete();
 
+    expose empty(): u1;
     expose length(): u64;
     expose raw(): i8[mut];
 
@@ -65,37 +66,37 @@ define +(l: i8[], &r: string): string {
 }
 
 define +(l: string, r: i8): string {
-    let mut str: string = $l;
+    let mut str: string = l;
     str += r;
     yield str;
 }
 
 define +(l: i8, r: string): string {
     let mut str: string = l;
-    str += $r;
+    str += r;
     yield str;
 }
 
 define +(l: string, r: i8[]): string {
-    let mut str: string = $l;
+    let mut str: string = l;
     str += r;
     yield str;
 }
 
 define +(l: i8[], r: string): string {
     let mut str: string = l;
-    str += $r;
+    str += r;
     yield str;
 }
 
 define +(&l: string, r: string): string {
     let mut str: string = l;
-    str += $r;
+    str += r;
     yield str;
 }
 
 define +(l: string, &r: string): string {
-    let mut str: string = $l;
+    let mut str: string = l;
     str += r;
     yield str;
 }
@@ -107,8 +108,8 @@ define +(&l: string, &r: string): string {
 }
 
 define +(l: string, r: string): string {
-    let mut str: string = $l;
-    str += $r;
+    let mut str: string = l;
+    str += r;
     yield str;
 }
 
@@ -118,13 +119,13 @@ define cast(src: i8[]): string {
 }
 
 define print(s: string) {
-    for (let mut p = s.begin(); p != s.end(); ++p)
-        putchar($*p);
+    foreach (c : s)
+        putchar(c);
 }
 
 define print(&s: string) {
-    for (let mut p = s.begin(); p != s.end(); ++p)
-        putchar($*p);
+    foreach (c : s)
+        putchar(c);
 }
 
 define hello(&name: string) {
@@ -135,9 +136,35 @@ define hello(name: string) {
     print("Hello, " + name + "!\r\n");
 }
 
+define test(a: u1, b: u1): string {
+    let mut x: string;
+    let s: string = "Hello there!";
+    let m: string = "ABC, 123.";
+
+    if (a) {
+        x = $m;
+    }
+
+    if (b) {
+        yield s;
+    }
+
+    x = s;
+    yield x;
+}
+
 interface main(count: i32, args: i8[][]): i32 {
+    foreach (str : args..(args + count)) {
+        hello(str);
+    }
 
     hello("world");
+
+    test(0, 0);
+    test(0, 1);
+    test(1, 0);
+    test(1, 1);
+
     yield 0;
 }
 
@@ -184,6 +211,10 @@ define:string mut delete() {
 
     self.beg = null;
     self.end = null;
+}
+
+define:string empty(): u1 {
+    yield self.beg == self.end;
 }
 
 define:string length(): u64 {
@@ -244,14 +275,14 @@ define:string mut =(s: i8[]): mut &string {
 }
 
 define:string mut =(mut s: string): mut &string {
-    let pbeg = self.beg;
-    let pend = self.end;
+    let self_beg = self.beg;
+    let self_end = self.end;
 
     self.beg = s.beg;
     self.end = s.end;
 
-    s.beg = pbeg;
-    s.end = pend;
+    s.beg = self_beg;
+    s.end = self_end;
 
     yield self;
 }

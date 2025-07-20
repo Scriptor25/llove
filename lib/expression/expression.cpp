@@ -1,3 +1,4 @@
+#include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
@@ -5,7 +6,35 @@
 
 void llove::Expression::Gen(Builder &builder) const
 {
-    (void) GenVal(builder, nullptr);
+    auto value = GenVal(builder, nullptr);
+
+    if (value->IsReferenceable() || value->GetType()->GetId() != TypeId_Class)
+        return;
+
+    const auto class_type = As<ClassType>(value->GetType());
+    if (const auto destructor = class_type->GetDestructor())
+    {
+        auto &reference = builder.GenFunction(
+            {
+                .Class = class_type,
+                .Mutable = destructor->Mutable,
+                .Expose = destructor->Expose,
+                .Name = destructor->Name,
+                .VarArg = destructor->VarArg,
+                .Result = destructor->Result,
+            });
+
+        const auto pointer = builder.CreateAlloca(class_type);
+        builder.CreateStore(pointer, value);
+        value = Value::CreateL(class_type, pointer, true);
+
+        builder.PushDestructor(
+            value->GetPointer(),
+            {
+                reference.Type->GenFunction(builder),
+                reference.Callee,
+            });
+    }
 }
 
 llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const

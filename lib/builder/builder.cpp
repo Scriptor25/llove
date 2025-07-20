@@ -121,7 +121,7 @@ llove::FunctionReference &llove::Builder::PushFunction(
     );
 }
 
-std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name)
+std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name) const
 {
     std::vector<FunctionReference> functions;
     for (auto &function : m_Functions)
@@ -130,7 +130,7 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::st
     return functions;
 }
 
-std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name, const Field &self)
+std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name, const Field &self) const
 {
     std::vector<FunctionReference> functions;
     for (auto &function : m_Functions)
@@ -157,28 +157,14 @@ void llove::Builder::PushFrame()
         return;
     }
 
-    auto &[
-        destructors,
-        values
-    ] = m_Stack.emplace_back(m_Stack.back());
-
-    destructors.clear();
-    for (const auto &key : values | std::views::keys)
-        values[key].first = false;
+    m_Stack.emplace_back();
 }
 
 void llove::Builder::PopFrame()
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    if (const auto block = m_Builder.GetInsertBlock())
-    {
-        if (const auto instruction = block->getTerminator())
-            m_Builder.SetInsertPoint(instruction);
-
-        for (auto &[self, callee] : m_Stack.back().Destructors)
-            CreateCall(callee, { self });
-    }
+    CallDestructors({}, false);
 
     m_Stack.pop_back();
 }
@@ -186,16 +172,19 @@ void llove::Builder::PopFrame()
 void llove::Builder::SetValue(const std::string &name, ValuePtr value)
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    Assert(
-        !m_Stack.back().Values.contains(name) || !m_Stack.back().Values.at(name).first,
-        "redefining named value in scope");
-    m_Stack.back().Values[name] = { true, std::move(value) };
+
+    m_Stack.back().Values[name] = std::move(value);
 }
 
 bool llove::Builder::HasValue(const std::string &name) const
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    for (const auto &[_, values] : std::ranges::reverse_view(m_Stack))
+
+    for (auto &[
+             valid,
+             destructors,
+             values
+         ] : std::ranges::reverse_view(m_Stack))
         if (values.contains(name))
             return true;
     return false;
@@ -204,28 +193,53 @@ bool llove::Builder::HasValue(const std::string &name) const
 llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    for (const auto &[_, values] : std::ranges::reverse_view(m_Stack))
+
+    for (auto &[
+             valid,
+             destructors,
+             values
+         ] : std::ranges::reverse_view(m_Stack))
         if (values.contains(name))
-            return values.at(name).second;
+            return values.at(name);
     return nullptr;
 }
 
 void llove::Builder::PushDestructor(llvm::Value *self, llvm::FunctionCallee callee)
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    m_Stack.back().Destructors.emplace_back(self, callee);
+
+    m_Stack.back().Destructors[self] = std::move(callee);
 }
 
-void llove::Builder::PopDestructor(const llvm::Value *self)
+void llove::Builder::CallDestructors(const std::set<llvm::Value *> &mask, const bool propagate)
 {
-    Assert(!m_Stack.empty(), "stack is empty");
-    for (auto &[destructors, _] : std::ranges::reverse_view(m_Stack))
-        for (auto i = destructors.begin(); i != destructors.end(); ++i)
-            if (i->Self == self)
-            {
-                destructors.erase(i);
-                return;
-            }
+    if (const auto block = m_Builder.GetInsertBlock(); !block || block->getTerminator())
+        return;
+
+    if (propagate)
+    {
+        for (auto &[
+                 valid,
+                 destructors,
+                 values
+             ] : std::ranges::reverse_view(m_Stack))
+            if (valid)
+                for (auto &[self, callee] : destructors)
+                    if (!mask.contains(self))
+                        CreateCall(callee, { self });
+    }
+    else
+    {
+        auto &[
+            valid,
+            destructors,
+            values
+        ] = m_Stack.back();
+        if (valid)
+            for (auto &[self, callee] : destructors)
+                if (!mask.contains(self))
+                    CreateCall(callee, { self });
+    }
 }
 
 llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)

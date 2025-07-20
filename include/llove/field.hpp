@@ -1,5 +1,7 @@
 #pragma once
 
+#include <format>
+#include <sstream>
 #include <string>
 #include <llove/forward.hpp>
 #include <llvm/IR/Type.h>
@@ -14,20 +16,20 @@ namespace llove
          * @param dst destination field
          * @param src source field
          * @param error error score reference
+         * @param strict
          * @return true if not permitted
          */
         [[nodiscard]] static bool GetCastError(
             const Builder &builder,
             const Field &dst,
             const Field &src,
-            unsigned &error);
+            unsigned &error,
+            bool strict);
         [[nodiscard]] static bool IsCastable(
             const Builder &builder,
             const Field &dst,
-            const Field &src);
-        [[nodiscard]] static bool IsAssignable(
-            const Field &dst,
-            const Field &src);
+            const Field &src,
+            bool strict);
 
         std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
@@ -46,3 +48,14 @@ namespace llove
 
     std::string GetFieldHash(const std::vector<Field> &fields);
 }
+
+template<>
+struct std::formatter<llove::Field> : std::formatter<std::string_view>
+{
+    auto format(const llove::Field &field, std::format_context &ctx) const
+    {
+        std::stringstream stream;
+        field.Print(stream);
+        return std::formatter<std::string_view>::format(stream.view(), ctx);
+    }
+};

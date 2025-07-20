@@ -7,7 +7,8 @@ bool llove::Field::GetCastError(
     const Builder &builder,
     const Field &dst,
     const Field &src,
-    unsigned &error)
+    unsigned &error,
+    const bool strict)
 {
     if (dst.Reference)
     {
@@ -17,6 +18,8 @@ bool llove::Field::GetCastError(
             return true;
         if (dst.Mutable && !src.Mutable)
             return true;
+        if (dst.Mutable != src.Mutable)
+            error += 1u;
         return false;
     }
 
@@ -24,7 +27,7 @@ bool llove::Field::GetCastError(
         return true;
     if (dst.Type != src.Type)
     {
-        if (!builder.IsCastable(src, dst))
+        if (strict || !builder.IsCastable(src, dst))
             return true;
         error += 5u;
     }
@@ -35,7 +38,8 @@ bool llove::Field::GetCastError(
 bool llove::Field::IsCastable(
     const Builder &builder,
     const Field &dst,
-    const Field &src)
+    const Field &src,
+    const bool strict)
 {
     if (dst.Reference)
     {
@@ -51,28 +55,8 @@ bool llove::Field::IsCastable(
     if (dst.Type->GetId() == TypeId_Class && src.Reference)
         return false;
     if (dst.Type != src.Type)
-        if (!builder.IsCastable(src, dst))
+        if (strict || !builder.IsCastable(src, dst))
             return false;
-    return true;
-}
-
-bool llove::Field::IsAssignable(const Field &dst, const Field &src)
-{
-    if (dst.Reference)
-    {
-        if (!src.Reference)
-            return false;
-        if (dst.Type != src.Type)
-            return false;
-        if (dst.Mutable && !src.Mutable)
-            return false;
-        return true;
-    }
-
-    if (dst.Type->GetId() == TypeId_Class && src.Reference)
-        return false;
-    if (dst.Type != src.Type)
-        return false;
     return true;
 }
 

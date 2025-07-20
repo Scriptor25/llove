@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -18,7 +19,27 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
     {
         Assert(operand->IsReferenceable(), "cannot remove ownership from rvalue");
 
-        builder.PopDestructor(operand->GetPointer());
+        if (operand->GetType()->GetId() == TypeId_Class)
+        {
+            const auto class_type = As<ClassType>(operand->GetType());
+            const auto functions = class_type->GetConstructors();
+            const auto reference = builder.FindFunction(
+                functions,
+                std::vector{ operand->AsField() },
+                class_type,
+                Field{ true, true, class_type });
+
+            if (reference.has_value())
+            {
+                const auto pointer = builder.CreateAlloca(class_type);
+                const auto self = Value::CreateL(class_type, pointer, true);
+
+                builder.CreateCall(reference->Type, reference->Callee, std::vector{ std::move(operand) }, self);
+
+                operand = self;
+            }
+        }
+
         const auto value = operand->Load(builder);
         return Value::CreateR(operand->GetType(), value);
     }
