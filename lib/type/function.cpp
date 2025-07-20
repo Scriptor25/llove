@@ -51,7 +51,13 @@ llove::TypeId llove::FunctionType::GetId() const
     return TypeId_Function;
 }
 
-llvm::FunctionType *llove::FunctionType::Gen(Builder &builder) const
+llvm::PointerType *llove::FunctionType::Gen(Builder &builder) const
+{
+    const auto function = GenFunction(builder);
+    return builder.GetPointerType(function);
+}
+
+llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder) const
 {
     std::vector<llvm::Type *> parameters;
     if (m_Self)
@@ -85,6 +91,12 @@ std::ostream &llove::FunctionType::Print(std::ostream &stream) const
         if (i != m_Parameters.begin())
             stream << ", ";
         stream << *i;
+    }
+    if (m_VarArg)
+    {
+        if (!m_Parameters.empty())
+            stream << ", ";
+        stream << "...";
     }
     stream << ')';
     if (m_Self)

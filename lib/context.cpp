@@ -57,7 +57,7 @@ llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, unsigned size)
         return type = std::make_shared<ArrayType>(std::move(base), size);
 }
 
-llove::StructType::Ptr llove::Context::GetStruct(std::vector<ClassFieldReference> fields)
+llove::StructType::Ptr llove::Context::GetStruct(std::vector<Parameter> fields)
 {
     std::vector<Field> struct_fields;
     for (const auto &[info_, name_] : fields)
@@ -68,6 +68,14 @@ llove::StructType::Ptr llove::Context::GetStruct(std::vector<ClassFieldReference
         return type;
     else
         return type = std::make_shared<StructType>(std::move(fields));
+}
+
+llove::RangeType::Ptr llove::Context::GetRange(TypePtr entry)
+{
+    if (auto &type = m_Range[entry])
+        return type;
+    else
+        return type = std::make_shared<RangeType>(std::move(entry));
 }
 
 llove::ClassType::Ptr llove::Context::GetClass(std::string name)

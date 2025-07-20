@@ -57,8 +57,12 @@ void llove::LetStatement::Gen(Builder &builder) const
             if (arguments.empty())
             {
                 std::vector<Field> argument_fields;
+                std::vector<ValuePtr> argument_values;
                 if (value)
+                {
                     argument_fields.emplace_back(value->AsField());
+                    argument_values.emplace_back(value);
+                }
 
                 if (const auto candidate = builder.FindFunction(constructors, argument_fields, class_type, self))
                 {
@@ -80,7 +84,7 @@ void llove::LetStatement::Gen(Builder &builder) const
                     builder.CreateCall(
                         reference.Type,
                         reference.Callee,
-                        { value },
+                        std::move(argument_values),
                         Value::CreateL(class_type, pointer, true));
                 }
                 else

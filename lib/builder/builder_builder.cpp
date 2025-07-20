@@ -1,5 +1,6 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/error.hpp>
 #include <llove/value.hpp>
 
 llvm::Value *llove::Builder::CreateAlloca(const TypePtr &type, llvm::Function *parent)
@@ -41,7 +42,7 @@ llvm::Value *llove::Builder::CreateCall(
     llvm::Value *callee,
     const std::vector<llvm::Value *> &arguments)
 {
-    return m_Builder.CreateCall(type->Gen(*this), callee, arguments);
+    return m_Builder.CreateCall(type->GenFunction(*this), callee, arguments);
 }
 
 llvm::Value *llove::Builder::CreateCall(const llvm::FunctionCallee callee, const std::vector<llvm::Value *> &arguments)
@@ -95,6 +96,16 @@ llvm::Value *llove::Builder::CreateExtractValue(llvm::Value *aggregate, const un
     return m_Builder.CreateExtractValue(aggregate, index);
 }
 
+llvm::Value *llove::Builder::CreateExtractValue(const ValuePtr &aggregate, const unsigned index)
+{
+    return m_Builder.CreateExtractValue(aggregate->Load(*this), index);
+}
+
+llvm::Value *llove::Builder::CreatePointerOffset(llvm::Type *element_type, llvm::Value *pointer, const unsigned offset)
+{
+    return m_Builder.CreateConstGEP1_64(element_type, pointer, offset);
+}
+
 llove::ValuePtr llove::Builder::CreatePointerOffset(const ValuePtr &pointer, const ValuePtr &offset)
 {
     auto type = As<PointerType>(pointer->GetType());
@@ -141,6 +152,11 @@ llove::ValuePtr llove::Builder::CreateArrayElement(ValuePtr array, const ValuePt
         array->GetPointer(),
         index->Load(*this));
     return Value::CreateL(type->GetBase(), value, array->IsMutable());
+}
+
+llvm::Value *llove::Builder::CreateArrayGEP(const TypePtr &type, llvm::Value *pointer, const unsigned index)
+{
+    return m_Builder.CreateConstGEP2_64(type->Gen(*this), pointer, 0, index);
 }
 
 llvm::Value *llove::Builder::CreateStructGEP(const TypePtr &type, llvm::Value *pointer, const unsigned index)
@@ -322,18 +338,32 @@ llove::ValuePtr llove::Builder::CreateFCmpGE(const ValuePtr &left, const ValuePt
     return Value::CreateR(m_Types.GetInteger(false, 1), value);
 }
 
+llvm::Value *llove::Builder::CreatePCmpEQ(llvm::Value *left, llvm::Value *right)
+{
+    const auto int_type = GetIntType(64);
+    const auto left_int = m_Builder.CreatePtrToInt(left, int_type);
+    const auto right_int = m_Builder.CreatePtrToInt(right, int_type);
+    return m_Builder.CreateICmpEQ(left_int, right_int);
+}
+
 llove::ValuePtr llove::Builder::CreatePCmpEQ(const ValuePtr &left, const ValuePtr &right)
 {
-    const auto left_int = CreateCast(left, m_Types.GetInteger(false, 64));
-    const auto right_int = CreateCast(right, m_Types.GetInteger(false, 64));
-    return CreateCmpEQ(left_int, right_int);
+    const auto value = CreatePCmpEQ(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
+}
+
+llvm::Value *llove::Builder::CreatePCmpNE(llvm::Value *left, llvm::Value *right)
+{
+    const auto int_type = GetIntType(64);
+    const auto left_int = m_Builder.CreatePtrToInt(left, int_type);
+    const auto right_int = m_Builder.CreatePtrToInt(right, int_type);
+    return m_Builder.CreateICmpNE(left_int, right_int);
 }
 
 llove::ValuePtr llove::Builder::CreatePCmpNE(const ValuePtr &left, const ValuePtr &right)
 {
-    const auto left_int = CreateCast(left, m_Types.GetInteger(false, 64));
-    const auto right_int = CreateCast(right, m_Types.GetInteger(false, 64));
-    return CreateCmpNE(left_int, right_int);
+    const auto value = CreatePCmpNE(left->Load(*this), right->Load(*this));
+    return Value::CreateR(m_Types.GetInteger(false, 1), value);
 }
 
 llove::ValuePtr llove::Builder::CreateNeg(const ValuePtr &operand)
@@ -360,9 +390,50 @@ llove::ValuePtr llove::Builder::CreateInv(const ValuePtr &operand)
     return Value::CreateR(operand->GetType(), value);
 }
 
+llvm::Value *llove::Builder::CreateIncrement(const TypePtr &type, llvm::Value *value)
+{
+    switch (type->GetId())
+    {
+    case TypeId_Integer:
+    {
+        const auto one = llvm::ConstantInt::get(value->getType(), 1);
+        return m_Builder.CreateAdd(value, one);
+    }
+    case TypeId_Float:
+    {
+        const auto one = llvm::ConstantFP::get(value->getType(), 1.0);
+        return m_Builder.CreateFAdd(value, one);
+    }
+    case TypeId_Pointer:
+        return CreatePointerOffset(As<PointerType>(type)->GetBase()->Gen(*this), value, 1);
+    default:
+        Error("increment value of type {} not implemented", type);
+    }
+}
+
+llvm::Value *llove::Builder::CreateCompareNE(TypePtr type, llvm::Value *left, llvm::Value *right)
+{
+    switch (type->GetId())
+    {
+    case TypeId_Integer:
+        return m_Builder.CreateICmpNE(left, right);
+    case TypeId_Float:
+        return m_Builder.CreateFCmpONE(left, right);
+    case TypeId_Pointer:
+        return CreatePCmpNE(left, right);
+    default:
+        Error("compare not-equal values of type {} not implemented", type);
+    }
+}
+
 void llove::Builder::CreateBranch(llvm::BasicBlock *block)
 {
     m_Builder.CreateBr(block);
+}
+
+void llove::Builder::CreateBranch(llvm::Value *condition, llvm::BasicBlock *then, llvm::BasicBlock *else_)
+{
+    m_Builder.CreateCondBr(condition, then, else_);
 }
 
 void llove::Builder::CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_)

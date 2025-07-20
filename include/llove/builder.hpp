@@ -95,12 +95,15 @@ namespace llove
 
         llvm::Value *CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, unsigned index);
         llvm::Value *CreateExtractValue(llvm::Value *aggregate, unsigned index);
+        llvm::Value *CreateExtractValue(const ValuePtr &aggregate, unsigned index);
 
+        llvm::Value *CreatePointerOffset(llvm::Type *element_type, llvm::Value *pointer, unsigned offset);
         ValuePtr CreatePointerOffset(const ValuePtr &pointer, const ValuePtr &offset);
         ValuePtr CreatePointerDifference(const ValuePtr &begin, const ValuePtr &end);
 
         ValuePtr CreatePointerElement(const ValuePtr &pointer, const ValuePtr &index);
         ValuePtr CreateArrayElement(ValuePtr array, const ValuePtr &index);
+        llvm::Value *CreateArrayGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
         llvm::Value *CreateStructGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
 
         ValuePtr CreateAdd(const ValuePtr &left, const ValuePtr &right);
@@ -133,7 +136,9 @@ namespace llove
         ValuePtr CreateFCmpLE(const ValuePtr &left, const ValuePtr &right);
         ValuePtr CreateFCmpGE(const ValuePtr &left, const ValuePtr &right);
 
+        llvm::Value *CreatePCmpEQ(llvm::Value *left, llvm::Value *right);
         ValuePtr CreatePCmpEQ(const ValuePtr &left, const ValuePtr &right);
+        llvm::Value *CreatePCmpNE(llvm::Value *left, llvm::Value *right);
         ValuePtr CreatePCmpNE(const ValuePtr &left, const ValuePtr &right);
 
         ValuePtr CreateNeg(const ValuePtr &operand);
@@ -142,7 +147,11 @@ namespace llove
         ValuePtr CreateNot(const ValuePtr &operand);
         ValuePtr CreateInv(const ValuePtr &operand);
 
+        llvm::Value *CreateIncrement(const TypePtr &type, llvm::Value *value);
+        llvm::Value *CreateCompareNE(TypePtr type, llvm::Value * left, llvm::Value *right);
+
         void CreateBranch(llvm::BasicBlock *block);
+        void CreateBranch(llvm::Value *condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
         void CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
 
         void SetInsertPoint(llvm::BasicBlock *block);
@@ -182,6 +191,7 @@ namespace llove
         void PopFrame();
 
         void SetValue(const std::string &name, ValuePtr value);
+        bool HasValue(const std::string &name) const;
         ValuePtr GetValue(const std::string &name) const;
 
         void PushDestructor(llvm::Value *self, llvm::FunctionCallee callee);

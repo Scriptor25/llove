@@ -83,7 +83,7 @@ llvm::Function *llove::Builder::GetOrCreateFunction(
     if (const auto function = m_Module.getFunction(name))
         return function;
     return llvm::Function::Create(
-        type->Gen(*this),
+        type->GenFunction(*this),
         external ? llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage,
         name,
         m_Module);
@@ -192,11 +192,21 @@ void llove::Builder::SetValue(const std::string &name, ValuePtr value)
     m_Stack.back().Values[name] = { true, std::move(value) };
 }
 
+bool llove::Builder::HasValue(const std::string &name) const
+{
+    Assert(!m_Stack.empty(), "stack is empty");
+    for (const auto &[_, values] : std::ranges::reverse_view(m_Stack))
+        if (values.contains(name))
+            return true;
+    return false;
+}
+
 llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
 {
     Assert(!m_Stack.empty(), "stack is empty");
-    if (m_Stack.back().Values.contains(name))
-        return m_Stack.back().Values.at(name).second;
+    for (const auto &[_, values] : std::ranges::reverse_view(m_Stack))
+        if (values.contains(name))
+            return values.at(name).second;
     return nullptr;
 }
 
@@ -341,7 +351,7 @@ void llove::Builder::GenParameters(
                 PushDestructor(
                     pointer,
                     {
-                        reference.Type->Gen(*this),
+                        reference.Type->GenFunction(*this),
                         reference.Callee,
                     });
             }

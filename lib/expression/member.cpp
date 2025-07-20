@@ -32,27 +32,27 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
     }
     else
     {
-        Error("not yet implemented");
+        Error("not implemented");
     }
 
     if (value->IsReferenceable())
     {
-        const auto result = builder.CreateStructGEP(type, value->GetPointer(), index);
+        auto pointer = builder.CreateStructGEP(type, value->GetPointer(), index);
 
         if (element.Reference)
         {
-            const auto pointer = builder.CreateLoad(result, builder.GetTypes().GetPointer(false));
+            pointer = builder.CreateLoad(pointer, builder.GetTypes().GetPointer(element.Type, element.Mutable));
             return Value::CreateL(element.Type, pointer, element.Mutable);
         }
 
-        return Value::CreateL(element.Type, result, value->IsMutable() && element.Mutable);
+        return Value::CreateL(element.Type, pointer, value->IsMutable() && element.Mutable);
     }
 
     const auto result = builder.CreateExtractValue(value->Load(builder), index);
 
     if (element.Reference)
     {
-        const auto pointer = builder.CreateLoad(result, builder.GetTypes().GetPointer(false));
+        const auto pointer = builder.CreateLoad(result, builder.GetTypes().GetPointer(element.Type, element.Mutable));
         return Value::CreateL(element.Type, pointer, element.Mutable);
     }
 

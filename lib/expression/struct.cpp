@@ -12,25 +12,23 @@ llove::StructExpression::StructExpression(std::map<std::string, ExpressionPtr> v
 
 llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
-    const auto type = m_Type ? m_Type : As<StructType>(expect);
+    auto type = m_Type ? m_Type : As<StructType>(expect);
     Assert(type != nullptr, "untyped struct expression");
 
-    const auto pointer = builder.CreateAlloca(type);
-    builder.CreateStore(pointer, llvm::Constant::getNullValue(type->Gen(builder)));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(type->Gen(builder));
 
-    for (auto &[key_, value_] : m_Values)
+    for (auto &[key, value] : m_Values)
     {
-        const auto index = type->GetFieldIndex(key_);
+        const auto index = type->GetFieldIndex(key);
         auto &field = type->GetField(index);
 
-        auto value = value_->GenVal(builder, field.Type);
-        const auto llvm_value = field.GenCast(builder, std::move(value));
+        auto gen_val = value->GenVal(builder, field.Type);
+        const auto val = field.GenCast(builder, std::move(gen_val));
 
-        const auto element_pointer = builder.CreateStructGEP(type, pointer, index);
-        builder.CreateStore(element_pointer, llvm_value);
+        aggregate = builder.CreateInsertValue(aggregate, val, index);
     }
 
-    return Value::CreateL(type, pointer, false);
+    return Value::CreateR(std::move(type), aggregate);
 }
 
 std::ostream &llove::StructExpression::Print(std::ostream &stream) const

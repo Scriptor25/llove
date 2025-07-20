@@ -1,0 +1,58 @@
+interface putchar(chr: i32): i32;
+interface strlen(str: i8[]): u64;
+
+type iterable_struct_t = {
+    begin: () => i8[],
+    end:   () => i8[],
+}
+
+define begin_str(): i8[] {
+    yield "Hello!\r\n";
+}
+
+define end_str(): i8[] {
+    let str = begin_str();
+    let len = strlen(str);
+    yield str + len;
+}
+
+class iterable_class_t {
+    expose mut create() {
+        self.str = "Hello!\r\n";
+    }
+
+    expose begin(): i8[] {
+        yield self.str;
+    }
+
+    expose end(): i8[] {
+        yield self.str + strlen(self.str);
+    }
+
+    let mut str: i8[];
+}
+
+interface main(count: i32, args: i8[][]): i32 {
+
+    let my_iterable_array = [0, 1, 2, 3, 4, 5]:i32;
+    foreach (&x : my_iterable_array) {
+        putchar(x + 0x30);
+    }
+    putchar('\r');
+    putchar('\n');
+
+    let my_iterable_struct: iterable_struct_t = {
+        begin: begin_str,
+        end: end_str,
+    };
+    foreach (&x : my_iterable_struct) {
+        putchar(x);
+    }
+
+    let my_iterable_class: iterable_class_t;
+    foreach (&x : my_iterable_class) {
+        putchar(x);
+    }
+
+    yield 0;
+}

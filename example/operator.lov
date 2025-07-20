@@ -1,0 +1,47 @@
+interface printf(format: i8[], ...): i32;
+
+type vec3 = {
+    mut x: f64,
+    mut y: f64,
+    mut z: f64,
+}
+
+define +(&l: vec3, &r: vec3): vec3 {
+    yield {
+        x: l.x + r.x,
+        y: l.y + r.y,
+        z: l.z + r.z,
+    };
+}
+
+define -(&l: vec3, &r: vec3): vec3 {
+    yield {
+        x: l.x - r.x,
+        y: l.y - r.y,
+        z: l.z - r.z,
+    };
+}
+
+define foo(mut bar: i32) {
+    bar = bar + 1;
+    bar = bar - 1;
+    bar += 1;
+    bar -= 1;
+    bar++;
+    bar--;
+    ++bar;
+    --bar;
+}
+
+interface main(count: i32, args: i8[][]): i32 {
+
+    let u: vec3 = { x: 1, y: 2, z: 3 };
+    let v: vec3 = { x: 3, y: 2, z: 1 };
+    let w = u + v;
+
+    printf("%f %f %f\r\n", u.x, u.y, u.z);
+    printf("%f %f %f\r\n", v.x, v.y, v.z);
+    printf("%f %f %f\r\n", w.x, w.y, w.z);
+
+    yield 0;
+}

@@ -24,7 +24,8 @@ namespace llove
         PointerType::Ptr GetPointer(bool mutable_);
         PointerType::Ptr GetPointer(TypePtr base, bool mutable_);
         ArrayType::Ptr GetArray(TypePtr base, unsigned size);
-        StructType::Ptr GetStruct(std::vector<ClassFieldReference> fields);
+        StructType::Ptr GetStruct(std::vector<Parameter> fields);
+        RangeType::Ptr GetRange(TypePtr entry);
         ClassType::Ptr GetClass(std::string name);
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result);
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result, Field self);
@@ -40,6 +41,7 @@ namespace llove
         std::map<TypePtr, std::map<bool, PointerType::Ptr>> m_Pointer;
         std::map<TypePtr, std::map<unsigned, ArrayType::Ptr>> m_Array;
         std::map<std::string, StructType::Ptr> m_Struct;
+        std::map<TypePtr, RangeType::Ptr> m_Range;
         std::map<std::string, ClassType::Ptr> m_Class;
         std::map<std::string, std::map<bool, std::map<std::string, std::map<std::string, FunctionType::Ptr>>>>
         m_Function;

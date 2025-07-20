@@ -3,6 +3,9 @@
 
 llove::StatementPtr llove::ScopeStatement::Wrap(StatementPtr ptr)
 {
+    if (dynamic_cast<ScopeStatement *>(ptr.get()))
+        return ptr;
+
     std::vector<StatementPtr> content;
     content.emplace_back(std::move(ptr));
     return std::make_unique<ScopeStatement>(std::move(content));

@@ -283,13 +283,13 @@ namespace llove
     class RangeExpression final : public Expression
     {
     public:
-        explicit RangeExpression(ExpressionPtr begin, ExpressionPtr end);
+        explicit RangeExpression(ExpressionPtr beg, ExpressionPtr end);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        ExpressionPtr m_Begin;
+        ExpressionPtr m_Beg;
         ExpressionPtr m_End;
     };
 

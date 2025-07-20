@@ -2,9 +2,17 @@
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
-llove::StructType::StructType(std::vector<ClassFieldReference> fields)
+llove::StructType::StructType(std::vector<Parameter> fields)
     : m_Fields(std::move(fields))
 {
+}
+
+bool llove::StructType::HasField(const std::string &name) const
+{
+    for (const auto &[_, field_name] : m_Fields)
+        if (field_name == name)
+            return true;
+    return false;
 }
 
 unsigned llove::StructType::GetFieldIndex(const std::string &name) const

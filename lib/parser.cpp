@@ -394,7 +394,7 @@ llove::TypePtr llove::Parser::ParseBaseType()
 {
     if (SkipIf(TokenType_Otr, "{"))
     {
-        std::vector<ClassFieldReference> fields;
+        std::vector<Parameter> fields;
 
         while (!At(TokenType_Otr, "}"))
         {
@@ -403,7 +403,8 @@ llove::TypePtr llove::Parser::ParseBaseType()
 
             fields.emplace_back(field, name);
 
-            Expect(TokenType_Otr, ",");
+            if (!At(TokenType_Otr, "}"))
+                Expect(TokenType_Otr, ",");
         }
         Expect(TokenType_Otr, "}");
 
@@ -417,6 +418,44 @@ llove::TypePtr llove::Parser::ParseBaseType()
         return m_Types.GetPointer(mutable_);
     }
 
+    if (SkipIf(TokenType_Otr, "("))
+    {
+        std::vector<Field> parameters;
+        auto vararg = false;
+
+        while (!At(TokenType_Otr, ")"))
+        {
+            if (SkipIf(TokenType_Opr, "..."))
+            {
+                vararg = true;
+                break;
+            }
+
+            ParseField(parameters.emplace_back(), false, false);
+
+            if (!At(TokenType_Otr, ")"))
+                Expect(TokenType_Otr, ",");
+        }
+        Expect(TokenType_Otr, ")");
+
+        auto has_self = false;
+        Field self;
+        if (SkipIf(TokenType_Otr, "["))
+        {
+            has_self = true;
+            ParseField(self, false, false);
+            Expect(TokenType_Otr, "]");
+        }
+
+        Field result;
+        if (SkipIf(TokenType_Opr, "=>"))
+            ParseField(result, false, false);
+
+        if (has_self)
+            return m_Types.GetFunction(std::move(parameters), vararg, std::move(result), std::move(self));
+        return m_Types.GetFunction(std::move(parameters), vararg, std::move(result));
+    }
+
     if (SkipIf(TokenType_Sym, "class"))
     {
         Expect(TokenType_Opr, "<");
@@ -424,6 +463,15 @@ llove::TypePtr llove::Parser::ParseBaseType()
         Expect(TokenType_Opr, ">");
 
         return m_Types.GetClass(std::move(name));
+    }
+
+    if (SkipIf(TokenType_Sym, "range"))
+    {
+        Expect(TokenType_Opr, "<");
+        auto entry = ParseType();
+        Expect(TokenType_Opr, ">");
+
+        return m_Types.GetRange(std::move(entry));
     }
 
     if (At(TokenType_Sym))
@@ -1023,10 +1071,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
 
         ArrayType::Ptr type;
         if (SkipIf(TokenType_Otr, ":"))
-        {
-            type = As<ArrayType>(ParseType());
-            Assert(type != nullptr, "expected array type");
-        }
+            type = m_Types.GetArray(ParseType(), values.size());
 
         return std::make_unique<ArrayExpression>(std::move(values), std::move(type));
     }

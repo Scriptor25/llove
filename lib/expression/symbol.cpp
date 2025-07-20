@@ -1,6 +1,7 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
+#include <llove/value.hpp>
 
 llove::SymbolExpression::SymbolExpression(std::string name)
     : m_Name(std::move(name))
@@ -9,11 +10,17 @@ llove::SymbolExpression::SymbolExpression(std::string name)
 
 llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect) const
 {
-    // TODO: if no symbol with name exists, return single function with name if exists
+    if (builder.HasValue(m_Name))
+        return builder.GetValue(m_Name);
 
-    auto value = builder.GetValue(m_Name);
-    Assert(value != nullptr, "undefined symbol name '{}'", m_Name);
-    return value;
+    const auto functions = builder.GetFunctions(m_Name);
+    if (functions.empty())
+        Error("undefined symbol name '{}'", m_Name);
+    if (functions.size() > 1)
+        Error("ambiguous function symbol name '{}'", m_Name);
+
+    const auto &function = functions.front();
+    return Value::CreateR(function.Type, function.Callee);
 }
 
 llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const

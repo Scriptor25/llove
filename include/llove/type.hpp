@@ -21,6 +21,7 @@ namespace llove
         TypeId_Pointer,
         TypeId_Array,
         TypeId_Struct,
+        TypeId_Range,
         TypeId_Class,
         TypeId_Function,
     };
@@ -157,10 +158,10 @@ namespace llove
     public:
         using Ptr = std::shared_ptr<StructType>;
 
-        explicit StructType(std::vector<ClassFieldReference> fields);
+        explicit StructType(std::vector<Parameter> fields);
 
+        [[nodiscard]] bool HasField(const std::string &name) const;
         [[nodiscard]] unsigned GetFieldIndex(const std::string &name) const;
-
         [[nodiscard]] unsigned GetFieldCount() const;
         [[nodiscard]] const Field &GetField(unsigned index) const;
 
@@ -175,7 +176,30 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        std::vector<ClassFieldReference> m_Fields;
+        std::vector<Parameter> m_Fields;
+    };
+
+    class RangeType final : public Type
+    {
+    public:
+        using Ptr = std::shared_ptr<RangeType>;
+
+        explicit RangeType(TypePtr entry);
+
+        [[nodiscard]] TypePtr GetEntry() const;
+
+        [[nodiscard]] TypeId GetId() const override;
+        llvm::StructType *Gen(Builder &builder) const override;
+
+        /**
+         * @return r<entry>
+         */
+        [[nodiscard]] std::string Mangle() const override;
+
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        TypePtr m_Entry;
     };
 
     class ClassType final : public Type
@@ -243,7 +267,8 @@ namespace llove
         [[nodiscard]] const Field &GetSelf() const;
 
         [[nodiscard]] TypeId GetId() const override;
-        llvm::FunctionType *Gen(Builder &builder) const override;
+        llvm::PointerType *Gen(Builder &builder) const override;
+        llvm::FunctionType *GenFunction(Builder &builder) const;
 
         /**
          * @return x<vararg?v><self?s><length>_<parameters...><result><self>
