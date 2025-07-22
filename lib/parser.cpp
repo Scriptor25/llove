@@ -665,7 +665,7 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
     if (SkipIf(TokenType_Otr, ";"))
         return std::make_unique<ClassGlobal>(std::move(type));
 
-    std::vector<ClassFieldReference> fields;
+    std::vector<ClassField> fields;
     std::vector<ClassFunction> functions;
 
     Expect(TokenType_Otr, "{");
@@ -684,10 +684,25 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
     return std::make_unique<ClassGlobal>(std::move(type), std::move(fields), std::move(functions));
 }
 
-void llove::Parser::ParseClassField(ClassFieldReference &field)
+void llove::Parser::ParseClassField(ClassField &field)
 {
     Expect(TokenType_Sym, "let");
     field.Name = ParseField(field.Info, true);
+    if (SkipIf(TokenType_Opr, "="))
+    {
+        field.Value = ParseExpression();
+    }
+    else if (SkipIf(TokenType_Otr, "("))
+    {
+        while (!At(TokenType_Otr, ")"))
+        {
+            field.Arguments.emplace_back(ParseExpression());
+
+            if (!At(TokenType_Otr, ")"))
+                Expect(TokenType_Otr, ",");
+        }
+        Expect(TokenType_Otr, ")");
+    }
     Expect(TokenType_Otr, ";");
 }
 
@@ -1028,10 +1043,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
 
         IntegerType::Ptr type;
         if (SkipIf(TokenType_Otr, ":"))
-        {
             type = As<IntegerType>(ParseType());
-            Assert(type != nullptr, "expected integer type");
-        }
 
         return std::make_unique<IntExpression>(value, std::move(type));
     }
@@ -1098,10 +1110,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
 
         StructType::Ptr type;
         if (SkipIf(TokenType_Otr, ":"))
-        {
             type = As<StructType>(ParseType());
-            Assert(type != nullptr, "expected struct type");
-        }
 
         return std::make_unique<StructExpression>(std::move(values), std::move(type));
     }

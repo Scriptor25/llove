@@ -1,6 +1,5 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
-#include <llove/error.hpp>
 #include <llove/value.hpp>
 
 llvm::Value *llove::Builder::CreateAlloca(const TypePtr &type, llvm::Function *parent)
@@ -146,22 +145,30 @@ llove::ValuePtr llove::Builder::CreatePointerElement(const ValuePtr &pointer, co
     return Value::CreateL(type->GetBase(), value, type->IsMutable());
 }
 
-llove::ValuePtr llove::Builder::CreateArrayElement(ValuePtr array, const ValuePtr &index)
+llove::ValuePtr llove::Builder::CreateArrayElement(const ValuePtr &array, const ValuePtr &index)
 {
     const auto type = As<ArrayType>(array->GetType());
+    const auto base_type = type->GetBase();
 
-    if (!array->IsReferenceable())
+    const auto index_value = index->Load(*this);
+
+    if (array->IsReferenceable())
     {
-        const auto pointer = CreateAlloca(type);
-        CreateStore(pointer, array);
-        array = Value::CreateL(type, pointer, false);
+        const auto element_pointer = m_Builder.CreateGEP(base_type->Gen(*this), array->GetPointer(), index_value);
+        return Value::CreateL(base_type, element_pointer, array->IsMutable());
     }
 
-    const auto value = m_Builder.CreateGEP(
-        type->GetBase()->Gen(*this),
-        array->GetPointer(),
-        index->Load(*this));
-    return Value::CreateL(type->GetBase(), value, array->IsMutable());
+    if (const auto const_index_value = llvm::dyn_cast<llvm::ConstantInt>(index_value))
+    {
+        const auto value = m_Builder.CreateExtractValue(array->Load(*this), const_index_value->getLimitedValue());
+        return Value::CreateR(base_type, value);
+    }
+
+    const auto pointer = CreateAlloca(type);
+    CreateStore(pointer, array);
+
+    const auto element_pointer = m_Builder.CreateGEP(base_type->Gen(*this), pointer, index_value);
+    return Value::CreateL(base_type, element_pointer, false);
 }
 
 llvm::Value *llove::Builder::CreateArrayGEP(const TypePtr &type, llvm::Value *pointer, const unsigned index)
@@ -413,4 +420,24 @@ void llove::Builder::CreateBranch(llvm::Value *condition, llvm::BasicBlock *then
 void llove::Builder::CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_)
 {
     m_Builder.CreateCondBr(condition->Load(*this), then, else_);
+}
+
+void llove::Builder::SetInsertPoint(llvm::BasicBlock *block)
+{
+    m_Builder.SetInsertPoint(block);
+}
+
+void llove::Builder::ClearInsertPoint()
+{
+    m_Builder.ClearInsertionPoint();
+}
+
+bool llove::Builder::NoTerminator() const
+{
+    return m_Builder.GetInsertBlock()->getTerminator() == nullptr;
+}
+
+llvm::BasicBlock *llove::Builder::CreateBlock(const std::string &name, llvm::Function *parent)
+{
+    return llvm::BasicBlock::Create(m_Context, name, parent);
 }

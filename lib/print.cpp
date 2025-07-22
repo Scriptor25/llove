@@ -13,11 +13,6 @@ std::ostream &llove::operator<<(std::ostream &stream, const Parameter &parameter
     return parameter.Print(stream);
 }
 
-std::ostream &llove::operator<<(std::ostream &stream, const TypePtr &ptr)
-{
-    return ptr->Print(stream);
-}
-
 std::ostream &llove::operator<<(std::ostream &stream, const GlobalPtr &ptr)
 {
     return ptr->Print(stream);

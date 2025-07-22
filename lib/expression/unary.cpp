@@ -19,7 +19,7 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
     {
         Assert(operand->IsReferenceable(), "cannot remove ownership from rvalue");
 
-        if (operand->GetType()->GetId() == TypeId_Class)
+        if (operand->GetType()->IsClass())
         {
             const auto class_type = As<ClassType>(operand->GetType());
             const auto functions = class_type->GetConstructors();

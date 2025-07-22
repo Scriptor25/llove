@@ -1,0 +1,52 @@
+help:
+  pattern: [ "--help", "-h", "-?", "?" ]
+  type: flag
+  description: "print this help text."
+version:
+  pattern: [ "--version", "-v" ]
+  type: flag
+  description: "print version text."
+format:
+  pattern: [ "--format", "-f" ]
+  type: value
+  filter: [ "asm", "obj" ]
+  description: "specify codegen output format."
+output:
+  pattern: [ "--output", "-o" ]
+  type: value
+  description: "specify output filename. use 'stdout' or leave empty for standard output stream."
+include:
+  pattern: [ "--include", "-i" ]
+  type: value
+  description: "specify include directories."
+print:
+  pattern: [ "--print", "-p" ]
+  type: array
+  filter: [ "llove", "llvm" ]
+  description: "specify print types."
+print-output:
+  pattern: [ "--print-output", "-po" ]
+  type: value
+  description: "specify print output destination. use 'stderr' or leave empty for standard error stream or 'stdout' for standard output stream."
+triple:
+  pattern: [ "--triple", "--target", "-t" ]
+  type: value
+  description: "specify target triple."
+cpu:
+  pattern: --cpu
+  type: value
+  description: "specify target cpu."
+features:
+  pattern: --features
+  type: array
+  description: "specify target features."
+relocation:
+  pattern: [ "--relocation", "-r" ]
+  type: value
+  filter: [ "static", "pic", "dynamic-no-pic", "ropi", "rwpi", "ropi-rwpi" ]
+  description: "specify codegen relocation type."
+level:
+  pattern: [ "--level", "-l" ]
+  type: value
+  filter: [ "0", "1", "2", "3", "s", "z" ]
+  description: "specify codegen optimization level."

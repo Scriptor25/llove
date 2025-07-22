@@ -9,7 +9,7 @@ llove::ClassGlobal::ClassGlobal(ClassType::Ptr type)
 
 llove::ClassGlobal::ClassGlobal(
     ClassType::Ptr type,
-    std::vector<ClassFieldReference> fields,
+    std::vector<ClassField> fields,
     std::vector<ClassFunction> functions)
     : m_Type(std::move(type)),
       m_Opaque(false),
@@ -24,8 +24,8 @@ void llove::ClassGlobal::Gen(Builder &builder) const
         return;
 
     std::vector<ClassFieldReference> class_fields;
-    for (auto &[info_, name_] : m_Fields)
-        class_fields.emplace_back(info_, name_);
+    for (auto &[info, name, value, arguments] : m_Fields)
+        class_fields.emplace_back(info, name);
     m_Type->SetFields(builder, std::move(class_fields));
 
     std::vector<ClassFunctionReference> class_functions;

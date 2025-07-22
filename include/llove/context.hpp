@@ -3,7 +3,7 @@
 #include <map>
 #include <string>
 #include <vector>
-#include <llove/class.hpp>
+#include <llove/error.hpp>
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
 #include <llove/type.hpp>
@@ -52,6 +52,8 @@ namespace llove
     template<typename T>
     typename T::Ptr As(TypePtr type)
     {
-        return std::dynamic_pointer_cast<T>(std::move(type));
+        auto ptr = std::dynamic_pointer_cast<T>(type);
+        Assert(ptr != nullptr, "illegal cast from id {} to id {} (type {}) ", type->GetId(), T::ID, type);
+        return ptr;
     }
 }

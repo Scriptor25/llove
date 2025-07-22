@@ -128,7 +128,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const
             }
         }
 
-        if (begin_type->GetId() == TypeId_Function)
+        if (begin_type->IsFunction())
         {
             const auto fn_type = As<FunctionType>(begin_type);
             Assert(!fn_type->IsVarArg(), "invalid vararg");
@@ -137,7 +137,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const
             begin = builder.CreateCall(fn_type, begin->Load(builder), {}, {});
         }
 
-        if (end_type->GetId() == TypeId_Function)
+        if (end_type->IsFunction())
         {
             const auto fn_type = As<FunctionType>(end_type);
             Assert(!fn_type->IsVarArg(), "invalid vararg");

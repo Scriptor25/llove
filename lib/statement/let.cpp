@@ -42,7 +42,7 @@ void llove::LetStatement::Gen(Builder &builder) const
     {
         const auto pointer = builder.CreateAlloca(type);
 
-        if (type && type->GetId() == TypeId_Class)
+        if (type && type->IsClass())
         {
             const Field self
             {

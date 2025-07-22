@@ -16,6 +16,11 @@ llove::TypeId llove::FloatType::GetId() const
     return TypeId_Float;
 }
 
+bool llove::FloatType::IsFloat() const
+{
+    return true;
+}
+
 llvm::Type *llove::FloatType::Gen(Builder &builder) const
 {
     return builder.GetFltType(m_Bits);

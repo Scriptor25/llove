@@ -140,6 +140,11 @@ llove::TypeId llove::ClassType::GetId() const
     return TypeId_Class;
 }
 
+bool llove::ClassType::IsClass() const
+{
+    return true;
+}
+
 llvm::StructType *llove::ClassType::Gen(Builder &builder) const
 {
     if (m_Opaque)

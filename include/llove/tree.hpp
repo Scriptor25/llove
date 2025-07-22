@@ -27,7 +27,7 @@ namespace llove
         explicit ClassGlobal(ClassType::Ptr type);
         explicit ClassGlobal(
             ClassType::Ptr type,
-            std::vector<ClassFieldReference> fields,
+            std::vector<ClassField> fields,
             std::vector<ClassFunction> functions);
 
         void Gen(Builder &builder) const override;
@@ -36,7 +36,7 @@ namespace llove
     private:
         ClassType::Ptr m_Type;
         bool m_Opaque;
-        std::vector<ClassFieldReference> m_Fields;
+        std::vector<ClassField> m_Fields;
         std::vector<ClassFunction> m_Functions;
     };
 

@@ -8,10 +8,12 @@
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
+#include <llvm/Passes/OptimizationLevel.h>
+#include <llvm/Target/TargetOptions.h>
 
 namespace llove
 {
-    struct GenericFunction final
+    struct FunctionInfo final
     {
         bool Interface = false;
 
@@ -33,11 +35,23 @@ namespace llove
         llvm::FunctionCallee Callee;
     };
 
-    struct Frame
+    struct Frame final
     {
         bool Valid = true;
         std::map<llvm::Value *, llvm::FunctionCallee> Destructors;
         std::map<std::string, ValuePtr> Values;
+    };
+
+    struct SealInfo final
+    {
+        llvm::CodeGenFileType Format;
+        std::string Filename;
+        std::string Triple;
+        std::string CPU;
+        std::vector<std::string> Features;
+        llvm::TargetOptions Options;
+        llvm::Reloc::Model Relocation;
+        llvm::OptimizationLevel Level;
     };
 
     class Builder
@@ -105,7 +119,7 @@ namespace llove
         ValuePtr CreatePointerDifference(const ValuePtr &begin, const ValuePtr &end);
 
         ValuePtr CreatePointerElement(const ValuePtr &pointer, const ValuePtr &index);
-        ValuePtr CreateArrayElement(ValuePtr array, const ValuePtr &index);
+        ValuePtr CreateArrayElement(const ValuePtr &array, const ValuePtr &index);
         llvm::Value *CreateArrayGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
         llvm::Value *CreateStructGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
 
@@ -201,10 +215,10 @@ namespace llove
 
         llvm::Value *CreateGlobalString(const std::string &value);
 
-        FunctionReference &GenFunction(const GenericFunction &fn);
+        FunctionReference &GenFunction(const FunctionInfo &fn);
         void GenParameters(llvm::Function *function, const std::vector<Parameter> &parameters, const Field &self = {});
 
-        void Seal(const std::string &filename);
+        void Seal(const SealInfo &info);
 
     private:
         Context &m_Types;
@@ -216,6 +230,7 @@ namespace llove
         std::vector<FunctionReference> m_Functions;
 
         llvm::Function *m_Parent;
+        ClassType::Ptr m_Class;
         Field m_Result;
         std::vector<Frame> m_Stack;
     };

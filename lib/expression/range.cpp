@@ -12,7 +12,7 @@ llove::RangeExpression::RangeExpression(ExpressionPtr beg, ExpressionPtr end)
 llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect) const
 {
     TypePtr type;
-    if (expect && expect->GetId() == TypeId_Range)
+    if (expect && expect->IsRange())
         type = As<RangeType>(std::move(expect))->GetEntry();
 
     auto beg = m_Beg->GenVal(builder, std::move(type));

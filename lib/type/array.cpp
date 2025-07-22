@@ -22,6 +22,11 @@ llove::TypeId llove::ArrayType::GetId() const
     return TypeId_Array;
 }
 
+bool llove::ArrayType::IsArray() const
+{
+    return true;
+}
+
 llvm::ArrayType *llove::ArrayType::Gen(Builder &builder) const
 {
     return builder.GetArrayType(m_Base->Gen(builder), m_Size);

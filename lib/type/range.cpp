@@ -16,6 +16,11 @@ llove::TypeId llove::RangeType::GetId() const
     return TypeId_Range;
 }
 
+bool llove::RangeType::IsRange() const
+{
+    return true;
+}
+
 llvm::StructType *llove::RangeType::Gen(Builder &builder) const
 {
     const auto entry = m_Entry->Gen(builder);

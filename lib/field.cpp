@@ -23,7 +23,7 @@ bool llove::Field::GetCastError(
         return false;
     }
 
-    if (dst.Type->GetId() == TypeId_Class && src.Reference)
+    if (dst.Type->IsClass() && src.Reference)
         return true;
     if (dst.Type != src.Type)
     {
@@ -52,7 +52,7 @@ bool llove::Field::IsCastable(
         return true;
     }
 
-    if (dst.Type->GetId() == TypeId_Class && src.Reference)
+    if (dst.Type->IsClass() && src.Reference)
         return false;
     if (dst.Type != src.Type)
         if (strict || !builder.IsCastable(src, dst))

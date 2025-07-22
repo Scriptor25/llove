@@ -34,7 +34,11 @@ namespace llove
     std::ostream &operator<<(std::ostream &stream, const Field &field);
     std::ostream &operator<<(std::ostream &stream, const Parameter &parameter);
 
-    std::ostream &operator<<(std::ostream &stream, const TypePtr &ptr);
+    template<typename T> requires std::is_base_of_v<Type, T>
+    std::ostream &operator<<(std::ostream &stream, const std::shared_ptr<T> &ptr)
+    {
+        return ptr->Print(stream);
+    }
 
     std::ostream &operator<<(std::ostream &stream, const GlobalPtr &ptr);
     std::ostream &operator<<(std::ostream &stream, const StatementPtr &ptr);

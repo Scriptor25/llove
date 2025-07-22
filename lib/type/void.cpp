@@ -6,6 +6,11 @@ llove::TypeId llove::VoidType::GetId() const
     return TypeId_Void;
 }
 
+bool llove::VoidType::IsVoid() const
+{
+    return true;
+}
+
 llvm::Type *llove::VoidType::Gen(Builder &builder) const
 {
     return builder.GetVoidType();

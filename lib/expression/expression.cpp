@@ -44,7 +44,7 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const
     const auto pointer_type = As<PointerType>(value->GetType());
     const auto is_function_pointer = pointer_type
                                      && !pointer_type->IsOpaque()
-                                     && pointer_type->GetBase()->GetId() == TypeId_Function;
+                                     && pointer_type->GetBase()->IsFunction();
 
     Assert(is_function_pointer, "not a function pointer");
 

@@ -29,6 +29,11 @@ llove::TypeId llove::PointerType::GetId() const
     return TypeId_Pointer;
 }
 
+bool llove::PointerType::IsPointer() const
+{
+    return true;
+}
+
 llvm::PointerType *llove::PointerType::Gen(Builder &builder) const
 {
     if (m_Base)

@@ -51,6 +51,11 @@ llove::TypeId llove::FunctionType::GetId() const
     return TypeId_Function;
 }
 
+bool llove::FunctionType::IsFunction() const
+{
+    return true;
+}
+
 llvm::PointerType *llove::FunctionType::Gen(Builder &builder) const
 {
     const auto function = GenFunction(builder);

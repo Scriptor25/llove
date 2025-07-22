@@ -1,6 +1,75 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 
+llvm::Function *llove::Builder::GetOrCreateFunction(
+    const std::string &name,
+    const FunctionType::Ptr &type,
+    const bool external)
+{
+    if (const auto function = m_Module.getFunction(name))
+        return function;
+    return llvm::Function::Create(
+        type->GenFunction(*this),
+        external ? llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage,
+        name,
+        m_Module);
+}
+
+llove::FunctionReference &llove::Builder::PushFunction(
+    const bool expose,
+    std::string name,
+    FunctionType::Ptr type,
+    llvm::Function *callee)
+{
+    for (auto &function : m_Functions)
+    {
+        if (function.Name != name)
+            continue;
+        if (function.Type != type)
+            continue;
+        Assert(expose == function.Expose && callee == function.Callee, "function prototype generation mismatch");
+        return function;
+    }
+
+    return m_Functions.emplace_back(
+        FunctionReference
+        {
+            .Expose = expose,
+            .Name = std::move(name),
+            .Type = std::move(type),
+            .Callee = callee,
+        }
+    );
+}
+
+std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name) const
+{
+    std::vector<FunctionReference> functions;
+    for (auto &function : m_Functions)
+        if (function.Name == name)
+            functions.emplace_back(function);
+    return functions;
+}
+
+std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name, const Field &self) const
+{
+    std::vector<FunctionReference> functions;
+    for (auto &function : m_Functions)
+    {
+        if (function.Name != name)
+            continue;
+        if (!function.Type->HasSelf())
+            continue;
+        auto &function_self = function.Type->GetSelf();
+        if (function_self.Type != self.Type)
+            continue;
+        if (function_self.Mutable && !self.Mutable)
+            continue;
+        functions.emplace_back(function);
+    }
+    return functions;
+}
+
 bool llove::Builder::HasFunction(
     const std::vector<FunctionReference> &functions,
     const std::vector<Field> &arguments,

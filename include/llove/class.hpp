@@ -24,6 +24,14 @@ namespace llove
         Field Result;
     };
 
+    struct ClassField final
+    {
+        Field Info;
+        std::string Name;
+        ExpressionPtr Value;
+        std::vector<ExpressionPtr> Arguments;
+    };
+
     struct ClassFunction final
     {
         bool Expose = false;
@@ -35,6 +43,6 @@ namespace llove
         StatementPtr Content;
     };
 
-    std::ostream &operator<<(std::ostream &stream, const ClassFieldReference &field);
+    std::ostream &operator<<(std::ostream &stream, const ClassField &field);
     std::ostream &operator<<(std::ostream &stream, const ClassFunction &function);
 }

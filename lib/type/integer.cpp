@@ -22,6 +22,11 @@ llove::TypeId llove::IntegerType::GetId() const
     return TypeId_Integer;
 }
 
+bool llove::IntegerType::IsInteger() const
+{
+    return true;
+}
+
 llvm::IntegerType *llove::IntegerType::Gen(Builder &builder) const
 {
     return builder.GetIntType(m_Bits);

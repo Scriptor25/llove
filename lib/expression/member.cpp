@@ -18,20 +18,25 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
     unsigned index;
     Field element;
 
-    if (const auto struct_type = As<StructType>(type))
+    switch (type->GetId())
     {
+    case TypeId_Struct:
+    {
+        const auto struct_type = As<StructType>(type);
         index = struct_type->GetFieldIndex(m_Member);
         element = struct_type->GetField(index);
+        break;
     }
-    else if (const auto class_type = As<ClassType>(type))
+    case TypeId_Class:
     {
+        const auto class_type = As<ClassType>(type);
         // TODO: check if field is accessible
         // TODO: if no field with name exists, return single function with name if exists and is accessible
         index = class_type->GetFieldIndex(m_Member);
         element = class_type->GetField(index);
+        break;
     }
-    else
-    {
+    default:
         Error("not implemented");
     }
 

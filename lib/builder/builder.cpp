@@ -50,204 +50,12 @@ std::string llove::Builder::Mangle(
     return mangled + result.Mangle();
 }
 
-void llove::Builder::SetInsertPoint(llvm::BasicBlock *block)
-{
-    m_Builder.SetInsertPoint(block);
-}
-
-void llove::Builder::ClearInsertPoint()
-{
-    m_Builder.ClearInsertionPoint();
-}
-
-bool llove::Builder::NoTerminator() const
-{
-    return m_Builder.GetInsertBlock()->getTerminator() == nullptr;
-}
-
-llvm::Function *llove::Builder::GetParent() const
-{
-    return m_Parent;
-}
-
-const llove::Field &llove::Builder::GetResult() const
-{
-    return m_Result;
-}
-
-llvm::Function *llove::Builder::GetOrCreateFunction(
-    const std::string &name,
-    const FunctionType::Ptr &type,
-    const bool external)
-{
-    if (const auto function = m_Module.getFunction(name))
-        return function;
-    return llvm::Function::Create(
-        type->GenFunction(*this),
-        external ? llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage,
-        name,
-        m_Module);
-}
-
-llvm::BasicBlock *llove::Builder::CreateBlock(const std::string &name, llvm::Function *parent)
-{
-    return llvm::BasicBlock::Create(m_Context, name, parent);
-}
-
-llove::FunctionReference &llove::Builder::PushFunction(
-    const bool expose,
-    std::string name,
-    FunctionType::Ptr type,
-    llvm::Function *callee)
-{
-    for (auto &function : m_Functions)
-    {
-        if (function.Name != name)
-            continue;
-        if (function.Type != type)
-            continue;
-        Assert(expose == function.Expose && callee == function.Callee, "function prototype generation mismatch");
-        return function;
-    }
-
-    return m_Functions.emplace_back(
-        FunctionReference
-        {
-            .Expose = expose,
-            .Name = std::move(name),
-            .Type = std::move(type),
-            .Callee = callee,
-        }
-    );
-}
-
-std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name) const
-{
-    std::vector<FunctionReference> functions;
-    for (auto &function : m_Functions)
-        if (function.Name == name)
-            functions.emplace_back(function);
-    return functions;
-}
-
-std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name, const Field &self) const
-{
-    std::vector<FunctionReference> functions;
-    for (auto &function : m_Functions)
-    {
-        if (function.Name != name)
-            continue;
-        if (!function.Type->HasSelf())
-            continue;
-        auto &function_self = function.Type->GetSelf();
-        if (function_self.Type != self.Type)
-            continue;
-        if (function_self.Mutable && !self.Mutable)
-            continue;
-        functions.emplace_back(function);
-    }
-    return functions;
-}
-
-void llove::Builder::PushFrame()
-{
-    if (m_Stack.empty())
-    {
-        m_Stack.emplace_back();
-        return;
-    }
-
-    m_Stack.emplace_back();
-}
-
-void llove::Builder::PopFrame()
-{
-    Assert(!m_Stack.empty(), "stack is empty");
-
-    CallDestructors({}, false);
-
-    m_Stack.pop_back();
-}
-
-void llove::Builder::SetValue(const std::string &name, ValuePtr value)
-{
-    Assert(!m_Stack.empty(), "stack is empty");
-
-    m_Stack.back().Values[name] = std::move(value);
-}
-
-bool llove::Builder::HasValue(const std::string &name) const
-{
-    Assert(!m_Stack.empty(), "stack is empty");
-
-    for (auto &[
-             valid,
-             destructors,
-             values
-         ] : std::ranges::reverse_view(m_Stack))
-        if (values.contains(name))
-            return true;
-    return false;
-}
-
-llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
-{
-    Assert(!m_Stack.empty(), "stack is empty");
-
-    for (auto &[
-             valid,
-             destructors,
-             values
-         ] : std::ranges::reverse_view(m_Stack))
-        if (values.contains(name))
-            return values.at(name);
-    return nullptr;
-}
-
-void llove::Builder::PushDestructor(llvm::Value *self, llvm::FunctionCallee callee)
-{
-    Assert(!m_Stack.empty(), "stack is empty");
-
-    m_Stack.back().Destructors[self] = std::move(callee);
-}
-
-void llove::Builder::CallDestructors(const std::set<llvm::Value *> &mask, const bool propagate)
-{
-    if (const auto block = m_Builder.GetInsertBlock(); !block || block->getTerminator())
-        return;
-
-    if (propagate)
-    {
-        for (auto &[
-                 valid,
-                 destructors,
-                 values
-             ] : std::ranges::reverse_view(m_Stack))
-            if (valid)
-                for (auto &[self, callee] : destructors)
-                    if (!mask.contains(self))
-                        CreateCall(callee, { self });
-    }
-    else
-    {
-        auto &[
-            valid,
-            destructors,
-            values
-        ] = m_Stack.back();
-        if (valid)
-            for (auto &[self, callee] : destructors)
-                if (!mask.contains(self))
-                    CreateCall(callee, { self });
-    }
-}
-
 llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
 {
     return m_Builder.CreateGlobalStringPtr(value, {}, 0, &m_Module);
 }
 
-llove::FunctionReference &llove::Builder::GenFunction(const GenericFunction &fn)
+llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
 {
     const auto mangled = Mangle(
         fn.Interface,
@@ -286,6 +94,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const GenericFunction &fn)
         return reference;
 
     m_Parent = function;
+    m_Class = fn.Class;
     m_Result = fn.Result;
 
     const auto entry_block = CreateBlock("entry", function);
@@ -300,7 +109,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const GenericFunction &fn)
     {
         if (block.getTerminator())
             continue;
-        if (fn.Result.Type->GetId() == TypeId_Void)
+        if (fn.Result.Type->IsVoid())
         {
             m_Builder.SetInsertPoint(&block);
             m_Builder.CreateRetVoid();
@@ -343,7 +152,7 @@ void llove::Builder::GenParameters(
         {
             storage = Value::CreateL(info_.Type, argument, info_.Mutable);
         }
-        else if (info_.Type->GetId() == TypeId_Class)
+        else if (info_.Type->IsClass())
         {
             const auto pointer = CreateAlloca(info_.Type, function);
             m_Builder.CreateStore(argument, pointer);

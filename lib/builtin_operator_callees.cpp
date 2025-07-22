@@ -129,8 +129,8 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
 
 static llove::ValuePtr operator_deref(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
 {
+    llove::Assert(operand->GetType()->IsPointer(), "cannot dereference non-pointer value");
     const auto type = llove::As<llove::PointerType>(operand->GetType());
-    llove::Assert(type != nullptr, "cannot dereference non-pointer value");
     return llove::Value::CreateL(type->GetBase(), operand->Load(builder), type->IsMutable());
 }
 

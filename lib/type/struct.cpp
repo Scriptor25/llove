@@ -38,6 +38,11 @@ llove::TypeId llove::StructType::GetId() const
     return TypeId_Struct;
 }
 
+bool llove::StructType::IsStruct() const
+{
+    return true;
+}
+
 llvm::StructType *llove::StructType::Gen(Builder &builder) const
 {
     std::vector<llvm::Type *> fields;

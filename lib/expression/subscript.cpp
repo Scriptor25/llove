@@ -12,7 +12,7 @@ llove::SubscriptExpression::SubscriptExpression(ExpressionPtr value, ExpressionP
 
 llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
-    auto value = m_Value->GenVal(builder, expect ? builder.GetTypes().GetPointer(expect, false) : nullptr);
+    const auto value = m_Value->GenVal(builder, expect ? builder.GetTypes().GetPointer(expect, false) : nullptr);
     const auto index = m_Index->GenVal(builder, nullptr);
 
     switch (value->GetType()->GetId())
@@ -20,7 +20,7 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
     case TypeId_Pointer:
         return builder.CreatePointerElement(value, index);
     case TypeId_Array:
-        return builder.CreateArrayElement(std::move(value), index);
+        return builder.CreateArrayElement(value, index);
     default:
         Error("subscript on non-pointer and non-array value of type {}", value->GetType());
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -30,9 +31,23 @@ namespace llove
     {
     public:
         virtual ~Type() = default;
+
         [[nodiscard]] virtual TypeId GetId() const = 0;
+
+        [[nodiscard]] virtual bool IsVoid() const;
+        [[nodiscard]] virtual bool IsInteger() const;
+        [[nodiscard]] virtual bool IsFloat() const;
+        [[nodiscard]] virtual bool IsPointer() const;
+        [[nodiscard]] virtual bool IsArray() const;
+        [[nodiscard]] virtual bool IsStruct() const;
+        [[nodiscard]] virtual bool IsRange() const;
+        [[nodiscard]] virtual bool IsClass() const;
+        [[nodiscard]] virtual bool IsFunction() const;
+
         virtual llvm::Type *Gen(Builder &builder) const = 0;
+
         [[nodiscard]] virtual std::string Mangle() const = 0;
+
         virtual std::ostream &Print(std::ostream &stream) const = 0;
     };
 
@@ -40,10 +55,12 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<VoidType>;
+        static constexpr auto ID = TypeId_Void;
 
         explicit VoidType() = default;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsVoid() const override;
         llvm::Type *Gen(Builder &builder) const override;
 
         /**
@@ -58,6 +75,7 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<IntegerType>;
+        static constexpr auto ID = TypeId_Integer;
 
         explicit IntegerType(bool sign, unsigned bits);
 
@@ -65,6 +83,7 @@ namespace llove
         [[nodiscard]] unsigned GetBits() const;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsInteger() const override;
         llvm::IntegerType *Gen(Builder &builder) const override;
 
         /**
@@ -83,12 +102,14 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<FloatType>;
+        static constexpr auto ID = TypeId_Float;
 
         explicit FloatType(unsigned bits);
 
         [[nodiscard]] unsigned GetBits() const;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsFloat() const override;
         llvm::Type *Gen(Builder &builder) const override;
 
         /**
@@ -106,6 +127,7 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<PointerType>;
+        static constexpr auto ID = TypeId_Pointer;
 
         explicit PointerType(TypePtr base, bool mutable_);
 
@@ -114,6 +136,7 @@ namespace llove
         [[nodiscard]] bool IsOpaque() const;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsPointer() const override;
         llvm::PointerType *Gen(Builder &builder) const override;
 
         /**
@@ -132,6 +155,7 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<ArrayType>;
+        static constexpr auto ID = TypeId_Array;
 
         explicit ArrayType(TypePtr base, unsigned size);
 
@@ -139,6 +163,7 @@ namespace llove
         [[nodiscard]] unsigned GetSize() const;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsArray() const override;
         llvm::ArrayType *Gen(Builder &builder) const override;
 
         /**
@@ -157,6 +182,7 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<StructType>;
+        static constexpr auto ID = TypeId_Struct;
 
         explicit StructType(std::vector<Parameter> fields);
 
@@ -166,6 +192,7 @@ namespace llove
         [[nodiscard]] const Field &GetField(unsigned index) const;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsStruct() const override;
         llvm::StructType *Gen(Builder &builder) const override;
 
         /**
@@ -183,12 +210,14 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<RangeType>;
+        static constexpr auto ID = TypeId_Range;
 
         explicit RangeType(TypePtr entry);
 
         [[nodiscard]] TypePtr GetEntry() const;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsRange() const override;
         llvm::StructType *Gen(Builder &builder) const override;
 
         /**
@@ -206,6 +235,7 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<ClassType>;
+        static constexpr auto ID = TypeId_Class;
 
         explicit ClassType(std::string name);
         explicit ClassType(
@@ -237,6 +267,7 @@ namespace llove
         void SetFunctions(std::vector<ClassFunctionReference> functions);
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsClass() const override;
         llvm::StructType *Gen(Builder &builder) const override;
 
         /**
@@ -257,6 +288,7 @@ namespace llove
     {
     public:
         using Ptr = std::shared_ptr<FunctionType>;
+        static constexpr auto ID = TypeId_Function;
 
         explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result);
         explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result, Field self);
@@ -269,6 +301,7 @@ namespace llove
         [[nodiscard]] const Field &GetSelf() const;
 
         [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsFunction() const override;
         llvm::PointerType *Gen(Builder &builder) const override;
         llvm::FunctionType *GenFunction(Builder &builder) const;
 
@@ -295,5 +328,26 @@ struct std::formatter<llove::TypePtr> : std::formatter<std::string_view>
         std::stringstream stream;
         ptr->Print(stream);
         return std::formatter<std::string_view>::format(stream.view(), ctx);
+    }
+};
+
+template<>
+struct std::formatter<llove::TypeId> : std::formatter<std::string_view>
+{
+    auto format(const llove::TypeId &id, std::format_context &ctx) const
+    {
+        static const std::map<llove::TypeId, const char *> map
+        {
+            { llove::TypeId_Void, "void" },
+            { llove::TypeId_Integer, "integer" },
+            { llove::TypeId_Float, "float" },
+            { llove::TypeId_Pointer, "pointer" },
+            { llove::TypeId_Array, "array" },
+            { llove::TypeId_Struct, "struct" },
+            { llove::TypeId_Range, "range" },
+            { llove::TypeId_Class, "class" },
+            { llove::TypeId_Function, "function" },
+        };
+        return std::formatter<std::string_view>::format(map.at(id), ctx);
     }
 };
