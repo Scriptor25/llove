@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/error.hpp>
 #include <llove/type.hpp>
 
 llove::FunctionType::FunctionType(std::vector<Field> parameters, const bool vararg, Field result)
@@ -43,6 +44,7 @@ bool llove::FunctionType::HasSelf() const
 
 const llove::Field &llove::FunctionType::GetSelf() const
 {
+    Assert(static_cast<bool>(m_Self), "function type does not have a self reference");
     return m_Self;
 }
 

@@ -28,7 +28,7 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const
     // TODO: if symbol with name exists, add to candidates
 
     auto candidates = builder.GetFunctions(m_Name);
-    Assert(!candidates.empty(), "undefined symbol name '{}'", m_Name);
+    Assert(!candidates.empty(), "undefined symbol '{}'", m_Name);
     return { .Candidates = std::move(candidates) };
 }
 

@@ -246,8 +246,8 @@ namespace llove
         [[nodiscard]] const std::string &GetName() const;
         [[nodiscard]] bool IsOpaque() const;
 
+        [[nodiscard]] bool HasField(const std::string &name) const;
         [[nodiscard]] unsigned GetFieldIndex(const std::string &name) const;
-
         [[nodiscard]] unsigned GetFieldCount() const;
         [[nodiscard]] const Field &GetField(unsigned index) const;
 
@@ -320,10 +320,10 @@ namespace llove
     };
 }
 
-template<>
-struct std::formatter<llove::TypePtr> : std::formatter<std::string_view>
+template<typename T> requires std::is_base_of_v<llove::Type, T>
+struct std::formatter<std::shared_ptr<T>> : std::formatter<std::string_view>
 {
-    auto format(const llove::TypePtr &ptr, std::format_context &ctx) const
+    auto format(const std::shared_ptr<T> &ptr, std::format_context &ctx) const
     {
         std::stringstream stream;
         ptr->Print(stream);

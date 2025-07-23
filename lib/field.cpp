@@ -78,7 +78,7 @@ llvm::Type *llove::Field::GenType(Builder &builder) const
     return Reference ? builder.GetPointerType(type) : type;
 }
 
-llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value) const
+llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, bool implicit_ownership) const
 {
     if (Reference)
     {
@@ -87,6 +87,10 @@ llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value) const
         Assert(!Mutable || value->IsMutable(), "reference mutability violation");
         return value->GetPointer();
     }
+
+    Assert(
+        implicit_ownership || !Type->IsClass() || !value->IsReferenceable(),
+        "implicitly removing ownership from lvalue");
 
     value = builder.CreateCast(std::move(value), Type);
     return value->Load(builder);

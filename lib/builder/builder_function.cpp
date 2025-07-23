@@ -27,7 +27,7 @@ llove::FunctionReference &llove::Builder::PushFunction(
             continue;
         if (function.Type != type)
             continue;
-        Assert(expose == function.Expose && callee == function.Callee, "function prototype generation mismatch");
+        Assert(expose == function.Expose && callee == function.Callee, "function prototype mismatch");
         return function;
     }
 
@@ -46,8 +46,13 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::st
 {
     std::vector<FunctionReference> functions;
     for (auto &function : m_Functions)
-        if (function.Name == name)
-            functions.emplace_back(function);
+    {
+        if (function.Name != name)
+            continue;
+        if (function.Type->HasSelf() && !function.Expose && function.Type->GetSelf().Type != m_Class)
+            continue;
+        functions.emplace_back(function);
+    }
     return functions;
 }
 
@@ -58,12 +63,16 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::st
     {
         if (function.Name != name)
             continue;
+        if (!function.Expose && function.Type->GetSelf().Type != m_Class)
+            continue;
         if (!function.Type->HasSelf())
             continue;
         auto &function_self = function.Type->GetSelf();
         if (function_self.Type != self.Type)
             continue;
         if (function_self.Mutable && !self.Mutable)
+            continue;
+        if (!function.Expose && m_Class != self.Type)
             continue;
         functions.emplace_back(function);
     }
@@ -113,7 +122,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
     const auto has_self = static_cast<bool>(self);
 
-    for (const auto &function : functions)
+    for (auto &function : functions)
     {
         const auto function_type = function.Type;
         if (function_type->HasSelf() != has_self)
@@ -160,7 +169,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     auto lowest_error = ~0u;
     std::optional<ClassFunctionReference> candidate;
 
-    for (const auto &function : functions)
+    for (auto &function : functions)
     {
         const Field class_
         {

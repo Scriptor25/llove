@@ -174,6 +174,7 @@ namespace llove
 
         llvm::Function *GetParent() const;
         const Field &GetResult() const;
+        ClassType::Ptr GetClass() const;
 
         llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);

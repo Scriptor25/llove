@@ -29,6 +29,14 @@ bool llove::ClassType::IsOpaque() const
     return m_Opaque;
 }
 
+bool llove::ClassType::HasField(const std::string &name) const
+{
+    for (auto &[_, fld_name] : m_Fields)
+        if (fld_name == name)
+            return true;
+    return false;
+}
+
 unsigned llove::ClassType::GetFieldIndex(const std::string &name) const
 {
     for (unsigned i = 0; i < m_Fields.size(); ++i)

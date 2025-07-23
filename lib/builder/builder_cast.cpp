@@ -132,7 +132,7 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
         break;
     }
 
-    Assert(result != nullptr, "cast from value of type {} to type {} not implemented", value->GetType(), dst);
+    Assert(result != nullptr, "cast from {} to {} not implemented", value->GetType(), dst);
     return Value::CreateR(std::move(dst), result);
 }
 

@@ -23,6 +23,7 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
     case TypeId_Struct:
     {
         const auto struct_type = As<StructType>(type);
+        Assert(struct_type->HasField(m_Member), "no field '{}' in type {}", m_Member, struct_type);
         index = struct_type->GetFieldIndex(m_Member);
         element = struct_type->GetField(index);
         break;
@@ -30,7 +31,12 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
     case TypeId_Class:
     {
         const auto class_type = As<ClassType>(type);
-        // TODO: check if field is accessible
+        Assert(class_type->HasField(m_Member), "no field '{}' in type {}", m_Member, class_type);
+        Assert(
+            class_type == builder.GetClass(),
+            "field '{}' in type {} is not accessible from current context",
+            m_Member,
+            class_type);
         // TODO: if no field with name exists, return single function with name if exists and is accessible
         index = class_type->GetFieldIndex(m_Member);
         element = class_type->GetField(index);

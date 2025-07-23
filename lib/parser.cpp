@@ -1094,7 +1094,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         while (!At(TokenType_Otr, "}"))
         {
             auto name = Expect(TokenType_Sym).Value;
-            Assert(!values.contains(name), "struct expression must not set field '{}' twice", name);
+            Assert(!values.contains(name), "struct expression already has field '{}'", name);
 
             ExpressionPtr value;
             if (SkipIf(TokenType_Otr, ":"))

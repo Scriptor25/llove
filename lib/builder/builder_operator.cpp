@@ -6,29 +6,35 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &operator
     auto lowest_error = ~0u;
     Operator<1>::Ptr candidate;
 
-    for (auto &function : m_Functions)
+    for (auto &[
+             expose,
+             name,
+             type,
+             callee
+         ] : m_Functions)
     {
-        if (function.Name != operator_)
+        if (name != operator_)
             continue;
 
-        auto function_type = function.Type;
-        if (suffix != function_type->IsVarArg())
+        if (suffix != type->IsVarArg())
             continue;
 
         auto error = 0u;
 
-        if (function_type->HasSelf())
+        if (type->HasSelf())
         {
-            if (function_type->GetParameterCount() != 0)
+            if (!expose && type->GetSelf().Type != m_Class)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetSelf(), operand, error, true))
+            if (type->GetParameterCount() != 0)
+                continue;
+            if (Field::GetCastError(*this, type->GetSelf(), operand, error, true))
                 continue;
         }
         else
         {
-            if (function_type->GetParameterCount() != 1)
+            if (type->GetParameterCount() != 1)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(0), operand, error, false))
+            if (Field::GetCastError(*this, type->GetParameter(0), operand, error, false))
                 continue;
         }
 
@@ -38,7 +44,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &operator
         Assert(error != lowest_error, "ambiguous candidates");
 
         lowest_error = error;
-        candidate = std::make_unique<UDOperator<1>>(function_type, function.Callee);
+        candidate = std::make_unique<UDOperator<1>>(type, callee);
     }
 
     if (candidate)
@@ -58,33 +64,39 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
     auto lowest_error = ~0u;
     Operator<2>::Ptr candidate;
 
-    for (auto &function : m_Functions)
+    for (auto &[
+             expose,
+             name,
+             type,
+             callee
+         ] : m_Functions)
     {
-        if (function.Name != operator_)
+        if (name != operator_)
             continue;
 
-        auto function_type = function.Type;
-        if (function_type->IsVarArg())
+        if (type->IsVarArg())
             continue;
 
         auto error = 0u;
 
-        if (function_type->HasSelf())
+        if (type->HasSelf())
         {
-            if (function_type->GetParameterCount() != 1)
+            if (!expose && type->GetSelf().Type != m_Class)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetSelf(), left, error, true))
+            if (type->GetParameterCount() != 1)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(0), right, error, false))
+            if (Field::GetCastError(*this, type->GetSelf(), left, error, true))
+                continue;
+            if (Field::GetCastError(*this, type->GetParameter(0), right, error, false))
                 continue;
         }
         else
         {
-            if (function_type->GetParameterCount() != 2)
+            if (type->GetParameterCount() != 2)
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(0), left, error, false))
+            if (Field::GetCastError(*this, type->GetParameter(0), left, error, false))
                 continue;
-            if (Field::GetCastError(*this, function_type->GetParameter(1), right, error, false))
+            if (Field::GetCastError(*this, type->GetParameter(1), right, error, false))
                 continue;
         }
 
@@ -94,7 +106,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
         Assert(error != lowest_error, "ambiguous candidates");
 
         lowest_error = error;
-        candidate = std::make_unique<UDOperator<2>>(function_type, function.Callee);
+        candidate = std::make_unique<UDOperator<2>>(type, callee);
     }
 
     if (candidate)

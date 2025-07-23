@@ -25,23 +25,31 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
             const auto functions = class_type->GetConstructors();
             const auto reference = builder.FindFunction(
                 functions,
-                std::vector{ operand->AsField() },
+                { { false, false, class_type } },
                 class_type,
-                Field{ true, true, class_type });
+                { true, true, class_type });
 
             if (reference.has_value())
             {
                 const auto pointer = builder.CreateAlloca(class_type);
                 const auto self = Value::CreateL(class_type, pointer, true);
 
-                builder.CreateCall(reference->Type, reference->Callee, std::vector{ std::move(operand) }, self);
+                if (operand->IsReferenceable())
+                    operand = Value::CreateR(operand->GetType(), operand->Load(builder));
+
+                builder.CreateCall(
+                    reference->Type,
+                    reference->Callee,
+                    { std::move(operand) },
+                    self);
 
                 operand = self;
             }
         }
 
-        const auto value = operand->Load(builder);
-        return Value::CreateR(operand->GetType(), value);
+        if (operand->IsReferenceable())
+            operand = Value::CreateR(operand->GetType(), operand->Load(builder));
+        return operand;
     }
 
     if (const auto operator_ = builder.FindOperator(m_Operator, operand->AsField(), m_Suffix))

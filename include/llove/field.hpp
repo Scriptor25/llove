@@ -34,7 +34,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
         llvm::Type *GenType(Builder &builder) const;
-        llvm::Value *GenCast(Builder &builder, ValuePtr value) const;
+        llvm::Value *GenCast(Builder &builder, ValuePtr value, bool implicit_ownership = false) const;
 
         [[nodiscard]] std::string Mangle() const;
 

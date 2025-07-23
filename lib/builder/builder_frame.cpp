@@ -12,6 +12,11 @@ const llove::Field &llove::Builder::GetResult() const
     return m_Result;
 }
 
+llove::ClassType::Ptr llove::Builder::GetClass() const
+{
+    return m_Class;
+}
+
 void llove::Builder::PushFrame()
 {
     if (m_Stack.empty())

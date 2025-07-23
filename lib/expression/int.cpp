@@ -14,9 +14,12 @@ llove::ValuePtr llove::IntExpression::GenVal(Builder &builder, const TypePtr exp
 {
     auto type = m_Type;
     if (!type)
-        type = As<IntegerType>(expect);
-    if (!type)
-        type = builder.GetTypes().GetInteger(false, 64);
+    {
+        if (expect && expect->IsInteger())
+            type = As<IntegerType>(expect);
+        else
+            type = builder.GetTypes().GetInteger(false, 64);
+    }
     const auto value = llvm::ConstantInt::get(type->Gen(builder), m_Value, type->IsSigned());
     return Value::CreateR(std::move(type), value);
 }
