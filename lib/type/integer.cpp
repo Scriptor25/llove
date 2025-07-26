@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/type.hpp>
 
 llove::IntegerType::IntegerType(const bool sign, const unsigned bits)
@@ -27,9 +28,19 @@ bool llove::IntegerType::IsInteger() const
     return true;
 }
 
+unsigned llove::IntegerType::Size(Builder &builder) const
+{
+    return m_Bits >> 3;
+}
+
 llvm::IntegerType *llove::IntegerType::Gen(Builder &builder) const
 {
     return builder.GetIntType(m_Bits);
+}
+
+llove::TypePtr llove::IntegerType::Reflect(Context &types) const
+{
+    return types.GetInteger(m_Sign, m_Bits);
 }
 
 std::string llove::IntegerType::Mangle() const

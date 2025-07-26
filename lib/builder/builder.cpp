@@ -93,6 +93,8 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     if (!fn.Content)
         return reference;
 
+    Assert(function->empty(), "function is already defined");
+
     m_Parent = function;
     m_Class = fn.Class;
     m_Result = fn.Result;

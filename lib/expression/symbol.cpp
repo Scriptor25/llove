@@ -32,6 +32,11 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const
     return { .Candidates = std::move(candidates) };
 }
 
+llove::StatementPtr llove::SymbolExpression::Reflect(Context &types) const
+{
+    return std::make_unique<SymbolExpression>(m_Name);
+}
+
 std::ostream &llove::SymbolExpression::Print(std::ostream &stream) const
 {
     return stream << m_Name;

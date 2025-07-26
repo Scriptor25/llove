@@ -156,7 +156,7 @@ static llove::ValuePtr operator_add(llove::Builder &builder, llove::ValuePtr lef
     if (left_type->GetId() == llove::TypeId_Integer && right_type->GetId() == llove::TypeId_Pointer)
         return builder.CreatePointerOffset(right, left);
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -186,7 +186,7 @@ static llove::ValuePtr operator_sub(llove::Builder &builder, llove::ValuePtr lef
     if (left_type->GetId() == llove::TypeId_Pointer && right_type->GetId() == llove::TypeId_Pointer)
         return builder.CreatePointerDifference(left, right);
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -208,7 +208,7 @@ static llove::ValuePtr operator_mul(llove::Builder &builder, llove::ValuePtr lef
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -230,7 +230,7 @@ static llove::ValuePtr operator_div(llove::Builder &builder, llove::ValuePtr lef
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -252,7 +252,7 @@ static llove::ValuePtr operator_rem(llove::Builder &builder, llove::ValuePtr lef
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -274,7 +274,7 @@ static llove::ValuePtr operator_and(llove::Builder &builder, llove::ValuePtr lef
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -294,7 +294,7 @@ static llove::ValuePtr operator_or(llove::Builder &builder, llove::ValuePtr left
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -314,7 +314,7 @@ static llove::ValuePtr operator_xor(llove::Builder &builder, llove::ValuePtr lef
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -334,7 +334,7 @@ static llove::ValuePtr operator_eq(llove::Builder &builder, llove::ValuePtr left
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -358,7 +358,7 @@ static llove::ValuePtr operator_ne(llove::Builder &builder, llove::ValuePtr left
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -382,7 +382,7 @@ static llove::ValuePtr operator_lt(llove::Builder &builder, llove::ValuePtr left
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -404,7 +404,7 @@ static llove::ValuePtr operator_gt(llove::Builder &builder, llove::ValuePtr left
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -426,7 +426,7 @@ static llove::ValuePtr operator_le(llove::Builder &builder, llove::ValuePtr left
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 
@@ -448,7 +448,7 @@ static llove::ValuePtr operator_ge(llove::Builder &builder, llove::ValuePtr left
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    const auto type = builder.GetTypes().DetermineHigherOrder(left_type, right_type);
+    const auto type = builder.GetTypes().GetMax(left_type, right_type);
     left = builder.CreateCast(std::move(left), type);
     right = builder.CreateCast(std::move(right), type);
 

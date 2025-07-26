@@ -36,10 +36,13 @@ namespace llove
         llvm::Type *GenType(Builder &builder) const;
         llvm::Value *GenCast(Builder &builder, ValuePtr value, bool implicit_ownership = false) const;
 
+        [[nodiscard]] unsigned Size(Builder &builder) const;
         [[nodiscard]] std::string Mangle() const;
 
         bool operator==(const Field &other) const;
         explicit operator bool() const;
+
+        void Reflect(Context &types, Field& field) const;
 
         bool Mutable = false;
         bool Reference = false;

@@ -14,6 +14,11 @@ llove::ValuePtr llove::StringExpression::GenVal(Builder &builder, TypePtr expect
     return Value::CreateR(builder.GetTypes().GetPointer(builder.GetTypes().GetInteger(true, 8), false), value);
 }
 
+llove::StatementPtr llove::StringExpression::Reflect(Context &types) const
+{
+    return std::make_unique<StringExpression>(m_Value);
+}
+
 std::ostream &llove::StringExpression::Print(std::ostream &stream) const
 {
     std::string value;

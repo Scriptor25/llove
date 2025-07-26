@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/tree.hpp>
 
 llove::ClassGlobal::ClassGlobal(ClassType::Ptr type)
@@ -32,8 +33,8 @@ void llove::ClassGlobal::Gen(Builder &builder) const
     for (auto &function : m_Functions)
     {
         std::vector<Field> parameters;
-        for (const auto &[info_, name_] : function.Parameters)
-            parameters.emplace_back(info_);
+        for (const auto &[info, name] : function.Parameters)
+            parameters.emplace_back(info);
         class_functions.emplace_back(
             function.Expose,
             function.Mutable,
@@ -42,49 +43,48 @@ void llove::ClassGlobal::Gen(Builder &builder) const
             function.VarArg,
             function.Result);
     }
-
     m_Type->SetFunctions(std::move(class_functions));
 
     for (auto &[
-             expose_,
+             expose,
              mutable_,
-             name_,
-             parameters_,
-             vararg_,
-             result_,
-             content_
+             name,
+             parameters,
+             vararg,
+             result,
+             content
          ] : m_Functions)
         builder.GenFunction(
             {
                 .Class = m_Type,
                 .Mutable = mutable_,
-                .Expose = expose_,
-                .Name = name_,
-                .Parameters = parameters_,
-                .VarArg = vararg_,
-                .Result = result_,
+                .Expose = expose,
+                .Name = name,
+                .Parameters = parameters,
+                .VarArg = vararg,
+                .Result = result,
             }
         );
 
     for (auto &[
-             expose_,
+             expose,
              mutable_,
-             name_,
-             parameters_,
-             vararg_,
-             result_,
-             content_
+             name,
+             parameters,
+             vararg,
+             result,
+             content
          ] : m_Functions)
         builder.GenFunction(
             {
                 .Class = m_Type,
                 .Mutable = mutable_,
-                .Expose = expose_,
-                .Name = name_,
-                .Parameters = parameters_,
-                .VarArg = vararg_,
-                .Result = result_,
-                .Content = content_.get(),
+                .Expose = expose,
+                .Name = name,
+                .Parameters = parameters,
+                .VarArg = vararg,
+                .Result = result,
+                .Content = content.get(),
             }
         );
 }

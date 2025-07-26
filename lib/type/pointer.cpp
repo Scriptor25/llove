@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
@@ -34,6 +35,11 @@ bool llove::PointerType::IsPointer() const
     return true;
 }
 
+unsigned llove::PointerType::Size(Builder &builder) const
+{
+    return 8;
+}
+
 llvm::PointerType *llove::PointerType::Gen(Builder &builder) const
 {
     if (m_Base)
@@ -41,9 +47,21 @@ llvm::PointerType *llove::PointerType::Gen(Builder &builder) const
     return builder.GetPointerType();
 }
 
+llove::TypePtr llove::PointerType::Reflect(Context &types) const
+{
+    TypePtr base;
+
+    if (m_Base)
+        m_Base->Reflect(types, base);
+
+    return types.GetPointer(std::move(base), m_Mutable);
+}
+
 std::string llove::PointerType::Mangle() const
 {
-    return 'p' + std::string(m_Mutable ? "m" : "i") + m_Base->Mangle();
+    if (m_Base)
+        return 'p' + std::string(m_Mutable ? "m" : "i") + m_Base->Mangle();
+    return 'p' + std::string(m_Mutable ? "m" : "i") + '_';
 }
 
 std::ostream &llove::PointerType::Print(std::ostream &stream) const

@@ -1,0 +1,91 @@
+interface printf(format: i8[], ...): i32;
+interface malloc(count: u64): [mut];
+
+class test {
+
+    # create
+    expose mut create() {
+        printf("create empty %p\r\n", &self);
+    }
+
+    # move
+    expose mut create(other: test) {
+        printf("create move %p (%p)\r\n", &self, &other);
+    }
+
+    expose mut =(other: test): mut &test {
+        printf("move %p (%p)\r\n", &self, &other);
+        yield self;
+    }
+
+    # copy
+    expose mut create(&other: test) {
+        printf("create copy %p (%p)\r\n", &self, &other);
+    }
+
+    expose mut =(&other: test): mut &test {
+        printf("copy %p (%p)\r\n", &self, &other);
+        yield self;
+    }
+
+    # delete
+    expose mut delete() {
+        printf("delete %p\r\n", &self);
+    }
+
+    let data: i32 = 0;
+}
+
+class<T> unique {
+
+    expose mut create(ptr: T[mut]) {
+        self.ptr = ptr;
+    }
+
+    expose mut create(val: T) {
+        self.ptr = malloc(sizeof<T>);
+        *self.ptr = $val;
+    }
+
+    expose mut create(&val: T) {
+        self.ptr = malloc(sizeof<T>);
+        *self.ptr = val;
+    }
+
+    expose mut delete() {
+        free(self.ptr);
+        self.ptr = null;
+    }
+
+    expose *(): mut &T {
+        yield *self.ptr;
+    }
+
+    expose !(): u1 {
+        yield !self.ptr;
+    }
+
+    expose get(): T[mut] {
+        yield self.ptr;
+    }
+
+    let mut ptr: T[mut];
+}
+
+interface main(): i32 {
+
+    let mut a: test;
+    let mut b: test;
+    let mut c: test;
+
+    c = a;
+    a = $b;
+    b = $c;
+
+    let u: class<test> unique;
+
+    *u = $b;
+    printf("%p\r\n", u.get());
+
+    yield 0;
+}

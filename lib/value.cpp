@@ -5,11 +5,15 @@
 
 llove::ValuePtr llove::Value::CreateR(TypePtr type, llvm::Value *value)
 {
+    Assert(type != nullptr, "type must not be null");
+    Assert(value != nullptr, "value must not be null");
     return std::make_shared<RValue>(type, value);
 }
 
 llove::ValuePtr llove::Value::CreateL(TypePtr type, llvm::Value *pointer, bool mutable_)
 {
+    Assert(type != nullptr, "type must not be null");
+    Assert(pointer != nullptr, "pointer must not be null");
     return std::make_shared<LValue>(type, pointer, mutable_);
 }
 

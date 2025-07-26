@@ -24,6 +24,15 @@ void llove::ScopeStatement::Gen(Builder &builder) const
     builder.PopFrame();
 }
 
+llove::StatementPtr llove::ScopeStatement::Reflect(Context &types) const
+{
+    std::vector<StatementPtr> content(m_Content.size());
+    for (unsigned i = 0; i < m_Content.size(); ++i)
+        m_Content.at(i)->Reflect(types, content.at(i));
+
+    return std::make_unique<ScopeStatement>(std::move(content));
+}
+
 std::ostream &llove::ScopeStatement::Print(std::ostream &stream) const
 {
     const auto cur = std::string(PrintDepth += 2, ' ');

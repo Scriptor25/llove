@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/type.hpp>
 
 llove::ArrayType::ArrayType(TypePtr base, const unsigned size)
@@ -27,9 +28,24 @@ bool llove::ArrayType::IsArray() const
     return true;
 }
 
+unsigned llove::ArrayType::Size(Builder &builder) const
+{
+    return m_Size * m_Base->Size(builder);
+}
+
 llvm::ArrayType *llove::ArrayType::Gen(Builder &builder) const
 {
     return builder.GetArrayType(m_Base->Gen(builder), m_Size);
+}
+
+llove::TypePtr llove::ArrayType::Reflect(Context &types) const
+{
+    TypePtr base;
+
+    if (m_Base)
+        m_Base->Reflect(types, base);
+
+    return types.GetArray(std::move(base), m_Size);
 }
 
 std::string llove::ArrayType::Mangle() const

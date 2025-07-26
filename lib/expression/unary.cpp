@@ -62,6 +62,16 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
         m_Suffix ? m_Operator : std::string{});
 }
 
+llove::StatementPtr llove::UnaryExpression::Reflect(Context &types) const
+{
+    ExpressionPtr operand;
+
+    if (m_Operand)
+        m_Operand->Reflect(types, operand);
+
+    return std::make_unique<UnaryExpression>(m_Operator, std::move(operand), m_Suffix);
+}
+
 std::ostream &llove::UnaryExpression::Print(std::ostream &stream) const
 {
     if (m_Suffix)

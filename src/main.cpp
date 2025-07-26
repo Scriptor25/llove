@@ -234,8 +234,8 @@ int main(const int argc, const char *const *argv)
         return 1;
 
     llove::Context types;
-    llove::Parser parser(types, stream);
     llove::Builder builder(types);
+    llove::Parser parser(types, builder, stream);
 
     auto print_stream = std::unique_ptr<std::ostream>(&std::cerr);
 

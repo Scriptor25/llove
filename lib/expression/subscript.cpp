@@ -26,6 +26,18 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
     }
 }
 
+llove::StatementPtr llove::SubscriptExpression::Reflect(Context &types) const
+{
+    ExpressionPtr value, index;
+
+    if (m_Value)
+        m_Value->Reflect(types, value);
+    if (m_Index)
+        m_Index->Reflect(types, index);
+
+    return std::make_unique<SubscriptExpression>(std::move(value), std::move(index));
+}
+
 std::ostream &llove::SubscriptExpression::Print(std::ostream &stream) const
 {
     return stream << m_Value << '[' << m_Index << ']';

@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
@@ -153,6 +154,14 @@ bool llove::ClassType::IsClass() const
     return true;
 }
 
+unsigned llove::ClassType::Size(Builder &builder) const
+{
+    auto size = 0u;
+    for (auto &[info, name] : m_Fields)
+        size += info.Size(builder);
+    return size;
+}
+
 llvm::StructType *llove::ClassType::Gen(Builder &builder) const
 {
     if (m_Opaque)
@@ -166,6 +175,12 @@ llvm::StructType *llove::ClassType::Gen(Builder &builder) const
     return builder.GetOrCreateNamedStructType(m_Name, elements, true);
 }
 
+llove::TypePtr llove::ClassType::Reflect(Context &types) const
+{
+    // TODO: no reflection?
+    return types.GetClass(m_Name);
+}
+
 std::string llove::ClassType::Mangle() const
 {
     return 'c' + std::to_string(m_Name.size()) + '_' + m_Name;
@@ -173,5 +188,5 @@ std::string llove::ClassType::Mangle() const
 
 std::ostream &llove::ClassType::Print(std::ostream &stream) const
 {
-    return stream << "class<" << m_Name << '>';
+    return stream << "class " << m_Name;
 }

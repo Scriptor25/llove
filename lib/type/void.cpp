@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/type.hpp>
 
 llove::TypeId llove::VoidType::GetId() const
@@ -11,9 +12,19 @@ bool llove::VoidType::IsVoid() const
     return true;
 }
 
+unsigned llove::VoidType::Size(Builder &builder) const
+{
+    return 0;
+}
+
 llvm::Type *llove::VoidType::Gen(Builder &builder) const
 {
     return builder.GetVoidType();
+}
+
+llove::TypePtr llove::VoidType::Reflect(Context &types) const
+{
+    return types.GetVoid();
 }
 
 std::string llove::VoidType::Mangle() const

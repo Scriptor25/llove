@@ -1,39 +1,37 @@
+#include <ranges>
+#include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/error.hpp>
+#include <llove/tree.hpp>
 
 llove::TypePtr llove::Context::Get(const std::string &id) const
 {
-    if (m_TypeMap.contains(id))
-        return m_TypeMap.at(id);
+    for (auto &template_ : std::ranges::reverse_view(m_TemplateTypes))
+        if (template_.contains(id))
+            return template_.at(id);
+    if (m_Named.contains(id))
+        return m_Named.at(id);
     return nullptr;
 }
 
 void llove::Context::Set(const std::string &id, TypePtr type)
 {
-    m_TypeMap[id] = std::move(type);
+    m_Named[id] = std::move(type);
 }
 
 llove::VoidType::Ptr llove::Context::GetVoid()
 {
-    if (m_Void)
-        return m_Void;
-    return m_Void = std::make_shared<VoidType>();
+    return GetOrCreate<VoidType>();
 }
 
 llove::IntegerType::Ptr llove::Context::GetInteger(bool sign, unsigned bits)
 {
-    if (auto &type = m_Integer[sign][bits])
-        return type;
-    else
-        return type = std::make_shared<IntegerType>(sign, bits);
+    return GetOrCreate<IntegerType>(sign, bits);
 }
 
 llove::FloatType::Ptr llove::Context::GetFloat(unsigned bits)
 {
-    if (auto &type = m_Float[bits])
-        return type;
-    else
-        return type = std::make_shared<FloatType>(bits);
+    return GetOrCreate<FloatType>(bits);
 }
 
 llove::PointerType::Ptr llove::Context::GetPointer(const bool mutable_)
@@ -43,58 +41,32 @@ llove::PointerType::Ptr llove::Context::GetPointer(const bool mutable_)
 
 llove::PointerType::Ptr llove::Context::GetPointer(TypePtr base, bool mutable_)
 {
-    if (auto &type = m_Pointer[base][mutable_])
-        return type;
-    else
-        return type = std::make_shared<PointerType>(std::move(base), mutable_);
+    return GetOrCreate<PointerType>(std::move(base), mutable_);
 }
 
 llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, unsigned size)
 {
-    if (auto &type = m_Array[base][size])
-        return type;
-    else
-        return type = std::make_shared<ArrayType>(std::move(base), size);
+    return GetOrCreate<ArrayType>(std::move(base), size);
 }
 
 llove::StructType::Ptr llove::Context::GetStruct(std::vector<Parameter> fields)
 {
-    std::vector<Field> struct_fields;
-    for (const auto &[info_, name_] : fields)
-        struct_fields.emplace_back(info_);
-    const auto hash = GetFieldHash(struct_fields);
-
-    if (auto &type = m_Struct[hash])
-        return type;
-    else
-        return type = std::make_shared<StructType>(std::move(fields));
+    return GetOrCreate<StructType>(std::move(fields));
 }
 
 llove::RangeType::Ptr llove::Context::GetRange(TypePtr entry)
 {
-    if (auto &type = m_Range[entry])
-        return type;
-    else
-        return type = std::make_shared<RangeType>(std::move(entry));
+    return GetOrCreate<RangeType>(std::move(entry));
 }
 
 llove::ClassType::Ptr llove::Context::GetClass(std::string name)
 {
-    if (auto &type = m_Class[name])
-        return type;
-    else
-        return type = std::make_shared<ClassType>(std::move(name));
+    return GetOrCreate<ClassType>(std::move(name));
 }
 
 llove::FunctionType::Ptr llove::Context::GetFunction(std::vector<Field> parameters, bool vararg, Field result)
 {
-    const auto parameter_hash = GetFieldHash(parameters);
-    const auto result_hash = GetFieldHash({ result });
-
-    if (auto &type = m_Function[parameter_hash][vararg][result_hash][{}])
-        return type;
-    else
-        return type = std::make_shared<FunctionType>(std::move(parameters), vararg, std::move(result), Field{});
+    return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result), Field{});
 }
 
 llove::FunctionType::Ptr llove::Context::GetFunction(
@@ -103,22 +75,10 @@ llove::FunctionType::Ptr llove::Context::GetFunction(
     Field result,
     Field self)
 {
-    const auto parameter_hash = GetFieldHash(parameters);
-    const auto result_hash = GetFieldHash({ result });
-    const auto self_hash = GetFieldHash({ self });
-
-    if (auto &type = m_Function[parameter_hash][vararg][result_hash][self_hash])
-        return type;
-    else
-        return type = std::make_shared<FunctionType>(std::move(parameters), vararg, std::move(result), std::move(self));
+    return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result), std::move(self));
 }
 
-bool llove::Context::HasClass(const std::string &name) const
-{
-    return m_Class.contains(name);
-}
-
-llove::TypePtr llove::Context::DetermineHigherOrder(const TypePtr &left, const TypePtr &right)
+llove::TypePtr llove::Context::GetMax(const TypePtr &left, const TypePtr &right)
 {
     if (left == right)
         return left;
@@ -167,4 +127,132 @@ llove::TypePtr llove::Context::DetermineHigherOrder(const TypePtr &left, const T
     }
 
     Error("cannot determine higher order of types {} and {}", left, right);
+}
+
+llove::ClassTemplate &llove::Context::PushTemplate(
+    std::string name,
+    std::vector<std::pair<std::string, TemplateType::Ptr>> parameters)
+{
+    auto &template_ = m_TemplateTypes.emplace_back();
+    for (auto &[fst, snd] : parameters)
+        template_.emplace(fst, snd);
+
+    auto &ref = m_ClassTemplates[name];
+
+    return ref = {
+               .Name = std::move(name),
+               .Parameters = std::move(parameters),
+           };
+}
+
+void llove::Context::PopTemplate()
+{
+    m_TemplateTypes.pop_back();
+}
+
+void llove::Context::EmplaceTemplate(
+    std::string name,
+    std::vector<std::pair<std::string, TemplateType::Ptr>> parameters)
+{
+    auto &ref = m_ClassTemplates[name];
+
+    ref = {
+        .Name = std::move(name),
+        .Parameters = std::move(parameters),
+    };
+}
+
+llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
+    Builder &builder,
+    std::string name,
+    const std::vector<TypePtr> &arguments)
+{
+    Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
+
+    const auto &[
+        template_name,
+        template_parameters,
+        template_fields,
+        template_functions
+    ] = m_ClassTemplates.at(name);
+    Assert(template_parameters.size() == arguments.size(), "wrong number of type arguments");
+
+    std::vector<ClassField> reflection_fields;
+    for (auto &field : template_fields)
+        field.Reflect(*this, reflection_fields.emplace_back());
+
+    std::vector<ClassFunction> reflection_functions;
+    for (auto &function : template_functions)
+        function.Reflect(*this, reflection_functions.emplace_back());
+
+    name = template_name + '.';
+    for (unsigned i = 0; i < arguments.size(); ++i)
+        name += arguments.at(i)->Mangle();
+    auto class_type = GetClass(std::move(name));
+
+    std::vector<ClassFieldReference> fields;
+    for (auto &field : reflection_fields)
+        fields.emplace_back(field.Info, field.Name);
+    class_type->SetFields(builder, std::move(fields));
+
+    std::vector<ClassFunctionReference> functions;
+    for (auto &function : reflection_functions)
+    {
+        std::vector<Field> parameters;
+        for (auto &[info, _] : function.Parameters)
+            parameters.emplace_back(info);
+        functions.emplace_back(
+            function.Expose,
+            function.Mutable,
+            function.Name,
+            parameters,
+            function.VarArg,
+            function.Result);
+    }
+    class_type->SetFunctions(std::move(functions));
+
+    for (auto &[
+             expose,
+             mutable_,
+             name,
+             parameters,
+             vararg,
+             result,
+             content
+         ] : reflection_functions)
+        builder.GenFunction(
+            {
+                .Class = class_type,
+                .Mutable = mutable_,
+                .Expose = expose,
+                .Name = name,
+                .Parameters = parameters,
+                .VarArg = vararg,
+                .Result = result,
+            }
+        );
+
+    for (auto &[
+             expose,
+             mutable_,
+             name,
+             parameters,
+             vararg,
+             result,
+             content
+         ] : reflection_functions)
+        builder.GenFunction(
+            {
+                .Class = class_type,
+                .Mutable = mutable_,
+                .Expose = expose,
+                .Name = name,
+                .Parameters = parameters,
+                .VarArg = vararg,
+                .Result = result,
+                .Content = content.get(),
+            }
+        );
+
+    return class_type;
 }

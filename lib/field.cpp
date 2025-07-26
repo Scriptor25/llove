@@ -96,6 +96,13 @@ llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, bool implic
     return value->Load(builder);
 }
 
+unsigned llove::Field::Size(Builder &builder) const
+{
+    if (Reference)
+        return 8;
+    return Type->Size(builder);
+}
+
 std::string llove::Field::Mangle() const
 {
     return std::string(Mutable ? "M" : "") + std::string(Reference ? "R" : "") + Type->Mangle();
@@ -111,6 +118,13 @@ bool llove::Field::operator==(const Field &other) const
 llove::Field::operator bool() const
 {
     return Type != nullptr;
+}
+
+void llove::Field::Reflect(Context &types, Field &field) const
+{
+    field.Mutable = Mutable;
+    field.Reference = Reference;
+    Type->Reflect(types, field.Type);
 }
 
 std::string llove::GetFieldHash(const std::vector<Field> &fields)

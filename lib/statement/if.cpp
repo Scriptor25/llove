@@ -52,6 +52,21 @@ void llove::IfStatement::Gen(Builder &builder) const
     }
 }
 
+llove::StatementPtr llove::IfStatement::Reflect(Context &types) const
+{
+    ExpressionPtr condition;
+    StatementPtr then, else_;
+
+    if (m_Condition)
+        m_Condition->Reflect(types, condition);
+    if (m_Then)
+        m_Then->Reflect(types, then);
+    if (m_Else)
+        m_Else->Reflect(types, else_);
+
+    return std::make_unique<IfStatement>(std::move(condition), std::move(then), std::move(else_));
+}
+
 std::ostream &llove::IfStatement::Print(std::ostream &stream) const
 {
     stream << "if (" << m_Condition << ") " << m_Then;

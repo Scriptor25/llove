@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/type.hpp>
 
 llove::FloatType::FloatType(const unsigned bits)
@@ -21,9 +22,19 @@ bool llove::FloatType::IsFloat() const
     return true;
 }
 
+unsigned llove::FloatType::Size(Builder &builder) const
+{
+    return m_Bits >> 3;
+}
+
 llvm::Type *llove::FloatType::Gen(Builder &builder) const
 {
     return builder.GetFltType(m_Bits);
+}
+
+llove::TypePtr llove::FloatType::Reflect(Context &types) const
+{
+    return types.GetFloat(m_Bits);
 }
 
 std::string llove::FloatType::Mangle() const

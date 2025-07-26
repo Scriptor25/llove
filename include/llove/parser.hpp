@@ -3,8 +3,10 @@
 #include <cmath>
 #include <format>
 #include <iosfwd>
+#include <map>
 #include <string>
 #include <vector>
+#include <llove/class.hpp>
 #include <llove/forward.hpp>
 
 namespace llove
@@ -32,7 +34,7 @@ namespace llove
     class Parser final
     {
     public:
-        explicit Parser(Context &types, std::istream &stream);
+        explicit Parser(Context &types, Builder& builder, std::istream &stream);
 
         [[nodiscard]] bool Ok() const;
         GlobalPtr Parse();
@@ -72,6 +74,8 @@ namespace llove
         void ParseClassField(ClassField &field);
         void ParseClassFunction(ClassFunction &function);
 
+        void ParseClassTemplate();
+
         StatementPtr ParseStatement(bool inline_);
         StatementPtr ParseScopeStatement();
         StatementPtr ParseForStatement(bool inline_);
@@ -88,6 +92,8 @@ namespace llove
 
     private:
         Context &m_Types;
+        Builder &m_Builder;
+
         std::istream &m_Stream;
         int m_Buffer;
         Token m_Token;

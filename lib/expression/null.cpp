@@ -21,6 +21,16 @@ llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr ex
     return Value::CreateR(std::move(type), value);
 }
 
+llove::StatementPtr llove::NullExpression::Reflect(Context &types) const
+{
+    TypePtr type;
+
+    if (m_Type)
+        m_Type->Reflect(types, type);
+
+    return std::make_unique<NullExpression>(std::move(type));
+}
+
 std::ostream &llove::NullExpression::Print(std::ostream &stream) const
 {
     if (m_Type)

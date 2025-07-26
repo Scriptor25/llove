@@ -47,6 +47,8 @@ void llove::Builder::Seal(const SealInfo &info)
     m_Module.setDataLayout(target_machine->createDataLayout());
     m_Module.setTargetTriple(target_triple);
 
+    m_Module.print(llvm::errs(), nullptr);
+
     // llvm::PassBuilder pb(target_machine);
     // auto mpm = pb.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
     //

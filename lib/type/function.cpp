@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
@@ -58,6 +59,11 @@ bool llove::FunctionType::IsFunction() const
     return true;
 }
 
+unsigned llove::FunctionType::Size(Builder &builder) const
+{
+    Error("function type does not have a size");
+}
+
 llvm::PointerType *llove::FunctionType::Gen(Builder &builder) const
 {
     const auto function = GenFunction(builder);
@@ -73,6 +79,21 @@ llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder) const
         parameters.emplace_back(parameter.GenType(builder));
 
     return builder.GetFunctionType(m_Result.GenType(builder), parameters, m_VarArg);
+}
+
+llove::TypePtr llove::FunctionType::Reflect(Context &types) const
+{
+    std::vector<Field> parameters(m_Parameters.size());
+    Field result;
+    Field self;
+
+    for (unsigned i = 0; i < m_Parameters.size(); ++i)
+        m_Parameters.at(i).Reflect(types, parameters.at(i));
+
+    m_Result.Reflect(types, result);
+    m_Self.Reflect(types, self);
+
+    return types.GetFunction(std::move(parameters), m_VarArg, std::move(result), std::move(self));
 }
 
 std::string llove::FunctionType::Mangle() const

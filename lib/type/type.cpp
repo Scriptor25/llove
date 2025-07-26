@@ -1,5 +1,10 @@
 #include <llove/type.hpp>
 
+bool llove::Type::IsTemplate() const
+{
+    return false;
+}
+
 bool llove::Type::IsVoid() const
 {
     return false;

@@ -4,7 +4,7 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::StructExpression::StructExpression(std::map<std::string, ExpressionPtr> values, StructType::Ptr type)
+llove::StructExpression::StructExpression(std::map<std::string, ExpressionPtr> values, TypePtr type)
     : m_Values(std::move(values)),
       m_Type(std::move(type))
 {
@@ -12,7 +12,7 @@ llove::StructExpression::StructExpression(std::map<std::string, ExpressionPtr> v
 
 llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
-    auto type = m_Type ? m_Type : As<StructType>(expect);
+    auto type = m_Type ? As<StructType>(m_Type) : expect ? As<StructType>(expect) : nullptr;
     Assert(type != nullptr, "untyped struct expression");
 
     llvm::Value *aggregate = llvm::Constant::getNullValue(type->Gen(builder));
@@ -29,6 +29,17 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
     }
 
     return Value::CreateR(std::move(type), aggregate);
+}
+
+llove::StatementPtr llove::StructExpression::Reflect(Context &types) const
+{
+    std::map<std::string, ExpressionPtr> values;
+    for (auto &[key, value] : m_Values)
+        value->Reflect(types, values[key]);
+
+    TypePtr type = TODO;
+
+    return std::make_unique<StructExpression>(std::move(values), std::move(type));
 }
 
 std::ostream &llove::StructExpression::Print(std::ostream &stream) const

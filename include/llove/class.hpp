@@ -26,6 +26,8 @@ namespace llove
 
     struct ClassField final
     {
+        void Reflect(Context &types, ClassField &field) const;
+
         Field Info;
         std::string Name;
         ExpressionPtr Value;
@@ -34,6 +36,8 @@ namespace llove
 
     struct ClassFunction final
     {
+        void Reflect(Context &types, ClassFunction &function) const;
+
         bool Expose = false;
         bool Mutable = false;
         std::string Name;

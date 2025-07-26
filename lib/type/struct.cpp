@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
@@ -43,6 +44,14 @@ bool llove::StructType::IsStruct() const
     return true;
 }
 
+unsigned llove::StructType::Size(Builder &builder) const
+{
+    auto size = 0u;
+    for (auto &[info, name] : m_Fields)
+        size += info.Size(builder);
+    return size;
+}
+
 llvm::StructType *llove::StructType::Gen(Builder &builder) const
 {
     std::vector<llvm::Type *> fields;
@@ -51,6 +60,17 @@ llvm::StructType *llove::StructType::Gen(Builder &builder) const
 
     // TODO: packed struct
     return builder.GetStructType(fields, true);
+}
+
+llove::TypePtr llove::StructType::Reflect(Context &types) const
+{
+    std::vector<Parameter> fields(m_Fields.size());
+    for (unsigned i = 0; i < m_Fields.size(); ++i)
+    {
+        fields.at(i).Name = m_Fields.at(i).Name;
+        m_Fields.at(i).Info.Reflect(types, fields.at(i).Info);
+    }
+    return types.GetStruct(std::move(fields));
 }
 
 std::string llove::StructType::Mangle() const

@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <llove/class_template.hpp>
 #include <llove/error.hpp>
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
@@ -18,6 +19,17 @@ namespace llove
         [[nodiscard]] TypePtr Get(const std::string &id) const;
         void Set(const std::string &id, TypePtr type);
 
+        template<typename T, typename... Args> requires std::is_base_of_v<Type, T>
+        std::shared_ptr<T> GetOrCreate(Args &&... args)
+        {
+            auto type = std::make_shared<T>(std::forward<Args>(args)...);
+            auto hash = type->Mangle();
+            if (m_Types.contains(hash))
+                return std::dynamic_pointer_cast<T>(m_Types.at(hash));
+            m_Types.emplace(hash, type);
+            return type;
+        }
+
         VoidType::Ptr GetVoid();
         IntegerType::Ptr GetInteger(bool sign, unsigned bits);
         FloatType::Ptr GetFloat(unsigned bits);
@@ -30,28 +42,33 @@ namespace llove
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result);
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result, Field self);
 
-        [[nodiscard]] bool HasClass(const std::string &name) const;
+        TypePtr GetMax(const TypePtr &left, const TypePtr &right);
 
-        TypePtr DetermineHigherOrder(const TypePtr &left, const TypePtr &right);
+        ClassTemplate &PushTemplate(
+            std::string name,
+            std::vector<std::pair<std::string, TemplateType::Ptr>> parameters);
+        void PopTemplate();
+
+        void EmplaceTemplate(std::string name, std::vector<std::pair<std::string, TemplateType::Ptr>> parameters);
+
+        ClassType::Ptr InstantiateTemplateClass(
+            Builder &builder,
+            std::string name,
+            const std::vector<TypePtr> &arguments);
 
     private:
-        VoidType::Ptr m_Void;
-        std::map<bool, std::map<unsigned, IntegerType::Ptr>> m_Integer;
-        std::map<unsigned, FloatType::Ptr> m_Float;
-        std::map<TypePtr, std::map<bool, PointerType::Ptr>> m_Pointer;
-        std::map<TypePtr, std::map<unsigned, ArrayType::Ptr>> m_Array;
-        std::map<std::string, StructType::Ptr> m_Struct;
-        std::map<TypePtr, RangeType::Ptr> m_Range;
-        std::map<std::string, ClassType::Ptr> m_Class;
-        std::map<std::string, std::map<bool, std::map<std::string, std::map<std::string, FunctionType::Ptr>>>>
-        m_Function;
+        std::map<std::string, TypePtr> m_Types;
+        std::map<std::string, TypePtr> m_Named;
 
-        std::map<std::string, TypePtr> m_TypeMap;
+        std::vector<std::map<std::string, TemplateType::Ptr>> m_TemplateTypes;
+
+        std::map<std::string, ClassTemplate> m_ClassTemplates;
     };
 
     template<typename T>
     typename T::Ptr As(TypePtr type)
     {
+        Assert(type != nullptr, "type must not be null");
         auto ptr = std::dynamic_pointer_cast<T>(type);
         Assert(ptr != nullptr, "illegal cast from id {} to id {} (type {}) ", type->GetId(), T::ID, type);
         return ptr;
