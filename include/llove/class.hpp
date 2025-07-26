@@ -10,13 +10,18 @@ namespace llove
 {
     struct ClassFieldReference final
     {
+        std::ostream &Print(std::ostream &stream) const;
+
         Field Info;
         std::string Name;
     };
 
     struct ClassFunctionReference final
     {
+        std::ostream &Print(std::ostream &stream) const;
+
         bool Expose = false;
+        bool Implicit = false;
         bool Mutable = false;
         std::string Name;
         std::vector<Field> Parameters;
@@ -27,6 +32,7 @@ namespace llove
     struct ClassField final
     {
         void Reflect(Context &types, ClassField &field) const;
+        std::ostream &Print(std::ostream &stream) const;
 
         Field Info;
         std::string Name;
@@ -37,8 +43,10 @@ namespace llove
     struct ClassFunction final
     {
         void Reflect(Context &types, ClassFunction &function) const;
+        std::ostream &Print(std::ostream &stream) const;
 
         bool Expose = false;
+        bool Implicit = false;
         bool Mutable = false;
         std::string Name;
         std::vector<Parameter> Parameters;
@@ -50,3 +58,15 @@ namespace llove
     std::ostream &operator<<(std::ostream &stream, const ClassField &field);
     std::ostream &operator<<(std::ostream &stream, const ClassFunction &function);
 }
+
+template<>
+struct std::formatter<llove::ClassFunctionReference> : std::formatter<std::string_view>
+{
+    template<typename FormatContext>
+    auto format(const llove::ClassFunctionReference &function, FormatContext &ctx) const
+    {
+        std::stringstream stream;
+        function.Print(stream);
+        return std::formatter<std::string_view>::format(stream.view(), ctx);
+    }
+};

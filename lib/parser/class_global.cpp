@@ -4,28 +4,28 @@
 
 llove::GlobalPtr llove::Parser::ParseClassGlobal()
 {
-    Expect(TokenType_Sym, "class");
+    Expect(TokenType_Symbol, "class");
 
-    if (At(TokenType_Opr, "<"))
+    if (At(TokenType_Operator, "<"))
     {
         ParseClassTemplate();
         return nullptr;
     }
 
-    auto name = Expect(TokenType_Sym).Value;
+    auto name = Expect(TokenType_Symbol).Value;
     auto type = m_Types.GetClass(std::move(name));
     m_Types.Set(type->GetName(), type);
 
-    if (SkipIf(TokenType_Otr, ";"))
+    if (SkipIf(TokenType_Other, ";"))
         return std::make_unique<ClassGlobal>(std::move(type));
 
     std::vector<ClassField> fields;
     std::vector<ClassFunction> functions;
 
-    Expect(TokenType_Otr, "{");
-    while (!At(TokenType_Otr, "}"))
+    Expect(TokenType_Other, "{");
+    while (!At(TokenType_Other, "}"))
     {
-        if (At(TokenType_Sym, "let"))
+        if (At(TokenType_Symbol, "let"))
         {
             ParseClassField(fields.emplace_back());
             continue;
@@ -33,43 +33,44 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
 
         ParseClassFunction(functions.emplace_back());
     }
-    Expect(TokenType_Otr, "}");
+    Expect(TokenType_Other, "}");
 
     return std::make_unique<ClassGlobal>(std::move(type), std::move(fields), std::move(functions));
 }
 
 void llove::Parser::ParseClassField(ClassField &field)
 {
-    Expect(TokenType_Sym, "let");
+    Expect(TokenType_Symbol, "let");
     field.Name = ParseField(field.Info, true);
-    if (SkipIf(TokenType_Opr, "="))
+    if (SkipIf(TokenType_Operator, "="))
     {
         field.Value = ParseExpression();
     }
-    else if (SkipIf(TokenType_Otr, "("))
+    else if (SkipIf(TokenType_Other, "("))
     {
-        while (!At(TokenType_Otr, ")"))
+        while (!At(TokenType_Other, ")"))
         {
             field.Arguments.emplace_back(ParseExpression());
 
-            if (!At(TokenType_Otr, ")"))
-                Expect(TokenType_Otr, ",");
+            if (!At(TokenType_Other, ")"))
+                Expect(TokenType_Other, ",");
         }
-        Expect(TokenType_Otr, ")");
+        Expect(TokenType_Other, ")");
     }
-    Expect(TokenType_Otr, ";");
+    Expect(TokenType_Other, ";");
 }
 
 void llove::Parser::ParseClassFunction(ClassFunction &function)
 {
-    function.Expose = SkipIf(TokenType_Sym, "expose");
-    function.Mutable = SkipIf(TokenType_Sym, "mut");
-    function.Name = At(TokenType_Opr) ? Skip().Value : Expect(TokenType_Sym).Value;
+    function.Expose = SkipIf(TokenType_Symbol, "expose");
+    function.Implicit = SkipIf(TokenType_Symbol, "implicit");
+    function.Mutable = SkipIf(TokenType_Symbol, "mut");
+    function.Name = At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
 
-    Expect(TokenType_Otr, "(");
-    while (!At(TokenType_Otr, ")"))
+    Expect(TokenType_Other, "(");
+    while (!At(TokenType_Other, ")"))
     {
-        if (SkipIf(TokenType_Opr, "..."))
+        if (SkipIf(TokenType_Operator, "..."))
         {
             function.VarArg = true;
             break;
@@ -78,17 +79,17 @@ void llove::Parser::ParseClassFunction(ClassFunction &function)
         auto &[info_, name_] = function.Parameters.emplace_back();
         name_ = ParseField(info_);
 
-        if (!At(TokenType_Otr, ")"))
-            Expect(TokenType_Otr, ",");
+        if (!At(TokenType_Other, ")"))
+            Expect(TokenType_Other, ",");
     }
-    Expect(TokenType_Otr, ")");
+    Expect(TokenType_Other, ")");
 
-    if (SkipIf(TokenType_Otr, ":"))
+    if (SkipIf(TokenType_Other, ":"))
         ParseField(function.Result, false, false);
     else
         function.Result.Type = m_Types.GetVoid();
 
-    if (SkipIf(TokenType_Otr, ";"))
+    if (SkipIf(TokenType_Other, ";"))
         return;
 
     function.Content = ParseScopeStatement();

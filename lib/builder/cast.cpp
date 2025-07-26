@@ -3,7 +3,7 @@
 #include <llove/error.hpp>
 #include <llove/value.hpp>
 
-llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
+llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bool implicit)
 {
     const auto src_fld = value->AsField();
     const auto dst_fld = Field{ .Type = dst };
@@ -12,22 +12,28 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
     if (src == dst)
         return value;
 
-    const FunctionReference *callee = nullptr;
+    std::optional<FunctionReference> callee;
 
     for (auto &function : m_Functions)
     {
         if (function.Name != "cast")
             continue;
 
+        if (implicit && !function.Implicit)
+            continue;
+
         const auto function_type = function.Type;
+
         if (function_type->IsVarArg())
             continue;
+
+        const auto &res_fld = function_type->GetResult();
 
         if (function_type->HasSelf())
         {
             if (function_type->GetParameterCount() != 0)
                 continue;
-            if (!Field::IsCastable(*this, dst_fld, function_type->GetResult(), true))
+            if (!Field::IsCastable(*this, dst_fld, res_fld, true))
                 continue;
             if (!Field::IsCastable(*this, function_type->GetSelf(), src_fld, true))
                 continue;
@@ -36,13 +42,13 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
         {
             if (function_type->GetParameterCount() != 1)
                 continue;
-            if (!Field::IsCastable(*this, dst_fld, function_type->GetResult(), true))
+            if (!Field::IsCastable(*this, dst_fld, res_fld, true))
                 continue;
             if (!Field::IsCastable(*this, function_type->GetParameter(0), src_fld, true))
                 continue;
         }
 
-        callee = &function;
+        callee = function;
         break;
     }
 
@@ -67,10 +73,13 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
         switch (dst->GetId())
         {
         case TypeId_Integer:
-            result = m_Builder.CreateIntCast(
-                llvm_value,
-                llvm_type,
-                As<IntegerType>(dst)->IsSigned());
+            if (As<IntegerType>(dst)->GetBits() == 1)
+                result = m_Builder.CreateIsNotNull(llvm_value);
+            else
+                result = m_Builder.CreateIntCast(
+                    llvm_value,
+                    llvm_type,
+                    As<IntegerType>(dst)->IsSigned());
             break;
         case TypeId_Float:
             if (As<IntegerType>(src)->IsSigned())
@@ -87,7 +96,9 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
         switch (dst->GetId())
         {
         case TypeId_Integer:
-            if (As<IntegerType>(dst)->IsSigned())
+            if (As<IntegerType>(dst)->GetBits() == 1)
+                result = m_Builder.CreateIsNotNull(llvm_value);
+            else if (As<IntegerType>(dst)->IsSigned())
                 result = m_Builder.CreateFPToSI(llvm_value, llvm_type);
             else
                 result = m_Builder.CreateFPToUI(llvm_value, llvm_type);
@@ -104,7 +115,10 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
         switch (dst->GetId())
         {
         case TypeId_Integer:
-            result = m_Builder.CreatePtrToInt(llvm_value, llvm_type);
+            if (As<IntegerType>(dst)->GetBits() == 1)
+                result = m_Builder.CreateIsNotNull(llvm_value);
+            else
+                result = m_Builder.CreatePtrToInt(llvm_value, llvm_type);
             break;
         case TypeId_Pointer:
             if (As<PointerType>(src)->IsMutable() || !As<PointerType>(dst)->IsMutable())
@@ -136,7 +150,7 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst)
     return Value::CreateR(std::move(dst), result);
 }
 
-bool llove::Builder::IsCastable(const Field &src, const Field &dst) const
+bool llove::Builder::IsCastable(const Field &src, const Field &dst, bool implicit) const
 {
     if (src == dst)
         return true;
@@ -146,11 +160,15 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst) const
         if (function.Name != "cast")
             continue;
 
+        if (implicit && !function.Implicit)
+            continue;
+
         const auto function_type = function.Type;
+
         if (function_type->IsVarArg())
             continue;
 
-        auto &res = function_type->GetResult();
+        const auto &res = function_type->GetResult();
 
         if (function_type->HasSelf())
         {

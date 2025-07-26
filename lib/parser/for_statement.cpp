@@ -3,28 +3,28 @@
 
 llove::StatementPtr llove::Parser::ParseForStatement(const bool inline_)
 {
-    Expect(TokenType_Sym, "for");
-    Expect(TokenType_Otr, "(");
+    Expect(TokenType_Symbol, "for");
+    Expect(TokenType_Other, "(");
 
     StatementPtr prefix, suffix;
     ExpressionPtr condition;
 
-    if (!SkipIf(TokenType_Otr, ";"))
+    if (!SkipIf(TokenType_Other, ";"))
     {
         prefix = ParseStatement(true);
-        Expect(TokenType_Otr, ";");
+        Expect(TokenType_Other, ";");
     }
 
-    if (!SkipIf(TokenType_Otr, ";"))
+    if (!SkipIf(TokenType_Other, ";"))
     {
         condition = ParseExpression();
-        Expect(TokenType_Otr, ";");
+        Expect(TokenType_Other, ";");
     }
 
-    if (!SkipIf(TokenType_Otr, ")"))
+    if (!SkipIf(TokenType_Other, ")"))
     {
         suffix = ParseStatement(true);
-        Expect(TokenType_Otr, ")");
+        Expect(TokenType_Other, ")");
     }
 
     auto content = ScopeStatement::Wrap(ParseStatement(inline_));

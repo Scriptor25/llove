@@ -34,13 +34,12 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
 llove::StatementPtr llove::CallExpression::Reflect(Context &types) const
 {
     ExpressionPtr callee;
-    std::vector<ExpressionPtr> arguments(m_Arguments.size());
-
     if (m_Callee)
         m_Callee->Reflect(types, callee);
 
-    for (unsigned i = 0; i < m_Arguments.size(); i++)
-        m_Arguments.at(i)->Reflect(types, arguments.at(i));
+    std::vector<ExpressionPtr> arguments;
+    for (auto &argument : m_Arguments)
+        argument->Reflect(types, arguments.emplace_back());
 
     return std::make_unique<CallExpression>(std::move(callee), std::move(arguments));
 }

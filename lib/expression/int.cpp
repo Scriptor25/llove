@@ -27,7 +27,6 @@ llove::ValuePtr llove::IntExpression::GenVal(Builder &builder, const TypePtr exp
 llove::StatementPtr llove::IntExpression::Reflect(Context &types) const
 {
     TypePtr type;
-
     if (m_Type)
         m_Type->Reflect(types, type);
 

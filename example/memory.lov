@@ -1,59 +1,107 @@
 interface printf(format: i8[], ...): i32;
 interface malloc(count: u64): [mut];
+interface free(block: [mut]);
 
 class test {
 
     # create
-    expose mut create() {
-        printf("create empty %p\r\n", &self);
+    expose mut create(data: i32) {
+        printf("test:create(i32)\r\n");
+        self.data_ptr = malloc(sizeof i32);
+        *self.data_ptr = data;
+        printf("=> self={ data_ptr: %p }\r\n", self.data_ptr);
+    }
+
+    expose mut =(data: i32): mut &test {
+        printf("test{ data_ptr: %p }:=(i32)\r\n", self.data_ptr);
+        *self.data_ptr = data;
+        yield self;
     }
 
     # move
-    expose mut create(other: test) {
-        printf("create move %p (%p)\r\n", &self, &other);
+    expose mut create(mut other: test) {
+        printf("test:create(test)\r\n");
+        self.data_ptr = other.data_ptr;
+        other.data_ptr = null;
+        printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
     }
 
-    expose mut =(other: test): mut &test {
-        printf("move %p (%p)\r\n", &self, &other);
+    expose mut =(mut other: test): mut &test {
+        printf("test{ data_ptr: %p }:=(test)\r\n", self.data_ptr);
+        let data_ptr = self.data_ptr;
+        self.data_ptr = other.data_ptr;
+        other.data_ptr = data_ptr;
+        printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
         yield self;
     }
 
     # copy
     expose mut create(&other: test) {
-        printf("create copy %p (%p)\r\n", &self, &other);
+        printf("test:create(&test)\r\n");
+        self.data_ptr = malloc(sizeof i32);
+        *self.data_ptr = *other.data_ptr;
+        printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
     }
 
     expose mut =(&other: test): mut &test {
-        printf("copy %p (%p)\r\n", &self, &other);
+        printf("test{ data_ptr: %p }:=(&test)\r\n", self.data_ptr);
+        *self.data_ptr = *other.data_ptr;
+        printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
         yield self;
+    }
+
+    expose mut $(): test {
+        let result = self;
+        self.data_ptr = null;
+        yield result;
     }
 
     # delete
     expose mut delete() {
-        printf("delete %p\r\n", &self);
+        printf("test{ data_ptr: %p }:delete()\r\n", self.data_ptr);
+        if (self.data_ptr) {
+            free(self.data_ptr);
+        }
+        self.data_ptr = null;
     }
 
-    let data: i32 = 0;
+    # getter
+    expose data(): i32 {
+        yield *self.data_ptr;
+    }
+
+    expose get(): i32[] {
+        yield self.data_ptr;
+    }
+
+    let mut data_ptr: i32[mut];
 }
 
 class<T> unique {
 
-    expose mut create(ptr: T[mut]) {
-        self.ptr = ptr;
-    }
-
-    expose mut create(val: T) {
-        self.ptr = malloc(sizeof<T>);
-        *self.ptr = $val;
+    expose mut create(mut val: T) {
+        printf("unique:create(T)\r\n");
+        self.ptr = malloc(sizeof T);
+        create[*self.ptr] T($val);
     }
 
     expose mut create(&val: T) {
-        self.ptr = malloc(sizeof<T>);
-        *self.ptr = val;
+        printf("unique:create(T)\r\n");
+        self.ptr = malloc(sizeof T);
+        create[*self.ptr] T(val);
+    }
+
+    expose mut create(ptr: T[mut]) {
+        printf("unique:create(T[mut])\r\n");
+        self.ptr = ptr;
     }
 
     expose mut delete() {
-        free(self.ptr);
+        printf("unique:delete()\r\n");
+        if (self.ptr) {
+            delete *self.ptr;
+            free(self.ptr);
+        }
         self.ptr = null;
     }
 
@@ -69,23 +117,22 @@ class<T> unique {
         yield self.ptr;
     }
 
+    expose cast(): u1 {
+        yield self.ptr != null;
+    }
+
     let mut ptr: T[mut];
 }
 
 interface main(): i32 {
 
-    let mut a: test;
-    let mut b: test;
-    let mut c: test;
+    let u: class<test> unique(create test(0));
 
-    c = a;
-    a = $b;
-    b = $c;
+    printf("%d (%p)\r\n", (*u).data(), (*u).get());
 
-    let u: class<test> unique;
+    *u = create test(123);
 
-    *u = $b;
-    printf("%p\r\n", u.get());
+    printf("%d (%p)\r\n", (*u).data(), (*u).get());
 
     yield 0;
 }

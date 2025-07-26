@@ -37,6 +37,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
             parameters.emplace_back(info);
         class_functions.emplace_back(
             function.Expose,
+            function.Implicit,
             function.Mutable,
             function.Name,
             parameters,
@@ -47,6 +48,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
 
     for (auto &[
              expose,
+             implicit,
              mutable_,
              name,
              parameters,
@@ -56,6 +58,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
          ] : m_Functions)
         builder.GenFunction(
             {
+                .Implicit = implicit,
                 .Class = m_Type,
                 .Mutable = mutable_,
                 .Expose = expose,
@@ -68,6 +71,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
 
     for (auto &[
              expose,
+             implicit,
              mutable_,
              name,
              parameters,
@@ -77,6 +81,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
          ] : m_Functions)
         builder.GenFunction(
             {
+                .Implicit = implicit,
                 .Class = m_Type,
                 .Mutable = mutable_,
                 .Expose = expose,

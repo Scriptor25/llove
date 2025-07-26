@@ -28,10 +28,11 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
 
 llove::StatementPtr llove::SubscriptExpression::Reflect(Context &types) const
 {
-    ExpressionPtr value, index;
-
+    ExpressionPtr value;
     if (m_Value)
         m_Value->Reflect(types, value);
+
+    ExpressionPtr index;
     if (m_Index)
         m_Index->Reflect(types, index);
 

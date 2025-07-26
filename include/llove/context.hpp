@@ -42,7 +42,8 @@ namespace llove
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result);
         FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result, Field self);
 
-        TypePtr GetMax(const TypePtr &left, const TypePtr &right);
+        TypePtr TypeUnion(const TypePtr &left, const TypePtr &right);
+        unsigned Difference(const TypePtr &left, const TypePtr &right);
 
         ClassTemplate &PushTemplate(
             std::string name,
@@ -56,13 +57,15 @@ namespace llove
             std::string name,
             const std::vector<TypePtr> &arguments);
 
+        [[nodiscard]] TypePtr TemplateArgument(const std::string &name) const;
+
     private:
         std::map<std::string, TypePtr> m_Types;
         std::map<std::string, TypePtr> m_Named;
 
         std::vector<std::map<std::string, TemplateType::Ptr>> m_TemplateTypes;
-
         std::map<std::string, ClassTemplate> m_ClassTemplates;
+        std::map<std::string, TypePtr> m_TemplateArguments;
     };
 
     template<typename T>

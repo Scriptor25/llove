@@ -7,11 +7,12 @@
 void llove::Expression::Gen(Builder &builder) const
 {
     auto value = GenVal(builder, nullptr);
+    const auto type = value->GetType();
 
-    if (value->IsReferenceable() || value->GetType()->GetId() != TypeId_Class)
+    if (value->IsReferenceable() || !type->IsClass())
         return;
 
-    const auto class_type = As<ClassType>(value->GetType());
+    const auto class_type = As<ClassType>(type);
     if (const auto destructor = class_type->GetDestructor())
     {
         auto &reference = builder.GenFunction(

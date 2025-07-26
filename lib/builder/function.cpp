@@ -17,6 +17,7 @@ llvm::Function *llove::Builder::GetOrCreateFunction(
 
 llove::FunctionReference &llove::Builder::PushFunction(
     const bool expose,
+    const bool implicit,
     std::string name,
     FunctionType::Ptr type,
     llvm::Function *callee)
@@ -27,19 +28,13 @@ llove::FunctionReference &llove::Builder::PushFunction(
             continue;
         if (function.Type != type)
             continue;
-        Assert(expose == function.Expose && callee == function.Callee, "function prototype mismatch");
+        Assert(
+            expose == function.Expose && implicit == function.Implicit && callee == function.Callee,
+            "function prototype mismatch");
         return function;
     }
 
-    return m_Functions.emplace_back(
-        FunctionReference
-        {
-            .Expose = expose,
-            .Name = std::move(name),
-            .Type = std::move(type),
-            .Callee = callee,
-        }
-    );
+    return m_Functions.emplace_back(expose, implicit, std::move(name), std::move(type), callee);
 }
 
 std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name) const
@@ -164,23 +159,27 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     const std::vector<ClassFunctionReference> &functions,
     const std::vector<Field> &arguments,
     const ClassType::Ptr &class_type,
-    const Field &self)
+    const Field &self,
+    const bool implicit)
 {
     auto lowest_error = ~0u;
     std::optional<ClassFunctionReference> candidate;
 
     for (auto &function : functions)
     {
-        const Field class_
+        const Field function_self
         {
             .Mutable = function.Mutable,
             .Reference = true,
             .Type = class_type,
         };
 
+        if (implicit && !function.Implicit)
+            continue;
+
         auto error = 0u;
 
-        if (Field::GetCastError(*this, class_, self, error, true))
+        if (Field::GetCastError(*this, function_self, self, error, true))
             continue;
 
         const auto parameter_count = function.Parameters.size();
@@ -204,13 +203,19 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
         if (error > lowest_error)
             continue;
 
-        Assert(error != lowest_error, "ambiguous candidates");
+        Assert(
+            error != lowest_error,
+            "ambiguous candidates '{}' and '{}' for arguments '{}' and self '{}'",
+            candidate,
+            function,
+            arguments,
+            self);
 
         lowest_error = error;
         candidate = function;
     }
 
-    if (!candidate.has_value())
+    if (!candidate)
         return std::nullopt;
 
     std::vector<Parameter> parameters;
@@ -219,6 +224,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
     return GenFunction(
         {
+            .Implicit = candidate->Implicit,
             .Class = class_type,
             .Mutable = candidate->Mutable,
             .Expose = candidate->Expose,

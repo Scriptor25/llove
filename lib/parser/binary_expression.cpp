@@ -50,7 +50,7 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
         return map.at(m_Token.Value);
     };
 
-    while (At(TokenType_Opr) && has_precedence() && get_precedence() >= min_precedence)
+    while (At(TokenType_Operator) && has_precedence() && get_precedence() >= min_precedence)
     {
         const auto operator_precedence = get_precedence();
         auto [
@@ -62,7 +62,7 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
         ] = Skip();
 
         auto right = ParseOperandExpression();
-        while (At(TokenType_Opr) && has_precedence()
+        while (At(TokenType_Operator) && has_precedence()
                && (get_precedence() > operator_precedence
                    || (!get_precedence() && get_precedence() >= operator_precedence)))
             right = ParseBinaryExpression(

@@ -24,7 +24,6 @@ llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr ex
 llove::StatementPtr llove::NullExpression::Reflect(Context &types) const
 {
     TypePtr type;
-
     if (m_Type)
         m_Type->Reflect(types, type);
 

@@ -1,22 +1,74 @@
 #include <llove/class.hpp>
 #include <llove/tree.hpp>
 
+std::ostream &llove::ClassFieldReference::Print(std::ostream &stream) const
+{
+    return Info.Print(stream << "let ", true, Name);
+}
+
+std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
+{
+    stream
+            << (Expose ? "expose " : "")
+            << (Implicit ? "implicit " : "")
+            << (Mutable ? "mut " : "")
+            << Name
+            << '(';
+    for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
+    {
+        if (i != Parameters.begin())
+            stream << ", ";
+        stream << *i;
+    }
+    if (VarArg)
+    {
+        if (!Parameters.empty())
+            stream << ", ";
+        stream << "...";
+    }
+    stream << ')';
+    if (Result)
+        stream << ": " << Result;
+    return stream;
+}
+
 void llove::ClassField::Reflect(Context &types, ClassField &field) const
 {
     field.Name = Name;
 
     Info.Reflect(types, field.Info);
 
-    Value->Reflect(types, field.Value);
+    if (Value)
+        Value->Reflect(types, field.Value);
 
     field.Arguments.resize(Arguments.size());
     for (unsigned i = 0; i < Arguments.size(); ++i)
         Arguments.at(i)->Reflect(types, field.Arguments.at(i));
 }
 
+std::ostream &llove::ClassField::Print(std::ostream &stream) const
+{
+    Info.Print(stream << "let ", true, Name);
+    if (Value)
+        stream << " = " << Value;
+    else if (!Arguments.empty())
+    {
+        stream << '(';
+        for (auto i = Arguments.begin(); i != Arguments.end(); ++i)
+        {
+            if (i != Arguments.begin())
+                stream << ", ";
+            stream << *i;
+        }
+        stream << ')';
+    }
+    return stream << ';';
+}
+
 void llove::ClassFunction::Reflect(Context &types, ClassFunction &function) const
 {
     function.Expose = Expose;
+    function.Implicit = Implicit;
     function.Mutable = Mutable;
     function.Name = Name;
     function.VarArg = VarArg;
@@ -30,51 +82,44 @@ void llove::ClassFunction::Reflect(Context &types, ClassFunction &function) cons
 
     Result.Reflect(types, function.Result);
 
-    Content->Reflect(types, function.Content);
+    if (Content)
+        Content->Reflect(types, function.Content);
 }
 
-std::ostream &llove::operator<<(std::ostream &stream, const ClassField &field)
-{
-    field.Info.Print(stream << "let ", true, field.Name);
-    if (field.Value)
-        stream << " = " << field.Value;
-    else if (!field.Arguments.empty())
-    {
-        stream << '(';
-        for (auto i = field.Arguments.begin(); i != field.Arguments.end(); ++i)
-        {
-            if (i != field.Arguments.begin())
-                stream << ", ";
-            stream << *i;
-        }
-        stream << ')';
-    }
-    return stream << ';';
-}
-
-std::ostream &llove::operator<<(std::ostream &stream, const ClassFunction &function)
+std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
 {
     stream
-            << (function.Expose ? "expose " : "")
-            << (function.Mutable ? "mut " : "")
-            << function.Name
+            << (Expose ? "expose " : "")
+            << (Implicit ? "implicit " : "")
+            << (Mutable ? "mut " : "")
+            << Name
             << '(';
-    for (auto i = function.Parameters.begin(); i != function.Parameters.end(); ++i)
+    for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
     {
-        if (i != function.Parameters.begin())
+        if (i != Parameters.begin())
             stream << ", ";
         stream << *i;
     }
-    if (function.VarArg)
+    if (VarArg)
     {
-        if (!function.Parameters.empty())
+        if (!Parameters.empty())
             stream << ", ";
         stream << "...";
     }
     stream << ')';
-    if (function.Result)
-        stream << ": " << function.Result;
-    if (!function.Content)
+    if (Result)
+        stream << ": " << Result;
+    if (!Content)
         return stream << ';';
-    return stream << ' ' << function.Content;
+    return stream << ' ' << Content;
+}
+
+std::ostream &llove::operator<<(std::ostream &stream, const ClassField &field)
+{
+    return field.Print(stream);
+}
+
+std::ostream &llove::operator<<(std::ostream &stream, const ClassFunction &function)
+{
+    return function.Print(stream);
 }

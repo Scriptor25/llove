@@ -5,10 +5,10 @@ llove::StatementPtr llove::Parser::ParseScopeStatement()
 {
     std::vector<StatementPtr> content;
 
-    Expect(TokenType_Otr, "{");
-    while (!At(TokenType_Otr, "}"))
+    Expect(TokenType_Other, "{");
+    while (!At(TokenType_Other, "}"))
         content.emplace_back(ParseStatement(false));
-    Expect(TokenType_Otr, "}");
+    Expect(TokenType_Other, "}");
 
     return std::make_unique<ScopeStatement>(std::move(content));
 }

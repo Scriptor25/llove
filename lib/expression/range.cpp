@@ -18,9 +18,9 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
     auto beg = m_Beg->GenVal(builder, std::move(type));
     auto end = m_End->GenVal(builder, beg->GetType());
 
-    auto entry = builder.GetTypes().GetMax(beg->GetType(), end->GetType());
-    beg = builder.CreateCast(std::move(beg), entry);
-    end = builder.CreateCast(std::move(end), entry);
+    auto entry = builder.GetTypes().TypeUnion(beg->GetType(), end->GetType());
+    beg = builder.CreateCast(std::move(beg), entry, true);
+    end = builder.CreateCast(std::move(end), entry, true);
 
     auto range_type = builder.GetTypes().GetRange(std::move(entry));
 
@@ -33,10 +33,11 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
 
 llove::StatementPtr llove::RangeExpression::Reflect(Context &types) const
 {
-    ExpressionPtr beg, end;
-
+    ExpressionPtr beg;
     if (m_Beg)
         m_Beg->Reflect(types, beg);
+
+    ExpressionPtr end;
     if (m_End)
         m_End->Reflect(types, end);
 

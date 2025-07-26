@@ -378,7 +378,8 @@ namespace llove
 template<typename T> requires std::is_base_of_v<llove::Type, T>
 struct std::formatter<std::shared_ptr<T>> : std::formatter<std::string_view>
 {
-    auto format(const std::shared_ptr<T> &ptr, std::format_context &ctx) const
+    template<typename FormatContext>
+    auto format(const std::shared_ptr<T> &ptr, FormatContext &ctx) const
     {
         std::stringstream stream;
         ptr->Print(stream);
@@ -389,7 +390,8 @@ struct std::formatter<std::shared_ptr<T>> : std::formatter<std::string_view>
 template<>
 struct std::formatter<llove::TypeId> : std::formatter<std::string_view>
 {
-    auto format(const llove::TypeId &id, std::format_context &ctx) const
+    template<typename FormatContext>
+    auto format(const llove::TypeId &id, FormatContext &ctx) const
     {
         static const std::map<llove::TypeId, const char *> map
         {

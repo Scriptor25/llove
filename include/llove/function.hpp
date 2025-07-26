@@ -9,6 +9,7 @@ namespace llove
     struct FunctionReference
     {
         bool Expose = false;
+        bool Implicit = false;
         std::string Name;
         FunctionType::Ptr Type;
         llvm::Value *Callee = nullptr;

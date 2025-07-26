@@ -8,6 +8,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &operator
 
     for (auto &[
              expose,
+             implicit,
              name,
              type,
              callee
@@ -66,6 +67,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
     for (auto &[
              expose,
+             implicit,
              name,
              type,
              callee

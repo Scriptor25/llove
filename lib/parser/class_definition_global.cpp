@@ -4,19 +4,20 @@
 
 llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
 {
-    auto class_name = Expect(TokenType_Sym).Value;
+    auto class_name = Expect(TokenType_Symbol).Value;
     auto class_type = m_Types.GetClass(std::move(class_name));
 
-    auto mutable_ = SkipIf(TokenType_Sym, "mut");
-    auto name = At(TokenType_Opr) ? Skip().Value : Expect(TokenType_Sym).Value;
+    auto implicit = SkipIf(TokenType_Symbol, "implicit");
+    auto mutable_ = SkipIf(TokenType_Symbol, "mut");
+    auto name = At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
 
     std::vector<Parameter> parameters;
     auto vararg = false;
 
-    Expect(TokenType_Otr, "(");
-    while (!At(TokenType_Otr, ")"))
+    Expect(TokenType_Other, "(");
+    while (!At(TokenType_Other, ")"))
     {
-        if (SkipIf(TokenType_Opr, "..."))
+        if (SkipIf(TokenType_Operator, "..."))
         {
             vararg = true;
             break;
@@ -25,13 +26,13 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
         auto &[info_, name_] = parameters.emplace_back();
         name_ = ParseField(info_);
 
-        if (!At(TokenType_Otr, ")"))
-            Expect(TokenType_Otr, ",");
+        if (!At(TokenType_Other, ")"))
+            Expect(TokenType_Other, ",");
     }
-    Expect(TokenType_Otr, ")");
+    Expect(TokenType_Other, ")");
 
     Field result;
-    if (SkipIf(TokenType_Otr, ":"))
+    if (SkipIf(TokenType_Other, ":"))
         ParseField(result, false, false);
     else
         result.Type = m_Types.GetVoid();
@@ -40,6 +41,7 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
 
     return std::make_unique<ClassDefinitionGlobal>(
         std::move(class_type),
+        implicit,
         mutable_,
         std::move(name),
         std::move(parameters),

@@ -88,7 +88,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     }
 
     const auto function = GetOrCreateFunction(mangled, function_type, fn.Interface);
-    auto &reference = PushFunction(fn.Expose, fn.Name, function_type, function);
+    auto &reference = PushFunction(fn.Expose, fn.Implicit, fn.Name, function_type, function);
 
     if (!fn.Content)
         return reference;

@@ -78,7 +78,7 @@ llove::FunctionType::Ptr llove::Context::GetFunction(
     return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result), std::move(self));
 }
 
-llove::TypePtr llove::Context::GetMax(const TypePtr &left, const TypePtr &right)
+llove::TypePtr llove::Context::TypeUnion(const TypePtr &left, const TypePtr &right)
 {
     if (left == right)
         return left;
@@ -129,6 +129,110 @@ llove::TypePtr llove::Context::GetMax(const TypePtr &left, const TypePtr &right)
     Error("cannot determine higher order of types {} and {}", left, right);
 }
 
+unsigned llove::Context::Difference(const TypePtr &left, const TypePtr &right)
+{
+    if (left == right)
+        return 0u;
+
+    switch (left->GetId())
+    {
+    case TypeId_Integer:
+    {
+        const auto left_int = As<IntegerType>(left);
+        switch (right->GetId())
+        {
+        case TypeId_Integer:
+        {
+            const auto right_int = As<IntegerType>(right);
+            const auto sign_error = left_int->IsSigned() != right_int->IsSigned() ? 1u : 0u;
+            const auto bits_error = left_int->GetBits() != right_int->GetBits() ? 5u : 0u;
+            return sign_error + bits_error;
+        }
+        case TypeId_Float:
+        {
+            const auto right_flt = As<FloatType>(right);
+            const auto bits_error = left_int->GetBits() != right_flt->GetBits() ? 5u : 0u;
+            return 5u + bits_error;
+        }
+        default:
+            break;
+        }
+        break;
+    }
+    case TypeId_Float:
+    {
+        const auto left_flt = As<FloatType>(left);
+        switch (right->GetId())
+        {
+        case TypeId_Integer:
+        {
+            const auto right_int = As<IntegerType>(right);
+            const auto bits_error = left_flt->GetBits() != right_int->GetBits() ? 5u : 0u;
+            return 5u + bits_error;
+        }
+        case TypeId_Float:
+        {
+            const auto right_flt = As<FloatType>(right);
+            const auto bits_error = left_flt->GetBits() != right_flt->GetBits() ? 5u : 0u;
+            return bits_error;
+        }
+        default:
+            break;
+        }
+        break;
+    }
+    case TypeId_Pointer:
+    {
+        const auto left_ptr = As<PointerType>(left);
+        switch (right->GetId())
+        {
+        case TypeId_Integer:
+        {
+            const auto right_int = As<IntegerType>(right);
+            const auto sign_error = false != right_int->IsSigned() ? 1u : 0u;
+            const auto bits_error = 64u != right_int->GetBits() ? 5u : 0u;
+            return 4u + sign_error + bits_error;
+        }
+        case TypeId_Pointer:
+        {
+            const auto right_ptr = As<PointerType>(right);
+            const auto opaque_error = left_ptr->IsOpaque() != right_ptr->IsOpaque() ? 2u : 0u;
+            const auto left_base = left_ptr->IsOpaque() ? nullptr : left_ptr->GetBase();
+            const auto right_base = right_ptr->IsOpaque() ? nullptr : right_ptr->GetBase();
+            const auto type_error = left_base != right_base ? 2u : 0u;
+            const auto mut_error = left_ptr->IsMutable() != right_ptr->IsMutable() ? 1u : 0u;
+            return opaque_error + type_error + mut_error;
+        }
+        default:
+            break;
+        }
+        break;
+    }
+    case TypeId_Array:
+    {
+        const auto left_arr = As<ArrayType>(left);
+        switch (right->GetId())
+        {
+        case TypeId_Pointer:
+        {
+            const auto right_ptr = As<PointerType>(right);
+            const auto opaque_error = false != right_ptr->IsOpaque() ? 2u : 0u;
+            const auto right_base = right_ptr->IsOpaque() ? nullptr : right_ptr->GetBase();
+            const auto type_error = left_arr->GetBase() != right_base ? 2u : 0u;
+            return 6u + opaque_error + type_error;
+        }
+        default:
+            break;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+
+    return 10u;
+}
+
 llove::ClassTemplate &llove::Context::PushTemplate(
     std::string name,
     std::vector<std::pair<std::string, TemplateType::Ptr>> parameters)
@@ -177,6 +281,16 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
     ] = m_ClassTemplates.at(name);
     Assert(template_parameters.size() == arguments.size(), "wrong number of type arguments");
 
+    m_TemplateArguments.clear();
+
+    name = template_name + '.';
+    for (unsigned i = 0; i < arguments.size(); ++i)
+    {
+        m_TemplateArguments.emplace(template_parameters.at(i).first, arguments.at(i));
+        name += arguments.at(i)->Mangle();
+    }
+    auto class_type = GetClass(std::move(name));
+
     std::vector<ClassField> reflection_fields;
     for (auto &field : template_fields)
         field.Reflect(*this, reflection_fields.emplace_back());
@@ -184,11 +298,6 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
     std::vector<ClassFunction> reflection_functions;
     for (auto &function : template_functions)
         function.Reflect(*this, reflection_functions.emplace_back());
-
-    name = template_name + '.';
-    for (unsigned i = 0; i < arguments.size(); ++i)
-        name += arguments.at(i)->Mangle();
-    auto class_type = GetClass(std::move(name));
 
     std::vector<ClassFieldReference> fields;
     for (auto &field : reflection_fields)
@@ -203,6 +312,7 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
             parameters.emplace_back(info);
         functions.emplace_back(
             function.Expose,
+            function.Implicit,
             function.Mutable,
             function.Name,
             parameters,
@@ -213,6 +323,7 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
 
     for (auto &[
              expose,
+             implicit,
              mutable_,
              name,
              parameters,
@@ -222,6 +333,7 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
          ] : reflection_functions)
         builder.GenFunction(
             {
+                .Implicit = implicit,
                 .Class = class_type,
                 .Mutable = mutable_,
                 .Expose = expose,
@@ -234,6 +346,7 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
 
     for (auto &[
              expose,
+             implicit,
              mutable_,
              name,
              parameters,
@@ -243,6 +356,7 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
          ] : reflection_functions)
         builder.GenFunction(
             {
+                .Implicit = implicit,
                 .Class = class_type,
                 .Mutable = mutable_,
                 .Expose = expose,
@@ -255,4 +369,10 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
         );
 
     return class_type;
+}
+
+llove::TypePtr llove::Context::TemplateArgument(const std::string &name) const
+{
+    Assert(m_TemplateArguments.contains(name), "undefined template argument '{}'", name);
+    return m_TemplateArguments.at(name);
 }

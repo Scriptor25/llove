@@ -37,7 +37,9 @@ llove::StatementPtr llove::StructExpression::Reflect(Context &types) const
     for (auto &[key, value] : m_Values)
         value->Reflect(types, values[key]);
 
-    TypePtr type = TODO;
+    TypePtr type;
+    if (m_Type)
+        m_Type->Reflect(types, type);
 
     return std::make_unique<StructExpression>(std::move(values), std::move(type));
 }

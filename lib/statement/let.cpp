@@ -58,13 +58,19 @@ void llove::LetStatement::Gen(Builder &builder) const
             {
                 std::vector<Field> argument_fields;
                 std::vector<ValuePtr> argument_values;
+
                 if (value)
                 {
                     argument_fields.emplace_back(value->AsField());
                     argument_values.emplace_back(value);
                 }
 
-                if (const auto candidate = builder.FindFunction(constructors, argument_fields, class_type, self))
+                if (const auto candidate = builder.FindFunction(
+                    constructors,
+                    argument_fields,
+                    class_type,
+                    self,
+                    value != nullptr))
                 {
                     builder.CreateCall(
                         candidate->Type,
@@ -74,14 +80,15 @@ void llove::LetStatement::Gen(Builder &builder) const
                 }
                 else
                 {
+                    Assert(constructors.empty() || value != nullptr, "missing initializer value");
                     if (value)
                     {
-                        value = builder.CreateCast(std::move(value), type);
+                        value = builder.CreateCast(std::move(value), type, true);
                     }
                     else
                     {
                         const auto null = llvm::Constant::getNullValue(type->Gen(builder));
-                        value = Value::CreateR(std::move(type), null);
+                        value = Value::CreateR(type, null);
                     }
                     builder.CreateStore(pointer, value);
                 }
@@ -96,7 +103,8 @@ void llove::LetStatement::Gen(Builder &builder) const
                     constructors,
                     argument_fields,
                     class_type,
-                    self);
+                    self,
+                    false);
                 Assert(candidate.has_value(), "no suitable candidate");
 
                 builder.CreateCall(
@@ -133,11 +141,11 @@ void llove::LetStatement::Gen(Builder &builder) const
                 Assert(type != nullptr, "missing type");
 
                 const auto null = llvm::Constant::getNullValue(type->Gen(builder));
-                value = Value::CreateR(std::move(type), null);
+                value = Value::CreateR(type, null);
             }
             else
             {
-                value = builder.CreateCast(std::move(value), type);
+                value = builder.CreateCast(std::move(value), type, true);
             }
 
             builder.CreateStore(pointer, value);

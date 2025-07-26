@@ -3,18 +3,18 @@
 
 llove::StatementPtr llove::Parser::ParseForEachStatement(const bool inline_)
 {
-    Expect(TokenType_Sym, "foreach");
-    Expect(TokenType_Otr, "(");
+    Expect(TokenType_Symbol, "foreach");
+    Expect(TokenType_Other, "(");
 
-    auto mutable_ = SkipIf(TokenType_Sym, "mut");
-    auto reference = SkipIf(TokenType_Opr, "&");
-    auto name = Expect(TokenType_Sym).Value;
+    auto mutable_ = SkipIf(TokenType_Symbol, "mut");
+    auto reference = SkipIf(TokenType_Operator, "&");
+    auto name = Expect(TokenType_Symbol).Value;
 
-    Expect(TokenType_Otr, ":");
+    Expect(TokenType_Other, ":");
 
     auto range = ParseExpression();
 
-    Expect(TokenType_Otr, ")");
+    Expect(TokenType_Other, ")");
 
     auto content = ScopeStatement::Wrap(ParseStatement(inline_));
 

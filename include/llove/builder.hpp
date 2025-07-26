@@ -16,6 +16,7 @@ namespace llove
     struct FunctionInfo final
     {
         bool Interface = false;
+        bool Implicit = false;
 
         ClassType::Ptr Class;
         bool Mutable = false;
@@ -179,7 +180,7 @@ namespace llove
         llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);
 
-        FunctionReference &PushFunction(bool expose, std::string name, FunctionType::Ptr type, llvm::Function *callee);
+        FunctionReference &PushFunction(bool expose, bool implicit, std::string name, FunctionType::Ptr type, llvm::Function *callee);
         [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name) const;
         [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self) const;
 
@@ -196,7 +197,8 @@ namespace llove
             const std::vector<ClassFunctionReference> &functions,
             const std::vector<Field> &arguments,
             const ClassType::Ptr &class_type,
-            const Field &self);
+            const Field &self,
+            bool implicit);
 
         Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
         Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
@@ -211,8 +213,8 @@ namespace llove
         void PushDestructor(llvm::Value *self, llvm::FunctionCallee callee);
         void CallDestructors(const std::set<llvm::Value *> &mask, bool propagate);
 
-        ValuePtr CreateCast(ValuePtr value, TypePtr dst);
-        bool IsCastable(const Field &src, const Field &dst) const;
+        ValuePtr CreateCast(ValuePtr value, TypePtr dst, bool implicit);
+        bool IsCastable(const Field &src, const Field &dst, bool implicit) const;
 
         llvm::Value *CreateGlobalString(const std::string &value);
 

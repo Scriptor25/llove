@@ -3,12 +3,14 @@
 
 llove::DefinitionGlobal::DefinitionGlobal(
     const bool interface,
+    const bool implicit,
     std::string name,
     std::vector<Parameter> parameters,
     const bool vararg,
     Field result,
     StatementPtr content)
     : m_Interface(interface),
+      m_Implicit(implicit),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
       m_VarArg(vararg),
@@ -22,6 +24,7 @@ void llove::DefinitionGlobal::Gen(Builder &builder) const
     builder.GenFunction(
         {
             .Interface = m_Interface,
+            .Implicit = m_Implicit,
             .Name = m_Name,
             .Parameters = m_Parameters,
             .VarArg = m_VarArg,
@@ -35,6 +38,7 @@ std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
 {
     stream
             << (m_Interface ? "interface " : "define ")
+            << (m_Implicit ? "implicit " : "")
             << m_Name
             << '(';
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)

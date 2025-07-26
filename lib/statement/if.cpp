@@ -18,7 +18,8 @@ void llove::IfStatement::Gen(Builder &builder) const
 
     auto use_end = false;
 
-    const auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
+    auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
+    condition = builder.CreateCast(std::move(condition), builder.GetTypes().GetInteger(false, 1), false);
     builder.CreateBranch(condition, then_block, else_block);
 
     builder.SetInsertPoint(then_block);

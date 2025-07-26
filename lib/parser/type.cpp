@@ -9,59 +9,59 @@ llove::TypePtr llove::Parser::ParseType()
 llove::TypePtr llove::Parser::ParseArrayType()
 {
     auto base = ParseBaseType();
-    while (SkipIf(TokenType_Otr, "["))
+    while (SkipIf(TokenType_Other, "["))
     {
-        if (At(TokenType_Int))
+        if (At(TokenType_Integer))
         {
             const auto size = Skip().IntValue;
             base = m_Types.GetArray(std::move(base), size);
         }
         else
         {
-            const auto mutable_ = SkipIf(TokenType_Sym, "mut");
+            const auto mutable_ = SkipIf(TokenType_Symbol, "mut");
             base = m_Types.GetPointer(std::move(base), mutable_);
         }
-        Expect(TokenType_Otr, "]");
+        Expect(TokenType_Other, "]");
     }
     return base;
 }
 
 llove::TypePtr llove::Parser::ParseBaseType()
 {
-    if (SkipIf(TokenType_Otr, "{"))
+    if (SkipIf(TokenType_Other, "{"))
     {
         std::vector<Parameter> fields;
 
-        while (!At(TokenType_Otr, "}"))
+        while (!At(TokenType_Other, "}"))
         {
             Field field;
             auto name = ParseField(field, true);
 
             fields.emplace_back(field, name);
 
-            if (!At(TokenType_Otr, "}"))
-                Expect(TokenType_Otr, ",");
+            if (!At(TokenType_Other, "}"))
+                Expect(TokenType_Other, ",");
         }
-        Expect(TokenType_Otr, "}");
+        Expect(TokenType_Other, "}");
 
         return m_Types.GetStruct(std::move(fields));
     }
 
-    if (SkipIf(TokenType_Otr, "["))
+    if (SkipIf(TokenType_Other, "["))
     {
-        const auto mutable_ = SkipIf(TokenType_Sym, "mut");
-        Expect(TokenType_Otr, "]");
+        const auto mutable_ = SkipIf(TokenType_Symbol, "mut");
+        Expect(TokenType_Other, "]");
         return m_Types.GetPointer(mutable_);
     }
 
-    if (SkipIf(TokenType_Otr, "("))
+    if (SkipIf(TokenType_Other, "("))
     {
         std::vector<Field> parameters;
         auto vararg = false;
 
-        while (!At(TokenType_Otr, ")"))
+        while (!At(TokenType_Other, ")"))
         {
-            if (SkipIf(TokenType_Opr, "..."))
+            if (SkipIf(TokenType_Operator, "..."))
             {
                 vararg = true;
                 break;
@@ -69,22 +69,22 @@ llove::TypePtr llove::Parser::ParseBaseType()
 
             ParseField(parameters.emplace_back(), false, false);
 
-            if (!At(TokenType_Otr, ")"))
-                Expect(TokenType_Otr, ",");
+            if (!At(TokenType_Other, ")"))
+                Expect(TokenType_Other, ",");
         }
-        Expect(TokenType_Otr, ")");
+        Expect(TokenType_Other, ")");
 
         auto has_self = false;
         Field self;
-        if (SkipIf(TokenType_Otr, "["))
+        if (SkipIf(TokenType_Other, "["))
         {
             has_self = true;
             ParseField(self, false, false);
-            Expect(TokenType_Otr, "]");
+            Expect(TokenType_Other, "]");
         }
 
         Field result;
-        if (SkipIf(TokenType_Opr, "=>"))
+        if (SkipIf(TokenType_Operator, "=>"))
             ParseField(result, false, false);
 
         if (has_self)
@@ -92,40 +92,40 @@ llove::TypePtr llove::Parser::ParseBaseType()
         return m_Types.GetFunction(std::move(parameters), vararg, std::move(result));
     }
 
-    if (SkipIf(TokenType_Sym, "class"))
+    if (SkipIf(TokenType_Symbol, "class"))
     {
-        if (SkipIf(TokenType_Opr, "<"))
+        if (SkipIf(TokenType_Operator, "<"))
         {
             std::vector<TypePtr> template_arguments;
-            while (!At(TokenType_Opr, ">"))
+            while (!At(TokenType_Operator, ">"))
             {
                 template_arguments.emplace_back(ParseType());
 
-                if (!At(TokenType_Opr, ">"))
-                    Expect(TokenType_Otr, ",");
+                if (!At(TokenType_Operator, ">"))
+                    Expect(TokenType_Other, ",");
             }
-            Expect(TokenType_Opr, ">");
+            Expect(TokenType_Operator, ">");
 
-            auto name = Expect(TokenType_Sym).Value;
+            auto name = Expect(TokenType_Symbol).Value;
             return m_Types.InstantiateTemplateClass(m_Builder, std::move(name), template_arguments);
         }
 
-        auto name = Expect(TokenType_Sym).Value;
+        auto name = Expect(TokenType_Symbol).Value;
         return m_Types.GetClass(std::move(name));
     }
 
-    if (SkipIf(TokenType_Sym, "range"))
+    if (SkipIf(TokenType_Symbol, "range"))
     {
-        Expect(TokenType_Opr, "<");
+        Expect(TokenType_Operator, "<");
         auto entry = ParseType();
-        Expect(TokenType_Opr, ">");
+        Expect(TokenType_Operator, ">");
 
         return m_Types.GetRange(std::move(entry));
     }
 
-    if (At(TokenType_Sym))
+    if (At(TokenType_Symbol))
     {
-        const auto name = Expect(TokenType_Sym).Value;
+        const auto name = Expect(TokenType_Symbol).Value;
         if (auto type = m_Types.Get(name))
             return type;
 

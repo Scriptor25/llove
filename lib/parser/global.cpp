@@ -4,18 +4,18 @@
 
 llove::GlobalPtr llove::Parser::ParseGlobal()
 {
-    if (SkipIf(TokenType_Sym, "type"))
+    if (SkipIf(TokenType_Symbol, "type"))
     {
-        const auto name = Expect(TokenType_Sym).Value;
-        Expect(TokenType_Opr, "=");
+        const auto name = Expect(TokenType_Symbol).Value;
+        Expect(TokenType_Operator, "=");
         auto type = ParseType();
         m_Types.Set(name, std::move(type));
         return nullptr;
     }
 
-    if (At(TokenType_Sym, "define", "interface"))
+    if (At(TokenType_Symbol, "define", "interface"))
         return ParseDefinitionGlobal();
-    if (At(TokenType_Sym, "class"))
+    if (At(TokenType_Symbol, "class"))
         return ParseClassGlobal();
 
     Error("unable to parse global from {} : '{}'", m_Token.Type, m_Token.Value);

@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/field.hpp>
 #include <llove/value.hpp>
@@ -27,9 +28,9 @@ bool llove::Field::GetCastError(
         return true;
     if (dst.Type != src.Type)
     {
-        if (strict || !builder.IsCastable(src, dst))
+        if (strict || !builder.IsCastable(src, dst, true))
             return true;
-        error += 5u;
+        error += builder.GetTypes().Difference(dst.Type, src.Type);
     }
 
     return false;
@@ -55,7 +56,7 @@ bool llove::Field::IsCastable(
     if (dst.Type->IsClass() && src.Reference)
         return false;
     if (dst.Type != src.Type)
-        if (strict || !builder.IsCastable(src, dst))
+        if (strict || !builder.IsCastable(src, dst, true))
             return false;
     return true;
 }
@@ -78,7 +79,7 @@ llvm::Type *llove::Field::GenType(Builder &builder) const
     return Reference ? builder.GetPointerType(type) : type;
 }
 
-llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, bool implicit_ownership) const
+llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool unstable_ownership) const
 {
     if (Reference)
     {
@@ -89,10 +90,10 @@ llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, bool implic
     }
 
     Assert(
-        implicit_ownership || !Type->IsClass() || !value->IsReferenceable(),
+        unstable_ownership || !Type->IsClass() || !value->IsReferenceable(),
         "implicitly removing ownership from lvalue");
 
-    value = builder.CreateCast(std::move(value), Type);
+    value = builder.CreateCast(std::move(value), Type, true);
     return value->Load(builder);
 }
 

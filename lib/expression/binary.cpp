@@ -40,15 +40,16 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
             return left;
         }
 
-    Error("undefined binary operator {} {} {}", left->GetType(), m_Operator, right->GetType());
+    Error("undefined binary operator {} {} {}", left->AsField(), m_Operator, right->AsField());
 }
 
 llove::StatementPtr llove::BinaryExpression::Reflect(Context &types) const
 {
-    ExpressionPtr left, right;
-
+    ExpressionPtr left;
     if (m_Left)
         m_Left->Reflect(types, left);
+
+    ExpressionPtr right;
     if (m_Right)
         m_Right->Reflect(types, right);
 

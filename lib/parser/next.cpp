@@ -125,7 +125,7 @@ llove::Token llove::Parser::Next()
                 value += static_cast<char>(m_Buffer);
                 m_Buffer = m_Stream.get();
                 return {
-                    .Type = TokenType_Otr,
+                    .Type = TokenType_Other,
                     .Raw = std::move(raw),
                     .Value = std::move(value),
                 };
@@ -222,7 +222,7 @@ llove::Token llove::Parser::Next()
                 break;
             }
             return {
-                .Type = TokenType_Sym,
+                .Type = TokenType_Symbol,
                 .Raw = std::move(raw),
                 .Value = std::move(value),
             };
@@ -235,7 +235,7 @@ llove::Token llove::Parser::Next()
             raw += static_cast<char>(m_Buffer);
             m_Buffer = m_Stream.get();
             return {
-                .Type = TokenType_Str,
+                .Type = TokenType_String,
                 .Raw = std::move(raw),
                 .Value = std::move(value),
             };
@@ -248,7 +248,7 @@ llove::Token llove::Parser::Next()
             raw += static_cast<char>(m_Buffer);
             m_Buffer = m_Stream.get();
             return {
-                .Type = TokenType_Int,
+                .Type = TokenType_Integer,
                 .Raw = std::move(raw),
                 .IntValue = static_cast<uint64_t>(value.at(0)),
             };
@@ -269,7 +269,7 @@ llove::Token llove::Parser::Next()
                 break;
             }
             return {
-                .Type = flt ? TokenType_Flt : TokenType_Int,
+                .Type = flt ? TokenType_Float : TokenType_Integer,
                 .Raw = std::move(raw),
                 .IntValue = flt ? 0u : std::stoull(value, nullptr, base),
                 .FltValue = flt ? std::stod(value) : 0.0,
@@ -283,7 +283,7 @@ llove::Token llove::Parser::Next()
                 break;
             }
             return {
-                .Type = TokenType_Opr,
+                .Type = TokenType_Operator,
                 .Raw = std::move(raw),
                 .Value = std::move(value),
             };

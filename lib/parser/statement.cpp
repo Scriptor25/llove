@@ -3,23 +3,25 @@
 
 llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
 {
-    if (At(TokenType_Otr, "{"))
+    if (At(TokenType_Other, "{"))
         return ParseScopeStatement();
-    if (At(TokenType_Sym, "for"))
+    if (At(TokenType_Symbol, "delete"))
+        return ParseDeleteStatement(inline_);
+    if (At(TokenType_Symbol, "for"))
         return ParseForStatement(inline_);
-    if (At(TokenType_Sym, "foreach"))
+    if (At(TokenType_Symbol, "foreach"))
         return ParseForEachStatement(inline_);
-    if (At(TokenType_Sym, "if"))
+    if (At(TokenType_Symbol, "if"))
         return ParseIfStatement(inline_);
-    if (At(TokenType_Sym, "let"))
+    if (At(TokenType_Symbol, "let"))
         return ParseLetStatement(inline_);
-    if (At(TokenType_Sym, "yield"))
+    if (At(TokenType_Symbol, "yield"))
         return ParseYieldStatement(inline_);
 
     auto expression = ParseExpression();
     if (inline_)
         return expression;
 
-    Expect(TokenType_Otr, ";");
+    Expect(TokenType_Other, ";");
     return expression;
 }

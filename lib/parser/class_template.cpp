@@ -7,20 +7,20 @@ void llove::Parser::ParseClassTemplate()
 {
     std::vector<std::pair<std::string, TemplateType::Ptr>> parameters;
 
-    Expect(TokenType_Opr, "<");
-    while (!At(TokenType_Opr, ">"))
+    Expect(TokenType_Operator, "<");
+    while (!At(TokenType_Operator, ">"))
     {
-        auto name = Expect(TokenType_Sym).Value;
+        auto name = Expect(TokenType_Symbol).Value;
         parameters.emplace_back(name, std::make_shared<TemplateType>(name));
 
-        if (!At(TokenType_Opr, ">"))
-            Expect(TokenType_Otr, ",");
+        if (!At(TokenType_Operator, ">"))
+            Expect(TokenType_Other, ",");
     }
-    Expect(TokenType_Opr, ">");
+    Expect(TokenType_Operator, ">");
 
-    auto name = Expect(TokenType_Sym).Value;
+    auto name = Expect(TokenType_Symbol).Value;
 
-    if (SkipIf(TokenType_Otr, ";"))
+    if (SkipIf(TokenType_Other, ";"))
     {
         m_Types.EmplaceTemplate(std::move(name), std::move(parameters));
         return;
@@ -28,10 +28,10 @@ void llove::Parser::ParseClassTemplate()
 
     auto &template_ = m_Types.PushTemplate(std::move(name), std::move(parameters));
 
-    Expect(TokenType_Otr, "{");
-    while (!At(TokenType_Otr, "}"))
+    Expect(TokenType_Other, "{");
+    while (!At(TokenType_Other, "}"))
     {
-        if (At(TokenType_Sym, "let"))
+        if (At(TokenType_Symbol, "let"))
         {
             ParseClassField(template_.Fields.emplace_back());
             continue;
@@ -39,7 +39,7 @@ void llove::Parser::ParseClassTemplate()
 
         ParseClassFunction(template_.Functions.emplace_back());
     }
-    Expect(TokenType_Otr, "}");
+    Expect(TokenType_Other, "}");
 
     m_Types.PopTemplate();
 }

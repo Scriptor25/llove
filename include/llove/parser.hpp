@@ -14,12 +14,12 @@ namespace llove
     enum TokenType
     {
         TokenType_Eof,
-        TokenType_Sym,
-        TokenType_Str,
-        TokenType_Int,
-        TokenType_Flt,
-        TokenType_Opr,
-        TokenType_Otr,
+        TokenType_Symbol,
+        TokenType_String,
+        TokenType_Integer,
+        TokenType_Float,
+        TokenType_Operator,
+        TokenType_Other,
     };
 
     struct Token
@@ -34,7 +34,7 @@ namespace llove
     class Parser final
     {
     public:
-        explicit Parser(Context &types, Builder& builder, std::istream &stream);
+        explicit Parser(Context &types, Builder &builder, std::istream &stream);
 
         [[nodiscard]] bool Ok() const;
         GlobalPtr Parse();
@@ -78,6 +78,7 @@ namespace llove
 
         StatementPtr ParseStatement(bool inline_);
         StatementPtr ParseScopeStatement();
+        StatementPtr ParseDeleteStatement(bool inline_);
         StatementPtr ParseForStatement(bool inline_);
         StatementPtr ParseForEachStatement(bool inline_);
         StatementPtr ParseIfStatement(bool inline_);
@@ -103,17 +104,18 @@ namespace llove
 template<>
 struct std::formatter<llove::TokenType> : std::formatter<std::string_view>
 {
-    auto format(const llove::TokenType &type, std::format_context &ctx) const
+    template<typename FormatContext>
+    auto format(const llove::TokenType &type, FormatContext &ctx) const
     {
         static const std::map<llove::TokenType, std::string_view> m
         {
             { llove::TokenType_Eof, "Eof" },
-            { llove::TokenType_Sym, "Sym" },
-            { llove::TokenType_Str, "Str" },
-            { llove::TokenType_Int, "Int" },
-            { llove::TokenType_Flt, "Flt" },
-            { llove::TokenType_Opr, "Opr" },
-            { llove::TokenType_Otr, "Otr" },
+            { llove::TokenType_Symbol, "Sym" },
+            { llove::TokenType_String, "Str" },
+            { llove::TokenType_Integer, "Int" },
+            { llove::TokenType_Float, "Flt" },
+            { llove::TokenType_Operator, "Opr" },
+            { llove::TokenType_Other, "Otr" },
         };
         return std::formatter<std::string_view>::format(m.at(type), ctx);
     }

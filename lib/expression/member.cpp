@@ -81,7 +81,6 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const
 llove::StatementPtr llove::MemberExpression::Reflect(Context &types) const
 {
     ExpressionPtr value;
-
     if (m_Value)
         m_Value->Reflect(types, value);
 

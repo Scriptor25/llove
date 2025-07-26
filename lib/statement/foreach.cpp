@@ -175,8 +175,18 @@ void llove::ForEachStatement::Gen(Builder &builder) const
     {
         const auto class_type = As<ClassType>(type);
 
-        auto begin_function = builder.FindFunction(class_type->GetFunctions("begin"), {}, class_type, range->AsField());
-        auto end_function = builder.FindFunction(class_type->GetFunctions("end"), {}, class_type, range->AsField());
+        auto begin_function = builder.FindFunction(
+            class_type->GetFunctions("begin"),
+            {},
+            class_type,
+            range->AsField(),
+            false);
+        auto end_function = builder.FindFunction(
+            class_type->GetFunctions("end"),
+            {},
+            class_type,
+            range->AsField(),
+            false);
 
         Assert(begin_function.has_value(), "class is missing function 'begin'");
         Assert(end_function.has_value(), "class is missing function 'end'");

@@ -46,6 +46,7 @@ namespace llove
     public:
         explicit ClassDefinitionGlobal(
             ClassType::Ptr class_type,
+            bool implicit,
             bool mutable_,
             std::string name,
             std::vector<Parameter> parameters,
@@ -58,6 +59,7 @@ namespace llove
 
     private:
         ClassType::Ptr m_ClassType;
+        bool m_Implicit;
         bool m_Mutable;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
@@ -71,6 +73,7 @@ namespace llove
     public:
         explicit DefinitionGlobal(
             bool interface,
+            bool implicit,
             std::string name,
             std::vector<Parameter> parameters,
             bool vararg,
@@ -82,6 +85,7 @@ namespace llove
 
     private:
         bool m_Interface;
+        bool m_Implicit;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
         bool m_VarArg;
@@ -105,6 +109,19 @@ namespace llove
             Assert(cast, "invalid reflection cast");
             ref = std::unique_ptr<T>(cast);
         }
+    };
+
+    class DeleteStatement final : public Statement
+    {
+    public:
+        explicit DeleteStatement(ExpressionPtr value);
+
+        void Gen(Builder &builder) const override;
+        StatementPtr Reflect(Context &types) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Value;
     };
 
     class ForStatement final : public Statement
@@ -258,6 +275,21 @@ namespace llove
 
     private:
         ExpressionPtr m_Callee;
+        std::vector<ExpressionPtr> m_Arguments;
+    };
+
+    class CreateExpression final : public Expression
+    {
+    public:
+        explicit CreateExpression(TypePtr type, ExpressionPtr destination, std::vector<ExpressionPtr> arguments);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        StatementPtr Reflect(Context &types) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        TypePtr m_Type;
+        ExpressionPtr m_Destination;
         std::vector<ExpressionPtr> m_Arguments;
     };
 

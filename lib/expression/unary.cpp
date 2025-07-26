@@ -17,39 +17,11 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
 
     if (m_Operator == "$")
     {
-        Assert(operand->IsReferenceable(), "cannot remove ownership from rvalue");
-
-        if (operand->GetType()->IsClass())
-        {
-            const auto class_type = As<ClassType>(operand->GetType());
-            const auto functions = class_type->GetConstructors();
-            const auto reference = builder.FindFunction(
-                functions,
-                { { false, false, class_type } },
-                class_type,
-                { true, true, class_type });
-
-            if (reference.has_value())
-            {
-                const auto pointer = builder.CreateAlloca(class_type);
-                const auto self = Value::CreateL(class_type, pointer, true);
-
-                if (operand->IsReferenceable())
-                    operand = Value::CreateR(operand->GetType(), operand->Load(builder));
-
-                builder.CreateCall(
-                    reference->Type,
-                    reference->Callee,
-                    { std::move(operand) },
-                    self);
-
-                operand = self;
-            }
-        }
-
-        if (operand->IsReferenceable())
-            operand = Value::CreateR(operand->GetType(), operand->Load(builder));
-        return operand;
+        if (!operand->IsReferenceable())
+            return operand;
+        if (!operand->GetType()->IsClass())
+            return Value::CreateR(operand->GetType(), operand->Load(builder));
+        Assert(operand->IsMutable(), "cannot remove ownership from immutable lvalue");
     }
 
     if (const auto operator_ = builder.FindOperator(m_Operator, operand->AsField(), m_Suffix))
@@ -58,14 +30,13 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
     Error(
         "undefined unary operator {}{}{}",
         m_Suffix ? std::string{} : m_Operator,
-        operand->GetType(),
+        operand->AsField(),
         m_Suffix ? m_Operator : std::string{});
 }
 
 llove::StatementPtr llove::UnaryExpression::Reflect(Context &types) const
 {
     ExpressionPtr operand;
-
     if (m_Operand)
         m_Operand->Reflect(types, operand);
 

@@ -18,11 +18,14 @@ llove::ValuePtr llove::SizeofTypeExpression::GenVal(Builder &builder, TypePtr ex
 
 llove::StatementPtr llove::SizeofTypeExpression::Reflect(Context &types) const
 {
-    TypePtr type = TODO;
+    TypePtr type;
+    if (m_Type)
+        m_Type->Reflect(types, type);
+
     return std::make_unique<SizeofTypeExpression>(std::move(type));
 }
 
 std::ostream &llove::SizeofTypeExpression::Print(std::ostream &stream) const
 {
-    return stream << "sizeof<" << m_Type << '>';
+    return stream << "sizeof " << m_Type;
 }

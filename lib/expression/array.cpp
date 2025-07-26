@@ -10,7 +10,7 @@ llove::ArrayExpression::ArrayExpression(std::vector<ExpressionPtr> values, TypeP
 {
 }
 
-llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
     auto type = m_Type ? As<ArrayType>(m_Type) : expect ? As<ArrayType>(expect) : nullptr;
     Assert(type != nullptr, "untyped array expression");
@@ -38,12 +38,11 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, TypePtr expect)
 
 llove::StatementPtr llove::ArrayExpression::Reflect(Context &types) const
 {
-    std::vector<ExpressionPtr> values(m_Values.size());
-    for (unsigned i = 0; i < m_Values.size(); ++i)
-        m_Values.at(i)->Reflect(types, values.at(i));
+    std::vector<ExpressionPtr> values;
+    for (auto &value : m_Values)
+        value->Reflect(types, values.emplace_back());
 
     TypePtr type;
-
     if (m_Type)
         m_Type->Reflect(types, type);
 

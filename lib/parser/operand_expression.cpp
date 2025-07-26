@@ -7,32 +7,32 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
 
     while (true)
     {
-        if (SkipIf(TokenType_Otr, "("))
+        if (SkipIf(TokenType_Other, "("))
         {
             std::vector<ExpressionPtr> arguments;
 
-            while (!At(TokenType_Otr, ")"))
+            while (!At(TokenType_Other, ")"))
             {
                 arguments.emplace_back(ParseExpression());
 
-                if (!At(TokenType_Otr, ")"))
-                    Expect(TokenType_Otr, ",");
+                if (!At(TokenType_Other, ")"))
+                    Expect(TokenType_Other, ",");
             }
-            Expect(TokenType_Otr, ")");
+            Expect(TokenType_Other, ")");
 
             expression = std::make_unique<CallExpression>(std::move(expression), std::move(arguments));
             continue;
         }
 
-        if (SkipIf(TokenType_Opr, "."))
+        if (SkipIf(TokenType_Operator, "."))
         {
-            auto member = Expect(TokenType_Sym).Value;
+            auto member = Expect(TokenType_Symbol).Value;
 
             expression = std::make_unique<MemberExpression>(std::move(expression), std::move(member));
             continue;
         }
 
-        if (SkipIf(TokenType_Opr, ".."))
+        if (SkipIf(TokenType_Operator, ".."))
         {
             auto end = ParsePrimaryExpression();
 
@@ -40,16 +40,16 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             continue;
         }
 
-        if (SkipIf(TokenType_Otr, "["))
+        if (SkipIf(TokenType_Other, "["))
         {
             auto index = ParseExpression();
-            Expect(TokenType_Otr, "]");
+            Expect(TokenType_Other, "]");
 
             expression = std::make_unique<SubscriptExpression>(std::move(expression), std::move(index));
             continue;
         }
 
-        if (At(TokenType_Opr, "++", "--"))
+        if (At(TokenType_Operator, "++", "--"))
         {
             auto operator_ = Skip().Value;
 
