@@ -24,11 +24,11 @@ llove::ValuePtr llove::IntExpression::GenVal(Builder &builder, const TypePtr exp
     return Value::CreateR(std::move(type), value);
 }
 
-llove::StatementPtr llove::IntExpression::Reflect(Context &types) const
+llove::StatementPtr llove::IntExpression::Reflect(Builder &builder) const
 {
     TypePtr type;
     if (m_Type)
-        m_Type->Reflect(types, type);
+        m_Type->Reflect(builder, type);
 
     return std::make_unique<IntExpression>(m_Value, std::move(type));
 }

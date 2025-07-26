@@ -29,12 +29,12 @@ void llove::YieldStatement::Gen(Builder &builder) const
     builder.CreateRet(result_value);
 }
 
-llove::StatementPtr llove::YieldStatement::Reflect(Context &types) const
+llove::StatementPtr llove::YieldStatement::Reflect(Builder &builder) const
 {
     ExpressionPtr value;
 
     if (m_Value)
-        m_Value->Reflect(types, value);
+        m_Value->Reflect(builder, value);
 
     return std::make_unique<YieldStatement>(std::move(value));
 }

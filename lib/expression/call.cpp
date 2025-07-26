@@ -31,15 +31,15 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
     return builder.CreateCall(candidate->Type, candidate->Callee, std::move(arguments), std::move(self));
 }
 
-llove::StatementPtr llove::CallExpression::Reflect(Context &types) const
+llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const
 {
     ExpressionPtr callee;
     if (m_Callee)
-        m_Callee->Reflect(types, callee);
+        m_Callee->Reflect(builder, callee);
 
     std::vector<ExpressionPtr> arguments;
     for (auto &argument : m_Arguments)
-        argument->Reflect(types, arguments.emplace_back());
+        argument->Reflect(builder, arguments.emplace_back());
 
     return std::make_unique<CallExpression>(std::move(callee), std::move(arguments));
 }

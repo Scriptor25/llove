@@ -22,9 +22,9 @@ llvm::Type *llove::VoidType::Gen(Builder &builder) const
     return builder.GetVoidType();
 }
 
-llove::TypePtr llove::VoidType::Reflect(Context &types) const
+llove::TypePtr llove::VoidType::Reflect(Builder &builder) const
 {
-    return types.GetVoid();
+    return builder.GetTypes().GetVoid();
 }
 
 std::string llove::VoidType::Mangle() const

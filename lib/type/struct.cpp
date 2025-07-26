@@ -62,15 +62,16 @@ llvm::StructType *llove::StructType::Gen(Builder &builder) const
     return builder.GetStructType(fields, true);
 }
 
-llove::TypePtr llove::StructType::Reflect(Context &types) const
+llove::TypePtr llove::StructType::Reflect(Builder &builder) const
 {
     std::vector<Parameter> fields(m_Fields.size());
     for (unsigned i = 0; i < m_Fields.size(); ++i)
     {
         fields.at(i).Name = m_Fields.at(i).Name;
-        m_Fields.at(i).Info.Reflect(types, fields.at(i).Info);
+        m_Fields.at(i).Info.Reflect(builder, fields.at(i).Info);
     }
-    return types.GetStruct(std::move(fields));
+
+    return builder.GetTypes().GetStruct(std::move(fields));
 }
 
 std::string llove::StructType::Mangle() const

@@ -34,11 +34,11 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
         m_Suffix ? m_Operator : std::string{});
 }
 
-llove::StatementPtr llove::UnaryExpression::Reflect(Context &types) const
+llove::StatementPtr llove::UnaryExpression::Reflect(Builder &builder) const
 {
     ExpressionPtr operand;
     if (m_Operand)
-        m_Operand->Reflect(types, operand);
+        m_Operand->Reflect(builder, operand);
 
     return std::make_unique<UnaryExpression>(m_Operator, std::move(operand), m_Suffix);
 }

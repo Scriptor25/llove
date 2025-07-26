@@ -38,14 +38,14 @@ llvm::ArrayType *llove::ArrayType::Gen(Builder &builder) const
     return builder.GetArrayType(m_Base->Gen(builder), m_Size);
 }
 
-llove::TypePtr llove::ArrayType::Reflect(Context &types) const
+llove::TypePtr llove::ArrayType::Reflect(Builder &builder) const
 {
     TypePtr base;
 
     if (m_Base)
-        m_Base->Reflect(types, base);
+        m_Base->Reflect(builder, base);
 
-    return types.GetArray(std::move(base), m_Size);
+    return builder.GetTypes().GetArray(std::move(base), m_Size);
 }
 
 std::string llove::ArrayType::Mangle() const

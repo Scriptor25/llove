@@ -52,7 +52,9 @@ class test {
 
     expose mut $(): test {
         let result = self;
+
         self.data_ptr = null;
+
         yield result;
     }
 
@@ -94,6 +96,14 @@ class<T> unique {
     expose mut create(ptr: T[mut]) {
         printf("unique:create(T[mut])\r\n");
         self.ptr = ptr;
+    }
+
+    expose mut $(): class<T> unique {
+        let result = self;
+
+        self.ptr = null;
+
+        yield self;
     }
 
     expose mut delete() {

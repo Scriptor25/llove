@@ -26,12 +26,12 @@ void llove::Parser::RemoveEscape(std::string &raw, std::string &value)
     {
         raw += static_cast<char>(m_Buffer);
         value += static_cast<char>(m_Buffer);
-        m_Buffer = m_Stream.get();
+        Get();
         return;
     }
 
     raw += static_cast<char>(m_Buffer);
-    m_Buffer = m_Stream.get();
+    Get();
 
     switch (m_Buffer)
     {
@@ -62,7 +62,24 @@ void llove::Parser::RemoveEscape(std::string &raw, std::string &value)
     }
 
     raw += static_cast<char>(m_Buffer);
+    Get();
+}
+
+int llove::Parser::Get()
+{
     m_Buffer = m_Stream.get();
+
+    if (m_Buffer == '\n')
+    {
+        m_Loc.Col = 0;
+        m_Loc.Row++;
+    }
+    else
+    {
+        m_Loc.Col++;
+    }
+
+    return m_Buffer;
 }
 
 llove::Token llove::Parser::Next()
@@ -101,6 +118,8 @@ llove::Token llove::Parser::Next()
     auto base = 0;
     auto flt = false;
 
+    Location loc;
+
     while (m_Buffer >= 0)
     {
         switch (state)
@@ -121,10 +140,12 @@ llove::Token llove::Parser::Next()
             case ',':
             case ';':
             case '?':
+                loc = m_Loc;
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 return {
+                    .Loc = std::move(loc),
                     .Type = TokenType_Other,
                     .Raw = std::move(raw),
                     .Value = std::move(value),
@@ -144,36 +165,40 @@ llove::Token llove::Parser::Next()
             case '!':
             case '~':
             case '$':
+                loc = m_Loc;
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 state = State_Opr;
                 break;
             case '"':
+                loc = m_Loc;
                 raw += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 state = State_Str;
                 break;
             case '\'':
+                loc = m_Loc;
                 raw += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 state = State_Chr;
                 break;
             case '0':
+                loc = m_Loc;
                 raw += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 switch (m_Buffer)
                 {
                 case 'b':
                     raw += static_cast<char>(m_Buffer);
-                    m_Buffer = m_Stream.get();
+                    Get();
                     base = 2;
                     flt = false;
                     state = State_Num;
                     break;
                 case 'x':
                     raw += static_cast<char>(m_Buffer);
-                    m_Buffer = m_Stream.get();
+                    Get();
                     base = 16;
                     flt = false;
                     state = State_Num;
@@ -189,6 +214,7 @@ llove::Token llove::Parser::Next()
             default:
                 if (isdigit(m_Buffer))
                 {
+                    loc = m_Loc;
                     base = 10;
                     flt = false;
                     state = State_Num;
@@ -196,11 +222,12 @@ llove::Token llove::Parser::Next()
                 }
                 if (isalpha(m_Buffer) || m_Buffer == '_')
                 {
+                    loc = m_Loc;
                     state = State_Idt;
                     break;
                 }
                 raw += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 break;
             }
             break;
@@ -208,7 +235,7 @@ llove::Token llove::Parser::Next()
             if (m_Buffer != '\n')
             {
                 raw += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 break;
             }
             state = State_Idl;
@@ -218,10 +245,11 @@ llove::Token llove::Parser::Next()
             {
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 break;
             }
             return {
+                .Loc = std::move(loc),
                 .Type = TokenType_Symbol,
                 .Raw = std::move(raw),
                 .Value = std::move(value),
@@ -233,8 +261,9 @@ llove::Token llove::Parser::Next()
                 break;
             }
             raw += static_cast<char>(m_Buffer);
-            m_Buffer = m_Stream.get();
+            Get();
             return {
+                .Loc = std::move(loc),
                 .Type = TokenType_String,
                 .Raw = std::move(raw),
                 .Value = std::move(value),
@@ -246,8 +275,9 @@ llove::Token llove::Parser::Next()
                 break;
             }
             raw += static_cast<char>(m_Buffer);
-            m_Buffer = m_Stream.get();
+            Get();
             return {
+                .Loc = std::move(loc),
                 .Type = TokenType_Integer,
                 .Raw = std::move(raw),
                 .IntValue = static_cast<uint64_t>(value.at(0)),
@@ -257,7 +287,7 @@ llove::Token llove::Parser::Next()
             {
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 flt = true;
                 break;
             }
@@ -265,10 +295,11 @@ llove::Token llove::Parser::Next()
             {
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 break;
             }
             return {
+                .Loc = std::move(loc),
                 .Type = flt ? TokenType_Float : TokenType_Integer,
                 .Raw = std::move(raw),
                 .IntValue = flt ? 0u : std::stoull(value, nullptr, base),
@@ -279,10 +310,11 @@ llove::Token llove::Parser::Next()
             {
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);
-                m_Buffer = m_Stream.get();
+                Get();
                 break;
             }
             return {
+                .Loc = std::move(loc),
                 .Type = TokenType_Operator,
                 .Raw = std::move(raw),
                 .Value = std::move(value),
@@ -291,6 +323,7 @@ llove::Token llove::Parser::Next()
     }
 
     return {
+        .Loc = std::move(loc),
         .Type = TokenType_Eof,
     };
 }

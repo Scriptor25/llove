@@ -31,7 +31,7 @@ namespace llove
 
     struct ClassField final
     {
-        void Reflect(Context &types, ClassField &field) const;
+        void Reflect(Builder &builder, ClassField &field) const;
         std::ostream &Print(std::ostream &stream) const;
 
         Field Info;
@@ -42,7 +42,7 @@ namespace llove
 
     struct ClassFunction final
     {
-        void Reflect(Context &types, ClassFunction &function) const;
+        void Reflect(Builder &builder, ClassFunction &function) const;
         std::ostream &Print(std::ostream &stream) const;
 
         bool Expose = false;

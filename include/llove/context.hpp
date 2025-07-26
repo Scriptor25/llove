@@ -52,7 +52,7 @@ namespace llove
 
         void EmplaceTemplate(std::string name, std::vector<std::pair<std::string, TemplateType::Ptr>> parameters);
 
-        ClassType::Ptr InstantiateTemplateClass(
+        TypePtr InstantiateTemplateClass(
             Builder &builder,
             std::string name,
             const std::vector<TypePtr> &arguments);
@@ -65,6 +65,7 @@ namespace llove
 
         std::vector<std::map<std::string, TemplateType::Ptr>> m_TemplateTypes;
         std::map<std::string, ClassTemplate> m_ClassTemplates;
+        ClassTemplate *m_CurrentTemplate = nullptr;
         std::map<std::string, TypePtr> m_TemplateArguments;
     };
 

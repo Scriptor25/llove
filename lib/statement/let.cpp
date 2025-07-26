@@ -157,19 +157,19 @@ void llove::LetStatement::Gen(Builder &builder) const
     builder.SetValue(m_Name, std::move(storage));
 }
 
-llove::StatementPtr llove::LetStatement::Reflect(Context &types) const
+llove::StatementPtr llove::LetStatement::Reflect(Builder &builder) const
 {
     Field info;
     ExpressionPtr value;
     std::vector<ExpressionPtr> arguments(m_Arguments.size());
 
-    m_Info.Reflect(types, info);
+    m_Info.Reflect(builder, info);
 
     if (m_Value)
-        m_Value->Reflect(types, value);
+        m_Value->Reflect(builder, value);
 
     for (unsigned i = 0; i < m_Arguments.size(); ++i)
-        m_Arguments.at(i)->Reflect(types, arguments.at(i));
+        m_Arguments.at(i)->Reflect(builder, arguments.at(i));
 
     return std::make_unique<LetStatement>(std::move(info), m_Name, std::move(value), std::move(arguments));
 }

@@ -43,15 +43,15 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
     Error("undefined binary operator {} {} {}", left->AsField(), m_Operator, right->AsField());
 }
 
-llove::StatementPtr llove::BinaryExpression::Reflect(Context &types) const
+llove::StatementPtr llove::BinaryExpression::Reflect(Builder &builder) const
 {
     ExpressionPtr left;
     if (m_Left)
-        m_Left->Reflect(types, left);
+        m_Left->Reflect(builder, left);
 
     ExpressionPtr right;
     if (m_Right)
-        m_Right->Reflect(types, right);
+        m_Right->Reflect(builder, right);
 
     return std::make_unique<BinaryExpression>(m_Operator, std::move(left), std::move(right));
 }

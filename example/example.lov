@@ -1,4 +1,5 @@
 interface putchar(c: i32): i32;
+interface printf(format: i8[], ...): i32;
 interface strlen(s: i8[]): u64;
 interface free(block: [mut]);
 interface malloc(count: u64): [mut];
@@ -7,11 +8,13 @@ interface memcpy(dst: [mut], src: [], count: u64): [mut];
 
 class string {
 
-    expose mut create();
-    expose mut create(s: i8);
-    expose mut create(s: i8[]);
-    expose mut create(mut s: string);
-    expose mut create(&s: string);
+    expose implicit mut create();
+    expose implicit mut create(s: i8);
+    expose implicit mut create(s: i8[]);
+    expose implicit mut create(mut s: string);
+    expose implicit mut create(&s: string);
+
+    expose mut $(): string;
 
     expose mut delete();
 
@@ -113,9 +116,8 @@ define +(l: string, r: string): string {
     yield str;
 }
 
-define cast(src: i8[]): string {
-    let dst: string(src);
-    yield dst;
+define implicit cast(src: i8[]): string {
+    yield create string(src);
 }
 
 define print(s: string) {
@@ -124,7 +126,7 @@ define print(s: string) {
 }
 
 define print(&s: string) {
-    foreach (c : s)
+    foreach (&c : s)
         putchar(c);
 }
 
@@ -137,19 +139,30 @@ define hello(name: string) {
 }
 
 define test(a: u1, b: u1): string {
-    let mut x: string;
-    let s: string = "Hello there!";
-    let m: string = "ABC, 123.";
+    let mut x: string = "<empty>\r\n";
+    let s: string = "Hello there!\r\n";
+    let mut m: string = "ABC, 123.\r\n";
 
     if (a) {
         x = $m;
     }
 
     if (b) {
+        print(x);
+        print(s);
+        print(m);
+        printf("---------------------\r\n");
+
         yield s;
     }
 
     x = s;
+
+    print(x);
+    print(s);
+    print(m);
+    printf("---------------------\r\n");
+
     yield x;
 }
 
@@ -206,8 +219,19 @@ define:string mut create(&s: string) {
     memcpy(self.beg, s.beg, len);
 }
 
+define:string mut $(): string {
+    let result = self;
+
+    self.beg = null;
+    self.end = null;
+
+    yield result;
+}
+
 define:string mut delete() {
-    free(self.beg);
+    if (self.beg) {
+        free(self.beg);
+    }
 
     self.beg = null;
     self.end = null;
@@ -248,7 +272,9 @@ define:string mut end(): i8[mut] {
 }
 
 define:string mut clear() {
-    free(self.beg);
+    if (self.beg) {
+        free(self.beg);
+    }
 
     self.beg = null;
     self.end = null;
@@ -275,14 +301,14 @@ define:string mut =(s: i8[]): mut &string {
 }
 
 define:string mut =(mut s: string): mut &string {
-    let self_beg = self.beg;
-    let self_end = self.end;
+    let beg = self.beg;
+    let end = self.end;
 
     self.beg = s.beg;
     self.end = s.end;
 
-    s.beg = self_beg;
-    s.end = self_end;
+    s.beg = beg;
+    s.end = end;
 
     yield self;
 }

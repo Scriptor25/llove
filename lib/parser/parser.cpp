@@ -1,4 +1,3 @@
-#include <istream>
 #include <llove/context.hpp>
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
@@ -6,9 +5,11 @@
 llove::Parser::Parser(Context &types, Builder &builder, std::istream &stream)
     : m_Types(types),
       m_Builder(builder),
-      m_Stream(stream)
+      m_Stream(stream),
+      m_Buffer(0),
+      m_Loc({}, 1u, 0u)
 {
-    m_Buffer = stream.get();
+    Get();
     m_Token = Next();
 }
 

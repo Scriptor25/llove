@@ -64,19 +64,19 @@ void llove::ForStatement::Gen(Builder &builder) const
     builder.PopFrame();
 }
 
-llove::StatementPtr llove::ForStatement::Reflect(Context &types) const
+llove::StatementPtr llove::ForStatement::Reflect(Builder &builder) const
 {
     StatementPtr prefix, suffix, content;
     ExpressionPtr condition;
 
     if (m_Prefix)
-        m_Prefix->Reflect(types, prefix);
+        m_Prefix->Reflect(builder, prefix);
     if (m_Suffix)
-        m_Suffix->Reflect(types, suffix);
+        m_Suffix->Reflect(builder, suffix);
     if (m_Condition)
-        m_Condition->Reflect(types, condition);
+        m_Condition->Reflect(builder, condition);
     if (m_Content)
-        m_Content->Reflect(types, content);
+        m_Content->Reflect(builder, content);
 
     return std::make_unique<ForStatement>(
         std::move(prefix),

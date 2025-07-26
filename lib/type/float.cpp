@@ -32,9 +32,9 @@ llvm::Type *llove::FloatType::Gen(Builder &builder) const
     return builder.GetFltType(m_Bits);
 }
 
-llove::TypePtr llove::FloatType::Reflect(Context &types) const
+llove::TypePtr llove::FloatType::Reflect(Builder &builder) const
 {
-    return types.GetFloat(m_Bits);
+    return builder.GetTypes().GetFloat(m_Bits);
 }
 
 std::string llove::FloatType::Mangle() const

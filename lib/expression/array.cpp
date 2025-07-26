@@ -36,15 +36,15 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr e
     return Value::CreateR(std::move(type), aggregate);
 }
 
-llove::StatementPtr llove::ArrayExpression::Reflect(Context &types) const
+llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const
 {
     std::vector<ExpressionPtr> values;
     for (auto &value : m_Values)
-        value->Reflect(types, values.emplace_back());
+        value->Reflect(builder, values.emplace_back());
 
     TypePtr type;
     if (m_Type)
-        m_Type->Reflect(types, type);
+        m_Type->Reflect(builder, type);
 
     return std::make_unique<ArrayExpression>(std::move(values), std::move(type));
 }

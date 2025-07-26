@@ -7,7 +7,6 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
     auto class_name = Expect(TokenType_Symbol).Value;
     auto class_type = m_Types.GetClass(std::move(class_name));
 
-    auto implicit = SkipIf(TokenType_Symbol, "implicit");
     auto mutable_ = SkipIf(TokenType_Symbol, "mut");
     auto name = At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
 
@@ -41,7 +40,6 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
 
     return std::make_unique<ClassDefinitionGlobal>(
         std::move(class_type),
-        implicit,
         mutable_,
         std::move(name),
         std::move(parameters),

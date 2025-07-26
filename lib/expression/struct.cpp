@@ -31,15 +31,15 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
     return Value::CreateR(std::move(type), aggregate);
 }
 
-llove::StatementPtr llove::StructExpression::Reflect(Context &types) const
+llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const
 {
     std::map<std::string, ExpressionPtr> values;
     for (auto &[key, value] : m_Values)
-        value->Reflect(types, values[key]);
+        value->Reflect(builder, values[key]);
 
     TypePtr type;
     if (m_Type)
-        m_Type->Reflect(types, type);
+        m_Type->Reflect(builder, type);
 
     return std::make_unique<StructExpression>(std::move(values), std::move(type));
 }

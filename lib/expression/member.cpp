@@ -78,11 +78,11 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const
     return { .Candidates = builder.GetFunctions(m_Member, value->AsField()), .Self = std::move(value) };
 }
 
-llove::StatementPtr llove::MemberExpression::Reflect(Context &types) const
+llove::StatementPtr llove::MemberExpression::Reflect(Builder &builder) const
 {
     ExpressionPtr value;
     if (m_Value)
-        m_Value->Reflect(types, value);
+        m_Value->Reflect(builder, value);
 
     return std::make_unique<MemberExpression>(std::move(value), m_Member);
 }

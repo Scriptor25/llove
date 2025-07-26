@@ -81,19 +81,19 @@ llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder) const
     return builder.GetFunctionType(m_Result.GenType(builder), parameters, m_VarArg);
 }
 
-llove::TypePtr llove::FunctionType::Reflect(Context &types) const
+llove::TypePtr llove::FunctionType::Reflect(Builder &builder) const
 {
     std::vector<Field> parameters(m_Parameters.size());
     Field result;
     Field self;
 
     for (unsigned i = 0; i < m_Parameters.size(); ++i)
-        m_Parameters.at(i).Reflect(types, parameters.at(i));
+        m_Parameters.at(i).Reflect(builder, parameters.at(i));
 
-    m_Result.Reflect(types, result);
-    m_Self.Reflect(types, self);
+    m_Result.Reflect(builder, result);
+    m_Self.Reflect(builder, self);
 
-    return types.GetFunction(std::move(parameters), m_VarArg, std::move(result), std::move(self));
+    return builder.GetTypes().GetFunction(std::move(parameters), m_VarArg, std::move(result), std::move(self));
 }
 
 std::string llove::FunctionType::Mangle() const

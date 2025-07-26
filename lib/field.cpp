@@ -121,11 +121,13 @@ llove::Field::operator bool() const
     return Type != nullptr;
 }
 
-void llove::Field::Reflect(Context &types, Field &field) const
+void llove::Field::Reflect(Builder &builder, Field &field) const
 {
     field.Mutable = Mutable;
     field.Reference = Reference;
-    Type->Reflect(types, field.Type);
+
+    if (Type)
+        Type->Reflect(builder, field.Type);
 }
 
 std::string llove::GetFieldHash(const std::vector<Field> &fields)

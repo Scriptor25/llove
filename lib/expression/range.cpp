@@ -31,15 +31,15 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
     return Value::CreateR(std::move(range_type), aggregate);
 }
 
-llove::StatementPtr llove::RangeExpression::Reflect(Context &types) const
+llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const
 {
     ExpressionPtr beg;
     if (m_Beg)
-        m_Beg->Reflect(types, beg);
+        m_Beg->Reflect(builder, beg);
 
     ExpressionPtr end;
     if (m_End)
-        m_End->Reflect(types, end);
+        m_End->Reflect(builder, end);
 
     return std::make_unique<RangeExpression>(std::move(beg), std::move(end));
 }

@@ -175,10 +175,10 @@ llvm::StructType *llove::ClassType::Gen(Builder &builder) const
     return builder.GetOrCreateNamedStructType(m_Name, elements, true);
 }
 
-llove::TypePtr llove::ClassType::Reflect(Context &types) const
+llove::TypePtr llove::ClassType::Reflect(Builder &builder) const
 {
     // TODO: no reflection?
-    return types.GetClass(m_Name);
+    return builder.GetTypes().GetClass(m_Name);
 }
 
 std::string llove::ClassType::Mangle() const

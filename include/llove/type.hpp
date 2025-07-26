@@ -51,16 +51,16 @@ namespace llove
 
         [[nodiscard]] virtual unsigned Size(Builder &builder) const = 0;
         virtual llvm::Type *Gen(Builder &builder) const = 0;
-        virtual TypePtr Reflect(Context &types) const = 0;
+        virtual TypePtr Reflect(Builder &builder) const = 0;
 
         [[nodiscard]] virtual std::string Mangle() const = 0;
 
         virtual std::ostream &Print(std::ostream &stream) const = 0;
 
         template<typename T> requires std::is_base_of_v<Type, T>
-        void Reflect(Context &types, std::shared_ptr<T> &ref)
+        void Reflect(Builder &builder, std::shared_ptr<T> &ref)
         {
-            auto cast = std::dynamic_pointer_cast<T>(Reflect(types));
+            auto cast = std::dynamic_pointer_cast<T>(Reflect(builder));
             Assert(cast != nullptr, "invalid reflection cast");
             ref = cast;
         }
@@ -78,7 +78,7 @@ namespace llove
         [[nodiscard]] bool IsTemplate() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::Type *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         [[nodiscard]] std::string Mangle() const override;
 
@@ -86,6 +86,29 @@ namespace llove
 
     private:
         std::string m_Name;
+    };
+
+    class ClassTemplateType final : public Type
+    {
+    public:
+        using Ptr = std::shared_ptr<ClassTemplateType>;
+        static constexpr auto ID = TypeId_Template;
+
+        explicit ClassTemplateType(std::string name, std::vector<TypePtr> arguments);
+
+        [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsTemplate() const override;
+        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        llvm::Type *Gen(Builder &builder) const override;
+        TypePtr Reflect(Builder &builder) const override;
+
+        [[nodiscard]] std::string Mangle() const override;
+
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Name;
+        std::vector<TypePtr> m_Arguments;
     };
 
     class VoidType final : public Type
@@ -100,7 +123,7 @@ namespace llove
         [[nodiscard]] bool IsVoid() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::Type *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return v
@@ -125,7 +148,7 @@ namespace llove
         [[nodiscard]] bool IsInteger() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::IntegerType *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return <sign?i:u><bits>_
@@ -153,7 +176,7 @@ namespace llove
         [[nodiscard]] bool IsFloat() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::Type *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return f<bits>_
@@ -182,7 +205,7 @@ namespace llove
         [[nodiscard]] bool IsPointer() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::PointerType *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return p<mutable?m:i><base>
@@ -211,7 +234,7 @@ namespace llove
         [[nodiscard]] bool IsArray() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::ArrayType *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return a<size>_<base>
@@ -242,7 +265,7 @@ namespace llove
         [[nodiscard]] bool IsStruct() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::StructType *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return s<length>_<fields...>
@@ -269,7 +292,7 @@ namespace llove
         [[nodiscard]] bool IsRange() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::StructType *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return r<entry>
@@ -321,7 +344,7 @@ namespace llove
         [[nodiscard]] bool IsClass() const override;
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::StructType *Gen(Builder &builder) const override;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return c<length>_<name>
@@ -358,7 +381,7 @@ namespace llove
         [[nodiscard]] unsigned Size(Builder &builder) const override;
         llvm::PointerType *Gen(Builder &builder) const override;
         llvm::FunctionType *GenFunction(Builder &builder) const;
-        TypePtr Reflect(Context &types) const override;
+        TypePtr Reflect(Builder &builder) const override;
 
         /**
          * @return x<vararg?v><self?s><length>_<parameters...><result><self>

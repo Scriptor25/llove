@@ -243,6 +243,8 @@ llove::ClassTemplate &llove::Context::PushTemplate(
 
     auto &ref = m_ClassTemplates[name];
 
+    m_CurrentTemplate = &ref;
+
     return ref = {
                .Name = std::move(name),
                .Parameters = std::move(parameters),
@@ -251,6 +253,9 @@ llove::ClassTemplate &llove::Context::PushTemplate(
 
 void llove::Context::PopTemplate()
 {
+    m_CurrentTemplate->Complete = true;
+
+    m_CurrentTemplate = nullptr;
     m_TemplateTypes.pop_back();
 }
 
@@ -266,20 +271,26 @@ void llove::Context::EmplaceTemplate(
     };
 }
 
-llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
+llove::TypePtr llove::Context::InstantiateTemplateClass(
     Builder &builder,
     std::string name,
     const std::vector<TypePtr> &arguments)
 {
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
-    const auto &[
+    auto &[
+        template_complete,
+        template_instantiated,
+
         template_name,
         template_parameters,
         template_fields,
         template_functions
     ] = m_ClassTemplates.at(name);
     Assert(template_parameters.size() == arguments.size(), "wrong number of type arguments");
+
+    if (!template_complete)
+        return std::make_shared<ClassTemplateType>(std::move(name), arguments);
 
     m_TemplateArguments.clear();
 
@@ -291,13 +302,18 @@ llove::ClassType::Ptr llove::Context::InstantiateTemplateClass(
     }
     auto class_type = GetClass(std::move(name));
 
+    if (template_instantiated)
+        return class_type;
+
+    template_instantiated = true;
+
     std::vector<ClassField> reflection_fields;
     for (auto &field : template_fields)
-        field.Reflect(*this, reflection_fields.emplace_back());
+        field.Reflect(builder, reflection_fields.emplace_back());
 
     std::vector<ClassFunction> reflection_functions;
     for (auto &function : template_functions)
-        function.Reflect(*this, reflection_functions.emplace_back());
+        function.Reflect(builder, reflection_functions.emplace_back());
 
     std::vector<ClassFieldReference> fields;
     for (auto &field : reflection_fields)

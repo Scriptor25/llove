@@ -276,15 +276,15 @@ void llove::ForEachStatement::Gen(Builder &builder) const
     builder.SetInsertPoint(end_block);
 }
 
-llove::StatementPtr llove::ForEachStatement::Reflect(Context &types) const
+llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const
 {
     ExpressionPtr range;
     StatementPtr content;
 
     if (m_Range)
-        m_Range->Reflect(types, range);
+        m_Range->Reflect(builder, range);
     if (m_Content)
-        m_Content->Reflect(types, content);
+        m_Content->Reflect(builder, content);
 
     return std::make_unique<ForEachStatement>(m_Mutable, m_Reference, m_Name, std::move(range), std::move(content));
 }

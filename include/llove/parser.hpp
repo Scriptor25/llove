@@ -8,6 +8,7 @@
 #include <vector>
 #include <llove/class.hpp>
 #include <llove/forward.hpp>
+#include <llove/location.hpp>
 
 namespace llove
 {
@@ -24,6 +25,7 @@ namespace llove
 
     struct Token
     {
+        Location Loc;
         TokenType Type = TokenType_Eof;
         std::string Raw;
         std::string Value;
@@ -42,6 +44,7 @@ namespace llove
     protected:
         void RemoveEscape(std::string &raw, std::string &value);
 
+        int Get();
         Token Next();
         Token &Pop();
 
@@ -97,6 +100,7 @@ namespace llove
 
         std::istream &m_Stream;
         int m_Buffer;
+        Location m_Loc;
         Token m_Token;
     };
 }

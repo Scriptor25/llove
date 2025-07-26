@@ -69,19 +69,19 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     return Value::CreateR(m_Type, value);
 }
 
-llove::StatementPtr llove::CreateExpression::Reflect(Context &types) const
+llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const
 {
     TypePtr type;
     if (m_Type)
-        m_Type->Reflect(types, type);
+        m_Type->Reflect(builder, type);
 
     ExpressionPtr destination;
     if (m_Destination)
-        m_Destination->Reflect(types, destination);
+        m_Destination->Reflect(builder, destination);
 
     std::vector<ExpressionPtr> arguments;
     for (auto &argument : m_Arguments)
-        argument->Reflect(types, arguments.emplace_back());
+        argument->Reflect(builder, arguments.emplace_back());
 
     return std::make_unique<CreateExpression>(std::move(type), std::move(destination), std::move(arguments));
 }

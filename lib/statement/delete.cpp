@@ -43,12 +43,12 @@ void llove::DeleteStatement::Gen(Builder &builder) const
     }
 }
 
-llove::StatementPtr llove::DeleteStatement::Reflect(Context &types) const
+llove::StatementPtr llove::DeleteStatement::Reflect(Builder &builder) const
 {
     ExpressionPtr value;
 
     if (m_Value)
-        m_Value->Reflect(types, value);
+        m_Value->Reflect(builder, value);
 
     return std::make_unique<DeleteStatement>(std::move(value));
 }

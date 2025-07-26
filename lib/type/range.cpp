@@ -33,14 +33,13 @@ llvm::StructType *llove::RangeType::Gen(Builder &builder) const
     return builder.GetStructType({ entry, entry }, true);
 }
 
-llove::TypePtr llove::RangeType::Reflect(Context &types) const
+llove::TypePtr llove::RangeType::Reflect(Builder &builder) const
 {
     TypePtr entry;
-
     if (m_Entry)
-        m_Entry->Reflect(types, entry);
+        m_Entry->Reflect(builder, entry);
 
-    return types.GetRange(std::move(entry));
+    return builder.GetTypes().GetRange(std::move(entry));
 }
 
 std::string llove::RangeType::Mangle() const

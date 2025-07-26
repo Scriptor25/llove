@@ -47,14 +47,13 @@ llvm::PointerType *llove::PointerType::Gen(Builder &builder) const
     return builder.GetPointerType();
 }
 
-llove::TypePtr llove::PointerType::Reflect(Context &types) const
+llove::TypePtr llove::PointerType::Reflect(Builder &builder) const
 {
     TypePtr base;
-
     if (m_Base)
-        m_Base->Reflect(types, base);
+        m_Base->Reflect(builder, base);
 
-    return types.GetPointer(std::move(base), m_Mutable);
+    return builder.GetTypes().GetPointer(std::move(base), m_Mutable);
 }
 
 std::string llove::PointerType::Mangle() const

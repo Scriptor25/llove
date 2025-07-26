@@ -4,7 +4,6 @@
 
 llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     ClassType::Ptr class_type,
-    const bool implicit,
     const bool mutable_,
     std::string name,
     std::vector<Parameter> parameters,
@@ -12,7 +11,6 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     Field result,
     StatementPtr content)
     : m_ClassType(std::move(class_type)),
-      m_Implicit(implicit),
       m_Mutable(mutable_),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
@@ -33,6 +31,7 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const
 
     builder.GenFunction(
         {
+            .Implicit = class_function->Implicit,
             .Class = m_ClassType,
             .Mutable = m_Mutable,
             .Expose = class_function->Expose,
@@ -51,7 +50,6 @@ std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const
             << "define:"
             << m_ClassType->GetName()
             << ' '
-            << (m_Implicit ? "implicit " : "")
             << (m_Mutable ? "mut " : "")
             << m_Name
             << '(';

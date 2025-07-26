@@ -38,9 +38,9 @@ llvm::IntegerType *llove::IntegerType::Gen(Builder &builder) const
     return builder.GetIntType(m_Bits);
 }
 
-llove::TypePtr llove::IntegerType::Reflect(Context &types) const
+llove::TypePtr llove::IntegerType::Reflect(Builder &builder) const
 {
-    return types.GetInteger(m_Sign, m_Bits);
+    return builder.GetTypes().GetInteger(m_Sign, m_Bits);
 }
 
 std::string llove::IntegerType::Mangle() const

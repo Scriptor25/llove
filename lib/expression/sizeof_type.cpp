@@ -16,11 +16,11 @@ llove::ValuePtr llove::SizeofTypeExpression::GenVal(Builder &builder, TypePtr ex
     return Value::CreateR(size_type, llvm::ConstantInt::get(size_type->Gen(builder), size));
 }
 
-llove::StatementPtr llove::SizeofTypeExpression::Reflect(Context &types) const
+llove::StatementPtr llove::SizeofTypeExpression::Reflect(Builder &builder) const
 {
     TypePtr type;
     if (m_Type)
-        m_Type->Reflect(types, type);
+        m_Type->Reflect(builder, type);
 
     return std::make_unique<SizeofTypeExpression>(std::move(type));
 }

@@ -54,11 +54,12 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
     {
         const auto operator_precedence = get_precedence();
         auto [
-            type_,
-            raw_,
-            value_,
-            int_,
-            flt_
+            loc,
+            type,
+            raw,
+            value,
+            int_value,
+            flt_value
         ] = Skip();
 
         auto right = ParseOperandExpression();
@@ -69,7 +70,7 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
                 std::move(right),
                 operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));
 
-        left = std::make_unique<BinaryExpression>(std::move(value_), std::move(left), std::move(right));
+        left = std::make_unique<BinaryExpression>(std::move(value), std::move(left), std::move(right));
     }
 
     return left;

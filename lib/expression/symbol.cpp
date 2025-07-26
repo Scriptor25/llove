@@ -32,7 +32,7 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const
     return { .Candidates = std::move(candidates) };
 }
 
-llove::StatementPtr llove::SymbolExpression::Reflect(Context &types) const
+llove::StatementPtr llove::SymbolExpression::Reflect(Builder &builder) const
 {
     return std::make_unique<SymbolExpression>(m_Name);
 }

@@ -53,17 +53,17 @@ void llove::IfStatement::Gen(Builder &builder) const
     }
 }
 
-llove::StatementPtr llove::IfStatement::Reflect(Context &types) const
+llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const
 {
     ExpressionPtr condition;
     StatementPtr then, else_;
 
     if (m_Condition)
-        m_Condition->Reflect(types, condition);
+        m_Condition->Reflect(builder, condition);
     if (m_Then)
-        m_Then->Reflect(types, then);
+        m_Then->Reflect(builder, then);
     if (m_Else)
-        m_Else->Reflect(types, else_);
+        m_Else->Reflect(builder, else_);
 
     return std::make_unique<IfStatement>(std::move(condition), std::move(then), std::move(else_));
 }
