@@ -5,11 +5,13 @@
 #include <llove/value.hpp>
 
 llove::LetStatement::LetStatement(
+    Location loc,
     Field info,
     std::string name,
     ExpressionPtr value,
     std::vector<ExpressionPtr> arguments)
-    : m_Info(std::move(info)),
+    : Statement(std::move(loc)),
+      m_Info(std::move(info)),
       m_Name(std::move(name)),
       m_Value(std::move(value)),
       m_Arguments(std::move(arguments))
@@ -26,6 +28,8 @@ void llove::LetStatement::Gen(Builder &builder) const
     std::vector<ValuePtr> arguments;
     for (auto &argument : m_Arguments)
         arguments.emplace_back(argument->GenVal(builder, nullptr));
+
+    builder.EmitLoc(m_Loc);
 
     ValuePtr storage;
     if (m_Info.Reference)
@@ -154,6 +158,7 @@ void llove::LetStatement::Gen(Builder &builder) const
         storage = Value::CreateL(std::move(type), pointer, m_Info.Mutable);
     }
 
+    builder.CreateDbgVariable(m_Name, storage);
     builder.SetValue(m_Name, std::move(storage));
 }
 
@@ -171,7 +176,7 @@ llove::StatementPtr llove::LetStatement::Reflect(Builder &builder) const
     for (unsigned i = 0; i < m_Arguments.size(); ++i)
         m_Arguments.at(i)->Reflect(builder, arguments.at(i));
 
-    return std::make_unique<LetStatement>(std::move(info), m_Name, std::move(value), std::move(arguments));
+    return std::make_unique<LetStatement>(m_Loc, std::move(info), m_Name, std::move(value), std::move(arguments));
 }
 
 std::ostream &llove::LetStatement::Print(std::ostream &stream) const

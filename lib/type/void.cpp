@@ -12,7 +12,7 @@ bool llove::VoidType::IsVoid() const
     return true;
 }
 
-unsigned llove::VoidType::Size(Builder &builder) const
+unsigned llove::VoidType::SizeBits(Builder &builder) const
 {
     return 0;
 }
@@ -20,6 +20,11 @@ unsigned llove::VoidType::Size(Builder &builder) const
 llvm::Type *llove::VoidType::Gen(Builder &builder) const
 {
     return builder.GetVoidType();
+}
+
+llvm::DIType *llove::VoidType::GenDbg(Builder &builder) const
+{
+    return builder.GetDbgVoidType();
 }
 
 llove::TypePtr llove::VoidType::Reflect(Builder &builder) const

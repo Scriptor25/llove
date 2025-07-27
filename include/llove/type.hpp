@@ -10,8 +10,8 @@
 #include <llove/error.hpp>
 #include <llove/forward.hpp>
 #include <llove/parameter.hpp>
+#include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/DerivedTypes.h>
-#include <llvm/IR/Type.h>
 
 namespace llove
 {
@@ -49,8 +49,9 @@ namespace llove
         [[nodiscard]] virtual bool IsClass() const;
         [[nodiscard]] virtual bool IsFunction() const;
 
-        [[nodiscard]] virtual unsigned Size(Builder &builder) const = 0;
+        [[nodiscard]] virtual unsigned SizeBits(Builder &builder) const = 0;
         virtual llvm::Type *Gen(Builder &builder) const = 0;
+        virtual llvm::DIType *GenDbg(Builder &builder) const = 0;
         virtual TypePtr Reflect(Builder &builder) const = 0;
 
         [[nodiscard]] virtual std::string Mangle() const = 0;
@@ -76,8 +77,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsTemplate() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         [[nodiscard]] std::string Mangle() const override;
@@ -98,8 +100,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsTemplate() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         [[nodiscard]] std::string Mangle() const override;
@@ -121,8 +124,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsVoid() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -146,8 +150,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsInteger() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::IntegerType *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -174,8 +179,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsFloat() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -203,8 +209,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsPointer() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::PointerType *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -232,8 +239,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsArray() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::ArrayType *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -263,8 +271,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsStruct() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -290,8 +299,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsRange() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -342,8 +352,9 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsClass() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         TypePtr Reflect(Builder &builder) const override;
 
         /**
@@ -378,9 +389,11 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsFunction() const override;
-        [[nodiscard]] unsigned Size(Builder &builder) const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::PointerType *Gen(Builder &builder) const override;
+        llvm::DIType *GenDbg(Builder &builder) const override;
         llvm::FunctionType *GenFunction(Builder &builder) const;
+        llvm::DISubroutineType *GenDbgFunction(Builder &builder) const;
         TypePtr Reflect(Builder &builder) const override;
 
         /**

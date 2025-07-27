@@ -71,7 +71,7 @@ namespace llove
 
         GlobalPtr ParseGlobal();
         GlobalPtr ParseDefinitionGlobal();
-        GlobalPtr ParseClassDefinitionGlobal();
+        GlobalPtr ParseClassDefinitionGlobal(Location loc);
         GlobalPtr ParseClassGlobal();
 
         void ParseClassField(ClassField &field);

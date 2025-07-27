@@ -9,6 +9,7 @@
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
 #include <llove/function.hpp>
+#include <llove/location.hpp>
 #include <llove/parameter.hpp>
 #include <llove/type.hpp>
 
@@ -17,16 +18,24 @@ namespace llove
     class Global
     {
     public:
+        explicit Global(Location loc);
+
+        const Location &Loc() const;
+
         virtual ~Global() = default;
         virtual void Gen(Builder &builder) const = 0;
         virtual std::ostream &Print(std::ostream &stream) const = 0;
+
+    protected:
+        Location m_Loc;
     };
 
     class ClassGlobal final : public Global
     {
     public:
-        explicit ClassGlobal(ClassType::Ptr type);
+        explicit ClassGlobal(Location loc, ClassType::Ptr type);
         explicit ClassGlobal(
+            Location loc,
             ClassType::Ptr type,
             std::vector<ClassField> fields,
             std::vector<ClassFunction> functions);
@@ -45,6 +54,7 @@ namespace llove
     {
     public:
         explicit ClassDefinitionGlobal(
+            Location loc,
             ClassType::Ptr class_type,
             bool mutable_,
             std::string name,
@@ -70,6 +80,7 @@ namespace llove
     {
     public:
         explicit DefinitionGlobal(
+            Location loc,
             bool interface,
             bool implicit,
             std::string name,
@@ -94,6 +105,10 @@ namespace llove
     class Statement
     {
     public:
+        explicit Statement(Location loc);
+
+        const Location &Loc() const;
+
         virtual ~Statement() = default;
         virtual void Gen(Builder &builder) const = 0;
         virtual StatementPtr Reflect(Builder &builder) const = 0;
@@ -107,12 +122,15 @@ namespace llove
             Assert(cast, "invalid reflection cast");
             ref = std::unique_ptr<T>(cast);
         }
+
+    protected:
+        Location m_Loc;
     };
 
     class DeleteStatement final : public Statement
     {
     public:
-        explicit DeleteStatement(ExpressionPtr value);
+        explicit DeleteStatement(Location loc, ExpressionPtr value);
 
         void Gen(Builder &builder) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -125,7 +143,12 @@ namespace llove
     class ForStatement final : public Statement
     {
     public:
-        explicit ForStatement(StatementPtr prefix, StatementPtr suffix, ExpressionPtr condition, StatementPtr content);
+        explicit ForStatement(
+            Location loc,
+            StatementPtr prefix,
+            StatementPtr suffix,
+            ExpressionPtr condition,
+            StatementPtr content);
 
         void Gen(Builder &builder) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -142,6 +165,7 @@ namespace llove
     {
     public:
         explicit ForEachStatement(
+            Location loc,
             bool mutable_,
             bool reference,
             std::string name,
@@ -163,7 +187,7 @@ namespace llove
     class IfStatement final : public Statement
     {
     public:
-        explicit IfStatement(ExpressionPtr condition, StatementPtr then, StatementPtr else_);
+        explicit IfStatement(Location loc, ExpressionPtr condition, StatementPtr then, StatementPtr else_);
 
         void Gen(Builder &builder) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -178,7 +202,12 @@ namespace llove
     class LetStatement final : public Statement
     {
     public:
-        explicit LetStatement(Field info, std::string name, ExpressionPtr value, std::vector<ExpressionPtr> arguments);
+        explicit LetStatement(
+            Location loc,
+            Field info,
+            std::string name,
+            ExpressionPtr value,
+            std::vector<ExpressionPtr> arguments);
 
         void Gen(Builder &builder) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -196,7 +225,7 @@ namespace llove
     public:
         static StatementPtr Wrap(StatementPtr ptr);
 
-        explicit ScopeStatement(std::vector<StatementPtr> content);
+        explicit ScopeStatement(Location loc, std::vector<StatementPtr> content);
 
         void Gen(Builder &builder) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -209,7 +238,7 @@ namespace llove
     class YieldStatement final : public Statement
     {
     public:
-        explicit YieldStatement(ExpressionPtr value);
+        explicit YieldStatement(Location loc, ExpressionPtr value);
 
         void Gen(Builder &builder) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -228,6 +257,7 @@ namespace llove
     class Expression : public Statement
     {
     public:
+        explicit Expression(Location loc);
         void Gen(Builder &builder) const override;
         virtual ValuePtr GenVal(Builder &builder, TypePtr expect) const = 0;
         virtual CalleeInfo GenCallee(Builder &builder) const;
@@ -236,7 +266,7 @@ namespace llove
     class ArrayExpression final : public Expression
     {
     public:
-        explicit ArrayExpression(std::vector<ExpressionPtr> values, TypePtr type);
+        explicit ArrayExpression(Location loc, std::vector<ExpressionPtr> values, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -250,7 +280,7 @@ namespace llove
     class BinaryExpression final : public Expression
     {
     public:
-        explicit BinaryExpression(std::string operator_, ExpressionPtr left, ExpressionPtr right);
+        explicit BinaryExpression(Location loc, std::string operator_, ExpressionPtr left, ExpressionPtr right);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -265,7 +295,7 @@ namespace llove
     class CallExpression final : public Expression
     {
     public:
-        explicit CallExpression(ExpressionPtr callee, std::vector<ExpressionPtr> arguments);
+        explicit CallExpression(Location loc, ExpressionPtr callee, std::vector<ExpressionPtr> arguments);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -279,7 +309,11 @@ namespace llove
     class CreateExpression final : public Expression
     {
     public:
-        explicit CreateExpression(TypePtr type, ExpressionPtr destination, std::vector<ExpressionPtr> arguments);
+        explicit CreateExpression(
+            Location loc,
+            TypePtr type,
+            ExpressionPtr destination,
+            std::vector<ExpressionPtr> arguments);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -294,7 +328,7 @@ namespace llove
     class IntExpression final : public Expression
     {
     public:
-        explicit IntExpression(uint64_t value, TypePtr type);
+        explicit IntExpression(Location loc, uint64_t value, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -308,7 +342,7 @@ namespace llove
     class MemberExpression final : public Expression
     {
     public:
-        explicit MemberExpression(ExpressionPtr value, std::string member);
+        explicit MemberExpression(Location loc, ExpressionPtr value, std::string member);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         CalleeInfo GenCallee(Builder &builder) const override;
@@ -323,7 +357,7 @@ namespace llove
     class NullExpression final : public Expression
     {
     public:
-        explicit NullExpression(TypePtr type);
+        explicit NullExpression(Location loc, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -336,7 +370,7 @@ namespace llove
     class RangeExpression final : public Expression
     {
     public:
-        explicit RangeExpression(ExpressionPtr beg, ExpressionPtr end);
+        explicit RangeExpression(Location loc, ExpressionPtr beg, ExpressionPtr end);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -350,7 +384,7 @@ namespace llove
     class SizeofTypeExpression final : public Expression
     {
     public:
-        explicit SizeofTypeExpression(TypePtr type);
+        explicit SizeofTypeExpression(Location loc, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -363,7 +397,7 @@ namespace llove
     class StringExpression final : public Expression
     {
     public:
-        explicit StringExpression(std::string value);
+        explicit StringExpression(Location loc, std::string value);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -376,7 +410,7 @@ namespace llove
     class StructExpression final : public Expression
     {
     public:
-        explicit StructExpression(std::map<std::string, ExpressionPtr> values, TypePtr type);
+        explicit StructExpression(Location loc, std::map<std::string, ExpressionPtr> values, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -390,7 +424,7 @@ namespace llove
     class SubscriptExpression final : public Expression
     {
     public:
-        explicit SubscriptExpression(ExpressionPtr value, ExpressionPtr index);
+        explicit SubscriptExpression(Location loc, ExpressionPtr value, ExpressionPtr index);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -404,7 +438,7 @@ namespace llove
     class SymbolExpression final : public Expression
     {
     public:
-        explicit SymbolExpression(std::string name);
+        explicit SymbolExpression(Location loc, std::string name);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         CalleeInfo GenCallee(Builder &builder) const override;
@@ -418,7 +452,7 @@ namespace llove
     class UnaryExpression final : public Expression
     {
     public:
-        explicit UnaryExpression(std::string operator_, ExpressionPtr operand, bool suffix);
+        explicit UnaryExpression(Location loc, std::string operator_, ExpressionPtr operand, bool suffix);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;

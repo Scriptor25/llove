@@ -3,8 +3,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::SymbolExpression::SymbolExpression(std::string name)
-    : m_Name(std::move(name))
+llove::SymbolExpression::SymbolExpression(Location loc, std::string name)
+    : Expression(std::move(loc)),
+      m_Name(std::move(name))
 {
 }
 
@@ -18,6 +19,8 @@ llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect
         Error("undefined symbol name '{}'", m_Name);
     if (functions.size() > 1)
         Error("ambiguous function symbol name '{}'", m_Name);
+
+    builder.EmitLoc(m_Loc);
 
     const auto &function = functions.front();
     return Value::CreateR(function.Type, function.Callee);
@@ -34,7 +37,7 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const
 
 llove::StatementPtr llove::SymbolExpression::Reflect(Builder &builder) const
 {
-    return std::make_unique<SymbolExpression>(m_Name);
+    return std::make_unique<SymbolExpression>(m_Loc, m_Name);
 }
 
 std::ostream &llove::SymbolExpression::Print(std::ostream &stream) const

@@ -3,8 +3,13 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::CreateExpression::CreateExpression(TypePtr type, ExpressionPtr destination, std::vector<ExpressionPtr> arguments)
-    : m_Type(std::move(type)),
+llove::CreateExpression::CreateExpression(
+    Location loc,
+    TypePtr type,
+    ExpressionPtr destination,
+    std::vector<ExpressionPtr> arguments)
+    : Expression(std::move(loc)),
+      m_Type(std::move(type)),
       m_Destination(std::move(destination)),
       m_Arguments(std::move(arguments))
 {
@@ -56,6 +61,8 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
         pointer = builder.CreateAlloca(m_Type);
     }
 
+    builder.EmitLoc(m_Loc);
+
     builder.CreateCall(
         candidate->Type,
         candidate->Callee,
@@ -83,7 +90,7 @@ llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const
     for (auto &argument : m_Arguments)
         argument->Reflect(builder, arguments.emplace_back());
 
-    return std::make_unique<CreateExpression>(std::move(type), std::move(destination), std::move(arguments));
+    return std::make_unique<CreateExpression>(m_Loc, std::move(type), std::move(destination), std::move(arguments));
 }
 
 std::ostream &llove::CreateExpression::Print(std::ostream &stream) const

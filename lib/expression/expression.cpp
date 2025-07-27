@@ -4,6 +4,11 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
+llove::Expression::Expression(Location loc)
+    : Statement(std::move(loc))
+{
+}
+
 void llove::Expression::Gen(Builder &builder) const
 {
     auto value = GenVal(builder, nullptr);

@@ -3,6 +3,7 @@
 #include <llove/tree.hpp>
 
 llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
+    Location loc,
     ClassType::Ptr class_type,
     const bool mutable_,
     std::string name,
@@ -10,7 +11,8 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     const bool vararg,
     Field result,
     StatementPtr content)
-    : m_ClassType(std::move(class_type)),
+    : Global(std::move(loc)),
+      m_ClassType(std::move(class_type)),
       m_Mutable(mutable_),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
@@ -31,6 +33,7 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const
 
     builder.GenFunction(
         {
+            .Loc = m_Loc,
             .Implicit = class_function->Implicit,
             .Class = m_ClassType,
             .Mutable = m_Mutable,

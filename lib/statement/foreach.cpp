@@ -5,12 +5,14 @@
 #include <llove/value.hpp>
 
 llove::ForEachStatement::ForEachStatement(
+    Location loc,
     const bool mutable_,
     const bool reference,
     std::string name,
     ExpressionPtr range,
     StatementPtr content)
-    : m_Mutable(mutable_),
+    : Statement(std::move(loc)),
+      m_Mutable(mutable_),
       m_Reference(reference),
       m_Name(std::move(name)),
       m_Range(std::move(range)),
@@ -20,6 +22,7 @@ llove::ForEachStatement::ForEachStatement(
 
 void llove::ForEachStatement::Gen(Builder &builder) const
 {
+    builder.EmitLoc(m_Loc);
     builder.PushFrame();
 
     const auto range = m_Range->GenVal(builder, nullptr);
@@ -27,6 +30,8 @@ void llove::ForEachStatement::Gen(Builder &builder) const
 
     ValuePtr begin;
     ValuePtr end;
+
+    builder.EmitLoc(m_Loc);
 
     switch (type->GetId())
     {
@@ -200,6 +205,8 @@ void llove::ForEachStatement::Gen(Builder &builder) const
         Error("iterating over value of type {} not implemented", type);
     }
 
+    builder.EmitLoc(m_Loc);
+
     ValuePtr iterator;
     {
         const auto pointer = builder.CreateAlloca(begin->GetType());
@@ -261,6 +268,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const
 
     m_Content->Gen(builder);
 
+    builder.EmitLoc(m_Loc);
     {
         const auto operator_ = builder.FindOperator("++", iterator->AsField(), false);
         Assert(operator_ != nullptr, "operator '++' not implemented for {}", iterator->AsField());
@@ -286,7 +294,13 @@ llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const
     if (m_Content)
         m_Content->Reflect(builder, content);
 
-    return std::make_unique<ForEachStatement>(m_Mutable, m_Reference, m_Name, std::move(range), std::move(content));
+    return std::make_unique<ForEachStatement>(
+        m_Loc,
+        m_Mutable,
+        m_Reference,
+        m_Name,
+        std::move(range),
+        std::move(content));
 }
 
 std::ostream &llove::ForEachStatement::Print(std::ostream &stream) const

@@ -4,6 +4,8 @@
 
 llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
 {
+    auto loc = m_Token.Loc;
+
     if (At(TokenType_Integer))
     {
         auto value = Skip().IntValue;
@@ -12,13 +14,13 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         if (SkipIf(TokenType_Other, ":"))
             type = ParseType();
 
-        return std::make_unique<IntExpression>(value, std::move(type));
+        return std::make_unique<IntExpression>(std::move(loc), value, std::move(type));
     }
 
     if (At(TokenType_String))
     {
         auto value = Skip().Value;
-        return std::make_unique<StringExpression>(std::move(value));
+        return std::make_unique<StringExpression>(std::move(loc), std::move(value));
     }
 
     if (At(TokenType_Operator, "-", "!", "~", "++", "--", "*", "&", "$"))
@@ -26,7 +28,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         auto operator_ = Skip().Value;
         auto operand = ParseOperandExpression();
 
-        return std::make_unique<UnaryExpression>(std::move(operator_), std::move(operand), false);
+        return std::make_unique<UnaryExpression>(std::move(loc), std::move(operator_), std::move(operand), false);
     }
 
     if (SkipIf(TokenType_Other, "("))
@@ -52,7 +54,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         if (SkipIf(TokenType_Other, ":"))
             type = m_Types.GetArray(ParseType(), values.size());
 
-        return std::make_unique<ArrayExpression>(std::move(values), std::move(type));
+        return std::make_unique<ArrayExpression>(std::move(loc), std::move(values), std::move(type));
     }
 
     if (SkipIf(TokenType_Other, "{"))
@@ -67,7 +69,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
             if (SkipIf(TokenType_Other, ":"))
                 value = ParseExpression();
             else
-                value = std::make_unique<SymbolExpression>(name);
+                value = std::make_unique<SymbolExpression>(std::move(loc), name);
             values[name] = std::move(value);
 
             if (!At(TokenType_Other, "}"))
@@ -79,7 +81,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         if (SkipIf(TokenType_Other, ":"))
             type = ParseType();
 
-        return std::make_unique<StructExpression>(std::move(values), std::move(type));
+        return std::make_unique<StructExpression>(std::move(loc), std::move(values), std::move(type));
     }
 
     if (SkipIf(TokenType_Symbol, "null"))
@@ -87,7 +89,7 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         TypePtr type;
         if (SkipIf(TokenType_Other, ":"))
             type = ParseType();
-        return std::make_unique<NullExpression>(type);
+        return std::make_unique<NullExpression>(std::move(loc), type);
     }
 
     if (SkipIf(TokenType_Symbol, "create"))
@@ -114,14 +116,18 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
             Expect(TokenType_Other, ")");
         }
 
-        return std::make_unique<CreateExpression>(std::move(type), std::move(destination), std::move(arguments));
+        return std::make_unique<CreateExpression>(
+            std::move(loc),
+            std::move(type),
+            std::move(destination),
+            std::move(arguments));
     }
 
     if (SkipIf(TokenType_Symbol, "sizeof"))
-        return std::make_unique<SizeofTypeExpression>(ParseType());
+        return std::make_unique<SizeofTypeExpression>(std::move(loc), ParseType());
 
     if (At(TokenType_Symbol))
-        return std::make_unique<SymbolExpression>(Skip().Value);
+        return std::make_unique<SymbolExpression>(std::move(loc), Skip().Value);
 
     Error("unable to parse expression from {} : '{}'", m_Token.Type, m_Token.Value);
 }

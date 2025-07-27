@@ -79,6 +79,12 @@ llvm::Type *llove::Field::GenType(Builder &builder) const
     return Reference ? builder.GetPointerType(type) : type;
 }
 
+llvm::DIType *llove::Field::GenDbgType(Builder &builder) const
+{
+    const auto type = Type->GenDbg(builder);
+    return Reference ? builder.GetDbgPointerType(type) : type;
+}
+
 llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool unstable_ownership) const
 {
     if (Reference)
@@ -97,11 +103,11 @@ llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool 
     return value->Load(builder);
 }
 
-unsigned llove::Field::Size(Builder &builder) const
+unsigned llove::Field::SizeBits(Builder &builder) const
 {
     if (Reference)
-        return 8;
-    return Type->Size(builder);
+        return 64;
+    return Type->SizeBits(builder);
 }
 
 std::string llove::Field::Mangle() const

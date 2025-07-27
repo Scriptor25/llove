@@ -1,6 +1,7 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 #include <llvm/IR/LegacyPassManager.h>
+#include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Support/FileSystem.h>
@@ -10,6 +11,10 @@
 
 void llove::Builder::Seal(const SealInfo &info)
 {
+    m_DIBuilder.finalize();
+
+    Assert(!llvm::verifyModule(m_Module, &llvm::errs()), "module has errors");
+
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();

@@ -18,12 +18,17 @@ bool llove::TemplateType::IsTemplate() const
     return true;
 }
 
-unsigned llove::TemplateType::Size(Builder &builder) const
+unsigned llove::TemplateType::SizeBits(Builder &builder) const
 {
     Error("template");
 }
 
 llvm::Type *llove::TemplateType::Gen(Builder &builder) const
+{
+    Error("template");
+}
+
+llvm::DIType *llove::TemplateType::GenDbg(Builder &builder) const
 {
     Error("template");
 }
@@ -59,12 +64,17 @@ bool llove::ClassTemplateType::IsTemplate() const
     return true;
 }
 
-unsigned llove::ClassTemplateType::Size(Builder &builder) const
+unsigned llove::ClassTemplateType::SizeBits(Builder &builder) const
 {
     Error("template");
 }
 
 llvm::Type *llove::ClassTemplateType::Gen(Builder &builder) const
+{
+    Error("template");
+}
+
+llvm::DIType *llove::ClassTemplateType::GenDbg(Builder &builder) const
 {
     Error("template");
 }

@@ -3,7 +3,7 @@
 
 llove::StatementPtr llove::Parser::ParseForStatement(const bool inline_)
 {
-    Expect(TokenType_Symbol, "for");
+    auto loc = Expect(TokenType_Symbol, "for").Loc;
     Expect(TokenType_Other, "(");
 
     StatementPtr prefix, suffix;
@@ -30,6 +30,7 @@ llove::StatementPtr llove::Parser::ParseForStatement(const bool inline_)
     auto content = ScopeStatement::Wrap(ParseStatement(inline_));
 
     return std::make_unique<ForStatement>(
+        std::move(loc),
         std::move(prefix),
         std::move(suffix),
         std::move(condition),

@@ -28,14 +28,19 @@ bool llove::ArrayType::IsArray() const
     return true;
 }
 
-unsigned llove::ArrayType::Size(Builder &builder) const
+unsigned llove::ArrayType::SizeBits(Builder &builder) const
 {
-    return m_Size * m_Base->Size(builder);
+    return m_Size * m_Base->SizeBits(builder);
 }
 
 llvm::ArrayType *llove::ArrayType::Gen(Builder &builder) const
 {
     return builder.GetArrayType(m_Base->Gen(builder), m_Size);
+}
+
+llvm::DIType *llove::ArrayType::GenDbg(Builder &builder) const
+{
+    return builder.GetDbgArrayType(m_Base->GenDbg(builder), m_Size);
 }
 
 llove::TypePtr llove::ArrayType::Reflect(Builder &builder) const

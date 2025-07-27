@@ -1,10 +1,10 @@
 #include <llove/builder.hpp>
-#include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::YieldStatement::YieldStatement(ExpressionPtr value)
-    : m_Value(std::move(value))
+llove::YieldStatement::YieldStatement(Location loc, ExpressionPtr value)
+    : Statement(std::move(loc)),
+      m_Value(std::move(value))
 {
 }
 
@@ -12,10 +12,13 @@ void llove::YieldStatement::Gen(Builder &builder) const
 {
     if (!m_Value)
     {
+        builder.EmitLoc(m_Loc);
         builder.CallDestructors({}, true);
         builder.CreateRetVoid();
         return;
     }
+
+    builder.EmitLoc(m_Loc);
 
     auto &result = builder.GetResult();
     const auto value = m_Value->GenVal(builder, result.Type);
@@ -25,6 +28,7 @@ void llove::YieldStatement::Gen(Builder &builder) const
     if (!result.Reference && value->IsReferenceable())
         mask.emplace(value->GetPointer());
 
+    builder.EmitLoc(m_Loc);
     builder.CallDestructors(mask, true);
     builder.CreateRet(result_value);
 }
@@ -36,7 +40,7 @@ llove::StatementPtr llove::YieldStatement::Reflect(Builder &builder) const
     if (m_Value)
         m_Value->Reflect(builder, value);
 
-    return std::make_unique<YieldStatement>(std::move(value));
+    return std::make_unique<YieldStatement>(m_Loc, std::move(value));
 }
 
 std::ostream &llove::YieldStatement::Print(std::ostream &stream) const

@@ -3,17 +3,20 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-
-llove::SizeofTypeExpression::SizeofTypeExpression(TypePtr type)
-    : m_Type(std::move(type))
+llove::SizeofTypeExpression::SizeofTypeExpression(Location loc, TypePtr type)
+    : Expression(std::move(loc)),
+      m_Type(std::move(type))
 {
 }
 
 llove::ValuePtr llove::SizeofTypeExpression::GenVal(Builder &builder, TypePtr expect) const
 {
-    const auto size = m_Type->Size(builder);
+    const auto size = m_Type->SizeBits(builder);
     const auto size_type = builder.GetTypes().GetInteger(false, 64);
-    return Value::CreateR(size_type, llvm::ConstantInt::get(size_type->Gen(builder), size));
+
+    builder.EmitLoc(m_Loc);
+
+    return Value::CreateR(size_type, llvm::ConstantInt::get(size_type->Gen(builder), size >> 3));
 }
 
 llove::StatementPtr llove::SizeofTypeExpression::Reflect(Builder &builder) const
@@ -22,7 +25,7 @@ llove::StatementPtr llove::SizeofTypeExpression::Reflect(Builder &builder) const
     if (m_Type)
         m_Type->Reflect(builder, type);
 
-    return std::make_unique<SizeofTypeExpression>(std::move(type));
+    return std::make_unique<SizeofTypeExpression>(m_Loc, std::move(type));
 }
 
 std::ostream &llove::SizeofTypeExpression::Print(std::ostream &stream) const

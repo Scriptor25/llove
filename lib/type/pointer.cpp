@@ -35,9 +35,9 @@ bool llove::PointerType::IsPointer() const
     return true;
 }
 
-unsigned llove::PointerType::Size(Builder &builder) const
+unsigned llove::PointerType::SizeBits(Builder &builder) const
 {
-    return 8;
+    return 64;
 }
 
 llvm::PointerType *llove::PointerType::Gen(Builder &builder) const
@@ -45,6 +45,13 @@ llvm::PointerType *llove::PointerType::Gen(Builder &builder) const
     if (m_Base)
         return builder.GetPointerType(m_Base->Gen(builder));
     return builder.GetPointerType();
+}
+
+llvm::DIType *llove::PointerType::GenDbg(Builder &builder) const
+{
+    if (m_Base)
+        return builder.GetDbgPointerType(m_Base->GenDbg(builder));
+    return builder.GetDbgPointerType();
 }
 
 llove::TypePtr llove::PointerType::Reflect(Builder &builder) const

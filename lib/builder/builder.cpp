@@ -7,17 +7,36 @@
 #include <llove/value.hpp>
 #include <llvm/IR/Verifier.h>
 
-llove::Builder::Builder(Context &types)
+llove::Builder::Builder(Context &types, const std::filesystem::path &filepath)
     : m_Types(types),
       m_Builder(m_Context),
       m_Module("main", m_Context),
-      m_Parent(nullptr)
+      m_DIBuilder(m_Module)
 {
+    m_Module.setSourceFileName(filepath.string());
+
+    m_CompileUnit = m_DIBuilder.createCompileUnit(
+        llvm::dwarf::DW_LANG_C,
+        m_DIBuilder.createFile(filepath.string(), filepath.parent_path().string()),
+        "LLove",
+        false,
+        "",
+        0u);
 }
 
 llove::Context &llove::Builder::GetTypes() const
 {
     return m_Types;
+}
+
+llvm::DIScope *llove::Builder::GetDbgScope() const
+{
+    return m_Stack.empty() ? m_CompileUnit : m_Stack.back().Scope;
+}
+
+llvm::DIFile *llove::Builder::GetDbgFile() const
+{
+    return GetDbgScope()->getFile();
 }
 
 std::string llove::Builder::Mangle(
@@ -95,6 +114,19 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
 
     Assert(function->empty(), "function is already defined");
 
+    const auto dbg_unit = m_DIBuilder.createFile(m_CompileUnit->getFilename(), m_CompileUnit->getDirectory());
+    const auto dbg_subprogram = m_DIBuilder.createFunction(
+        dbg_unit,
+        fn.Name,
+        mangled,
+        dbg_unit,
+        fn.Loc.Row,
+        function_type->GenDbgFunction(*this),
+        fn.Loc.Row,
+        llvm::DINode::FlagPrototyped,
+        llvm::DISubprogram::SPFlagDefinition);
+    function->setSubprogram(dbg_subprogram);
+
     m_Parent = function;
     m_Class = fn.Class;
     m_Result = fn.Result;
@@ -102,7 +134,9 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     const auto entry_block = CreateBlock("entry", function);
     m_Builder.SetInsertPoint(entry_block);
 
-    PushFrame();
+    PushFrame(dbg_subprogram);
+
+    EmitLoc();
     GenParameters(function, fn.Parameters, self);
     fn.Content->Gen(*this);
     PopFrame();
@@ -120,8 +154,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
         Error("not all paths yield");
     }
 
-    const auto error = verifyFunction(*function, &llvm::errs());
-    Assert(!error, "function has errors");
+    Assert(!verifyFunction(*function, &llvm::errs()), "function has errors");
 
     return reference;
 }
@@ -139,29 +172,45 @@ void llove::Builder::GenParameters(
         const auto argument = function->getArg(0);
         argument->setName("self");
 
+        const auto dbg_var = m_DIBuilder.createParameterVariable(
+            GetDbgScope(),
+            "self",
+            0u,
+            GetDbgFile(),
+            0u,
+            self.Type->GenDbg(*this),
+            true);
+
+        m_DIBuilder.insertDeclare(
+            argument,
+            dbg_var,
+            m_DIBuilder.createExpression(),
+            llvm::DILocation::get(m_Context, 0u, 0u, GetDbgScope()),
+            m_Builder.GetInsertBlock());
+
         SetValue("self", Value::CreateL(self.Type, argument, self.Mutable));
     }
 
     for (unsigned i = 0; i < function->arg_size() - offset; ++i)
     {
-        auto &[info_, name_] = parameters.at(i);
+        auto &[info, name] = parameters.at(i);
 
         const auto argument = function->getArg(i + offset);
-        argument->setName(name_);
+        argument->setName(name);
 
         ValuePtr storage;
-        if (info_.Reference)
+        if (info.Reference)
         {
-            storage = Value::CreateL(info_.Type, argument, info_.Mutable);
+            storage = Value::CreateL(info.Type, argument, info.Mutable);
         }
-        else if (info_.Type->IsClass())
+        else if (info.Type->IsClass())
         {
-            const auto pointer = CreateAlloca(info_.Type, function);
+            const auto pointer = CreateAlloca(info.Type, function);
             m_Builder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(info_.Type, pointer, info_.Mutable);
+            storage = Value::CreateL(info.Type, pointer, info.Mutable);
 
-            auto class_type = As<ClassType>(info_.Type);
+            auto class_type = As<ClassType>(info.Type);
             if (const auto destructor = class_type->GetDestructor())
             {
                 const auto &reference = GenFunction(
@@ -181,18 +230,19 @@ void llove::Builder::GenParameters(
                     });
             }
         }
-        else if (info_.Mutable)
+        else if (info.Mutable)
         {
-            const auto pointer = CreateAlloca(info_.Type, function);
+            const auto pointer = CreateAlloca(info.Type, function);
             m_Builder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(info_.Type, pointer, info_.Mutable);
+            storage = Value::CreateL(info.Type, pointer, info.Mutable);
         }
         else
         {
-            storage = Value::CreateR(info_.Type, argument);
+            storage = Value::CreateR(info.Type, argument);
         }
 
-        SetValue(name_, storage);
+        CreateDbgParameter(name, i, storage);
+        SetValue(name, storage);
     }
 }

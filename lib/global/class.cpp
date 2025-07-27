@@ -2,17 +2,20 @@
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
 
-llove::ClassGlobal::ClassGlobal(ClassType::Ptr type)
-    : m_Type(std::move(type)),
+llove::ClassGlobal::ClassGlobal(Location loc, ClassType::Ptr type)
+    : Global(std::move(loc)),
+      m_Type(std::move(type)),
       m_Opaque(true)
 {
 }
 
 llove::ClassGlobal::ClassGlobal(
+    Location loc,
     ClassType::Ptr type,
     std::vector<ClassField> fields,
     std::vector<ClassFunction> functions)
-    : m_Type(std::move(type)),
+    : Global(std::move(loc)),
+      m_Type(std::move(type)),
       m_Opaque(false),
       m_Fields(std::move(fields)),
       m_Functions(std::move(functions))
@@ -58,6 +61,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
          ] : m_Functions)
         builder.GenFunction(
             {
+                // TODO: loc
                 .Implicit = implicit,
                 .Class = m_Type,
                 .Mutable = mutable_,
@@ -81,6 +85,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const
          ] : m_Functions)
         builder.GenFunction(
             {
+                // TODO: loc
                 .Implicit = implicit,
                 .Class = m_Type,
                 .Mutable = mutable_,

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 #include <llove/forward.hpp>
+#include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
@@ -34,9 +35,10 @@ namespace llove
         std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
         llvm::Type *GenType(Builder &builder) const;
+        llvm::DIType *GenDbgType(Builder &builder) const;
         llvm::Value *GenCast(Builder &builder, ValuePtr value, bool unstable_ownership = false) const;
 
-        [[nodiscard]] unsigned Size(Builder &builder) const;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const;
         [[nodiscard]] std::string Mangle() const;
 
         bool operator==(const Field &other) const;

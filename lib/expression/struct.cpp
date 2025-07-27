@@ -4,8 +4,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::StructExpression::StructExpression(std::map<std::string, ExpressionPtr> values, TypePtr type)
-    : m_Values(std::move(values)),
+llove::StructExpression::StructExpression(Location loc, std::map<std::string, ExpressionPtr> values, TypePtr type)
+    : Expression(std::move(loc)),
+      m_Values(std::move(values)),
       m_Type(std::move(type))
 {
 }
@@ -14,6 +15,8 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
 {
     auto type = m_Type ? As<StructType>(m_Type) : expect ? As<StructType>(expect) : nullptr;
     Assert(type != nullptr, "untyped struct expression");
+
+    builder.EmitLoc(m_Loc);
 
     llvm::Value *aggregate = llvm::Constant::getNullValue(type->Gen(builder));
 
@@ -41,7 +44,7 @@ llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const
     if (m_Type)
         m_Type->Reflect(builder, type);
 
-    return std::make_unique<StructExpression>(std::move(values), std::move(type));
+    return std::make_unique<StructExpression>(m_Loc, std::move(values), std::move(type));
 }
 
 std::ostream &llove::StructExpression::Print(std::ostream &stream) const

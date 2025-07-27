@@ -28,14 +28,19 @@ bool llove::IntegerType::IsInteger() const
     return true;
 }
 
-unsigned llove::IntegerType::Size(Builder &builder) const
+unsigned llove::IntegerType::SizeBits(Builder &builder) const
 {
-    return m_Bits >> 3;
+    return m_Bits;
 }
 
 llvm::IntegerType *llove::IntegerType::Gen(Builder &builder) const
 {
     return builder.GetIntType(m_Bits);
+}
+
+llvm::DIType *llove::IntegerType::GenDbg(Builder &builder) const
+{
+    return builder.GetDbgIntType(m_Sign, m_Bits);
 }
 
 llove::TypePtr llove::IntegerType::Reflect(Builder &builder) const

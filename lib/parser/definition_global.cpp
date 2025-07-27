@@ -5,10 +5,11 @@
 
 llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
 {
+    auto loc = m_Token.Loc;
     auto interface = SkipIf(TokenType_Symbol, "interface") || (Expect(TokenType_Symbol, "define"), false);
 
     if (!interface && SkipIf(TokenType_Other, ":"))
-        return ParseClassDefinitionGlobal();
+        return ParseClassDefinitionGlobal(std::move(loc));
 
     auto implicit = SkipIf(TokenType_Symbol, "implicit");
 
@@ -42,6 +43,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
 
     if (SkipIf(TokenType_Other, ";"))
         return std::make_unique<DefinitionGlobal>(
+            std::move(loc),
             interface,
             implicit,
             std::move(name),
@@ -53,6 +55,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
     auto content = ParseScopeStatement();
 
     return std::make_unique<DefinitionGlobal>(
+        std::move(loc),
         interface,
         implicit,
         std::move(name),

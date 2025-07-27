@@ -3,11 +3,13 @@
 #include <llove/tree.hpp>
 
 llove::ForStatement::ForStatement(
+    Location loc,
     StatementPtr prefix,
     StatementPtr suffix,
     ExpressionPtr condition,
     StatementPtr content)
-    : m_Prefix(std::move(prefix)),
+    : Statement(std::move(loc)),
+      m_Prefix(std::move(prefix)),
       m_Suffix(std::move(suffix)),
       m_Condition(std::move(condition)),
       m_Content(std::move(content))
@@ -23,21 +25,25 @@ void llove::ForStatement::Gen(Builder &builder) const
 
     auto use_end = false;
 
+    builder.EmitLoc(m_Loc);
     builder.PushFrame();
 
     if (m_Prefix)
         m_Prefix->Gen(builder);
+    builder.EmitLoc(m_Loc);
     builder.CreateBranch(head_block);
 
     builder.SetInsertPoint(head_block);
     if (m_Condition)
     {
         const auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
+        builder.EmitLoc(m_Loc);
         builder.CreateBranch(condition, loop_block, end_block);
         use_end = true;
     }
     else
     {
+        builder.EmitLoc(m_Loc);
         builder.CreateBranch(loop_block);
     }
 
@@ -47,6 +53,7 @@ void llove::ForStatement::Gen(Builder &builder) const
     {
         if (m_Suffix)
             m_Suffix->Gen(builder);
+        builder.EmitLoc(m_Loc);
         builder.CreateBranch(head_block);
     }
 
@@ -79,6 +86,7 @@ llove::StatementPtr llove::ForStatement::Reflect(Builder &builder) const
         m_Content->Reflect(builder, content);
 
     return std::make_unique<ForStatement>(
+        m_Loc,
         std::move(prefix),
         std::move(suffix),
         std::move(condition),

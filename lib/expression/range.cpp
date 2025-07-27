@@ -3,8 +3,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::RangeExpression::RangeExpression(ExpressionPtr beg, ExpressionPtr end)
-    : m_Beg(std::move(beg)),
+llove::RangeExpression::RangeExpression(Location loc, ExpressionPtr beg, ExpressionPtr end)
+    : Expression(std::move(loc)),
+      m_Beg(std::move(beg)),
       m_End(std::move(end))
 {
 }
@@ -24,6 +25,8 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
 
     auto range_type = builder.GetTypes().GetRange(std::move(entry));
 
+    builder.EmitLoc(m_Loc);
+
     llvm::Value *aggregate = llvm::Constant::getNullValue(range_type->Gen(builder));
     aggregate = builder.CreateInsertValue(aggregate, beg->Load(builder), 0);
     aggregate = builder.CreateInsertValue(aggregate, end->Load(builder), 1);
@@ -41,7 +44,7 @@ llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const
     if (m_End)
         m_End->Reflect(builder, end);
 
-    return std::make_unique<RangeExpression>(std::move(beg), std::move(end));
+    return std::make_unique<RangeExpression>(m_Loc, std::move(beg), std::move(end));
 }
 
 std::ostream &llove::RangeExpression::Print(std::ostream &stream) const

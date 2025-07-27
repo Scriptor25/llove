@@ -59,7 +59,7 @@ bool llove::FunctionType::IsFunction() const
     return true;
 }
 
-unsigned llove::FunctionType::Size(Builder &builder) const
+unsigned llove::FunctionType::SizeBits(Builder &builder) const
 {
     Error("function type does not have a size");
 }
@@ -70,15 +70,32 @@ llvm::PointerType *llove::FunctionType::Gen(Builder &builder) const
     return builder.GetPointerType(function);
 }
 
+llvm::DIType *llove::FunctionType::GenDbg(Builder &builder) const
+{
+    const auto function = GenDbgFunction(builder);
+    return builder.GetDbgPointerType(function);
+}
+
 llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder) const
 {
     std::vector<llvm::Type *> parameters;
     if (m_Self)
-        parameters.emplace_back(builder.GetPointerType(m_Self.Type->Gen(builder)));
+        parameters.emplace_back(m_Self.GenType(builder));
     for (auto &parameter : m_Parameters)
         parameters.emplace_back(parameter.GenType(builder));
 
     return builder.GetFunctionType(m_Result.GenType(builder), parameters, m_VarArg);
+}
+
+llvm::DISubroutineType *llove::FunctionType::GenDbgFunction(Builder &builder) const
+{
+    std::vector<llvm::Metadata *> parameters;
+    for (auto &parameter : m_Parameters)
+        parameters.emplace_back(parameter.GenDbgType(builder));
+
+    const auto result = m_Result.GenDbgType(builder);
+
+    return builder.GetDbgFunctionType(parameters, result);
 }
 
 llove::TypePtr llove::FunctionType::Reflect(Builder &builder) const

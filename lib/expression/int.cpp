@@ -4,8 +4,9 @@
 #include <llove/value.hpp>
 #include <llvm/IR/Constants.h>
 
-llove::IntExpression::IntExpression(const uint64_t value, TypePtr type)
-    : m_Value(value),
+llove::IntExpression::IntExpression(Location loc, const uint64_t value, TypePtr type)
+    : Expression(std::move(loc)),
+      m_Value(value),
       m_Type(std::move(type))
 {
 }
@@ -20,6 +21,9 @@ llove::ValuePtr llove::IntExpression::GenVal(Builder &builder, const TypePtr exp
         else
             type = builder.GetTypes().GetInteger(false, 64);
     }
+
+    builder.EmitLoc(m_Loc);
+
     const auto value = llvm::ConstantInt::get(type->Gen(builder), m_Value, type->IsSigned());
     return Value::CreateR(std::move(type), value);
 }
@@ -30,7 +34,7 @@ llove::StatementPtr llove::IntExpression::Reflect(Builder &builder) const
     if (m_Type)
         m_Type->Reflect(builder, type);
 
-    return std::make_unique<IntExpression>(m_Value, std::move(type));
+    return std::make_unique<IntExpression>(m_Loc, m_Value, std::move(type));
 }
 
 std::ostream &llove::IntExpression::Print(std::ostream &stream) const

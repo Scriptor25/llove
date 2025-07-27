@@ -4,7 +4,7 @@
 
 llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
 {
-    Expect(TokenType_Symbol, "let");
+    auto loc = Expect(TokenType_Symbol, "let").Loc;
 
     Field info;
     auto name = ParseField(info, true);
@@ -32,5 +32,10 @@ llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
     if (!inline_)
         Expect(TokenType_Other, ";");
 
-    return std::make_unique<LetStatement>(std::move(info), std::move(name), std::move(value), std::move(arguments));
+    return std::make_unique<LetStatement>(
+        std::move(loc),
+        std::move(info),
+        std::move(name),
+        std::move(value),
+        std::move(arguments));
 }

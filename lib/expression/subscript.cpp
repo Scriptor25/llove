@@ -4,8 +4,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::SubscriptExpression::SubscriptExpression(ExpressionPtr value, ExpressionPtr index)
-    : m_Value(std::move(value)),
+llove::SubscriptExpression::SubscriptExpression(Location loc, ExpressionPtr value, ExpressionPtr index)
+    : Expression(std::move(loc)),
+      m_Value(std::move(value)),
       m_Index(std::move(index))
 {
 }
@@ -14,6 +15,8 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
 {
     const auto value = m_Value->GenVal(builder, expect ? builder.GetTypes().GetPointer(expect, false) : nullptr);
     const auto index = m_Index->GenVal(builder, nullptr);
+
+    builder.EmitLoc(m_Loc);
 
     switch (value->GetType()->GetId())
     {
@@ -36,7 +39,7 @@ llove::StatementPtr llove::SubscriptExpression::Reflect(Builder &builder) const
     if (m_Index)
         m_Index->Reflect(builder, index);
 
-    return std::make_unique<SubscriptExpression>(std::move(value), std::move(index));
+    return std::make_unique<SubscriptExpression>(m_Loc, std::move(value), std::move(index));
 }
 
 std::ostream &llove::SubscriptExpression::Print(std::ostream &stream) const

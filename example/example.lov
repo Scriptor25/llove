@@ -68,38 +68,38 @@ define +(l: i8[], &r: string): string {
     yield str;
 }
 
-define +(l: string, r: i8): string {
-    let mut str: string = l;
+define +(mut l: string, r: i8): string {
+    let mut str: string = $l;
     str += r;
     yield str;
 }
 
-define +(l: i8, r: string): string {
+define +(l: i8, mut r: string): string {
     let mut str: string = l;
+    str += $r;
+    yield str;
+}
+
+define +(mut l: string, r: i8[]): string {
+    let mut str: string = $l;
     str += r;
     yield str;
 }
 
-define +(l: string, r: i8[]): string {
+define +(l: i8[], mut r: string): string {
     let mut str: string = l;
-    str += r;
+    str += $r;
     yield str;
 }
 
-define +(l: i8[], r: string): string {
+define +(&l: string, mut r: string): string {
     let mut str: string = l;
-    str += r;
+    str += $r;
     yield str;
 }
 
-define +(&l: string, r: string): string {
-    let mut str: string = l;
-    str += r;
-    yield str;
-}
-
-define +(l: string, &r: string): string {
-    let mut str: string = l;
+define +(mut l: string, &r: string): string {
+    let mut str: string = $l;
     str += r;
     yield str;
 }
@@ -110,9 +110,9 @@ define +(&l: string, &r: string): string {
     yield str;
 }
 
-define +(l: string, r: string): string {
-    let mut str: string = l;
-    str += r;
+define +(mut l: string, mut r: string): string {
+    let mut str: string = $l;
+    str += $r;
     yield str;
 }
 
@@ -220,7 +220,10 @@ define:string mut create(&s: string) {
 }
 
 define:string mut $(): string {
-    let result = self;
+    let mut result: string;
+
+    result.beg = self.beg;
+    result.end = self.end;
 
     self.beg = null;
     self.end = null;

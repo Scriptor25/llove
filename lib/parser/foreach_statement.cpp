@@ -3,7 +3,7 @@
 
 llove::StatementPtr llove::Parser::ParseForEachStatement(const bool inline_)
 {
-    Expect(TokenType_Symbol, "foreach");
+    auto loc = Expect(TokenType_Symbol, "foreach").Loc;
     Expect(TokenType_Other, "(");
 
     auto mutable_ = SkipIf(TokenType_Symbol, "mut");
@@ -19,6 +19,7 @@ llove::StatementPtr llove::Parser::ParseForEachStatement(const bool inline_)
     auto content = ScopeStatement::Wrap(ParseStatement(inline_));
 
     return std::make_unique<ForEachStatement>(
+        std::move(loc),
         mutable_,
         reference,
         std::move(name),

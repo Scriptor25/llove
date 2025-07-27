@@ -22,14 +22,19 @@ bool llove::FloatType::IsFloat() const
     return true;
 }
 
-unsigned llove::FloatType::Size(Builder &builder) const
+unsigned llove::FloatType::SizeBits(Builder &builder) const
 {
-    return m_Bits >> 3;
+    return m_Bits;
 }
 
 llvm::Type *llove::FloatType::Gen(Builder &builder) const
 {
     return builder.GetFltType(m_Bits);
+}
+
+llvm::DIType *llove::FloatType::GenDbg(Builder &builder) const
+{
+    return builder.GetDbgFltType(m_Bits);
 }
 
 llove::TypePtr llove::FloatType::Reflect(Builder &builder) const

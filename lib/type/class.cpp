@@ -154,11 +154,11 @@ bool llove::ClassType::IsClass() const
     return true;
 }
 
-unsigned llove::ClassType::Size(Builder &builder) const
+unsigned llove::ClassType::SizeBits(Builder &builder) const
 {
     auto size = 0u;
     for (auto &[info, name] : m_Fields)
-        size += info.Size(builder);
+        size += info.SizeBits(builder);
     return size;
 }
 
@@ -173,6 +173,24 @@ llvm::StructType *llove::ClassType::Gen(Builder &builder) const
 
     // TODO: packed struct
     return builder.GetOrCreateNamedStructType(m_Name, elements, true);
+}
+
+llvm::DIType *llove::ClassType::GenDbg(Builder &builder) const
+{
+    if (m_Opaque)
+        return builder.GetDbgClassType(m_Name);
+
+    std::vector<llvm::Metadata *> fields;
+
+    unsigned offset = 0;
+    for (auto &[info, name] : m_Fields)
+    {
+        const auto size = info.SizeBits(builder);
+        fields.emplace_back(builder.GetDbgFieldType(name, info.GenDbgType(builder), size, offset));
+        offset += size;
+    }
+
+    return builder.GetDbgClassType(m_Name, fields);
 }
 
 llove::TypePtr llove::ClassType::Reflect(Builder &builder) const

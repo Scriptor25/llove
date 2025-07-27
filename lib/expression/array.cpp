@@ -4,8 +4,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::ArrayExpression::ArrayExpression(std::vector<ExpressionPtr> values, TypePtr type)
-    : m_Values(std::move(values)),
+llove::ArrayExpression::ArrayExpression(Location loc, std::vector<ExpressionPtr> values, TypePtr type)
+    : Expression(std::move(loc)),
+      m_Values(std::move(values)),
       m_Type(std::move(type))
 {
 }
@@ -22,6 +23,8 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr e
         .Reference = false,
         .Type = base,
     };
+
+    builder.EmitLoc(m_Loc);
 
     llvm::Value *aggregate = llvm::Constant::getNullValue(type->Gen(builder));
 
@@ -46,7 +49,7 @@ llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const
     if (m_Type)
         m_Type->Reflect(builder, type);
 
-    return std::make_unique<ArrayExpression>(std::move(values), std::move(type));
+    return std::make_unique<ArrayExpression>(m_Loc, std::move(values), std::move(type));
 }
 
 std::ostream &llove::ArrayExpression::Print(std::ostream &stream) const

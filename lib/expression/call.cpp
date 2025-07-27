@@ -3,8 +3,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::CallExpression::CallExpression(ExpressionPtr callee, std::vector<ExpressionPtr> arguments)
-    : m_Callee(std::move(callee)),
+llove::CallExpression::CallExpression(Location loc, ExpressionPtr callee, std::vector<ExpressionPtr> arguments)
+    : Expression(std::move(loc)),
+      m_Callee(std::move(callee)),
       m_Arguments(std::move(arguments))
 {
 }
@@ -28,6 +29,8 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
         self ? self->AsField() : Field{});
     Assert(candidate.has_value(), "no suitable candidate");
 
+    builder.EmitLoc(m_Loc);
+
     return builder.CreateCall(candidate->Type, candidate->Callee, std::move(arguments), std::move(self));
 }
 
@@ -41,7 +44,7 @@ llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const
     for (auto &argument : m_Arguments)
         argument->Reflect(builder, arguments.emplace_back());
 
-    return std::make_unique<CallExpression>(std::move(callee), std::move(arguments));
+    return std::make_unique<CallExpression>(m_Loc, std::move(callee), std::move(arguments));
 }
 
 std::ostream &llove::CallExpression::Print(std::ostream &stream) const

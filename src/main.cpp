@@ -10,7 +10,6 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 #include <llvm/Passes/OptimizationLevel.h>
-#include <llvm/Support/FileSystem.h>
 #include <llvm/TargetParser/Host.h>
 
 // --format=<"asm"|"obj">
@@ -234,7 +233,7 @@ int main(const int argc, const char *const *argv)
         return 1;
 
     llove::Context types;
-    llove::Builder builder(types);
+    llove::Builder builder(types, arguments.filename());
     llove::Parser parser(types, builder, stream);
 
     auto print_stream = std::unique_ptr<std::ostream>(&std::cerr);

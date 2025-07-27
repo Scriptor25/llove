@@ -4,8 +4,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::UnaryExpression::UnaryExpression(std::string operator_, ExpressionPtr operand, const bool suffix)
-    : m_Operator(std::move(operator_)),
+llove::UnaryExpression::UnaryExpression(Location loc, std::string operator_, ExpressionPtr operand, const bool suffix)
+    : Expression(std::move(loc)),
+      m_Operator(std::move(operator_)),
       m_Operand(std::move(operand)),
       m_Suffix(suffix)
 {
@@ -14,6 +15,8 @@ llove::UnaryExpression::UnaryExpression(std::string operator_, ExpressionPtr ope
 llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr expect) const
 {
     auto operand = m_Operand->GenVal(builder, expect);
+
+    builder.EmitLoc(m_Loc);
 
     if (m_Operator == "$")
     {
@@ -40,7 +43,7 @@ llove::StatementPtr llove::UnaryExpression::Reflect(Builder &builder) const
     if (m_Operand)
         m_Operand->Reflect(builder, operand);
 
-    return std::make_unique<UnaryExpression>(m_Operator, std::move(operand), m_Suffix);
+    return std::make_unique<UnaryExpression>(m_Loc, m_Operator, std::move(operand), m_Suffix);
 }
 
 std::ostream &llove::UnaryExpression::Print(std::ostream &stream) const

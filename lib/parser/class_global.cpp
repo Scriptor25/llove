@@ -4,7 +4,7 @@
 
 llove::GlobalPtr llove::Parser::ParseClassGlobal()
 {
-    Expect(TokenType_Symbol, "class");
+    auto loc = Expect(TokenType_Symbol, "class").Loc;
 
     if (At(TokenType_Operator, "<"))
     {
@@ -17,7 +17,7 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
     m_Types.Set(type->GetName(), type);
 
     if (SkipIf(TokenType_Other, ";"))
-        return std::make_unique<ClassGlobal>(std::move(type));
+        return std::make_unique<ClassGlobal>(std::move(loc), std::move(type));
 
     std::vector<ClassField> fields;
     std::vector<ClassFunction> functions;
@@ -35,7 +35,7 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
     }
     Expect(TokenType_Other, "}");
 
-    return std::make_unique<ClassGlobal>(std::move(type), std::move(fields), std::move(functions));
+    return std::make_unique<ClassGlobal>(std::move(loc), std::move(type), std::move(fields), std::move(functions));
 }
 
 void llove::Parser::ParseClassField(ClassField &field)

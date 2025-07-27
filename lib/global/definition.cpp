@@ -2,6 +2,7 @@
 #include <llove/tree.hpp>
 
 llove::DefinitionGlobal::DefinitionGlobal(
+    Location loc,
     const bool interface,
     const bool implicit,
     std::string name,
@@ -9,7 +10,8 @@ llove::DefinitionGlobal::DefinitionGlobal(
     const bool vararg,
     Field result,
     StatementPtr content)
-    : m_Interface(interface),
+    : Global(std::move(loc)),
+      m_Interface(interface),
       m_Implicit(implicit),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
@@ -23,6 +25,7 @@ void llove::DefinitionGlobal::Gen(Builder &builder) const
 {
     builder.GenFunction(
         {
+            .Loc = m_Loc,
             .Interface = m_Interface,
             .Implicit = m_Implicit,
             .Name = m_Name,

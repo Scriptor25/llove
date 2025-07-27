@@ -22,15 +22,21 @@ bool llove::RangeType::IsRange() const
     return true;
 }
 
-unsigned llove::RangeType::Size(Builder &builder) const
+unsigned llove::RangeType::SizeBits(Builder &builder) const
 {
-    return 2 * m_Entry->Size(builder);
+    return 2 * m_Entry->SizeBits(builder);
 }
 
 llvm::StructType *llove::RangeType::Gen(Builder &builder) const
 {
     const auto entry = m_Entry->Gen(builder);
     return builder.GetStructType({ entry, entry }, true);
+}
+
+llvm::DIType *llove::RangeType::GenDbg(Builder &builder) const
+{
+    const auto entry = m_Entry->GenDbg(builder);
+    return builder.GetDbgStructType({ entry, entry }, SizeBits(builder));
 }
 
 llove::TypePtr llove::RangeType::Reflect(Builder &builder) const

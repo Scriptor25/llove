@@ -3,7 +3,7 @@
 
 llove::StatementPtr llove::Parser::ParseIfStatement(const bool inline_)
 {
-    Expect(TokenType_Symbol, "if");
+    auto loc = Expect(TokenType_Symbol, "if").Loc;
     Expect(TokenType_Other, "(");
     auto condition = ParseExpression();
     Expect(TokenType_Other, ")");
@@ -13,5 +13,5 @@ llove::StatementPtr llove::Parser::ParseIfStatement(const bool inline_)
     if (SkipIf(TokenType_Symbol, "else"))
         else_ = ScopeStatement::Wrap(ParseStatement(inline_));
 
-    return std::make_unique<IfStatement>(std::move(condition), std::move(then), std::move(else_));
+    return std::make_unique<IfStatement>(std::move(loc), std::move(condition), std::move(then), std::move(else_));
 }

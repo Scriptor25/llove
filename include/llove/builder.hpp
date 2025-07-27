@@ -1,10 +1,13 @@
 #pragma once
 
+#include <filesystem>
 #include <map>
 #include <set>
 #include <llove/forward.hpp>
 #include <llove/function.hpp>
+#include <llove/location.hpp>
 #include <llove/operator.hpp>
+#include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -15,6 +18,8 @@ namespace llove
 {
     struct FunctionInfo final
     {
+        Location Loc;
+
         bool Interface = false;
         bool Implicit = false;
 
@@ -38,7 +43,7 @@ namespace llove
 
     struct Frame final
     {
-        bool Valid = true;
+        llvm::DIScope *Scope = nullptr;
         std::map<llvm::Value *, llvm::FunctionCallee> Destructors;
         std::map<std::string, ValuePtr> Values;
     };
@@ -58,9 +63,12 @@ namespace llove
     class Builder
     {
     public:
-        explicit Builder(Context &types);
+        explicit Builder(Context &types, const std::filesystem::path &filepath);
 
         Context &GetTypes() const;
+
+        llvm::DIScope *GetDbgScope() const;
+        llvm::DIFile *GetDbgFile() const;
 
         static std::string Mangle(
             bool interface,
@@ -89,6 +97,28 @@ namespace llove
             const std::string &name,
             const std::vector<llvm::Type *> &fields,
             bool packed);
+
+        llvm::DIType *GetDbgVoidType();
+        llvm::DIType *GetDbgIntType(bool sign, unsigned bits);
+        llvm::DIType *GetDbgFltType(unsigned bits);
+        llvm::DIType *GetDbgPointerType();
+        llvm::DIType *GetDbgPointerType(llvm::DIType *base);
+        llvm::DIType *GetDbgArrayType(llvm::DIType *base, unsigned size);
+        llvm::DIType *GetDbgStructType(const std::vector<llvm::Metadata *> &fields, unsigned size);
+        llvm::DIType *GetDbgFieldType(const std::string &name, llvm::DIType *type, unsigned size, unsigned offset);
+        llvm::DIType *GetDbgClassType(const std::string &name);
+        llvm::DIType *GetDbgClassType(const std::string &name, const std::vector<llvm::Metadata *> &fields);
+        llvm::DISubroutineType *GetDbgFunctionType(
+            const std::vector<llvm::Metadata *> &parameters,
+            llvm::DIType *result);
+
+        void CreateDbgParameter(const std::string &name, unsigned index, const ValuePtr &value);
+        void CreateDbgVariable(const std::string &name, const ValuePtr &value);
+
+        void EmitLoc();
+        void EmitLoc(const Location &loc);
+        void EmitLoc(const GlobalPtr &ptr);
+        void EmitLoc(const StatementPtr &ptr);
 
         llvm::Value *CreateAlloca(const TypePtr &type, llvm::Function *parent = nullptr);
 
@@ -180,7 +210,12 @@ namespace llove
         llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);
 
-        FunctionReference &PushFunction(bool expose, bool implicit, std::string name, FunctionType::Ptr type, llvm::Function *callee);
+        FunctionReference &PushFunction(
+            bool expose,
+            bool implicit,
+            std::string name,
+            FunctionType::Ptr type,
+            llvm::Function *callee);
         [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name) const;
         [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self) const;
 
@@ -203,7 +238,7 @@ namespace llove
         Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
         Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
 
-        void PushFrame();
+        void PushFrame(llvm::DIScope *scope = nullptr);
         void PopFrame();
 
         void SetValue(const std::string &name, ValuePtr value);
@@ -230,9 +265,12 @@ namespace llove
         llvm::IRBuilder<> m_Builder;
         llvm::Module m_Module;
 
+        llvm::DIBuilder m_DIBuilder;
+        llvm::DICompileUnit *m_CompileUnit;
+
         std::vector<FunctionReference> m_Functions;
 
-        llvm::Function *m_Parent;
+        llvm::Function *m_Parent = nullptr;
         ClassType::Ptr m_Class;
         Field m_Result;
         std::vector<Frame> m_Stack;

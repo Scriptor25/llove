@@ -2,8 +2,9 @@
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
 
-llove::IfStatement::IfStatement(ExpressionPtr condition, StatementPtr then, StatementPtr else_)
-    : m_Condition(std::move(condition)),
+llove::IfStatement::IfStatement(Location loc, ExpressionPtr condition, StatementPtr then, StatementPtr else_)
+    : Statement(std::move(loc)),
+      m_Condition(std::move(condition)),
       m_Then(std::move(then)),
       m_Else(std::move(else_))
 {
@@ -17,6 +18,8 @@ void llove::IfStatement::Gen(Builder &builder) const
     const auto end_block = builder.CreateBlock("end");
 
     auto use_end = false;
+
+    builder.EmitLoc(m_Loc);
 
     auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
     condition = builder.CreateCast(std::move(condition), builder.GetTypes().GetInteger(false, 1), false);
@@ -65,7 +68,7 @@ llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const
     if (m_Else)
         m_Else->Reflect(builder, else_);
 
-    return std::make_unique<IfStatement>(std::move(condition), std::move(then), std::move(else_));
+    return std::make_unique<IfStatement>(m_Loc, std::move(condition), std::move(then), std::move(else_));
 }
 
 std::ostream &llove::IfStatement::Print(std::ostream &stream) const

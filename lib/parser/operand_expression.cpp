@@ -7,6 +7,8 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
 
     while (true)
     {
+        auto loc = m_Token.Loc;
+
         if (SkipIf(TokenType_Other, "("))
         {
             std::vector<ExpressionPtr> arguments;
@@ -20,7 +22,7 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             }
             Expect(TokenType_Other, ")");
 
-            expression = std::make_unique<CallExpression>(std::move(expression), std::move(arguments));
+            expression = std::make_unique<CallExpression>(std::move(loc), std::move(expression), std::move(arguments));
             continue;
         }
 
@@ -28,7 +30,7 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
         {
             auto member = Expect(TokenType_Symbol).Value;
 
-            expression = std::make_unique<MemberExpression>(std::move(expression), std::move(member));
+            expression = std::make_unique<MemberExpression>(std::move(loc), std::move(expression), std::move(member));
             continue;
         }
 
@@ -36,7 +38,7 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
         {
             auto end = ParsePrimaryExpression();
 
-            expression = std::make_unique<RangeExpression>(std::move(expression), std::move(end));
+            expression = std::make_unique<RangeExpression>(std::move(loc), std::move(expression), std::move(end));
             continue;
         }
 
@@ -45,7 +47,7 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             auto index = ParseExpression();
             Expect(TokenType_Other, "]");
 
-            expression = std::make_unique<SubscriptExpression>(std::move(expression), std::move(index));
+            expression = std::make_unique<SubscriptExpression>(std::move(loc), std::move(expression), std::move(index));
             continue;
         }
 
@@ -53,7 +55,11 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
         {
             auto operator_ = Skip().Value;
 
-            expression = std::make_unique<UnaryExpression>(std::move(operator_), std::move(expression), true);
+            expression = std::make_unique<UnaryExpression>(
+                std::move(loc),
+                std::move(operator_),
+                std::move(expression),
+                true);
             continue;
         }
 

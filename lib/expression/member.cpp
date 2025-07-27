@@ -4,8 +4,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::MemberExpression::MemberExpression(ExpressionPtr value, std::string member)
-    : m_Value(std::move(value)),
+llove::MemberExpression::MemberExpression(Location loc, ExpressionPtr value, std::string member)
+    : Expression(std::move(loc)),
+      m_Value(std::move(value)),
       m_Member(std::move(member))
 {
 }
@@ -46,6 +47,8 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
         Error("not implemented");
     }
 
+    builder.EmitLoc(m_Loc);
+
     if (value->IsReferenceable())
     {
         auto pointer = builder.CreateStructGEP(type, value->GetPointer(), index);
@@ -84,7 +87,7 @@ llove::StatementPtr llove::MemberExpression::Reflect(Builder &builder) const
     if (m_Value)
         m_Value->Reflect(builder, value);
 
-    return std::make_unique<MemberExpression>(std::move(value), m_Member);
+    return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member);
 }
 
 std::ostream &llove::MemberExpression::Print(std::ostream &stream) const

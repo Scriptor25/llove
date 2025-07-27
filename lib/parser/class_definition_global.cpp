@@ -2,7 +2,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
+llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
 {
     auto class_name = Expect(TokenType_Symbol).Value;
     auto class_type = m_Types.GetClass(std::move(class_name));
@@ -39,6 +39,7 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal()
     auto content = ParseScopeStatement();
 
     return std::make_unique<ClassDefinitionGlobal>(
+        std::move(loc),
         std::move(class_type),
         mutable_,
         std::move(name),
