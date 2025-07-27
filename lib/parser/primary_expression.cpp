@@ -17,6 +17,17 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         return std::make_unique<IntExpression>(std::move(loc), value, std::move(type));
     }
 
+    if (At(TokenType_Float))
+    {
+        auto value = Skip().FltValue;
+
+        TypePtr type;
+        if (SkipIf(TokenType_Other, ":"))
+            type = ParseType();
+
+        return std::make_unique<FltExpression>(std::move(loc), value, std::move(type));
+    }
+
     if (At(TokenType_String))
     {
         auto value = Skip().Value;

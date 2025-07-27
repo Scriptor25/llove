@@ -61,7 +61,7 @@ bool llove::FunctionType::IsFunction() const
 
 unsigned llove::FunctionType::SizeBits(Builder &builder) const
 {
-    Error("function type does not have a size");
+    return 64;
 }
 
 llvm::PointerType *llove::FunctionType::Gen(Builder &builder) const

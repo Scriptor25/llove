@@ -14,6 +14,8 @@ class string {
     expose implicit mut create(mut s: string);
     expose implicit mut create(&s: string);
 
+    mut create(beg: i8[mut], end: i8[mut]);
+
     expose mut $(): string;
 
     expose mut delete();
@@ -148,21 +150,10 @@ define test(a: u1, b: u1): string {
     }
 
     if (b) {
-        print(x);
-        print(s);
-        print(m);
-        printf("---------------------\r\n");
-
         yield s;
     }
 
     x = s;
-
-    print(x);
-    print(s);
-    print(m);
-    printf("---------------------\r\n");
-
     yield x;
 }
 
@@ -219,11 +210,13 @@ define:string mut create(&s: string) {
     memcpy(self.beg, s.beg, len);
 }
 
-define:string mut $(): string {
-    let mut result: string;
+define:string mut create(beg: i8[mut], end: i8[mut]) {
+    self.beg = beg;
+    self.end = end;
+}
 
-    result.beg = self.beg;
-    result.end = self.end;
+define:string mut $(): string {
+    let result: string(self.beg, self.end);
 
     self.beg = null;
     self.end = null;

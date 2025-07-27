@@ -35,8 +35,8 @@ define foo(mut bar: i32) {
 
 interface main(count: i32, args: i8[][]): i32 {
 
-    let u: vec3 = { x: 1, y: 2, z: 3 };
-    let v: vec3 = { x: 3, y: 2, z: 1 };
+    let u: vec3 = { x: 1.0, y: 2.0, z: 3.0 };
+    let v: vec3 = { x: 3.0, y: 2.0, z: 1.0 };
     let w = u + v;
 
     printf("%f %f %f\r\n", u.x, u.y, u.z);

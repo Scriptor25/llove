@@ -1,0 +1,45 @@
+#include <llove/builder.hpp>
+#include <llove/context.hpp>
+#include <llove/tree.hpp>
+#include <llove/value.hpp>
+
+llove::FltExpression::FltExpression(Location loc, const double_t value, TypePtr type)
+    : Expression(std::move(loc)),
+      m_Value(value),
+      m_Type(std::move(type))
+{
+}
+
+llove::ValuePtr llove::FltExpression::GenVal(Builder &builder, const TypePtr expect) const
+{
+    auto type = m_Type ? As<FloatType>(m_Type) : nullptr;
+    if (!type)
+    {
+        if (expect && expect->IsInteger())
+            type = As<FloatType>(expect);
+        else
+            type = builder.GetTypes().GetFloat(64);
+    }
+
+    builder.EmitLoc(m_Loc);
+
+    const auto value = llvm::ConstantFP::get(type->Gen(builder), m_Value);
+    return Value::CreateR(std::move(type), value);
+}
+
+llove::StatementPtr llove::FltExpression::Reflect(Builder &builder) const
+{
+    TypePtr type;
+    if (m_Type)
+        m_Type->Reflect(builder, type);
+
+    return std::make_unique<FltExpression>(m_Loc, m_Value, std::move(type));
+}
+
+std::ostream &llove::FltExpression::Print(std::ostream &stream) const
+{
+    stream << m_Value;
+    if (m_Type)
+        stream << ':' << m_Type;
+    return stream;
+}

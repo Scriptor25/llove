@@ -1,4 +1,5 @@
 interface putchar(chr: i32): i32;
+interface printf(format: i8[], ...): i32;
 interface strlen(str: i8[]): u64;
 
 type iterable_struct_t = {
@@ -34,12 +35,15 @@ class iterable_class_t {
 
 interface main(count: i32, args: i8[][]): i32 {
 
+    foreach (arg : args..(args + count)) {
+        printf("%s\r\n", arg);
+    }
+
     let my_iterable_array = [0, 1, 2, 3, 4, 5]:i32;
     foreach (&x : my_iterable_array) {
         putchar(x + 0x30);
     }
-    putchar('\r');
-    putchar('\n');
+    printf("\r\n");
 
     let my_iterable_struct: iterable_struct_t = {
         begin: begin_str,

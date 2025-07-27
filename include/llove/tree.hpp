@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <map>
 #include <memory>
 #include <string>
@@ -323,6 +324,20 @@ namespace llove
         TypePtr m_Type;
         ExpressionPtr m_Destination;
         std::vector<ExpressionPtr> m_Arguments;
+    };
+
+    class FltExpression final : public Expression
+    {
+    public:
+        explicit FltExpression(Location loc, double_t value, TypePtr type);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        StatementPtr Reflect(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        double_t m_Value;
+        TypePtr m_Type;
     };
 
     class IntExpression final : public Expression
