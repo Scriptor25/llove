@@ -4,6 +4,7 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/PassBuilder.h>
+#include <llvm/Passes/StandardInstrumentations.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/TargetParser/Host.h>
@@ -85,24 +86,27 @@ void llove::Builder::Seal(const SealInfo &info)
     m_Module.setDataLayout(target_machine->createDataLayout());
     m_Module.setTargetTriple(target_triple);
 
+    llvm::LoopAnalysisManager lam;
+    llvm::FunctionAnalysisManager fam;
+    llvm::CGSCCAnalysisManager cgam;
+    llvm::ModuleAnalysisManager mam;
+    llvm::PassInstrumentationCallbacks pic;
+    llvm::StandardInstrumentations si(m_Context, true);
+
+    si.registerCallbacks(pic, &mam);
+
+    llvm::PassBuilder pb(target_machine);
+    pb.registerLoopAnalyses(lam);
+    pb.registerFunctionAnalyses(fam);
+    pb.registerCGSCCAnalyses(cgam);
+    pb.registerModuleAnalyses(mam);
+    pb.crossRegisterProxies(lam, fam, cgam, mam);
+
+    auto mpm = pb.buildPerModuleDefaultPipeline(info.Level);
+    mpm.run(m_Module, mam);
+
     if (info.Print)
         m_Module.print(print_stream, nullptr);
-
-    // llvm::PassBuilder pb(target_machine);
-    // auto mpm = pb.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
-
-    // llvm::ModuleAnalysisManager mam;
-    // llvm::LoopAnalysisManager lam;
-    // llvm::CGSCCAnalysisManager cgam;
-    // llvm::FunctionAnalysisManager fam;
-
-    // pb.registerLoopAnalyses(lam);
-    // pb.registerFunctionAnalyses(fam);
-    // pb.registerCGSCCAnalyses(cgam);
-    // pb.registerModuleAnalyses(mam);
-    // pb.crossRegisterProxies(lam, fam, cgam, mam);
-
-    // mpm.run(m_Module, mam);
 
     // TODO: pls tell llvm devs to update their codegen system!!!
     llvm::legacy::PassManager codegen_pass;

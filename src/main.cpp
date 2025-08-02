@@ -201,7 +201,7 @@ int main(const int argc, const char *const *argv) try
         .Features = {},
         .Options = {},
         .Relocation = llvm::Reloc::PIC_,
-        .Level = llvm::OptimizationLevel::O2,
+        .Level = llvm::OptimizationLevel::O0,
     };
 
     std::string print_filename, output_filename;
