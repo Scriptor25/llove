@@ -46,16 +46,9 @@ void llove::LetStatement::Gen(Builder &builder) const try
     {
         pointer = builder.CreateAlloca(type);
 
-        const auto self = Value::CreateL(type, pointer, true);
-
         if (type->IsClass())
         {
-            const Field self_field
-            {
-                .Mutable = true,
-                .Reference = true,
-                .Type = type,
-            };
+            const auto self = Value::CreateL(type, pointer, true);
 
             const auto class_type = As<ClassType>(type);
             const auto constructors = class_type->GetConstructors();
@@ -66,11 +59,25 @@ void llove::LetStatement::Gen(Builder &builder) const try
                     constructors,
                     { value->AsField() },
                     class_type,
-                    self_field,
+                    self->AsField(),
                     true);
-                Assert(candidate.has_value(), "no suitable candidate");
+                if (candidate.has_value())
+                {
+                    builder.CreateCall(*candidate, { std::move(value) }, self);
+                }
+                else
+                {
+                    Assert(!value->IsReferenceable(), "illegal implicit copy");
+                    value = builder.CreateCast(std::move(value), type, true);
+                    builder.CreateStore(pointer, value);
+                }
+            }
+            else if (constructors.empty())
+            {
+                Assert(arguments.empty(), "invalid arguments for implicit default constructor");
 
-                builder.CreateCall(*candidate, { std::move(value) }, self);
+                const auto null = llvm::Constant::getNullValue(type->Gen(builder));
+                builder.CreateStore(pointer, null);
             }
             else
             {
@@ -82,7 +89,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
                     constructors,
                     argument_fields,
                     class_type,
-                    self_field,
+                    self->AsField(),
                     false);
                 Assert(candidate.has_value(), "no suitable candidate");
 

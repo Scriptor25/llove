@@ -37,50 +37,58 @@ void llove::Builder::CreateRet(llvm::Value *value)
 }
 
 llove::ValuePtr llove::Builder::CreateCall(
-    const FunctionReference &reference,
+    const FunctionReference &function,
     std::vector<ValuePtr> arguments,
     ValuePtr self)
 {
-    Assert(!reference.Delete, "illegal use of explicitly deleted function '{}'", reference);
+    auto &function_type = function.Type;
+    auto &function_self = function_type->GetSelf();
+    auto &function_result = function_type->GetResult();
+
+    Assert(!self == !function_self, "illegal function call, function self does not match self");
 
     std::vector<llvm::Value *> argument_values;
+
     if (self)
-        argument_values.emplace_back(reference.Type->GetSelf().GenCast(*this, std::move(self)));
+    {
+        argument_values.emplace_back(function_self->GenCast(*this, std::move(self)));
+    }
 
     unsigned i;
-    for (i = 0; i < reference.Type->GetParameterCount(); ++i)
+    for (i = 0; i < function_type->GetParameterCount(); ++i)
     {
-        auto &parameter = reference.Type->GetParameter(i);
+        auto &parameter = function_type->GetParameter(i);
         auto &argument = arguments.at(i);
 
         argument_values.emplace_back(parameter.GenCast(*this, std::move(argument)));
     }
     for (; i < arguments.size(); ++i)
+    {
         argument_values.emplace_back(arguments.at(i)->Load(*this));
+    }
 
     const auto result_value = m_Builder.CreateCall(
-        reference.Type->GenFunction(*this),
-        reference.Callee,
+        function_type->GenFunction(*this),
+        function.Callee,
         argument_values);
 
-    auto &result = reference.Type->GetResult();
+    if (function_result.Reference)
+        return Value::CreateL(function_result.Type, result_value, function_result.Mutable);
 
-    if (result.Reference)
-        return Value::CreateL(result.Type, result_value, result.Mutable);
-
-    return Value::CreateR(result.Type, result_value);
+    return Value::CreateR(function_result.Type, result_value);
 }
 
-llove::ValuePtr llove::Builder::CreateCall(const FunctionType::Ptr &type, const ValuePtr &callee)
+llove::ValuePtr llove::Builder::CreateCall(const ValuePtr &callee)
 {
-    const auto result_value = m_Builder.CreateCall(type->GenFunction(*this), callee->Load(*this));
+    const auto function_type = As<FunctionType>(callee->GetType());
+    auto &function_result = function_type->GetResult();
 
-    auto &result = type->GetResult();
+    const auto result_value = m_Builder.CreateCall(function_type->GenFunction(*this), callee->Load(*this));
 
-    if (result.Reference)
-        return Value::CreateL(result.Type, result_value, result.Mutable);
+    if (function_result.Reference)
+        return Value::CreateL(function_result.Type, result_value, function_result.Mutable);
 
-    return Value::CreateR(result.Type, result_value);
+    return Value::CreateR(function_result.Type, result_value);
 }
 
 llvm::Value *llove::Builder::CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, const unsigned index)

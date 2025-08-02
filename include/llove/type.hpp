@@ -388,8 +388,7 @@ namespace llove
         [[nodiscard]] const Field &GetParameter(unsigned index) const;
         [[nodiscard]] bool IsVarArg() const;
         [[nodiscard]] const Field &GetResult() const;
-        [[nodiscard]] bool HasSelf() const;
-        [[nodiscard]] const Field &GetSelf() const;
+        [[nodiscard]] const std::optional<Field> &GetSelf() const;
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsFunction() const override;
@@ -415,7 +414,7 @@ namespace llove
         std::vector<Field> m_Parameters;
         bool m_VarArg;
         Field m_Result;
-        Field m_Self;
+        std::optional<Field> m_Self;
     };
 }
 

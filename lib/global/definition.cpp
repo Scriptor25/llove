@@ -48,6 +48,7 @@ std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
             << (m_Implicit ? "implicit " : "")
             << m_Name
             << '(';
+
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)
     {
         if (i != m_Parameters.begin())
@@ -60,9 +61,9 @@ std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
             stream << ", ";
         stream << "...";
     }
-    stream << ')';
-    if (m_Result)
-        stream << ": " << m_Result;
+
+    stream << "): " << m_Result;
+
     if (!m_Content)
         return stream << ';';
     return stream << ' ' << m_Content;

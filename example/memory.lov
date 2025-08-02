@@ -4,7 +4,6 @@ interface free(block: [mut]);
 
 class test {
 
-    # create
     expose mut create() {
         printf("test:create()\r\n");
         self.data_ptr = null;
@@ -24,7 +23,6 @@ class test {
         yield self;
     }
 
-    # move
     expose mut create(mut other: test) {
         printf("test:create(test)\r\n");
         self.data_ptr = other.data_ptr;
@@ -41,21 +39,6 @@ class test {
         yield self;
     }
 
-    # copy
-    # expose mut create(&other: test) {
-    #     printf("test:create(&test)\r\n");
-    #     self.data_ptr = malloc(sizeof i32);
-    #     *self.data_ptr = *other.data_ptr;
-    #     printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
-    # }
-
-    # expose mut =(&other: test): mut &test {
-    #     printf("test{ data_ptr: %p }:=(&test)\r\n", self.data_ptr);
-    #     *self.data_ptr = *other.data_ptr;
-    #     printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
-    #     yield self;
-    # }
-
     expose mut $(): test {
         let mut result: test;
 
@@ -65,7 +48,6 @@ class test {
         yield result;
     }
 
-    # delete
     expose mut delete() {
         printf("test{ data_ptr: %p }:delete()\r\n", self.data_ptr);
         if (self.data_ptr) {
@@ -74,7 +56,6 @@ class test {
         self.data_ptr = null;
     }
 
-    # getter
     expose data(): i32 {
         yield *self.data_ptr;
     }
@@ -104,19 +85,11 @@ class<T> unique {
         create[*self.ptr] T($val);
     }
 
-    # expose mut create(&val: T) {
-    #     printf("unique:create(T)\r\n");
-    #     self.ptr = malloc(sizeof T);
-    #     create[*self.ptr] T(val);
-    # }
-
     expose mut create(mut other: class<T> unique) {
         printf("unique:create(unique)\r\n");
         self.ptr = other.ptr;
         other.ptr = null;
     }
-
-    expose implicit mut create(&other: class<T> unique) @delete;
 
     expose mut =(mut other: class<T> unique): mut &class<T> unique {
         printf("unique{ ptr: %p }:=(unique)\r\n", self.ptr);
@@ -125,8 +98,6 @@ class<T> unique {
         other.ptr = ptr;
         yield self;
     }
-
-    expose mut =(&other: class<T> unique): mut &class<T> unique @delete;
 
     expose mut $(): class<T> unique {
         let mut result: class<T> unique;

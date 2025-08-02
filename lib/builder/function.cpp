@@ -18,7 +18,6 @@ llvm::Function *llove::Builder::GetOrCreateFunction(
 llove::FunctionReference &llove::Builder::PushFunction(
     const bool expose,
     const bool implicit,
-    const bool delete_,
     std::string name,
     FunctionType::Ptr type,
     llvm::Function *callee)
@@ -32,77 +31,77 @@ llove::FunctionReference &llove::Builder::PushFunction(
         Assert(
             expose == function.Expose
             && implicit == function.Implicit
-            && delete_ == function.Delete
             && callee == function.Callee,
             "function prototype mismatch");
         return function;
     }
 
-    return m_Functions.emplace_back(expose, implicit, delete_, std::move(name), std::move(type), callee);
+    return m_Functions.emplace_back(expose, implicit, std::move(name), std::move(type), callee);
 }
 
-std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name) const
+std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
+    const std::string &name,
+    const std::optional<Field> &self) const
 {
     std::vector<FunctionReference> functions;
+
     for (auto &function : m_Functions)
     {
         if (function.Name != name)
             continue;
-        if (function.Type->HasSelf() && !function.Expose && function.Type->GetSelf().Type != m_Class)
-            continue;
-        functions.emplace_back(function);
-    }
-    return functions;
-}
 
-std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name, const Field &self) const
-{
-    std::vector<FunctionReference> functions;
-    for (auto &function : m_Functions)
-    {
-        if (function.Name != name)
+        auto &function_type = function.Type;
+        const auto function_self = function_type->GetSelf();
+
+        if (self)
+        {
+            if (!function_self)
+                continue;
+            if (function_self->Type != self->Type)
+                continue;
+            if (function_self->Mutable && !self->Mutable)
+                continue;
+            if (function_self->Reference != self->Reference)
+                continue;
+            if (!function.Expose && function_self->Type != m_Class)
+                continue;
+        }
+        else if (function_self && !function.Expose && function_self->Type != m_Class)
             continue;
-        if (!function.Expose && function.Type->GetSelf().Type != m_Class)
-            continue;
-        if (!function.Type->HasSelf())
-            continue;
-        auto &function_self = function.Type->GetSelf();
-        if (function_self.Type != self.Type)
-            continue;
-        if (function_self.Mutable && !self.Mutable)
-            continue;
-        if (!function.Expose && m_Class != self.Type)
-            continue;
+
         functions.emplace_back(function);
     }
+
     return functions;
 }
 
 bool llove::Builder::HasFunction(
     const std::vector<FunctionReference> &functions,
     const std::vector<Field> &arguments,
-    const bool has_self,
-    const Field &self) const
+    const std::optional<Field> &self) const
 {
     for (const auto &function : functions)
     {
-        const auto function_type = function.Type;
-        if (function_type->HasSelf() != has_self)
+        const auto &function_type = function.Type;
+        const auto &function_self = function_type->GetSelf();
+        const auto parameter_count = function_type->GetParameterCount();
+
+        if (function_self.has_value() != self.has_value())
             continue;
 
-        if (has_self && !Field::IsCastable(*this, function_type->GetSelf(), self, true))
+        if (function_self && self && !Field::IsCastable(*this, *function_self, *self, true))
             continue;
 
-        if (function_type->GetParameterCount() > arguments.size())
+        if (parameter_count > arguments.size())
             continue;
-        if (!function_type->IsVarArg() && function_type->GetParameterCount() < arguments.size())
+        if (!function_type->IsVarArg() && parameter_count < arguments.size())
             continue;
 
         unsigned i;
-        for (i = 0; i < function_type->GetParameterCount(); ++i)
+        for (i = 0; i < parameter_count; ++i)
             if (!Field::IsCastable(*this, function_type->GetParameter(i), arguments.at(i), false))
                 break;
-        if (i < function_type->GetParameterCount())
+        if (i < parameter_count)
             continue;
 
         return true;
@@ -114,49 +113,57 @@ bool llove::Builder::HasFunction(
 std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     const std::vector<FunctionReference> &functions,
     const std::vector<Field> &arguments,
-    const Field &self) const
+    const std::optional<Field> &self) const
 {
     auto lowest_error = ~0u;
-    std::optional<FunctionReference> callee;
-
-    const auto has_self = static_cast<bool>(self);
+    std::vector<FunctionReference> candidates;
 
     for (auto &function : functions)
     {
-        const auto function_type = function.Type;
-        if (function_type->HasSelf() != has_self)
+        const auto &function_type = function.Type;
+        const auto &function_self = function_type->GetSelf();
+        const auto parameter_count = function_type->GetParameterCount();
+
+        if (function_self.has_value() != self.has_value())
             continue;
 
         auto error = 0u;
 
-        if (has_self && Field::GetCastError(*this, function_type->GetSelf(), self, error, true))
+        if (function_self && self && Field::GetCastError(*this, *function_self, *self, error, true))
             continue;
 
-        if (function_type->GetParameterCount() > arguments.size())
+        if (parameter_count > arguments.size())
             continue;
-        if (!function_type->IsVarArg() && function_type->GetParameterCount() < arguments.size())
+        if (!function_type->IsVarArg() && parameter_count < arguments.size())
             continue;
 
-        if (function_type->GetParameterCount() != arguments.size())
+        if (parameter_count != arguments.size())
             error += 2u;
 
         unsigned i;
-        for (i = 0; i < function_type->GetParameterCount(); ++i)
+        for (i = 0; i < parameter_count; ++i)
             if (Field::GetCastError(*this, function_type->GetParameter(i), arguments.at(i), error, false))
                 break;
-        if (i < function_type->GetParameterCount())
+        if (i < parameter_count)
             continue;
 
         if (error > lowest_error)
             continue;
 
-        Assert(error != lowest_error, "ambiguous candidates");
+        if (error < lowest_error)
+            candidates.clear();
 
         lowest_error = error;
-        callee = function;
+        candidates.emplace_back(function);
     }
 
-    return callee;
+    if (candidates.empty())
+        return std::nullopt;
+
+    if (candidates.size() == 1)
+        return candidates.front();
+
+    Error("ambiguous candidates {} for {}, self '{}'", candidates, arguments, self);
 }
 
 std::optional<llove::FunctionReference> llove::Builder::FindFunction(
@@ -167,7 +174,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     const bool implicit)
 {
     auto lowest_error = ~0u;
-    std::optional<ClassFunctionReference> candidate;
+    std::vector<ClassFunctionReference> candidates;
 
     for (auto &function : functions)
     {
@@ -207,35 +214,36 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
         if (error > lowest_error)
             continue;
 
-        Assert(
-            error != lowest_error,
-            "ambiguous candidates '{}' and '{}' for arguments '{}' and self '{}'",
-            candidate,
-            function,
-            arguments,
-            self);
+        if (error < lowest_error)
+            candidates.clear();
 
         lowest_error = error;
-        candidate = function;
+        candidates.emplace_back(function);
     }
 
-    if (!candidate)
+    if (candidates.empty())
         return std::nullopt;
 
-    std::vector<Parameter> parameters;
-    for (auto &parameter : candidate->Parameters)
-        parameters.emplace_back(parameter);
+    if (candidates.size() == 1)
+    {
+        auto &candidate = candidates.front();
 
-    return GenFunction(
-        {
-            .Implicit = candidate->Implicit,
-            .Delete = candidate->Delete,
-            .Class = class_type,
-            .Mutable = candidate->Mutable,
-            .Expose = candidate->Expose,
-            .Name = candidate->Name,
-            .Parameters = std::move(parameters),
-            .VarArg = candidate->VarArg,
-            .Result = candidate->Result,
-        });
+        std::vector<Parameter> parameters;
+        for (auto &parameter : candidate.Parameters)
+            parameters.emplace_back(parameter);
+
+        return GenFunction(
+            {
+                .Implicit = candidate.Implicit,
+                .Class = class_type,
+                .Mutable = candidate.Mutable,
+                .Expose = candidate.Expose,
+                .Name = candidate.Name,
+                .Parameters = std::move(parameters),
+                .VarArg = candidate.VarArg,
+                .Result = candidate.Result,
+            });
+    }
+
+    Error("ambiguous candidates {} for {}, self '{}'", candidates, arguments, self);
 }

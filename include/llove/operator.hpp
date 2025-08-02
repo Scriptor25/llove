@@ -24,6 +24,7 @@ namespace llove
 
         virtual ~Operator() = default;
         virtual ValuePtr operator()(Builder &builder, ValuePtr operand) const = 0;
+        virtual std::ostream &Print(std::ostream &stream) const = 0;
     };
 
     template<>
@@ -34,6 +35,7 @@ namespace llove
 
         virtual ~Operator() = default;
         virtual ValuePtr operator()(Builder &builder, ValuePtr left, ValuePtr right) const = 0;
+        virtual std::ostream &Print(std::ostream &stream) const = 0;
     };
 
     template<>
@@ -45,6 +47,7 @@ namespace llove
         explicit BIOperator(CalleeType callee, bool suffix);
 
         ValuePtr operator()(Builder &builder, ValuePtr operand) const override;
+        std::ostream &Print(std::ostream &stream) const override;
 
     private:
         CalleeType m_Callee;
@@ -60,6 +63,7 @@ namespace llove
         explicit BIOperator(CalleeType callee);
 
         ValuePtr operator()(Builder &builder, ValuePtr left, ValuePtr right) const override;
+        std::ostream &Print(std::ostream &stream) const override;
 
     private:
         CalleeType m_Callee;
@@ -72,6 +76,7 @@ namespace llove
         explicit UDOperator(const FunctionReference &reference);
 
         ValuePtr operator()(Builder &builder, ValuePtr operand) const override;
+        std::ostream &Print(std::ostream &stream) const override;
 
     private:
         const FunctionReference &m_Reference;
@@ -84,6 +89,7 @@ namespace llove
         explicit UDOperator(const FunctionReference &reference);
 
         ValuePtr operator()(Builder &builder, ValuePtr left, ValuePtr right) const override;
+        std::ostream &Print(std::ostream &stream) const override;
 
     private:
         const FunctionReference &m_Reference;
@@ -92,3 +98,27 @@ namespace llove
     extern const std::map<std::string_view, BIOperator<1>::CalleeType> BIUnOperatorCallees;
     extern const std::map<std::string_view, BIOperator<2>::CalleeType> BIBiOperatorCallees;
 }
+
+template<typename T> requires std::is_base_of_v<llove::Operator<1>, T>
+struct std::formatter<std::unique_ptr<T>> : std::formatter<std::string_view>
+{
+    template<typename FormatContext>
+    auto format(const std::unique_ptr<T> &operator_, FormatContext &ctx) const
+    {
+        std::stringstream stream;
+        operator_->Print(stream);
+        return std::formatter<std::string_view>::format(stream.view(), ctx);
+    }
+};
+
+template<typename T> requires std::is_base_of_v<llove::Operator<2>, T>
+struct std::formatter<std::unique_ptr<T>> : std::formatter<std::string_view>
+{
+    template<typename FormatContext>
+    auto format(const std::unique_ptr<T> &operator_, FormatContext &ctx) const
+    {
+        std::stringstream stream;
+        operator_->Print(stream);
+        return std::formatter<std::string_view>::format(stream.view(), ctx);
+    }
+};

@@ -66,7 +66,7 @@ llove::ClassType::Ptr llove::Context::GetClass(std::string name)
 
 llove::FunctionType::Ptr llove::Context::GetFunction(std::vector<Field> parameters, bool vararg, Field result)
 {
-    return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result), Field{});
+    return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result));
 }
 
 llove::FunctionType::Ptr llove::Context::GetFunction(
@@ -321,7 +321,6 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
         functions.emplace_back(
             function.Expose,
             function.Implicit,
-            function.Delete,
             function.Mutable,
             function.Name,
             parameters,
@@ -336,7 +335,6 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
                 .Loc = function.Loc,
                 .Interface = false,
                 .Implicit = function.Implicit,
-                .Delete = function.Delete,
                 .Class = class_type,
                 .Mutable = function.Mutable,
                 .Expose = function.Expose,
@@ -354,7 +352,6 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
                 .Loc = function.Loc,
                 .Interface = false,
                 .Implicit = function.Implicit,
-                .Delete = function.Delete,
                 .Class = class_type,
                 .Mutable = function.Mutable,
                 .Expose = function.Expose,

@@ -85,7 +85,7 @@ struct std::formatter<std::optional<T>> : std::formatter<T>
     {
         if (opt.has_value())
             return std::formatter<T>::format(opt.value(), ctx);
-        return std::format_to(ctx.out(), "null");
+        return std::format_to(ctx.out(), "[empty]");
     }
 };
 
@@ -98,8 +98,15 @@ struct std::formatter<std::vector<T, A>> : std::formatter<T>
         for (auto i = vec.begin(); i != vec.end(); ++i)
         {
             if (i != vec.begin())
-                std::format_to(ctx.out(), ", ");
+            {
+                if (i == vec.end() - 1)
+                    std::format_to(ctx.out(), " and ");
+                else
+                    std::format_to(ctx.out(), ", ");
+            }
+            std::format_to(ctx.out(), "'");
             std::formatter<T>::format(*i, ctx);
+            std::format_to(ctx.out(), "'");
         }
         return ctx.out();
     }

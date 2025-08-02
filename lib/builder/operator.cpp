@@ -8,35 +8,43 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &operator
 
     for (auto &function : m_Functions)
     {
+        const auto &function_type = function.Type;
+        const auto parameter_count = function_type->GetParameterCount();
+
         if (function.Name != operator_)
             continue;
 
-        if (suffix != function.Type->IsVarArg())
+        if (suffix != function_type->IsVarArg())
             continue;
 
         auto error = 0u;
 
-        if (function.Type->HasSelf())
+        if (const auto &function_self = function_type->GetSelf())
         {
-            if (!function.Expose && function.Type->GetSelf().Type != m_Class)
+            if (!function.Expose && function_self->Type != m_Class)
                 continue;
-            if (function.Type->GetParameterCount() != 0)
+            if (parameter_count != 0)
                 continue;
-            if (Field::GetCastError(*this, function.Type->GetSelf(), operand, error, true))
+            if (Field::GetCastError(*this, *function_self, operand, error, true))
                 continue;
         }
         else
         {
-            if (function.Type->GetParameterCount() != 1)
+            if (parameter_count != 1)
                 continue;
-            if (Field::GetCastError(*this, function.Type->GetParameter(0), operand, error, false))
+            if (Field::GetCastError(*this, function_type->GetParameter(0), operand, error, false))
                 continue;
         }
 
         if (error > lowest_error)
             continue;
 
-        Assert(error != lowest_error, "ambiguous candidates");
+        Assert(
+            error != lowest_error,
+            "ambiguous candidates '{}' and '{}' for operand '{}'",
+            candidate,
+            function,
+            operand);
 
         lowest_error = error;
         candidate = std::make_unique<UDOperator<1>>(function);
@@ -61,39 +69,48 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
     for (auto &function : m_Functions)
     {
+        const auto &function_type = function.Type;
+        const auto parameter_count = function_type->GetParameterCount();
+
         if (function.Name != operator_)
             continue;
 
-        if (function.Type->IsVarArg())
+        if (function_type->IsVarArg())
             continue;
 
         auto error = 0u;
 
-        if (function.Type->HasSelf())
+        if (const auto &function_self = function_type->GetSelf())
         {
-            if (!function.Expose && function.Type->GetSelf().Type != m_Class)
+            if (!function.Expose && function_self->Type != m_Class)
                 continue;
-            if (function.Type->GetParameterCount() != 1)
+            if (parameter_count != 1)
                 continue;
-            if (Field::GetCastError(*this, function.Type->GetSelf(), left, error, true))
+            if (Field::GetCastError(*this, *function_self, left, error, true))
                 continue;
-            if (Field::GetCastError(*this, function.Type->GetParameter(0), right, error, false))
+            if (Field::GetCastError(*this, function_type->GetParameter(0), right, error, false))
                 continue;
         }
         else
         {
-            if (function.Type->GetParameterCount() != 2)
+            if (parameter_count != 2)
                 continue;
-            if (Field::GetCastError(*this, function.Type->GetParameter(0), left, error, false))
+            if (Field::GetCastError(*this, function_type->GetParameter(0), left, error, false))
                 continue;
-            if (Field::GetCastError(*this, function.Type->GetParameter(1), right, error, false))
+            if (Field::GetCastError(*this, function_type->GetParameter(1), right, error, false))
                 continue;
         }
 
         if (error > lowest_error)
             continue;
 
-        Assert(error != lowest_error, "ambiguous candidates");
+        Assert(
+            error != lowest_error,
+            "ambiguous candidates '{}' and '{}' for operands '{}' and '{}'",
+            candidate,
+            function,
+            left,
+            right);
 
         lowest_error = error;
         candidate = std::make_unique<UDOperator<2>>(function);

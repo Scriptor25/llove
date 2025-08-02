@@ -41,7 +41,6 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
         class_functions.emplace_back(
             function.Expose,
             function.Implicit,
-            function.Delete,
             function.Mutable,
             function.Name,
             parameters,
@@ -55,7 +54,6 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
             {
                 // TODO: loc
                 .Implicit = function.Implicit,
-                .Delete = function.Delete,
                 .Class = m_Type,
                 .Mutable = function.Mutable,
                 .Expose = function.Expose,
@@ -71,7 +69,6 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
             {
                 // TODO: loc
                 .Implicit = function.Implicit,
-                .Delete = function.Delete,
                 .Class = m_Type,
                 .Mutable = function.Mutable,
                 .Expose = function.Expose,

@@ -43,6 +43,26 @@ bool llove::Parser::SkipIf(const TokenType type, const std::string &value)
 
 llove::Token llove::Parser::Expect(TokenType type, const std::string &value)
 {
-    Assert(At(type, value), "expected {} : '{}', but is {} : '{}'", type, value, m_Token.Type, m_Token.Value);
+    Assert(
+        At(type, value),
+        m_Token.Loc,
+        "expected {} : '{}', but is {} : '{}'",
+        type,
+        value,
+        m_Token.Type,
+        m_Token.Value);
+    return Skip();
+}
+
+llove::Token llove::Parser::Expect(TokenType type, const std::vector<std::string> &values)
+{
+    Assert(
+        At(type, values),
+        m_Token.Loc,
+        "expected {} : [{}], but is {} : '{}'",
+        type,
+        values,
+        m_Token.Type,
+        m_Token.Value);
     return Skip();
 }

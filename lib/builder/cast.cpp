@@ -16,33 +16,32 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
 
     for (auto &function : m_Functions)
     {
+        const auto &function_type = function.Type;
+        const auto &function_result = function_type->GetResult();
+
         if (function.Name != "cast")
             continue;
 
         if (implicit && !function.Implicit)
             continue;
 
-        const auto function_type = function.Type;
-
         if (function_type->IsVarArg())
             continue;
 
-        const auto &res_fld = function_type->GetResult();
-
-        if (function_type->HasSelf())
+        if (const auto &function_self = function_type->GetSelf())
         {
             if (function_type->GetParameterCount() != 0)
                 continue;
-            if (!Field::IsCastable(*this, dst_fld, res_fld, true))
+            if (!Field::IsCastable(*this, dst_fld, function_result, true))
                 continue;
-            if (!Field::IsCastable(*this, function_type->GetSelf(), src_fld, true))
+            if (!Field::IsCastable(*this, *function_self, src_fld, true))
                 continue;
         }
         else
         {
             if (function_type->GetParameterCount() != 1)
                 continue;
-            if (!Field::IsCastable(*this, dst_fld, res_fld, true))
+            if (!Field::IsCastable(*this, dst_fld, function_result, true))
                 continue;
             if (!Field::IsCastable(*this, function_type->GetParameter(0), src_fld, true))
                 continue;
@@ -57,7 +56,7 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         std::vector<ValuePtr> arguments;
         ValuePtr self;
 
-        if (callee->Type->HasSelf())
+        if (callee->Type->GetSelf())
             self = std::move(value);
         else
             arguments.emplace_back(std::move(value));
@@ -160,33 +159,32 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst, bool implici
 
     for (auto &function : m_Functions)
     {
+        const auto &function_type = function.Type;
+        const auto &function_result = function_type->GetResult();
+
         if (function.Name != "cast")
             continue;
 
         if (implicit && !function.Implicit)
             continue;
 
-        const auto function_type = function.Type;
-
         if (function_type->IsVarArg())
             continue;
 
-        const auto &res = function_type->GetResult();
-
-        if (function_type->HasSelf())
+        if (const auto &function_self = function_type->GetSelf())
         {
             if (function_type->GetParameterCount() != 0)
                 continue;
-            if (!Field::IsCastable(*this, dst, res, true))
+            if (!Field::IsCastable(*this, dst, function_result, true))
                 continue;
-            if (!Field::IsCastable(*this, function_type->GetSelf(), src, true))
+            if (!Field::IsCastable(*this, *function_self, src, true))
                 continue;
         }
         else
         {
             if (function_type->GetParameterCount() != 1)
                 continue;
-            if (!Field::IsCastable(*this, dst, res, true))
+            if (!Field::IsCastable(*this, dst, function_result, true))
                 continue;
             if (!Field::IsCastable(*this, function_type->GetParameter(0), src, true))
                 continue;

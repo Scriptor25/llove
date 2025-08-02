@@ -12,7 +12,6 @@ namespace llove
 
         bool Expose = false;
         bool Implicit = false;
-        bool Delete = false;
         std::string Name;
         FunctionType::Ptr Type;
         llvm::Value *Callee = nullptr;

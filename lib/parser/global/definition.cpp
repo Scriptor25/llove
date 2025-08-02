@@ -16,24 +16,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
     auto name = !interface && At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
 
     std::vector<Parameter> parameters;
-    auto vararg = false;
-
-    Expect(TokenType_Other, "(");
-    while (!At(TokenType_Other, ")"))
-    {
-        if (SkipIf(TokenType_Operator, "..."))
-        {
-            vararg = true;
-            break;
-        }
-
-        auto &parameter = parameters.emplace_back();
-        parameter.Name = ParseField(parameter.Info);
-
-        if (!At(TokenType_Other, ")"))
-            Expect(TokenType_Other, ",");
-    }
-    Expect(TokenType_Other, ")");
+    auto vararg = ParseParameterList("(", parameters, ")");
 
     Field result;
     if (SkipIf(TokenType_Other, ":"))
@@ -41,18 +24,9 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
     else
         result.Type = m_Types.GetVoid();
 
-    if (SkipIf(TokenType_Other, ";"))
-        return std::make_unique<DefinitionGlobal>(
-            std::move(loc),
-            interface,
-            implicit,
-            std::move(name),
-            std::move(parameters),
-            vararg,
-            std::move(result),
-            nullptr);
-
-    auto content = ParseScopeStatement();
+    StatementPtr content;
+    if (!SkipIf(TokenType_Other, ";"))
+        content = ParseScopeStatement();
 
     return std::make_unique<DefinitionGlobal>(
         std::move(loc),

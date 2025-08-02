@@ -29,8 +29,8 @@ namespace llove
         TokenType Type = TokenType_EndOfFile;
         std::string Raw;
         std::string Value;
-        uint64_t IntValue = 0;
-        double_t FltValue = 0.0;
+        uint64_t IntegerValue = 0;
+        double_t FloatValue = 0.0;
     };
 
     class Parser final
@@ -62,12 +62,32 @@ namespace llove
         bool SkipIf(TokenType type, const std::string &value = {});
 
         Token Expect(TokenType type, const std::string &value = {});
+        Token Expect(TokenType type, const std::vector<std::string> &values);
+
+        template<typename... Values>
+        Token Expect(const TokenType type, Values... values)
+        {
+            return Expect(type, std::vector<std::string>{ values... });
+        }
 
         TypePtr ParseType();
+
         TypePtr ParseArrayType();
         TypePtr ParseBaseType();
+        TypePtr ParseClassType();
+        TypePtr ParseFunctionType();
+        TypePtr ParseNamedType();
+        TypePtr ParsePointerType();
+        TypePtr ParseRangeType();
+        TypePtr ParseStructType();
 
         std::string ParseField(Field &field, bool require_name = false, bool allow_name = true);
+
+        void ParseParameter(Parameter &parameter);
+        bool ParseParameterList(
+            const std::string &begin,
+            std::vector<Parameter> &parameters,
+            const std::string &end);
 
         GlobalPtr ParseGlobal();
         GlobalPtr ParseDefinitionGlobal();
@@ -80,19 +100,35 @@ namespace llove
         void ParseClassTemplate();
 
         StatementPtr ParseStatement(bool inline_);
-        StatementPtr ParseScopeStatement();
         StatementPtr ParseDeleteStatement(bool inline_);
         StatementPtr ParseForStatement(bool inline_);
         StatementPtr ParseForEachStatement(bool inline_);
         StatementPtr ParseIfStatement(bool inline_);
         StatementPtr ParseLetStatement(bool inline_);
+        StatementPtr ParseScopeStatement();
         StatementPtr ParseYieldStatement(bool inline_);
 
         ExpressionPtr ParseExpression();
+
+        ExpressionPtr ParseArrayExpression();
         ExpressionPtr ParseBinaryExpression();
         ExpressionPtr ParseBinaryExpression(ExpressionPtr left, unsigned min_precedence);
+        ExpressionPtr ParseCallExpression(ExpressionPtr callee);
+        ExpressionPtr ParseCreateExpression();
+        ExpressionPtr ParseFloatExpression();
+        ExpressionPtr ParseIntegerExpression();
+        ExpressionPtr ParseMemberExpression(ExpressionPtr value);
+        ExpressionPtr ParseNullExpression();
         ExpressionPtr ParseOperandExpression();
         ExpressionPtr ParsePrimaryExpression();
+        ExpressionPtr ParseRangeExpression(ExpressionPtr begin);
+        ExpressionPtr ParseSizeofExpression();
+        ExpressionPtr ParseStringExpression();
+        ExpressionPtr ParseStructExpression();
+        ExpressionPtr ParseSubscriptExpression(ExpressionPtr value);
+        ExpressionPtr ParseSymbolExpression();
+        ExpressionPtr ParseUnaryExpression();
+        ExpressionPtr ParseUnaryExpression(ExpressionPtr operand);
 
     private:
         Context &m_Types;

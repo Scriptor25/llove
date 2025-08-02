@@ -23,10 +23,12 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
         argument_fields.emplace_back(value->AsField());
     }
 
-    const auto candidate = builder.FindFunction(
-        functions,
-        argument_fields,
-        self ? self->AsField() : Field{});
+    std::optional<FunctionReference> candidate;
+    if (self)
+        candidate = builder.FindFunction(functions, argument_fields, self->AsField());
+    else
+        candidate = builder.FindFunction(functions, argument_fields);
+
     Assert(candidate.has_value(), "no suitable candidate");
 
     builder.EmitLoc(m_Loc);

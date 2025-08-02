@@ -1,0 +1,13 @@
+define foo(bar1: i64, bar2: i32, bar3: i16) {}
+define foo(bar1: i16, bar2: i64, bar3: i32) {}
+define foo(bar1: i32, bar2: i16, bar3: i64) {}
+define foo(bar1: i32, bar2: i64, bar3: i16) {}
+define foo(bar1: i64, bar2: i16, bar3: i32) {}
+define foo(bar1: i16, bar2: i32, bar3: i64) {}
+
+interface main(count: i32, args: i8[][]): i32 {
+
+    foo(123:i16, 456:i32, 789:i64);
+
+    yield 0;
+}

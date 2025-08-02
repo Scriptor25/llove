@@ -78,12 +78,18 @@ void llove::Builder::CallDestructors(const std::set<llvm::Value *> &mask, const 
         for (auto &frame : std::ranges::reverse_view(m_Stack))
             for (auto &[self, callee] : frame.Destructors)
                 if (!mask.contains(self))
-                    CreateCall(callee, {}, Value::CreateL(callee.Type->GetSelf().Type, self, true));
+                {
+                    auto self_value = Value::CreateL(callee.Type->GetSelf()->Type, self, true);
+                    CreateCall(callee, {}, std::move(self_value));
+                }
     }
     else
     {
         for (auto &frame = m_Stack.back(); auto &[self, callee] : frame.Destructors)
             if (!mask.contains(self))
-                CreateCall(callee, {}, Value::CreateL(callee.Type->GetSelf().Type, self, true));
+            {
+                auto self_value = Value::CreateL(callee.Type->GetSelf()->Type, self, true);
+                CreateCall(callee, {}, std::move(self_value));
+            }
     }
 }

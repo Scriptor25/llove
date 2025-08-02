@@ -131,7 +131,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             Assert(!fn_type->IsVarArg(), "illegal vararg");
             Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
-            begin = builder.CreateCall(fn_type, begin);
+            begin = builder.CreateCall(begin);
         }
 
         if (end_fld.Type->IsFunction())
@@ -140,7 +140,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             Assert(!fn_type->IsVarArg(), "illegal vararg");
             Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
-            end = builder.CreateCall(fn_type, end);
+            end = builder.CreateCall(end);
         }
 
         break;

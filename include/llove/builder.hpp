@@ -22,7 +22,6 @@ namespace llove
 
         bool Interface = false;
         bool Implicit = false;
-        bool Delete = false;
 
         ClassType::Ptr Class;
         bool Mutable = false;
@@ -127,8 +126,8 @@ namespace llove
         void CreateRetVoid();
         void CreateRet(llvm::Value *value);
 
-        ValuePtr CreateCall(const FunctionReference &reference, std::vector<ValuePtr> arguments, ValuePtr self);
-        ValuePtr CreateCall(const FunctionType::Ptr &type, const ValuePtr &callee);
+        ValuePtr CreateCall(const FunctionReference &function, std::vector<ValuePtr> arguments, ValuePtr self);
+        ValuePtr CreateCall(const ValuePtr &callee);
 
         llvm::Value *CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, unsigned index);
         llvm::Value *CreateExtractValue(llvm::Value *aggregate, unsigned index);
@@ -203,22 +202,21 @@ namespace llove
         FunctionReference &PushFunction(
             bool expose,
             bool implicit,
-            bool delete_,
             std::string name,
             FunctionType::Ptr type,
             llvm::Function *callee);
-        [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name) const;
-        [[nodiscard]] std::vector<FunctionReference> GetFunctions(const std::string &name, const Field &self) const;
+        [[nodiscard]] std::vector<FunctionReference> GetFunctions(
+            const std::string &name,
+            const std::optional<Field> &self = std::nullopt) const;
 
         bool HasFunction(
             const std::vector<FunctionReference> &functions,
             const std::vector<Field> &arguments,
-            bool has_self,
-            const Field &self = {}) const;
+            const std::optional<Field> &self = std::nullopt) const;
         std::optional<FunctionReference> FindFunction(
             const std::vector<FunctionReference> &functions,
             const std::vector<Field> &arguments,
-            const Field &self = {}) const;
+            const std::optional<Field> &self = std::nullopt) const;
         std::optional<FunctionReference> FindFunction(
             const std::vector<ClassFunctionReference> &functions,
             const std::vector<Field> &arguments,
@@ -245,7 +243,10 @@ namespace llove
         llvm::Value *CreateGlobalString(const std::string &value);
 
         FunctionReference &GenFunction(const FunctionInfo &fn);
-        void GenParameters(llvm::Function *function, const std::vector<Parameter> &parameters, const Field &self = {});
+        void GenParameters(
+            llvm::Function *function,
+            const std::vector<Parameter> &parameters,
+            const std::optional<Field> &self = std::nullopt);
 
         void Seal(const SealInfo &info);
 

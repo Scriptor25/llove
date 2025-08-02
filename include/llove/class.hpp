@@ -23,7 +23,6 @@ namespace llove
 
         bool Expose = false;
         bool Implicit = false;
-        bool Delete = false;
         bool Mutable = false;
 
         std::string Name;
@@ -51,7 +50,6 @@ namespace llove
         Location Loc;
         bool Expose = false;
         bool Implicit = false;
-        bool Delete = false;
         bool Mutable = false;
         std::string Name;
         std::vector<Parameter> Parameters;

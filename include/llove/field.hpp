@@ -42,7 +42,6 @@ namespace llove
         [[nodiscard]] std::string Mangle() const;
 
         bool operator==(const Field &other) const;
-        explicit operator bool() const;
 
         void Reflect(Builder &builder, Field &field) const;
 

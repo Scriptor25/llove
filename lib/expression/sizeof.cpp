@@ -3,13 +3,13 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::SizeofTypeExpression::SizeofTypeExpression(Location loc, TypePtr type)
+llove::SizeofExpression::SizeofExpression(Location loc, TypePtr type)
     : Expression(std::move(loc)),
       m_Type(std::move(type))
 {
 }
 
-llove::ValuePtr llove::SizeofTypeExpression::GenVal(Builder &builder, TypePtr expect) const try
+llove::ValuePtr llove::SizeofExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     const auto size = m_Type->SizeBits(builder);
     const auto size_type = builder.GetTypes().GetInteger(false, 64);
@@ -23,20 +23,20 @@ catch (const ErrorStack *cause)
     throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::SizeofTypeExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::SizeofExpression::Reflect(Builder &builder) const try
 {
     TypePtr type;
     if (m_Type)
         m_Type->Reflect(builder, type);
 
-    return std::make_unique<SizeofTypeExpression>(m_Loc, std::move(type));
+    return std::make_unique<SizeofExpression>(m_Loc, std::move(type));
 }
 catch (const ErrorStack *cause)
 {
     throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
-std::ostream &llove::SizeofTypeExpression::Print(std::ostream &stream) const
+std::ostream &llove::SizeofExpression::Print(std::ostream &stream) const
 {
     return stream << "sizeof " << m_Type;
 }

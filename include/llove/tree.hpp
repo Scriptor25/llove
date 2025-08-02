@@ -21,7 +21,7 @@ namespace llove
     public:
         explicit Global(Location loc);
 
-        const Location &Loc() const;
+        [[nodiscard]] const Location &Loc() const;
 
         virtual ~Global() = default;
         virtual void Gen(Builder &builder) const = 0;
@@ -108,7 +108,7 @@ namespace llove
     public:
         explicit Statement(Location loc);
 
-        const Location &Loc() const;
+        [[nodiscard]] const Location &Loc() const;
 
         virtual ~Statement() = default;
         virtual void Gen(Builder &builder) const = 0;
@@ -326,10 +326,10 @@ namespace llove
         std::vector<ExpressionPtr> m_Arguments;
     };
 
-    class FltExpression final : public Expression
+    class FloatExpression final : public Expression
     {
     public:
-        explicit FltExpression(Location loc, double_t value, TypePtr type);
+        explicit FloatExpression(Location loc, double_t value, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -340,10 +340,10 @@ namespace llove
         TypePtr m_Type;
     };
 
-    class IntExpression final : public Expression
+    class IntegerExpression final : public Expression
     {
     public:
-        explicit IntExpression(Location loc, uint64_t value, TypePtr type);
+        explicit IntegerExpression(Location loc, uint64_t value, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -396,10 +396,10 @@ namespace llove
         ExpressionPtr m_End;
     };
 
-    class SizeofTypeExpression final : public Expression
+    class SizeofExpression final : public Expression
     {
     public:
-        explicit SizeofTypeExpression(Location loc, TypePtr type);
+        explicit SizeofExpression(Location loc, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;

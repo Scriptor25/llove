@@ -3,8 +3,6 @@
 
 llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
 {
-    if (At(TokenType_Other, "{"))
-        return ParseScopeStatement();
     if (At(TokenType_Symbol, "delete"))
         return ParseDeleteStatement(inline_);
     if (At(TokenType_Symbol, "for"))
@@ -15,6 +13,8 @@ llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
         return ParseIfStatement(inline_);
     if (At(TokenType_Symbol, "let"))
         return ParseLetStatement(inline_);
+    if (At(TokenType_Other, "{"))
+        return ParseScopeStatement();
     if (At(TokenType_Symbol, "yield"))
         return ParseYieldStatement(inline_);
 

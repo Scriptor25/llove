@@ -281,7 +281,7 @@ llove::Token llove::Parser::Next()
                 .Loc = std::move(loc),
                 .Type = TokenType_Integer,
                 .Raw = std::move(raw),
-                .IntValue = static_cast<uint64_t>(value.at(0)),
+                .IntegerValue = static_cast<uint64_t>(value.at(0)),
             };
         case State_Num:
             if (base == 10 && !flt && m_Buffer == '.')
@@ -303,8 +303,8 @@ llove::Token llove::Parser::Next()
                 .Loc = std::move(loc),
                 .Type = flt ? TokenType_Float : TokenType_Integer,
                 .Raw = std::move(raw),
-                .IntValue = flt ? 0u : std::stoull(value, nullptr, base),
-                .FltValue = flt ? std::stod(value) : 0.0,
+                .IntegerValue = flt ? 0u : std::stoull(value, nullptr, base),
+                .FloatValue = flt ? std::stod(value) : 0.0,
             };
         case State_Opr:
             if (compound_map.contains(value) && compound_map.at(value).contains(m_Buffer))

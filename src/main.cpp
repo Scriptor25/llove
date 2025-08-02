@@ -280,7 +280,15 @@ int main(const int argc, const char *const *argv)
     if (std::string level; arguments.value("level", level))
         seal_info.Level = OPTIMIZATION_LEVEL.at(level);
 
-    builder.Seal(seal_info);
+    try
+    {
+        builder.Seal(seal_info);
+    }
+    catch (const llove::ErrorStack *cause)
+    {
+        cause->Print(std::cerr);
+        return 1;
+    }
 
     if (print_file)
         delete seal_info.PrintStream;

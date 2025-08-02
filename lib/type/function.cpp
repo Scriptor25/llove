@@ -38,14 +38,8 @@ const llove::Field &llove::FunctionType::GetResult() const
     return m_Result;
 }
 
-bool llove::FunctionType::HasSelf() const
+const std::optional<llove::Field> &llove::FunctionType::GetSelf() const
 {
-    return static_cast<bool>(m_Self);
-}
-
-const llove::Field &llove::FunctionType::GetSelf() const
-{
-    Assert(static_cast<bool>(m_Self), "function type does not have a self reference");
     return m_Self;
 }
 
@@ -91,7 +85,7 @@ llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder)
 
     std::vector<llvm::Type *> parameters;
     if (m_Self)
-        parameters.emplace_back(m_Self.GenType(builder));
+        parameters.emplace_back(m_Self->GenType(builder));
     for (auto &parameter : m_Parameters)
         parameters.emplace_back(parameter.GenType(builder));
 
@@ -114,15 +108,18 @@ llvm::DISubroutineType *llove::FunctionType::GenDbgFunction(Builder &builder)
 
 llove::TypePtr llove::FunctionType::Reflect(Builder &builder) const
 {
-    std::vector<Field> parameters(m_Parameters.size());
-    Field result;
-    Field self;
+    std::vector<Field> parameters;
+    Field result, self;
 
-    for (unsigned i = 0; i < m_Parameters.size(); ++i)
-        m_Parameters.at(i).Reflect(builder, parameters.at(i));
+    for (auto &parameter : m_Parameters)
+        parameter.Reflect(builder, parameters.emplace_back());
 
     m_Result.Reflect(builder, result);
-    m_Self.Reflect(builder, self);
+
+    if (!m_Self)
+        return builder.GetTypes().GetFunction(std::move(parameters), m_VarArg, std::move(result));
+
+    m_Self->Reflect(builder, self);
 
     return builder.GetTypes().GetFunction(std::move(parameters), m_VarArg, std::move(result), std::move(self));
 }
@@ -134,12 +131,12 @@ std::string llove::FunctionType::Mangle() const
         parameters += parameter.Mangle();
     return 'x'
            + std::string(m_VarArg ? "v" : "")
-           + std::string(m_Self.Type ? "s" : "")
+           + std::string(m_Self ? "s" : "")
            + std::to_string(m_Parameters.size())
            + '_'
            + parameters
            + m_Result.Mangle()
-           + (m_Self.Type ? m_Self.Mangle() : std::string());
+           + (m_Self ? m_Self->Mangle() : std::string());
 }
 
 std::ostream &llove::FunctionType::Print(std::ostream &stream) const
@@ -159,6 +156,6 @@ std::ostream &llove::FunctionType::Print(std::ostream &stream) const
     }
     stream << ')';
     if (m_Self)
-        stream << '[' << m_Self << ']';
+        stream << '[' << *m_Self << ']';
     return stream << " => " << m_Result;
 }

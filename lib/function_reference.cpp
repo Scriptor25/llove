@@ -7,8 +7,8 @@ std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
     if (Implicit)
         stream << "implicit ";
 
-    if (Type->HasSelf())
-        stream << Type->GetSelf() << ':';
+    if (const auto self = Type->GetSelf())
+        stream << *self << ':';
 
     stream << Name << '(';
 
@@ -25,13 +25,5 @@ std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
         stream << "...";
     }
 
-    stream << ')';
-
-    if (Type->GetResult())
-        stream << ": " << Type->GetResult();
-
-    if (Delete)
-        stream << " @delete";
-
-    return stream;
+    return stream << "): " << Type->GetResult();
 }

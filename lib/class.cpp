@@ -26,10 +26,7 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
             stream << ", ";
         stream << "...";
     }
-    stream << ')';
-    if (Result)
-        stream << ": " << Result;
-    return stream;
+    return stream << "): " << Result;
 }
 
 void llove::ClassField::Reflect(Builder &builder, ClassField &field) const
@@ -70,7 +67,6 @@ void llove::ClassFunction::Reflect(Builder &builder, ClassFunction &function) co
     function.Loc = Loc;
     function.Expose = Expose;
     function.Implicit = Implicit;
-    function.Delete = Delete;
     function.Mutable = Mutable;
     function.Name = Name;
     function.VarArg = VarArg;
@@ -108,11 +104,7 @@ std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
             stream << ", ";
         stream << "...";
     }
-    stream << ')';
-    if (Result)
-        stream << ": " << Result;
-    if (Delete)
-        stream << " @delete";
+    stream << "): " << Result;
     if (!Content)
         return stream << ';';
     return stream << ' ' << Content;

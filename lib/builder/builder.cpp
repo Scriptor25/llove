@@ -94,7 +94,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     for (auto &parameter : fn.Parameters)
         type_parameters.emplace_back(parameter.Info);
 
-    Field self;
+    std::optional<Field> self;
     FunctionType::Ptr function_type;
 
     if (fn.Class)
@@ -104,17 +104,17 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
             .Reference = true,
             .Type = fn.Class,
         };
-        function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result, self);
+        function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result, *self);
     }
     else
     {
         function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result);
     }
 
-    const auto function = fn.Delete ? nullptr : GetOrCreateFunction(mangled, function_type, fn.Interface);
-    auto &reference = PushFunction(fn.Expose, fn.Implicit, fn.Delete, fn.Name, function_type, function);
+    const auto function = GetOrCreateFunction(mangled, function_type, fn.Interface);
+    auto &reference = PushFunction(fn.Expose, fn.Implicit, fn.Name, function_type, function);
 
-    if (fn.Delete || !fn.Content)
+    if (!fn.Content)
         return reference;
 
     Assert(function->empty(), "function is already defined");
@@ -167,7 +167,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
 void llove::Builder::GenParameters(
     llvm::Function *function,
     const std::vector<Parameter> &parameters,
-    const Field &self)
+    const std::optional<Field> &self)
 {
     auto offset = 0u;
     if (self)
@@ -183,7 +183,7 @@ void llove::Builder::GenParameters(
             0u,
             GetDbgFile(),
             0u,
-            self.Type->GenDbg(*this),
+            self->Type->GenDbg(*this),
             true);
 
         m_DIBuilder.insertDeclare(
@@ -193,7 +193,7 @@ void llove::Builder::GenParameters(
             llvm::DILocation::get(m_Context, 0u, 0u, GetDbgScope()),
             m_Builder.GetInsertBlock());
 
-        SetValue("self", Value::CreateL(self.Type, argument, self.Mutable));
+        SetValue("self", Value::CreateL(self->Type, argument, self->Mutable));
     }
 
     for (unsigned i = 0; i < function->arg_size() - offset; ++i)

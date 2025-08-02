@@ -122,11 +122,6 @@ bool llove::Field::operator==(const Field &other) const
            && Type == other.Type;
 }
 
-llove::Field::operator bool() const
-{
-    return Type != nullptr;
-}
-
 void llove::Field::Reflect(Builder &builder, Field &field) const
 {
     field.Mutable = Mutable;
