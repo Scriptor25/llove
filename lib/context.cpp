@@ -126,7 +126,7 @@ llove::TypePtr llove::Context::TypeUnion(const TypePtr &left, const TypePtr &rig
         break;
     }
 
-    Error("cannot determine higher order of types {} and {}", left, right);
+    Error("illegal type unionization of {} and {}", left, right);
 }
 
 unsigned llove::Context::Difference(const TypePtr &left, const TypePtr &right)
@@ -238,8 +238,8 @@ llove::ClassTemplate &llove::Context::PushTemplate(
     std::vector<std::pair<std::string, TemplateType::Ptr>> parameters)
 {
     auto &template_ = m_TemplateTypes.emplace_back();
-    for (auto &[fst, snd] : parameters)
-        template_.emplace(fst, snd);
+    for (auto &[key, type] : parameters)
+        template_.emplace(key, type);
 
     auto &ref = m_ClassTemplates[name];
 
@@ -278,41 +278,33 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
 {
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
-    auto &[
-        template_complete,
-        template_instantiated,
+    auto &template_ = m_ClassTemplates.at(name);
+    Assert(template_.Parameters.size() == arguments.size(), "wrong number of type arguments");
 
-        template_name,
-        template_parameters,
-        template_fields,
-        template_functions
-    ] = m_ClassTemplates.at(name);
-    Assert(template_parameters.size() == arguments.size(), "wrong number of type arguments");
-
-    if (!template_complete)
+    if (!template_.Complete)
         return std::make_shared<ClassTemplateType>(std::move(name), arguments);
 
     m_TemplateArguments.clear();
 
-    name = template_name + '.';
+    name = template_.Name + '.';
     for (unsigned i = 0; i < arguments.size(); ++i)
     {
-        m_TemplateArguments.emplace(template_parameters.at(i).first, arguments.at(i));
+        m_TemplateArguments.emplace(template_.Parameters.at(i).first, arguments.at(i));
         name += arguments.at(i)->Mangle();
     }
     auto class_type = GetClass(std::move(name));
 
-    if (template_instantiated)
+    if (template_.Instantiated)
         return class_type;
 
-    template_instantiated = true;
+    template_.Instantiated = true;
 
     std::vector<ClassField> reflection_fields;
-    for (auto &field : template_fields)
+    for (auto &field : template_.Fields)
         field.Reflect(builder, reflection_fields.emplace_back());
 
     std::vector<ClassFunction> reflection_functions;
-    for (auto &function : template_functions)
+    for (auto &function : template_.Functions)
         function.Reflect(builder, reflection_functions.emplace_back());
 
     std::vector<ClassFieldReference> fields;
@@ -321,14 +313,15 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
     class_type->SetFields(builder, std::move(fields));
 
     std::vector<ClassFunctionReference> functions;
-    for (auto &function : reflection_functions)
+    for (const auto &function : reflection_functions)
     {
         std::vector<Field> parameters;
-        for (auto &[info, _] : function.Parameters)
-            parameters.emplace_back(info);
+        for (auto &parameter : function.Parameters)
+            parameters.emplace_back(parameter.Info);
         functions.emplace_back(
             function.Expose,
             function.Implicit,
+            function.Delete,
             function.Mutable,
             function.Name,
             parameters,
@@ -337,50 +330,39 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
     }
     class_type->SetFunctions(std::move(functions));
 
-    for (auto &[
-             expose,
-             implicit,
-             mutable_,
-             name,
-             parameters,
-             vararg,
-             result,
-             content
-         ] : reflection_functions)
+    for (const auto &function : reflection_functions)
         builder.GenFunction(
             {
-                .Implicit = implicit,
+                .Loc = function.Loc,
+                .Interface = false,
+                .Implicit = function.Implicit,
+                .Delete = function.Delete,
                 .Class = class_type,
-                .Mutable = mutable_,
-                .Expose = expose,
-                .Name = name,
-                .Parameters = parameters,
-                .VarArg = vararg,
-                .Result = result,
+                .Mutable = function.Mutable,
+                .Expose = function.Expose,
+                .Name = function.Name,
+                .Parameters = function.Parameters,
+                .VarArg = function.VarArg,
+                .Result = function.Result,
+                .Content = nullptr,
             }
         );
 
-    for (auto &[
-             expose,
-             implicit,
-             mutable_,
-             name,
-             parameters,
-             vararg,
-             result,
-             content
-         ] : reflection_functions)
+    for (const auto &function : reflection_functions)
         builder.GenFunction(
             {
-                .Implicit = implicit,
+                .Loc = function.Loc,
+                .Interface = false,
+                .Implicit = function.Implicit,
+                .Delete = function.Delete,
                 .Class = class_type,
-                .Mutable = mutable_,
-                .Expose = expose,
-                .Name = name,
-                .Parameters = parameters,
-                .VarArg = vararg,
-                .Result = result,
-                .Content = content.get(),
+                .Mutable = function.Mutable,
+                .Expose = function.Expose,
+                .Name = function.Name,
+                .Parameters = function.Parameters,
+                .VarArg = function.VarArg,
+                .Result = function.Result,
+                .Content = function.Content.get(),
             }
         );
 

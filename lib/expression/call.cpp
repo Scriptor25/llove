@@ -10,7 +10,7 @@ llove::CallExpression::CallExpression(Location loc, ExpressionPtr callee, std::v
 {
 }
 
-llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     auto [functions, self] = m_Callee->GenCallee(builder);
 
@@ -31,10 +31,14 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
 
     builder.EmitLoc(m_Loc);
 
-    return builder.CreateCall(candidate->Type, candidate->Callee, std::move(arguments), std::move(self));
+    return builder.CreateCall(*candidate, std::move(arguments), std::move(self));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const try
 {
     ExpressionPtr callee;
     if (m_Callee)
@@ -45,6 +49,10 @@ llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const
         argument->Reflect(builder, arguments.emplace_back());
 
     return std::make_unique<CallExpression>(m_Loc, std::move(callee), std::move(arguments));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::CallExpression::Print(std::ostream &stream) const

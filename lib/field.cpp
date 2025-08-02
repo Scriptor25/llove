@@ -140,13 +140,13 @@ std::string llove::GetFieldHash(const std::vector<Field> &fields)
 {
     std::string hash;
     hash += std::to_string(fields.size());
-    for (const auto &[mutable_, reference_, type_] : fields)
+    for (auto &field : fields)
     {
-        if (mutable_)
+        if (field.Mutable)
             hash += 'm';
-        if (reference_)
+        if (field.Reference)
             hash += 'r';
-        hash += std::to_string(reinterpret_cast<uintptr_t>(type_.get()));
+        hash += std::to_string(reinterpret_cast<uintptr_t>(field.Type.get()));
     }
     return hash;
 }

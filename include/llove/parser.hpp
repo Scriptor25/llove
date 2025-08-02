@@ -14,7 +14,7 @@ namespace llove
 {
     enum TokenType
     {
-        TokenType_Eof,
+        TokenType_EndOfFile,
         TokenType_Symbol,
         TokenType_String,
         TokenType_Integer,
@@ -26,7 +26,7 @@ namespace llove
     struct Token
     {
         Location Loc;
-        TokenType Type = TokenType_Eof;
+        TokenType Type = TokenType_EndOfFile;
         std::string Raw;
         std::string Value;
         uint64_t IntValue = 0;
@@ -36,7 +36,7 @@ namespace llove
     class Parser final
     {
     public:
-        explicit Parser(Context &types, Builder &builder, std::istream &stream);
+        explicit Parser(Context &types, Builder &builder, std::istream &stream, const std::filesystem::path &filepath);
 
         [[nodiscard]] bool Ok() const;
         GlobalPtr Parse();
@@ -75,7 +75,7 @@ namespace llove
         GlobalPtr ParseClassGlobal();
 
         void ParseClassField(ClassField &field);
-        void ParseClassFunction(ClassFunction &function);
+        void ParseClassFunction(ClassFunction &function, bool require_content);
 
         void ParseClassTemplate();
 
@@ -113,13 +113,13 @@ struct std::formatter<llove::TokenType> : std::formatter<std::string_view>
     {
         static const std::map<llove::TokenType, std::string_view> m
         {
-            { llove::TokenType_Eof, "Eof" },
-            { llove::TokenType_Symbol, "Sym" },
-            { llove::TokenType_String, "Str" },
-            { llove::TokenType_Integer, "Int" },
-            { llove::TokenType_Float, "Flt" },
-            { llove::TokenType_Operator, "Opr" },
-            { llove::TokenType_Other, "Otr" },
+            { llove::TokenType_EndOfFile, "EndOfFile" },
+            { llove::TokenType_Symbol, "Symbol" },
+            { llove::TokenType_String, "String" },
+            { llove::TokenType_Integer, "Integer" },
+            { llove::TokenType_Float, "Float" },
+            { llove::TokenType_Operator, "Operator" },
+            { llove::TokenType_Other, "Other" },
         };
         return std::formatter<std::string_view>::format(m.at(type), ctx);
     }

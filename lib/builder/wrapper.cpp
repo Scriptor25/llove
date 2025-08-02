@@ -36,53 +36,51 @@ void llove::Builder::CreateRet(llvm::Value *value)
     m_Builder.CreateRet(value);
 }
 
-llvm::Value *llove::Builder::CreateCall(
-    const FunctionType::Ptr &type,
-    llvm::Value *callee,
-    const std::vector<llvm::Value *> &arguments)
-{
-    return m_Builder.CreateCall(type->GenFunction(*this), callee, arguments);
-}
-
-llvm::Value *llove::Builder::CreateCall(const llvm::FunctionCallee callee, const std::vector<llvm::Value *> &arguments)
-{
-    return m_Builder.CreateCall(callee, arguments);
-}
-
 llove::ValuePtr llove::Builder::CreateCall(
-    const FunctionType::Ptr &type,
-    llvm::Value *callee,
+    const FunctionReference &reference,
     std::vector<ValuePtr> arguments,
     ValuePtr self)
 {
-    std::vector<llvm::Value *> argument_values;
+    Assert(!reference.Delete, "illegal use of explicitly deleted function '{}'", reference);
 
+    std::vector<llvm::Value *> argument_values;
     if (self)
-    {
-        argument_values.emplace_back(type->GetSelf().GenCast(*this, std::move(self)));
-    }
+        argument_values.emplace_back(reference.Type->GetSelf().GenCast(*this, std::move(self)));
 
     unsigned i;
-    for (i = 0; i < type->GetParameterCount(); ++i)
+    for (i = 0; i < reference.Type->GetParameterCount(); ++i)
     {
-        auto &parameter = type->GetParameter(i);
+        auto &parameter = reference.Type->GetParameter(i);
         auto &argument = arguments.at(i);
 
         argument_values.emplace_back(parameter.GenCast(*this, std::move(argument)));
     }
     for (; i < arguments.size(); ++i)
-    {
         argument_values.emplace_back(arguments.at(i)->Load(*this));
-    }
 
-    const auto result_value = CreateCall(type, callee, argument_values);
+    const auto result_value = m_Builder.CreateCall(
+        reference.Type->GenFunction(*this),
+        reference.Callee,
+        argument_values);
 
-    auto &[mutable_, reference_, type_] = type->GetResult();
+    auto &result = reference.Type->GetResult();
 
-    if (reference_)
-        return Value::CreateL(type_, result_value, mutable_);
+    if (result.Reference)
+        return Value::CreateL(result.Type, result_value, result.Mutable);
 
-    return Value::CreateR(type_, result_value);
+    return Value::CreateR(result.Type, result_value);
+}
+
+llove::ValuePtr llove::Builder::CreateCall(const FunctionType::Ptr &type, const ValuePtr &callee)
+{
+    const auto result_value = m_Builder.CreateCall(type->GenFunction(*this), callee->Load(*this));
+
+    auto &result = type->GetResult();
+
+    if (result.Reference)
+        return Value::CreateL(result.Type, result_value, result.Mutable);
+
+    return Value::CreateR(result.Type, result_value);
 }
 
 llvm::Value *llove::Builder::CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, const unsigned index)

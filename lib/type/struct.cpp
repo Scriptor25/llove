@@ -49,8 +49,8 @@ bool llove::StructType::IsStruct() const
 unsigned llove::StructType::SizeBits(Builder &builder) const
 {
     auto size = 0u;
-    for (auto &[info, name] : m_Fields)
-        size += info.SizeBits(builder);
+    for (auto &field : m_Fields)
+        size += field.Info.SizeBits(builder);
     return size;
 }
 
@@ -60,8 +60,8 @@ llvm::StructType *llove::StructType::Gen(Builder &builder)
         return llvm::dyn_cast<llvm::StructType>(m_IRType);
 
     std::vector<llvm::Type *> fields;
-    for (auto &[info, name] : m_Fields)
-        fields.emplace_back(info.GenType(builder));
+    for (auto &field : m_Fields)
+        fields.emplace_back(field.Info.GenType(builder));
 
     // TODO: packed struct
     const auto type = builder.GetStructType(fields, true);
@@ -77,10 +77,10 @@ llvm::DIType *llove::StructType::GenDbg(Builder &builder)
     std::vector<llvm::Metadata *> fields;
 
     auto offset = 0u;
-    for (auto &[info, name] : m_Fields)
+    for (auto &field : m_Fields)
     {
-        const auto field_size = info.SizeBits(builder);
-        fields.emplace_back(builder.GetDbgFieldType(name, info.GenDbgType(builder), field_size, offset));
+        const auto field_size = field.Info.SizeBits(builder);
+        fields.emplace_back(builder.GetDbgFieldType(field.Name, field.Info.GenDbgType(builder), field_size, offset));
         offset += field_size;
     }
 
@@ -102,8 +102,8 @@ llove::TypePtr llove::StructType::Reflect(Builder &builder) const
 std::string llove::StructType::Mangle() const
 {
     std::string fields;
-    for (auto &[info_, name_] : m_Fields)
-        fields += info_.Mangle();
+    for (auto &field : m_Fields)
+        fields += field.Info.Mangle();
     return 's' + std::to_string(m_Fields.size()) + '_' + fields;
 }
 

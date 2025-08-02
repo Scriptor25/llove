@@ -16,7 +16,7 @@ llove::ForStatement::ForStatement(
 {
 }
 
-void llove::ForStatement::Gen(Builder &builder) const
+void llove::ForStatement::Gen(Builder &builder) const try
 {
     const auto parent = builder.GetParent();
     const auto head_block = builder.CreateBlock("head", parent);
@@ -70,8 +70,12 @@ void llove::ForStatement::Gen(Builder &builder) const
 
     builder.PopFrame();
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::ForStatement::Reflect(Builder &builder) const
+llove::StatementPtr llove::ForStatement::Reflect(Builder &builder) const try
 {
     StatementPtr prefix, suffix, content;
     ExpressionPtr condition;
@@ -91,6 +95,10 @@ llove::StatementPtr llove::ForStatement::Reflect(Builder &builder) const
         std::move(suffix),
         std::move(condition),
         std::move(content));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ForStatement::Print(std::ostream &stream) const

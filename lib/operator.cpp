@@ -27,30 +27,26 @@ llove::ValuePtr llove::BIOperator<2>::operator()(
     return m_Callee(builder, std::move(left), std::move(right));
 }
 
-llove::UDOperator<1>::UDOperator(FunctionType::Ptr type, llvm::Value *callee)
-    : m_Type(std::move(type)),
-      m_Callee(callee)
+llove::UDOperator<1>::UDOperator(const FunctionReference &reference)
+    : m_Reference(std::move(reference))
 {
 }
 
 llove::ValuePtr llove::UDOperator<1>::operator()(Builder &builder, ValuePtr operand) const
 {
-    auto operand_value = (m_Type->HasSelf() ? m_Type->GetSelf() : m_Type->GetParameter(0))
-            .GenCast(builder, std::move(operand));
+    std::vector<ValuePtr> arguments;
+    ValuePtr self;
 
-    const auto result_value = builder.CreateCall(m_Type, m_Callee, { operand_value });
+    if (m_Reference.Type->HasSelf())
+        self = std::move(operand);
+    else
+        arguments.emplace_back(std::move(operand));
 
-    auto &[mutable_, reference_, type_] = m_Type->GetResult();
-
-    if (reference_)
-        return Value::CreateL(type_, result_value, mutable_);
-
-    return Value::CreateR(type_, result_value);
+    return builder.CreateCall(m_Reference, std::move(arguments), std::move(self));
 }
 
-llove::UDOperator<2>::UDOperator(FunctionType::Ptr type, llvm::Value *callee)
-    : m_Type(std::move(type)),
-      m_Callee(callee)
+llove::UDOperator<2>::UDOperator(const FunctionReference &reference)
+    : m_Reference(std::move(reference))
 {
 }
 
@@ -59,24 +55,19 @@ llove::ValuePtr llove::UDOperator<2>::operator()(
     ValuePtr left,
     ValuePtr right) const
 {
-    llvm::Value *left_value, *right_value;
-    if (m_Type->HasSelf())
+    std::vector<ValuePtr> arguments;
+    ValuePtr self;
+
+    if (m_Reference.Type->HasSelf())
     {
-        left_value = m_Type->GetSelf().GenCast(builder, std::move(left));
-        right_value = m_Type->GetParameter(0).GenCast(builder, std::move(right));
+        self = std::move(left);
+        arguments.emplace_back(std::move(right));
     }
     else
     {
-        left_value = m_Type->GetParameter(0).GenCast(builder, std::move(left));
-        right_value = m_Type->GetParameter(1).GenCast(builder, std::move(right));
+        arguments.emplace_back(std::move(left));
+        arguments.emplace_back(std::move(right));
     }
 
-    const auto result_value = builder.CreateCall(m_Type, m_Callee, { left_value, right_value });
-
-    auto &[mutable_, reference_, type_] = m_Type->GetResult();
-
-    if (reference_)
-        return Value::CreateL(type_, result_value, mutable_);
-
-    return Value::CreateR(type_, result_value);
+    return builder.CreateCall(m_Reference, std::move(arguments), std::move(self));
 }

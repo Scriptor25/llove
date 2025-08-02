@@ -16,7 +16,7 @@ static llove::ValuePtr operator_neg(llove::Builder &builder, const llove::ValueP
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '-{}' not implemented", operand->AsField());
 }
 
 static llove::ValuePtr operator_not(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
@@ -31,7 +31,7 @@ static llove::ValuePtr operator_not(llove::Builder &builder, const llove::ValueP
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '!{}' not implemented", operand->AsField());
 }
 
 static llove::ValuePtr operator_inv(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
@@ -44,7 +44,7 @@ static llove::ValuePtr operator_inv(llove::Builder &builder, const llove::ValueP
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '~{}' not implemented", operand->AsField());
 }
 
 static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr operand, const bool suffix)
@@ -76,7 +76,7 @@ static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr ope
         break;
     }
     default:
-        llove::Error("not implemented");
+        llove::Error("operator '{}{}{}' not implemented", suffix ? "" : "++", operand->AsField(), suffix ? "++" : "");
     }
 
     operand->Store(builder, result);
@@ -116,7 +116,7 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
         break;
     }
     default:
-        llove::Error("not implemented");
+        llove::Error("operator '{}{}{}' not implemented", suffix ? "" : "--", operand->AsField(), suffix ? "--" : "");
     }
 
     operand->Store(builder, result);
@@ -129,7 +129,7 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
 
 static llove::ValuePtr operator_deref(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
 {
-    llove::Assert(operand->GetType()->IsPointer(), "cannot dereference non-pointer value");
+    llove::Assert(operand->GetType()->IsPointer(), "illegal dereference of non-pointer value");
     const auto type = llove::As<llove::PointerType>(operand->GetType());
     return llove::Value::CreateL(type->GetBase(), operand->Load(builder), type->IsMutable());
 }
@@ -170,7 +170,7 @@ static llove::ValuePtr operator_add(llove::Builder &builder, llove::ValuePtr lef
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} + {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_sub(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -200,7 +200,7 @@ static llove::ValuePtr operator_sub(llove::Builder &builder, llove::ValuePtr lef
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} - {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_mul(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -222,7 +222,7 @@ static llove::ValuePtr operator_mul(llove::Builder &builder, llove::ValuePtr lef
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} * {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_div(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -244,7 +244,7 @@ static llove::ValuePtr operator_div(llove::Builder &builder, llove::ValuePtr lef
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} / {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_rem(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -266,7 +266,7 @@ static llove::ValuePtr operator_rem(llove::Builder &builder, llove::ValuePtr lef
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} % {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_and(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -286,7 +286,7 @@ static llove::ValuePtr operator_and(llove::Builder &builder, llove::ValuePtr lef
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} & {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_or(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -306,7 +306,7 @@ static llove::ValuePtr operator_or(llove::Builder &builder, llove::ValuePtr left
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} | {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_xor(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -326,7 +326,7 @@ static llove::ValuePtr operator_xor(llove::Builder &builder, llove::ValuePtr lef
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} ^ {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_eq(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -350,7 +350,7 @@ static llove::ValuePtr operator_eq(llove::Builder &builder, llove::ValuePtr left
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} == {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_ne(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -374,7 +374,7 @@ static llove::ValuePtr operator_ne(llove::Builder &builder, llove::ValuePtr left
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} != {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_lt(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -396,7 +396,7 @@ static llove::ValuePtr operator_lt(llove::Builder &builder, llove::ValuePtr left
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} < {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_gt(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -418,7 +418,7 @@ static llove::ValuePtr operator_gt(llove::Builder &builder, llove::ValuePtr left
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} > {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_le(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -440,7 +440,7 @@ static llove::ValuePtr operator_le(llove::Builder &builder, llove::ValuePtr left
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} <= {}' not implemented", left->AsField(), right->AsField());
 }
 
 static llove::ValuePtr operator_ge(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -462,7 +462,7 @@ static llove::ValuePtr operator_ge(llove::Builder &builder, llove::ValuePtr left
         break;
     }
 
-    llove::Error("not implemented");
+    llove::Error("operator '{} >= {}' not implemented", left->AsField(), right->AsField());
 }
 
 const std::map<std::string_view, llove::BIOperator<1>::CalleeType> llove::BIUnOperatorCallees

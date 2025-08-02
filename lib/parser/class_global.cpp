@@ -31,7 +31,7 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal()
             continue;
         }
 
-        ParseClassFunction(functions.emplace_back());
+        ParseClassFunction(functions.emplace_back(), false);
     }
     Expect(TokenType_Other, "}");
 
@@ -60,8 +60,9 @@ void llove::Parser::ParseClassField(ClassField &field)
     Expect(TokenType_Other, ";");
 }
 
-void llove::Parser::ParseClassFunction(ClassFunction &function)
+void llove::Parser::ParseClassFunction(ClassFunction &function, const bool require_content)
 {
+    function.Loc = m_Token.Loc;
     function.Expose = SkipIf(TokenType_Symbol, "expose");
     function.Implicit = SkipIf(TokenType_Symbol, "implicit");
     function.Mutable = SkipIf(TokenType_Symbol, "mut");
@@ -76,8 +77,8 @@ void llove::Parser::ParseClassFunction(ClassFunction &function)
             break;
         }
 
-        auto &[info_, name_] = function.Parameters.emplace_back();
-        name_ = ParseField(info_);
+        auto &parameter = function.Parameters.emplace_back();
+        parameter.Name = ParseField(parameter.Info);
 
         if (!At(TokenType_Other, ")"))
             Expect(TokenType_Other, ",");
@@ -89,7 +90,15 @@ void llove::Parser::ParseClassFunction(ClassFunction &function)
     else
         function.Result.Type = m_Types.GetVoid();
 
-    if (SkipIf(TokenType_Other, ";"))
+    if (SkipIf(TokenType_Other, "@"))
+    {
+        Expect(TokenType_Symbol, "delete");
+        function.Delete = true;
+        Expect(TokenType_Other, ";");
+        return;
+    }
+
+    if (!require_content && SkipIf(TokenType_Other, ";"))
         return;
 
     function.Content = ParseScopeStatement();

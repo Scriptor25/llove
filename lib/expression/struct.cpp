@@ -11,7 +11,7 @@ llove::StructExpression::StructExpression(Location loc, std::map<std::string, Ex
 {
 }
 
-llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr expect) const
+llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
     auto type = m_Type ? As<StructType>(m_Type) : expect ? As<StructType>(expect) : nullptr;
     Assert(type != nullptr, "untyped struct expression");
@@ -33,8 +33,12 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
 
     return Value::CreateR(std::move(type), aggregate);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const try
 {
     std::map<std::string, ExpressionPtr> values;
     for (auto &[key, value] : m_Values)
@@ -45,6 +49,10 @@ llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const
         m_Type->Reflect(builder, type);
 
     return std::make_unique<StructExpression>(m_Loc, std::move(values), std::move(type));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::StructExpression::Print(std::ostream &stream) const

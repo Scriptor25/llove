@@ -128,32 +128,27 @@ static void print_help(const std::map<std::string, cli::OptionTemplate> &templat
 
     table << "PATTERN" << "FILTER" << "DESCRIPTION";
 
-    for (auto &[
-             pattern,
-             type,
-             filter,
-             description
-         ] : templates | std::views::values)
+    for (auto &template_ : templates | std::views::values)
     {
         std::string pattern_str;
-        for (auto p = pattern.begin(); p != pattern.end(); ++p)
+        for (auto p = template_.Pattern.begin(); p != template_.Pattern.end(); ++p)
         {
-            if (p != pattern.begin())
+            if (p != template_.Pattern.begin())
                 pattern_str += ", ";
             pattern_str += *p;
         }
         table << pattern_str;
 
         std::string filter_str;
-        if (type != cli::OptionTemplateType_Flag)
+        if (template_.Type != cli::OptionTemplateType_Flag)
         {
-            filter->Stringify(filter_str);
-            if (type == cli::OptionTemplateType_Array)
+            template_.Filter->Stringify(filter_str);
+            if (template_.Type == cli::OptionTemplateType_Array)
                 filter_str += ",...";
         }
         table << filter_str;
 
-        table << description;
+        table << template_.Description;
     }
 }
 
@@ -218,7 +213,7 @@ int main(const int argc, const char *const *argv)
 
     llove::Context types;
     llove::Builder builder(types, arguments.filename());
-    llove::Parser parser(types, builder, stream);
+    llove::Parser parser(types, builder, stream, arguments.filename());
 
     llove::SealInfo seal_info
     {
@@ -257,11 +252,19 @@ int main(const int argc, const char *const *argv)
     }
 
     while (parser.Ok())
-        if (auto ptr = parser.Parse())
+        try
         {
-            if (print_llove)
-                *seal_info.PrintStream << ptr << std::endl;
-            ptr->Gen(builder);
+            if (auto ptr = parser.Parse())
+            {
+                if (print_llove)
+                    *seal_info.PrintStream << ptr << std::endl;
+                ptr->Gen(builder);
+            }
+        }
+        catch (const llove::ErrorStack *cause)
+        {
+            cause->Print(std::cerr);
+            return 1;
         }
 
     if (std::string format; arguments.value("format", format))

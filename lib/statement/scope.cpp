@@ -19,7 +19,7 @@ llove::ScopeStatement::ScopeStatement(Location loc, std::vector<StatementPtr> co
 {
 }
 
-void llove::ScopeStatement::Gen(Builder &builder) const
+void llove::ScopeStatement::Gen(Builder &builder) const try
 {
     builder.EmitLoc(m_Loc);
     builder.PushFrame();
@@ -27,14 +27,22 @@ void llove::ScopeStatement::Gen(Builder &builder) const
         ptr->Gen(builder);
     builder.PopFrame();
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::ScopeStatement::Reflect(Builder &builder) const
+llove::StatementPtr llove::ScopeStatement::Reflect(Builder &builder) const try
 {
     std::vector<StatementPtr> content(m_Content.size());
     for (unsigned i = 0; i < m_Content.size(); ++i)
         m_Content.at(i)->Reflect(builder, content.at(i));
 
     return std::make_unique<ScopeStatement>(m_Loc, std::move(content));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ScopeStatement::Print(std::ostream &stream) const

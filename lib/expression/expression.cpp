@@ -9,9 +9,9 @@ llove::Expression::Expression(Location loc)
 {
 }
 
-void llove::Expression::Gen(Builder &builder) const
+void llove::Expression::Gen(Builder &builder) const try
 {
-    auto value = GenVal(builder, nullptr);
+    const auto value = GenVal(builder, nullptr);
     const auto type = value->GetType();
 
     if (value->IsReferenceable() || !type->IsClass())
@@ -20,7 +20,10 @@ void llove::Expression::Gen(Builder &builder) const
     const auto class_type = As<ClassType>(type);
     if (const auto destructor = class_type->GetDestructor())
     {
-        auto &reference = builder.GenFunction(
+        const auto pointer = builder.CreateAlloca(class_type);
+        builder.CreateStore(pointer, value);
+
+        const auto &reference = builder.GenFunction(
             {
                 .Class = class_type,
                 .Mutable = destructor->Mutable,
@@ -30,20 +33,15 @@ void llove::Expression::Gen(Builder &builder) const
                 .Result = destructor->Result,
             });
 
-        const auto pointer = builder.CreateAlloca(class_type);
-        builder.CreateStore(pointer, value);
-        value = Value::CreateL(class_type, pointer, true);
-
-        builder.PushDestructor(
-            value->GetPointer(),
-            {
-                reference.Type->GenFunction(builder),
-                reference.Callee,
-            });
+        builder.PushDestructor(pointer, reference);
     }
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const
+llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const try
 {
     const auto value = GenVal(builder, nullptr);
 
@@ -65,4 +63,8 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const
             }
         }
     };
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }

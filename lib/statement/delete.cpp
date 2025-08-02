@@ -9,11 +9,11 @@ llove::DeleteStatement::DeleteStatement(Location loc, ExpressionPtr value)
 {
 }
 
-void llove::DeleteStatement::Gen(Builder &builder) const
+void llove::DeleteStatement::Gen(Builder &builder) const try
 {
     builder.EmitLoc(m_Loc);
 
-    const auto value = m_Value->GenVal(builder, nullptr);
+    auto value = m_Value->GenVal(builder, nullptr);
     const auto type = value->GetType();
 
     if (!type->IsClass())
@@ -22,6 +22,13 @@ void llove::DeleteStatement::Gen(Builder &builder) const
     auto class_type = As<ClassType>(type);
     if (const auto destructor = class_type->GetDestructor())
     {
+        if (!value->IsReferenceable())
+        {
+            const auto pointer = builder.CreateAlloca(type);
+            builder.CreateStore(pointer, value);
+            value = Value::CreateL(type, pointer, false);
+        }
+
         const auto &reference = builder.GenFunction(
             {
                 .Class = std::move(class_type),
@@ -31,29 +38,26 @@ void llove::DeleteStatement::Gen(Builder &builder) const
                 .Result = destructor->Result,
             });
 
-        llvm::Value *pointer;
-        if (value->IsReferenceable())
-        {
-            pointer = value->GetPointer();
-        }
-        else
-        {
-            pointer = builder.CreateAlloca(type);
-            builder.CreateStore(pointer, value);
-        }
-
         builder.EmitLoc(m_Loc);
-        builder.CreateCall(reference.Type, reference.Callee, { pointer });
+        builder.CreateCall(reference, {}, std::move(value));
     }
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::DeleteStatement::Reflect(Builder &builder) const
+llove::StatementPtr llove::DeleteStatement::Reflect(Builder &builder) const try
 {
     ExpressionPtr value;
     if (m_Value)
         m_Value->Reflect(builder, value);
 
     return std::make_unique<DeleteStatement>(m_Loc, std::move(value));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::DeleteStatement::Print(std::ostream &stream) const

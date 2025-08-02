@@ -54,12 +54,15 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
 
     if (callee)
     {
-        auto argument = callee->Type->HasSelf()
-                            ? callee->Type->GetSelf().GenCast(*this, value)
-                            : callee->Type->GetParameter(0).GenCast(*this, value);
+        std::vector<ValuePtr> arguments;
+        ValuePtr self;
 
-        const auto result = CreateCall(callee->Type, callee->Callee, { argument });
-        return Value::CreateR(dst, result);
+        if (callee->Type->HasSelf())
+            self = std::move(value);
+        else
+            arguments.emplace_back(std::move(value));
+
+        return CreateCall(*callee, std::move(arguments), std::move(self));
     }
 
     const auto llvm_value = value->Load(*this);

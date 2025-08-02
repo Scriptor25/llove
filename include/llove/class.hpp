@@ -4,6 +4,7 @@
 #include <vector>
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
+#include <llove/location.hpp>
 #include <llove/parameter.hpp>
 
 namespace llove
@@ -22,7 +23,9 @@ namespace llove
 
         bool Expose = false;
         bool Implicit = false;
+        bool Delete = false;
         bool Mutable = false;
+
         std::string Name;
         std::vector<Field> Parameters;
         bool VarArg = false;
@@ -45,8 +48,10 @@ namespace llove
         void Reflect(Builder &builder, ClassFunction &function) const;
         std::ostream &Print(std::ostream &stream) const;
 
+        Location Loc;
         bool Expose = false;
         bool Implicit = false;
+        bool Delete = false;
         bool Mutable = false;
         std::string Name;
         std::vector<Parameter> Parameters;

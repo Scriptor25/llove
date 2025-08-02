@@ -22,11 +22,11 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
 {
 }
 
-void llove::ClassDefinitionGlobal::Gen(Builder &builder) const
+void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
 {
     std::vector<Field> parameters;
-    for (auto &[info_, name_] : m_Parameters)
-        parameters.emplace_back(info_);
+    for (auto &parameter : m_Parameters)
+        parameters.emplace_back(parameter.Info);
     const auto class_function = m_ClassType->GetFunction(m_Name, m_Mutable, parameters, m_VarArg, m_Result);
 
     Assert(class_function.has_value(), "class function prototype mismatch");
@@ -45,6 +45,10 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const
             .Content = m_Content.get(),
         }
     );
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const

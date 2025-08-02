@@ -21,7 +21,7 @@ llove::DefinitionGlobal::DefinitionGlobal(
 {
 }
 
-void llove::DefinitionGlobal::Gen(Builder &builder) const
+void llove::DefinitionGlobal::Gen(Builder &builder) const try
 {
     builder.GenFunction(
         {
@@ -35,6 +35,10 @@ void llove::DefinitionGlobal::Gen(Builder &builder) const
             .Content = m_Content.get(),
         }
     );
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const

@@ -11,7 +11,7 @@ llove::SubscriptExpression::SubscriptExpression(Location loc, ExpressionPtr valu
 {
 }
 
-llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypePtr expect) const
+llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
     const auto value = m_Value->GenVal(builder, expect ? builder.GetTypes().GetPointer(expect, false) : nullptr);
     const auto index = m_Index->GenVal(builder, nullptr);
@@ -28,8 +28,12 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
         Error("subscript on non-pointer and non-array value of type {}", value->GetType());
     }
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::SubscriptExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::SubscriptExpression::Reflect(Builder &builder) const try
 {
     ExpressionPtr value;
     if (m_Value)
@@ -40,6 +44,10 @@ llove::StatementPtr llove::SubscriptExpression::Reflect(Builder &builder) const
         m_Index->Reflect(builder, index);
 
     return std::make_unique<SubscriptExpression>(m_Loc, std::move(value), std::move(index));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::SubscriptExpression::Print(std::ostream &stream) const

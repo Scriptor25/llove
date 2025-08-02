@@ -12,7 +12,7 @@ llove::UnaryExpression::UnaryExpression(Location loc, std::string operator_, Exp
 {
 }
 
-llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr expect) const
+llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
     auto operand = m_Operand->GenVal(builder, expect);
 
@@ -36,14 +36,22 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
         operand->AsField(),
         m_Suffix ? m_Operator : std::string{});
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::UnaryExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::UnaryExpression::Reflect(Builder &builder) const try
 {
     ExpressionPtr operand;
     if (m_Operand)
         m_Operand->Reflect(builder, operand);
 
     return std::make_unique<UnaryExpression>(m_Loc, m_Operator, std::move(operand), m_Suffix);
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::UnaryExpression::Print(std::ostream &stream) const

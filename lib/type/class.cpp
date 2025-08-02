@@ -136,8 +136,8 @@ void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReferen
     }
 
     std::vector<llvm::Type *> elements;
-    for (auto &[info_, name_] : m_Fields)
-        elements.emplace_back(info_.GenType(builder));
+    for (auto &field : m_Fields)
+        elements.emplace_back(field.Info.GenType(builder));
 
     // TODO: packed struct
     m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, true);
@@ -161,8 +161,8 @@ bool llove::ClassType::IsClass() const
 unsigned llove::ClassType::SizeBits(Builder &builder) const
 {
     auto size = 0u;
-    for (auto &[info, name] : m_Fields)
-        size += info.SizeBits(builder);
+    for (auto &field : m_Fields)
+        size += field.Info.SizeBits(builder);
     return size;
 }
 
@@ -179,8 +179,8 @@ llvm::StructType *llove::ClassType::Gen(Builder &builder)
     }
 
     std::vector<llvm::Type *> elements;
-    for (auto &[info_, name_] : m_Fields)
-        elements.emplace_back(info_.GenType(builder));
+    for (auto &field : m_Fields)
+        elements.emplace_back(field.Info.GenType(builder));
 
     // TODO: packed struct
     const auto type = builder.GetOrCreateNamedStructType(m_Name, elements, true);
@@ -199,10 +199,10 @@ llvm::DIType *llove::ClassType::GenDbg(Builder &builder)
     std::vector<llvm::Metadata *> fields;
 
     unsigned offset = 0;
-    for (auto &[info, name] : m_Fields)
+    for (auto &field : m_Fields)
     {
-        const auto size = info.SizeBits(builder);
-        fields.emplace_back(builder.GetDbgFieldType(name, info.GenDbgType(builder), size, offset));
+        const auto size = field.Info.SizeBits(builder);
+        fields.emplace_back(builder.GetDbgFieldType(field.Name, field.Info.GenDbgType(builder), size, offset));
         offset += size;
     }
 

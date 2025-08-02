@@ -59,22 +59,22 @@ llvm::Value *llove::RValue::Load(Builder &builder) const
 
 void llove::RValue::Store(Builder &builder, llvm::Value *value, bool volatile_) const
 {
-    Error("cannot store value to rvalue");
+    Error("illegal store to rvalue");
 }
 
 void llove::RValue::Store(Builder &builder, ValuePtr value, bool volatile_) const
 {
-    Error("cannot store value to rvalue");
+    Error("illegal store to rvalue");
 }
 
 llove::ValuePtr llove::RValue::Reference(Builder &builder) const
 {
-    Error("cannot reference rvalue");
+    Error("illegal reference to rvalue");
 }
 
 llvm::Value *llove::RValue::GetPointer() const
 {
-    Error("cannot get pointer to rvalue");
+    Error("illegal pointer to rvalue");
 }
 
 llove::LValue::LValue(TypePtr type, llvm::Value *pointer, const bool mutable_)

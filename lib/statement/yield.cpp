@@ -8,7 +8,7 @@ llove::YieldStatement::YieldStatement(Location loc, ExpressionPtr value)
 {
 }
 
-void llove::YieldStatement::Gen(Builder &builder) const
+void llove::YieldStatement::Gen(Builder &builder) const try
 {
     if (!m_Value)
     {
@@ -32,8 +32,12 @@ void llove::YieldStatement::Gen(Builder &builder) const
     builder.CallDestructors(mask, true);
     builder.CreateRet(result_value);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::YieldStatement::Reflect(Builder &builder) const
+llove::StatementPtr llove::YieldStatement::Reflect(Builder &builder) const try
 {
     ExpressionPtr value;
 
@@ -41,6 +45,10 @@ llove::StatementPtr llove::YieldStatement::Reflect(Builder &builder) const
         m_Value->Reflect(builder, value);
 
     return std::make_unique<YieldStatement>(m_Loc, std::move(value));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::YieldStatement::Print(std::ostream &stream) const

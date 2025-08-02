@@ -10,7 +10,7 @@ llove::RangeExpression::RangeExpression(Location loc, ExpressionPtr beg, Express
 {
 }
 
-llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     TypePtr type;
     if (expect && expect->IsRange())
@@ -33,8 +33,12 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
 
     return Value::CreateR(std::move(range_type), aggregate);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const try
 {
     ExpressionPtr beg;
     if (m_Beg)
@@ -45,6 +49,10 @@ llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const
         m_End->Reflect(builder, end);
 
     return std::make_unique<RangeExpression>(m_Loc, std::move(beg), std::move(end));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::RangeExpression::Print(std::ostream &stream) const

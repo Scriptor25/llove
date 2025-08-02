@@ -10,7 +10,7 @@ llove::FltExpression::FltExpression(Location loc, const double_t value, TypePtr 
 {
 }
 
-llove::ValuePtr llove::FltExpression::GenVal(Builder &builder, const TypePtr expect) const
+llove::ValuePtr llove::FltExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
     auto type = m_Type ? As<FloatType>(m_Type) : nullptr;
     if (!type)
@@ -26,14 +26,22 @@ llove::ValuePtr llove::FltExpression::GenVal(Builder &builder, const TypePtr exp
     const auto value = llvm::ConstantFP::get(type->Gen(builder), m_Value);
     return Value::CreateR(std::move(type), value);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::FltExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::FltExpression::Reflect(Builder &builder) const try
 {
     TypePtr type;
     if (m_Type)
         m_Type->Reflect(builder, type);
 
     return std::make_unique<FltExpression>(m_Loc, m_Value, std::move(type));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::FltExpression::Print(std::ostream &stream) const

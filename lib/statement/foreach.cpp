@@ -20,7 +20,7 @@ llove::ForEachStatement::ForEachStatement(
 {
 }
 
-void llove::ForEachStatement::Gen(Builder &builder) const
+void llove::ForEachStatement::Gen(Builder &builder) const try
 {
     builder.EmitLoc(m_Loc);
     builder.PushFrame();
@@ -65,90 +65,82 @@ void llove::ForEachStatement::Gen(Builder &builder) const
         const auto begin_index = struct_type->GetFieldIndex("begin");
         const auto end_index = struct_type->GetFieldIndex("end");
 
-        auto &[
-            begin_mutable,
-            begin_reference,
-            begin_type
-        ] = struct_type->GetField(begin_index);
-        auto &[
-            end_mutable,
-            end_reference,
-            end_type
-        ] = struct_type->GetField(end_index);
+        auto &begin_fld = struct_type->GetField(begin_index);
+        auto &end_fld = struct_type->GetField(end_index);
 
         if (range->IsReferenceable())
         {
             auto begin_pointer = builder.CreateStructGEP(struct_type, range->GetPointer(), begin_index);
-            if (begin_reference)
+            if (begin_fld.Reference)
             {
                 begin_pointer = builder.CreateLoad(
                     begin_pointer,
-                    builder.GetTypes().GetPointer(begin_type, begin_mutable));
-                begin = Value::CreateL(begin_type, begin_pointer, begin_mutable);
+                    builder.GetTypes().GetPointer(begin_fld.Type, begin_fld.Mutable));
+                begin = Value::CreateL(begin_fld.Type, begin_pointer, begin_fld.Mutable);
             }
             else
             {
-                begin = Value::CreateL(begin_type, begin_pointer, range->IsMutable() && begin_mutable);
+                begin = Value::CreateL(begin_fld.Type, begin_pointer, range->IsMutable() && begin_fld.Mutable);
             }
 
             auto end_pointer = builder.CreateStructGEP(struct_type, range->GetPointer(), end_index);
-            if (end_reference)
+            if (end_fld.Reference)
             {
                 end_pointer = builder.CreateLoad(
                     end_pointer,
-                    builder.GetTypes().GetPointer(end_type, end_mutable));
-                end = Value::CreateL(end_type, end_pointer, end_mutable);
+                    builder.GetTypes().GetPointer(end_fld.Type, end_fld.Mutable));
+                end = Value::CreateL(end_fld.Type, end_pointer, end_fld.Mutable);
             }
             else
             {
-                end = Value::CreateL(end_type, end_pointer, range->IsMutable() && end_mutable);
+                end = Value::CreateL(end_fld.Type, end_pointer, range->IsMutable() && end_fld.Mutable);
             }
         }
         else
         {
             auto begin_value = builder.CreateExtractValue(range, begin_index);
-            if (begin_reference)
+            if (begin_fld.Reference)
             {
                 begin_value = builder.CreateLoad(
                     begin_value,
-                    builder.GetTypes().GetPointer(begin_type, begin_mutable));
-                begin = Value::CreateL(begin_type, begin_value, begin_mutable);
+                    builder.GetTypes().GetPointer(begin_fld.Type, begin_fld.Mutable));
+                begin = Value::CreateL(begin_fld.Type, begin_value, begin_fld.Mutable);
             }
             else
             {
-                begin = Value::CreateR(begin_type, begin_value);
+                begin = Value::CreateR(begin_fld.Type, begin_value);
             }
 
             auto end_value = builder.CreateExtractValue(range, end_index);
-            if (end_reference)
+            if (end_fld.Reference)
             {
                 end_value = builder.CreateLoad(
                     end_value,
-                    builder.GetTypes().GetPointer(end_type, end_mutable));
-                end = Value::CreateL(end_type, end_value, end_mutable);
+                    builder.GetTypes().GetPointer(end_fld.Type, end_fld.Mutable));
+                end = Value::CreateL(end_fld.Type, end_value, end_fld.Mutable);
             }
             else
             {
-                end = Value::CreateR(end_type, end_value);
+                end = Value::CreateR(end_fld.Type, end_value);
             }
         }
 
-        if (begin_type->IsFunction())
+        if (begin_fld.Type->IsFunction())
         {
-            const auto fn_type = As<FunctionType>(begin_type);
-            Assert(!fn_type->IsVarArg(), "invalid vararg");
-            Assert(fn_type->GetParameterCount() == 0, "invalid parameter count");
+            const auto fn_type = As<FunctionType>(begin_fld.Type);
+            Assert(!fn_type->IsVarArg(), "illegal vararg");
+            Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
-            begin = builder.CreateCall(fn_type, begin->Load(builder), {}, {});
+            begin = builder.CreateCall(fn_type, begin);
         }
 
-        if (end_type->IsFunction())
+        if (end_fld.Type->IsFunction())
         {
-            const auto fn_type = As<FunctionType>(end_type);
-            Assert(!fn_type->IsVarArg(), "invalid vararg");
-            Assert(fn_type->GetParameterCount() == 0, "invalid parameter count");
+            const auto fn_type = As<FunctionType>(end_fld.Type);
+            Assert(!fn_type->IsVarArg(), "illegal vararg");
+            Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
-            end = builder.CreateCall(fn_type, end->Load(builder), {}, {});
+            end = builder.CreateCall(fn_type, end);
         }
 
         break;
@@ -196,8 +188,8 @@ void llove::ForEachStatement::Gen(Builder &builder) const
         Assert(begin_function.has_value(), "class is missing function 'begin'");
         Assert(end_function.has_value(), "class is missing function 'end'");
 
-        begin = builder.CreateCall(begin_function->Type, begin_function->Callee, {}, range);
-        end = builder.CreateCall(end_function->Type, end_function->Callee, {}, range);
+        begin = builder.CreateCall(*begin_function, {}, range);
+        end = builder.CreateCall(*end_function, {}, range);
 
         break;
     }
@@ -283,8 +275,12 @@ void llove::ForEachStatement::Gen(Builder &builder) const
 
     builder.SetInsertPoint(end_block);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const
+llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const try
 {
     ExpressionPtr range;
     StatementPtr content;
@@ -301,6 +297,10 @@ llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const
         m_Name,
         std::move(range),
         std::move(content));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ForEachStatement::Print(std::ostream &stream) const

@@ -15,7 +15,7 @@ llove::CreateExpression::CreateExpression(
 {
 }
 
-llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     Assert(m_Type->IsClass(), "cannot construct non-class value");
 
@@ -63,11 +63,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
 
     builder.EmitLoc(m_Loc);
 
-    builder.CreateCall(
-        candidate->Type,
-        candidate->Callee,
-        std::move(arguments),
-        Value::CreateL(class_type, pointer, true));
+    builder.CreateCall(*candidate, std::move(arguments), Value::CreateL(class_type, pointer, true));
 
     if (destination)
         return destination;
@@ -75,8 +71,12 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     const auto value = builder.CreateLoad(pointer, m_Type);
     return Value::CreateR(m_Type, value);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const try
 {
     TypePtr type;
     if (m_Type)
@@ -91,6 +91,10 @@ llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const
         argument->Reflect(builder, arguments.emplace_back());
 
     return std::make_unique<CreateExpression>(m_Loc, std::move(type), std::move(destination), std::move(arguments));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::CreateExpression::Print(std::ostream &stream) const

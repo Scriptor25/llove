@@ -8,9 +8,14 @@
 #include <llvm/IR/Verifier.h>
 
 llove::Builder::Builder(Context &types, const std::filesystem::path &filepath)
+    : Builder(types, filepath, filepath.filename().replace_extension().string())
+{
+}
+
+llove::Builder::Builder(Context &types, const std::filesystem::path &filepath, const std::string &module_id)
     : m_Types(types),
       m_Builder(m_Context),
-      m_Module("main", m_Context),
+      m_Module(module_id, m_Context),
       m_DIBuilder(m_Module)
 {
     m_Module.setSourceFileName(filepath.string());
@@ -63,8 +68,8 @@ std::string llove::Builder::Mangle(
         mangled += 'v';
 
     mangled += std::to_string(parameters.size()) + '_';
-    for (auto &[info_, name_] : parameters)
-        mangled += info_.Mangle();
+    for (auto &parameter : parameters)
+        mangled += parameter.Info.Mangle();
 
     return mangled + result.Mangle();
 }
@@ -86,8 +91,8 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
         fn.Result);
 
     std::vector<Field> type_parameters;
-    for (auto &[info, name] : fn.Parameters)
-        type_parameters.emplace_back(info);
+    for (auto &parameter : fn.Parameters)
+        type_parameters.emplace_back(parameter.Info);
 
     Field self;
     FunctionType::Ptr function_type;
@@ -106,10 +111,10 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
         function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result);
     }
 
-    const auto function = GetOrCreateFunction(mangled, function_type, fn.Interface);
-    auto &reference = PushFunction(fn.Expose, fn.Implicit, fn.Name, function_type, function);
+    const auto function = fn.Delete ? nullptr : GetOrCreateFunction(mangled, function_type, fn.Interface);
+    auto &reference = PushFunction(fn.Expose, fn.Implicit, fn.Delete, fn.Name, function_type, function);
 
-    if (!fn.Content)
+    if (fn.Delete || !fn.Content)
         return reference;
 
     Assert(function->empty(), "function is already defined");
@@ -193,24 +198,24 @@ void llove::Builder::GenParameters(
 
     for (unsigned i = 0; i < function->arg_size() - offset; ++i)
     {
-        auto &[info, name] = parameters.at(i);
+        auto &parameter = parameters.at(i);
 
         const auto argument = function->getArg(i + offset);
-        argument->setName(name);
+        argument->setName(parameter.Name);
 
         ValuePtr storage;
-        if (info.Reference)
+        if (parameter.Info.Reference)
         {
-            storage = Value::CreateL(info.Type, argument, info.Mutable);
+            storage = Value::CreateL(parameter.Info.Type, argument, parameter.Info.Mutable);
         }
-        else if (info.Type->IsClass())
+        else if (parameter.Info.Type->IsClass())
         {
-            const auto pointer = CreateAlloca(info.Type, function);
+            const auto pointer = CreateAlloca(parameter.Info.Type, function);
             m_Builder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(info.Type, pointer, info.Mutable);
+            storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);
 
-            auto class_type = As<ClassType>(info.Type);
+            auto class_type = As<ClassType>(parameter.Info.Type);
             if (const auto destructor = class_type->GetDestructor())
             {
                 const auto &reference = GenFunction(
@@ -222,27 +227,22 @@ void llove::Builder::GenParameters(
                         .Result = destructor->Result,
                     });
 
-                PushDestructor(
-                    pointer,
-                    {
-                        reference.Type->GenFunction(*this),
-                        reference.Callee,
-                    });
+                PushDestructor(pointer, reference);
             }
         }
-        else if (info.Mutable)
+        else if (parameter.Info.Mutable)
         {
-            const auto pointer = CreateAlloca(info.Type, function);
+            const auto pointer = CreateAlloca(parameter.Info.Type, function);
             m_Builder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(info.Type, pointer, info.Mutable);
+            storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);
         }
         else
         {
-            storage = Value::CreateR(info.Type, argument);
+            storage = Value::CreateR(parameter.Info.Type, argument);
         }
 
-        CreateDbgParameter(name, i, storage);
-        SetValue(name, storage);
+        CreateDbgParameter(parameter.Name, i, storage);
+        SetValue(parameter.Name, storage);
     }
 }

@@ -37,7 +37,7 @@ void llove::Parser::ParseClassTemplate()
             continue;
         }
 
-        ParseClassFunction(template_.Functions.emplace_back());
+        ParseClassFunction(template_.Functions.emplace_back(), true);
     }
     Expect(TokenType_Other, "}");
 

@@ -1,6 +1,7 @@
 #include <ranges>
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
+#include <llove/value.hpp>
 
 llvm::Function *llove::Builder::GetParent() const
 {
@@ -44,12 +45,8 @@ bool llove::Builder::HasValue(const std::string &name) const
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    for (auto &[
-             valid,
-             destructors,
-             values
-         ] : std::ranges::reverse_view(m_Stack))
-        if (values.contains(name))
+    for (auto &frame : std::ranges::reverse_view(m_Stack))
+        if (frame.Values.contains(name))
             return true;
     return false;
 }
@@ -58,21 +55,17 @@ llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    for (auto &[
-             valid,
-             destructors,
-             values
-         ] : std::ranges::reverse_view(m_Stack))
-        if (values.contains(name))
-            return values.at(name);
+    for (auto &frame : std::ranges::reverse_view(m_Stack))
+        if (frame.Values.contains(name))
+            return frame.Values.at(name);
     return nullptr;
 }
 
-void llove::Builder::PushDestructor(llvm::Value *self, llvm::FunctionCallee callee)
+void llove::Builder::PushDestructor(llvm::Value *self, const FunctionReference &reference)
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    m_Stack.back().Destructors[self] = std::move(callee);
+    m_Stack.back().Destructors[self] = reference;
 }
 
 void llove::Builder::CallDestructors(const std::set<llvm::Value *> &mask, const bool propagate)
@@ -82,26 +75,15 @@ void llove::Builder::CallDestructors(const std::set<llvm::Value *> &mask, const 
 
     if (propagate)
     {
-        for (auto &[
-                 valid,
-                 destructors,
-                 values
-             ] : std::ranges::reverse_view(m_Stack))
-            if (valid)
-                for (auto &[self, callee] : destructors)
-                    if (!mask.contains(self))
-                        CreateCall(callee, { self });
+        for (auto &frame : std::ranges::reverse_view(m_Stack))
+            for (auto &[self, callee] : frame.Destructors)
+                if (!mask.contains(self))
+                    CreateCall(callee, {}, Value::CreateL(callee.Type->GetSelf().Type, self, true));
     }
     else
     {
-        auto &[
-            valid,
-            destructors,
-            values
-        ] = m_Stack.back();
-        if (valid)
-            for (auto &[self, callee] : destructors)
-                if (!mask.contains(self))
-                    CreateCall(callee, { self });
+        for (auto &frame = m_Stack.back(); auto &[self, callee] : frame.Destructors)
+            if (!mask.contains(self))
+                CreateCall(callee, {}, Value::CreateL(callee.Type->GetSelf().Type, self, true));
     }
 }

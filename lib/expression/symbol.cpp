@@ -10,7 +10,7 @@ llove::SymbolExpression::SymbolExpression(Location loc, std::string name)
 {
 }
 
-llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     if (builder.HasValue(m_Name))
         return builder.GetValue(m_Name);
@@ -26,8 +26,12 @@ llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect
     const auto &function = functions.front();
     return Value::CreateR(function.Type, function.Callee);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const
+llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
 {
     // TODO: if symbol with name exists, add to candidates
 
@@ -35,10 +39,18 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const
     Assert(!candidates.empty(), "undefined symbol '{}'", m_Name);
     return { .Candidates = std::move(candidates) };
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::SymbolExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::SymbolExpression::Reflect(Builder &builder) const try
 {
     return std::make_unique<SymbolExpression>(m_Loc, m_Name);
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::SymbolExpression::Print(std::ostream &stream) const

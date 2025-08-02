@@ -11,7 +11,7 @@ llove::MemberExpression::MemberExpression(Location loc, ExpressionPtr value, std
 {
 }
 
-llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     const auto value = m_Value->GenVal(builder, nullptr);
     const auto type = value->GetType();
@@ -44,7 +44,7 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
         break;
     }
     default:
-        Error("not implemented");
+        Error("illegal member '{}' of '{}'", m_Member, type);
     }
 
     builder.EmitLoc(m_Loc);
@@ -72,22 +72,34 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
     return Value::CreateR(element.Type, result);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const
+llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
 {
     // TODO: if field with name exists and is accessible, add to candidates
 
     auto value = m_Value->GenVal(builder, nullptr);
     return { .Candidates = builder.GetFunctions(m_Member, value->AsField()), .Self = std::move(value) };
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::MemberExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::MemberExpression::Reflect(Builder &builder) const try
 {
     ExpressionPtr value;
     if (m_Value)
         m_Value->Reflect(builder, value);
 
     return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member);
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::MemberExpression::Print(std::ostream &stream) const

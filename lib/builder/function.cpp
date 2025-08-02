@@ -18,6 +18,7 @@ llvm::Function *llove::Builder::GetOrCreateFunction(
 llove::FunctionReference &llove::Builder::PushFunction(
     const bool expose,
     const bool implicit,
+    const bool delete_,
     std::string name,
     FunctionType::Ptr type,
     llvm::Function *callee)
@@ -29,12 +30,15 @@ llove::FunctionReference &llove::Builder::PushFunction(
         if (function.Type != type)
             continue;
         Assert(
-            expose == function.Expose && implicit == function.Implicit && callee == function.Callee,
+            expose == function.Expose
+            && implicit == function.Implicit
+            && delete_ == function.Delete
+            && callee == function.Callee,
             "function prototype mismatch");
         return function;
     }
 
-    return m_Functions.emplace_back(expose, implicit, std::move(name), std::move(type), callee);
+    return m_Functions.emplace_back(expose, implicit, delete_, std::move(name), std::move(type), callee);
 }
 
 std::vector<llove::FunctionReference> llove::Builder::GetFunctions(const std::string &name) const
@@ -225,6 +229,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     return GenFunction(
         {
             .Implicit = candidate->Implicit,
+            .Delete = candidate->Delete,
             .Class = class_type,
             .Mutable = candidate->Mutable,
             .Expose = candidate->Expose,

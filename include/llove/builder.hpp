@@ -22,6 +22,7 @@ namespace llove
 
         bool Interface = false;
         bool Implicit = false;
+        bool Delete = false;
 
         ClassType::Ptr Class;
         bool Mutable = false;
@@ -35,16 +36,10 @@ namespace llove
         Statement *Content = nullptr;
     };
 
-    struct DestructorReference final
-    {
-        llvm::Value *Self = nullptr;
-        llvm::FunctionCallee Callee;
-    };
-
     struct Frame final
     {
         llvm::DIScope *Scope = nullptr;
-        std::map<llvm::Value *, llvm::FunctionCallee> Destructors;
+        std::map<llvm::Value *, FunctionReference> Destructors;
         std::map<std::string, ValuePtr> Values;
     };
 
@@ -66,6 +61,7 @@ namespace llove
     {
     public:
         explicit Builder(Context &types, const std::filesystem::path &filepath);
+        explicit Builder(Context &types, const std::filesystem::path &filepath, const std::string &module_id);
 
         Context &GetTypes() const;
 
@@ -131,16 +127,8 @@ namespace llove
         void CreateRetVoid();
         void CreateRet(llvm::Value *value);
 
-        llvm::Value *CreateCall(
-            const FunctionType::Ptr &type,
-            llvm::Value *callee,
-            const std::vector<llvm::Value *> &arguments);
-        llvm::Value *CreateCall(llvm::FunctionCallee callee, const std::vector<llvm::Value *> &arguments);
-        ValuePtr CreateCall(
-            const FunctionType::Ptr &type,
-            llvm::Value *callee,
-            std::vector<ValuePtr> arguments,
-            ValuePtr self);
+        ValuePtr CreateCall(const FunctionReference &reference, std::vector<ValuePtr> arguments, ValuePtr self);
+        ValuePtr CreateCall(const FunctionType::Ptr &type, const ValuePtr &callee);
 
         llvm::Value *CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, unsigned index);
         llvm::Value *CreateExtractValue(llvm::Value *aggregate, unsigned index);
@@ -215,6 +203,7 @@ namespace llove
         FunctionReference &PushFunction(
             bool expose,
             bool implicit,
+            bool delete_,
             std::string name,
             FunctionType::Ptr type,
             llvm::Function *callee);
@@ -247,7 +236,7 @@ namespace llove
         bool HasValue(const std::string &name) const;
         ValuePtr GetValue(const std::string &name) const;
 
-        void PushDestructor(llvm::Value *self, llvm::FunctionCallee callee);
+        void PushDestructor(llvm::Value *self, const FunctionReference &reference);
         void CallDestructors(const std::set<llvm::Value *> &mask, bool propagate);
 
         ValuePtr CreateCast(ValuePtr value, TypePtr dst, bool implicit);

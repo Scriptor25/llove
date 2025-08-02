@@ -22,8 +22,8 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
             break;
         }
 
-        auto &[info_, name_] = parameters.emplace_back();
-        name_ = ParseField(info_);
+        auto &parameter = parameters.emplace_back();
+        parameter.Name = ParseField(parameter.Info);
 
         if (!At(TokenType_Other, ")"))
             Expect(TokenType_Other, ",");

@@ -11,7 +11,7 @@ llove::ArrayExpression::ArrayExpression(Location loc, std::vector<ExpressionPtr>
 {
 }
 
-llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr expect) const
+llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
     auto type = m_Type ? As<ArrayType>(m_Type) : expect ? As<ArrayType>(expect) : nullptr;
     Assert(type != nullptr, "untyped array expression");
@@ -38,8 +38,12 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr e
 
     return Value::CreateR(std::move(type), aggregate);
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const try
 {
     std::vector<ExpressionPtr> values;
     for (auto &value : m_Values)
@@ -50,6 +54,10 @@ llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const
         m_Type->Reflect(builder, type);
 
     return std::make_unique<ArrayExpression>(m_Loc, std::move(values), std::move(type));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ArrayExpression::Print(std::ostream &stream) const

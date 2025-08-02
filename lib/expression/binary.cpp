@@ -11,7 +11,7 @@ llove::BinaryExpression::BinaryExpression(Location loc, std::string operator_, E
 {
 }
 
-llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect) const
+llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     static const std::map<std::string_view, const char *> assign
     {
@@ -43,10 +43,14 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
             return left;
         }
 
-    Error("undefined binary operator {} {} {}", left->AsField(), m_Operator, right->AsField());
+    Error("operator '{} {} {}' not implemented", left->AsField(), m_Operator, right->AsField());
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::BinaryExpression::Reflect(Builder &builder) const
+llove::StatementPtr llove::BinaryExpression::Reflect(Builder &builder) const try
 {
     ExpressionPtr left;
     if (m_Left)
@@ -57,6 +61,10 @@ llove::StatementPtr llove::BinaryExpression::Reflect(Builder &builder) const
         m_Right->Reflect(builder, right);
 
     return std::make_unique<BinaryExpression>(m_Loc, m_Operator, std::move(left), std::move(right));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::BinaryExpression::Print(std::ostream &stream) const

@@ -10,7 +10,7 @@ llove::IfStatement::IfStatement(Location loc, ExpressionPtr condition, Statement
 {
 }
 
-void llove::IfStatement::Gen(Builder &builder) const
+void llove::IfStatement::Gen(Builder &builder) const try
 {
     const auto parent = builder.GetParent();
     const auto then_block = builder.CreateBlock("then", parent);
@@ -55,8 +55,12 @@ void llove::IfStatement::Gen(Builder &builder) const
         builder.ClearInsertPoint();
     }
 }
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
+}
 
-llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const
+llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const try
 {
     ExpressionPtr condition;
     StatementPtr then, else_;
@@ -69,6 +73,10 @@ llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const
         m_Else->Reflect(builder, else_);
 
     return std::make_unique<IfStatement>(m_Loc, std::move(condition), std::move(then), std::move(else_));
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::IfStatement::Print(std::ostream &stream) const

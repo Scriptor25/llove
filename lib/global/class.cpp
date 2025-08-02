@@ -22,25 +22,26 @@ llove::ClassGlobal::ClassGlobal(
 {
 }
 
-void llove::ClassGlobal::Gen(Builder &builder) const
+void llove::ClassGlobal::Gen(Builder &builder) const try
 {
     if (m_Opaque)
         return;
 
     std::vector<ClassFieldReference> class_fields;
-    for (auto &[info, name, value, arguments] : m_Fields)
-        class_fields.emplace_back(info, name);
+    for (auto &field : m_Fields)
+        class_fields.emplace_back(field.Info, field.Name);
     m_Type->SetFields(builder, std::move(class_fields));
 
     std::vector<ClassFunctionReference> class_functions;
     for (auto &function : m_Functions)
     {
         std::vector<Field> parameters;
-        for (const auto &[info, name] : function.Parameters)
-            parameters.emplace_back(info);
+        for (auto &parameter : function.Parameters)
+            parameters.emplace_back(parameter.Info);
         class_functions.emplace_back(
             function.Expose,
             function.Implicit,
+            function.Delete,
             function.Mutable,
             function.Name,
             parameters,
@@ -49,54 +50,42 @@ void llove::ClassGlobal::Gen(Builder &builder) const
     }
     m_Type->SetFunctions(std::move(class_functions));
 
-    for (auto &[
-             expose,
-             implicit,
-             mutable_,
-             name,
-             parameters,
-             vararg,
-             result,
-             content
-         ] : m_Functions)
+    for (auto &function : m_Functions)
         builder.GenFunction(
             {
                 // TODO: loc
-                .Implicit = implicit,
+                .Implicit = function.Implicit,
+                .Delete = function.Delete,
                 .Class = m_Type,
-                .Mutable = mutable_,
-                .Expose = expose,
-                .Name = name,
-                .Parameters = parameters,
-                .VarArg = vararg,
-                .Result = result,
+                .Mutable = function.Mutable,
+                .Expose = function.Expose,
+                .Name = function.Name,
+                .Parameters = function.Parameters,
+                .VarArg = function.VarArg,
+                .Result = function.Result,
             }
         );
 
-    for (auto &[
-             expose,
-             implicit,
-             mutable_,
-             name,
-             parameters,
-             vararg,
-             result,
-             content
-         ] : m_Functions)
+    for (auto &function : m_Functions)
         builder.GenFunction(
             {
                 // TODO: loc
-                .Implicit = implicit,
+                .Implicit = function.Implicit,
+                .Delete = function.Delete,
                 .Class = m_Type,
-                .Mutable = mutable_,
-                .Expose = expose,
-                .Name = name,
-                .Parameters = parameters,
-                .VarArg = vararg,
-                .Result = result,
-                .Content = content.get(),
+                .Mutable = function.Mutable,
+                .Expose = function.Expose,
+                .Name = function.Name,
+                .Parameters = function.Parameters,
+                .VarArg = function.VarArg,
+                .Result = function.Result,
+                .Content = function.Content.get(),
             }
         );
+}
+catch (const ErrorStack *cause)
+{
+    throw new ErrorStack(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ClassGlobal::Print(std::ostream &stream) const
