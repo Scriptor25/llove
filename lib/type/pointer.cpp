@@ -40,18 +40,26 @@ unsigned llove::PointerType::SizeBits(Builder &builder) const
     return 64;
 }
 
-llvm::PointerType *llove::PointerType::Gen(Builder &builder) const
+llvm::PointerType *llove::PointerType::Gen(Builder &builder)
 {
-    if (m_Base)
-        return builder.GetPointerType(m_Base->Gen(builder));
-    return builder.GetPointerType();
+    if (m_IRType)
+        return llvm::dyn_cast<llvm::PointerType>(m_IRType);
+
+    const auto type = m_Base
+                          ? builder.GetPointerType(m_Base->Gen(builder))
+                          : builder.GetPointerType();
+    m_IRType = type;
+    return type;
 }
 
-llvm::DIType *llove::PointerType::GenDbg(Builder &builder) const
+llvm::DIType *llove::PointerType::GenDbg(Builder &builder)
 {
-    if (m_Base)
-        return builder.GetDbgPointerType(m_Base->GenDbg(builder));
-    return builder.GetDbgPointerType();
+    if (m_DIType)
+        return m_DIType;
+
+    return m_DIType = m_Base
+                          ? builder.GetDbgPointerType(m_Base->GenDbg(builder))
+                          : builder.GetDbgPointerType();
 }
 
 llove::TypePtr llove::PointerType::Reflect(Builder &builder) const

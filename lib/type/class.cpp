@@ -32,10 +32,12 @@ bool llove::ClassType::IsOpaque() const
 
 bool llove::ClassType::HasField(const std::string &name) const
 {
-    for (auto &[_, fld_name] : m_Fields)
-        if (fld_name == name)
-            return true;
-    return false;
+    return std::ranges::any_of(
+        m_Fields,
+        [&name](auto &field)
+        {
+            return field.Name == name;
+        });
 }
 
 unsigned llove::ClassType::GetFieldIndex(const std::string &name) const
@@ -88,10 +90,12 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetFunction(
 
 bool llove::ClassType::HasFunction(const std::string &name) const
 {
-    for (auto &function : m_Functions)
-        if (function.Name == name)
-            return true;
-    return false;
+    return std::ranges::any_of(
+        m_Functions,
+        [&name](auto &function)
+        {
+            return function.Name == name;
+        });
 }
 
 std::vector<llove::ClassFunctionReference> llove::ClassType::GetFunctions(const std::string &name) const
@@ -117,7 +121,7 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetDestructor() c
     for (auto &function : m_Functions)
         if (function.Name == "delete")
             return function;
-    return {};
+    return std::nullopt;
 }
 
 void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReference> fields)
@@ -127,7 +131,7 @@ void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReferen
 
     if (m_Opaque)
     {
-        builder.GetOrCreateNamedStructType(m_Name);
+        m_IRType = builder.GetOrCreateNamedStructType(m_Name);
         return;
     }
 
@@ -136,7 +140,7 @@ void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReferen
         elements.emplace_back(info_.GenType(builder));
 
     // TODO: packed struct
-    builder.GetOrCreateNamedStructType(m_Name, elements, true);
+    m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, true);
 }
 
 void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> functions)
@@ -162,23 +166,35 @@ unsigned llove::ClassType::SizeBits(Builder &builder) const
     return size;
 }
 
-llvm::StructType *llove::ClassType::Gen(Builder &builder) const
+llvm::StructType *llove::ClassType::Gen(Builder &builder)
 {
+    if (m_IRType)
+        return llvm::dyn_cast<llvm::StructType>(m_IRType);
+
     if (m_Opaque)
-        return builder.GetOrCreateNamedStructType(m_Name);
+    {
+        const auto type = builder.GetOrCreateNamedStructType(m_Name);
+        m_IRType = type;
+        return type;
+    }
 
     std::vector<llvm::Type *> elements;
     for (auto &[info_, name_] : m_Fields)
         elements.emplace_back(info_.GenType(builder));
 
     // TODO: packed struct
-    return builder.GetOrCreateNamedStructType(m_Name, elements, true);
+    const auto type = builder.GetOrCreateNamedStructType(m_Name, elements, true);
+    m_IRType = type;
+    return type;
 }
 
-llvm::DIType *llove::ClassType::GenDbg(Builder &builder) const
+llvm::DIType *llove::ClassType::GenDbg(Builder &builder)
 {
+    if (m_DIType)
+        return m_DIType;
+
     if (m_Opaque)
-        return builder.GetDbgClassType(m_Name);
+        return m_DIType = builder.GetDbgClassType(m_Name);
 
     std::vector<llvm::Metadata *> fields;
 
@@ -190,7 +206,7 @@ llvm::DIType *llove::ClassType::GenDbg(Builder &builder) const
         offset += size;
     }
 
-    return builder.GetDbgClassType(m_Name, fields);
+    return m_DIType = builder.GetDbgClassType(m_Name, fields);
 }
 
 llove::TypePtr llove::ClassType::Reflect(Builder &builder) const

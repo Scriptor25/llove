@@ -33,14 +33,22 @@ unsigned llove::IntegerType::SizeBits(Builder &builder) const
     return m_Bits;
 }
 
-llvm::IntegerType *llove::IntegerType::Gen(Builder &builder) const
+llvm::IntegerType *llove::IntegerType::Gen(Builder &builder)
 {
-    return builder.GetIntType(m_Bits);
+    if (m_IRType)
+        return llvm::dyn_cast<llvm::IntegerType>(m_IRType);
+
+    const auto type = builder.GetIntType(m_Bits);
+    m_IRType = type;
+    return type;
 }
 
-llvm::DIType *llove::IntegerType::GenDbg(Builder &builder) const
+llvm::DIType *llove::IntegerType::GenDbg(Builder &builder)
 {
-    return builder.GetDbgIntType(m_Sign, m_Bits);
+    if (m_DIType)
+        return m_DIType;
+
+    return m_DIType = builder.GetDbgIntType(m_Sign, m_Bits);
 }
 
 llove::TypePtr llove::IntegerType::Reflect(Builder &builder) const

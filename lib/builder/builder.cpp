@@ -117,8 +117,8 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     const auto dbg_unit = m_DIBuilder.createFile(m_CompileUnit->getFilename(), m_CompileUnit->getDirectory());
     const auto dbg_subprogram = m_DIBuilder.createFunction(
         dbg_unit,
-        fn.Name,
         mangled,
+        fn.Name,
         dbg_unit,
         fn.Loc.Row,
         function_type->GenDbgFunction(*this),

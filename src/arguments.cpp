@@ -26,11 +26,11 @@ cli::Arguments::Arguments(const char *const *begin, const char *const *end)
     for (auto i = begin; i != end; ++i)
     {
         auto arg = SplitString(*i, '=');
+        auto &pat = arg.at(0);
 
         auto match = false;
         for (auto &[fst, snd] : m_Templates)
         {
-            auto &pat = arg.at(0);
             if (!snd.Pattern.contains(pat))
                 continue;
 
@@ -43,24 +43,23 @@ cli::Arguments::Arguments(const char *const *begin, const char *const *end)
                 break;
             case OptionTemplateType_Value:
             {
-                auto &val = arg.at(1);
-                llove::Assert(
-                    snd.Filter.empty() || snd.Filter.contains(val),
-                    "illegal use of argument '{}': value '{}' does not match filter",
-                    pat,
-                    val);
+                std::string val;
+                if (arg.size() == 2)
+                    val = arg.at(1);
+                else if (arg.size() == 1)
+                    val = *++i;
+                else
+                    llove::Error("illegal use of argument '{}': must be a value", pat);
+                snd.Filter->Validate(pat, val);
                 m_Values.emplace(fst, val);
                 break;
             }
             case OptionTemplateType_Array:
             {
+                llove::Assert(arg.size() == 2, "illegal use of argument '{}': must be a value", pat);
                 auto vals = SplitString(arg.at(1), ',');
                 for (auto &val : vals)
-                    llove::Assert(
-                        snd.Filter.empty() || snd.Filter.contains(val),
-                        "illegal use of argument '{}': value '{}' does not match filter",
-                        pat,
-                        val);
+                    snd.Filter->Validate(pat, val);
                 m_Arrays.emplace(fst, std::move(vals));
                 break;
             }

@@ -10,10 +10,12 @@ llove::StructType::StructType(std::vector<Parameter> fields)
 
 bool llove::StructType::HasField(const std::string &name) const
 {
-    for (const auto &[_, field_name] : m_Fields)
-        if (field_name == name)
-            return true;
-    return false;
+    return std::ranges::any_of(
+        m_Fields,
+        [&name](auto &field)
+        {
+            return field.Name == name;
+        });
 }
 
 unsigned llove::StructType::GetFieldIndex(const std::string &name) const
@@ -52,18 +54,26 @@ unsigned llove::StructType::SizeBits(Builder &builder) const
     return size;
 }
 
-llvm::StructType *llove::StructType::Gen(Builder &builder) const
+llvm::StructType *llove::StructType::Gen(Builder &builder)
 {
+    if (m_IRType)
+        return llvm::dyn_cast<llvm::StructType>(m_IRType);
+
     std::vector<llvm::Type *> fields;
     for (auto &[info, name] : m_Fields)
         fields.emplace_back(info.GenType(builder));
 
     // TODO: packed struct
-    return builder.GetStructType(fields, true);
+    const auto type = builder.GetStructType(fields, true);
+    m_IRType = type;
+    return type;
 }
 
-llvm::DIType *llove::StructType::GenDbg(Builder &builder) const
+llvm::DIType *llove::StructType::GenDbg(Builder &builder)
 {
+    if (m_DIType)
+        return m_DIType;
+
     std::vector<llvm::Metadata *> fields;
 
     auto offset = 0u;
@@ -74,7 +84,7 @@ llvm::DIType *llove::StructType::GenDbg(Builder &builder) const
         offset += field_size;
     }
 
-    return builder.GetDbgStructType(fields, offset);
+    return m_DIType = builder.GetDbgStructType(fields, offset);
 }
 
 llove::TypePtr llove::StructType::Reflect(Builder &builder) const

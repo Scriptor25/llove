@@ -20,22 +20,12 @@ namespace cli
         explicit Table(std::ostream &stream, unsigned columns);
         ~Table();
 
-        template<typename T>
-        Table &operator<<(const T &cell)
-        {
-            m_Cells.emplace_back(cell);
-            return *this;
-        }
-
-        template<typename T>
-        Table &operator<<(T &&cell)
-        {
-            m_Cells.emplace_back(cell);
-            return *this;
-        }
+        Table &operator<<(const std::string &cell);
+        Table &operator<<(std::string &&cell);
+        Table &operator<<(const char *cell);
 
     protected:
-        void PrintBorder(const std::vector<unsigned> &widths) const;
+        void PrintBorder(const std::vector<unsigned> &widths, std::string &&begin, std::string &&cross, std::string &&end) const;
         void PrintData(const std::vector<unsigned> &widths, unsigned height, unsigned index) const;
         static std::pair<std::string, unsigned> TrimLine(std::string line, unsigned offset, unsigned max_width);
 

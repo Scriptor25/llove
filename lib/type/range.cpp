@@ -27,16 +27,24 @@ unsigned llove::RangeType::SizeBits(Builder &builder) const
     return 2 * m_Entry->SizeBits(builder);
 }
 
-llvm::StructType *llove::RangeType::Gen(Builder &builder) const
+llvm::StructType *llove::RangeType::Gen(Builder &builder)
 {
+    if (m_IRType)
+        return llvm::dyn_cast<llvm::StructType>(m_IRType);
+
     const auto entry = m_Entry->Gen(builder);
-    return builder.GetStructType({ entry, entry }, true);
+    const auto type = builder.GetStructType({ entry, entry }, true);
+    m_IRType = type;
+    return type;
 }
 
-llvm::DIType *llove::RangeType::GenDbg(Builder &builder) const
+llvm::DIType *llove::RangeType::GenDbg(Builder &builder)
 {
+    if (m_DIType)
+        return m_DIType;
+
     const auto entry = m_Entry->GenDbg(builder);
-    return builder.GetDbgStructType({ entry, entry }, SizeBits(builder));
+    return m_DIType = builder.GetDbgStructType({ entry, entry }, SizeBits(builder));
 }
 
 llove::TypePtr llove::RangeType::Reflect(Builder &builder) const

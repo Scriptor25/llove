@@ -64,38 +64,52 @@ unsigned llove::FunctionType::SizeBits(Builder &builder) const
     return 64;
 }
 
-llvm::PointerType *llove::FunctionType::Gen(Builder &builder) const
+llvm::PointerType *llove::FunctionType::Gen(Builder &builder)
 {
+    if (m_IRType)
+        return llvm::dyn_cast<llvm::PointerType>(m_IRType);
+
     const auto function = GenFunction(builder);
-    return builder.GetPointerType(function);
+    const auto type = builder.GetPointerType(function);
+    m_IRType = type;
+    return type;
 }
 
-llvm::DIType *llove::FunctionType::GenDbg(Builder &builder) const
+llvm::DIType *llove::FunctionType::GenDbg(Builder &builder)
 {
+    if (m_DIType)
+        return m_DIType;
+
     const auto function = GenDbgFunction(builder);
-    return builder.GetDbgPointerType(function);
+    return m_DIType = builder.GetDbgPointerType(function);
 }
 
-llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder) const
+llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder)
 {
+    if (m_IRFunction)
+        return m_IRFunction;
+
     std::vector<llvm::Type *> parameters;
     if (m_Self)
         parameters.emplace_back(m_Self.GenType(builder));
     for (auto &parameter : m_Parameters)
         parameters.emplace_back(parameter.GenType(builder));
 
-    return builder.GetFunctionType(m_Result.GenType(builder), parameters, m_VarArg);
+    return m_IRFunction = builder.GetFunctionType(m_Result.GenType(builder), parameters, m_VarArg);
 }
 
-llvm::DISubroutineType *llove::FunctionType::GenDbgFunction(Builder &builder) const
+llvm::DISubroutineType *llove::FunctionType::GenDbgFunction(Builder &builder)
 {
+    if (m_DIFunction)
+        return m_DIFunction;
+
     std::vector<llvm::Metadata *> parameters;
     for (auto &parameter : m_Parameters)
         parameters.emplace_back(parameter.GenDbgType(builder));
 
     const auto result = m_Result.GenDbgType(builder);
 
-    return builder.GetDbgFunctionType(parameters, result);
+    return m_DIFunction = builder.GetDbgFunctionType(parameters, result);
 }
 
 llove::TypePtr llove::FunctionType::Reflect(Builder &builder) const

@@ -29,26 +29,51 @@ cli::Table::~Table()
         height = std::max<unsigned>(height, cell_height);
     }
 
-    PrintBorder(widths);
+    PrintBorder(widths, "┌", "┬", "┐");
     for (unsigned i = 0; i < m_Cells.size(); i += m_Columns)
     {
+        if (i)
+            PrintBorder(widths, "├", "┼", "┤");
         PrintData(widths, heights.at(i / m_Columns), i);
-        PrintBorder(widths);
     }
+    PrintBorder(widths, "└", "┴", "┘");
 }
 
-void cli::Table::PrintBorder(const std::vector<unsigned> &widths) const
+cli::Table &cli::Table::operator<<(const std::string &cell)
+{
+    m_Cells.emplace_back(cell);
+    return *this;
+}
+
+cli::Table &cli::Table::operator<<(std::string &&cell)
+{
+    m_Cells.emplace_back(cell);
+    return *this;
+}
+
+cli::Table &cli::Table::operator<<(const char *cell)
+{
+    m_Cells.emplace_back(cell);
+    return *this;
+}
+
+void cli::Table::PrintBorder(
+    const std::vector<unsigned> &widths,
+    std::string &&begin,
+    std::string &&cross,
+    std::string &&end) const
 {
     if (PRINT_BORDER)
     {
-        m_Stream << '+';
+        m_Stream << begin;
         for (unsigned i = 0; i < m_Columns; ++i)
         {
+            if (i)
+                m_Stream << cross;
             for (unsigned j = 0; j < widths.at(i) + 2; ++j)
-                m_Stream << '-';
-            m_Stream << '+';
+                m_Stream << "─";
         }
-        m_Stream << std::endl;
+        m_Stream << end << std::endl;
     }
 }
 
@@ -60,7 +85,7 @@ void cli::Table::PrintData(const std::vector<unsigned> &widths, const unsigned h
     {
         if (PRINT_BORDER)
         {
-            m_Stream << '|';
+            m_Stream << "│";
         }
         for (unsigned j = 0; j < m_Columns; ++j)
         {
@@ -86,7 +111,7 @@ void cli::Table::PrintData(const std::vector<unsigned> &widths, const unsigned h
                 m_Stream << ' ';
             if (PRINT_BORDER)
             {
-                m_Stream << '|';
+                m_Stream << "│";
             }
             else
             {

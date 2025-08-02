@@ -129,78 +129,62 @@ static void print_help(const std::map<std::string, cli::OptionTemplate> &templat
     table << "PATTERN" << "FILTER" << "DESCRIPTION";
 
     for (auto &[
-             pattern_set,
+             pattern,
              type,
-             filter_set,
+             filter,
              description
          ] : templates | std::views::values)
     {
-        std::string pattern;
-        for (auto p = pattern_set.begin(); p != pattern_set.end(); ++p)
+        std::string pattern_str;
+        for (auto p = pattern.begin(); p != pattern.end(); ++p)
         {
-            if (p != pattern_set.begin())
-                pattern += ", ";
-            pattern += *p;
+            if (p != pattern.begin())
+                pattern_str += ", ";
+            pattern_str += *p;
         }
-        table << pattern;
+        table << pattern_str;
 
-        if (type == cli::OptionTemplateType_Flag)
+        std::string filter_str;
+        if (type != cli::OptionTemplateType_Flag)
         {
-            table << "(FLAG)";
-        }
-        else
-        {
-            std::string filter;
-            if (filter_set.empty())
-                filter += "value";
-            else
-            {
-                filter += '[';
-                for (auto f = filter_set.begin(); f != filter_set.end(); ++f)
-                {
-                    if (f != filter_set.begin())
-                        filter += '|';
-                    filter += '"' + *f + '"';
-                }
-                filter += ']';
-            }
+            filter->Stringify(filter_str);
             if (type == cli::OptionTemplateType_Array)
-                filter += ",...";
-            table << filter;
+                filter_str += ",...";
         }
+        table << filter_str;
 
         table << description;
     }
 }
 
-static const std::map<std::string_view, llvm::CodeGenFileType> CODE_GEN_FILE_TYPE
-{
-    { "asm", llvm::CodeGenFileType::AssemblyFile },
-    { "obj", llvm::CodeGenFileType::ObjectFile },
-};
-
-static const std::map<std::string_view, llvm::Reloc::Model> RELOC_MODEL
-{
-    { "static", llvm::Reloc::Static },
-    { "pic", llvm::Reloc::PIC_ },
-    { "dynamic-no-pic", llvm::Reloc::DynamicNoPIC },
-    { "ropi", llvm::Reloc::ROPI },
-    { "rwpi", llvm::Reloc::RWPI },
-    { "ropi-rwpi", llvm::Reloc::ROPI_RWPI },
-};
-
-static const std::map<std::string_view, llvm::OptimizationLevel> OPTIMIZATION_LEVEL
-{
-    { "0", llvm::OptimizationLevel::O0 },
-    { "1", llvm::OptimizationLevel::O1 },
-    { "2", llvm::OptimizationLevel::O2 },
-    { "3", llvm::OptimizationLevel::O3 },
-    { "s", llvm::OptimizationLevel::Os },
-    { "z", llvm::OptimizationLevel::Oz },
-};
-
 int main(const int argc, const char *const *argv)
 {
+    static const std::map<std::string_view, llvm::CodeGenFileType> CODE_GEN_FILE_TYPE
+    {
+        { "asm", llvm::CodeGenFileType::AssemblyFile },
+        { "obj", llvm::CodeGenFileType::ObjectFile },
+    };
+
+    static const std::map<std::string_view, llvm::Reloc::Model> RELOC_MODEL
+    {
+        { "static", llvm::Reloc::Static },
+        { "pic", llvm::Reloc::PIC_ },
+        { "dynamic-no-pic", llvm::Reloc::DynamicNoPIC },
+        { "ropi", llvm::Reloc::ROPI },
+        { "rwpi", llvm::Reloc::RWPI },
+        { "ropi-rwpi", llvm::Reloc::ROPI_RWPI },
+    };
+
+    static const std::map<std::string_view, llvm::OptimizationLevel> OPTIMIZATION_LEVEL
+    {
+        { "0", llvm::OptimizationLevel::O0 },
+        { "1", llvm::OptimizationLevel::O1 },
+        { "2", llvm::OptimizationLevel::O2 },
+        { "3", llvm::OptimizationLevel::O3 },
+        { "s", llvm::OptimizationLevel::Os },
+        { "z", llvm::OptimizationLevel::Oz },
+    };
+
     if (argc == 1)
     {
         std::cerr << "no arguments. use '--help', '-h', '-?' or '?' for help." << std::endl;
@@ -236,40 +220,12 @@ int main(const int argc, const char *const *argv)
     llove::Builder builder(types, arguments.filename());
     llove::Parser parser(types, builder, stream);
 
-    auto print_stream = std::unique_ptr<std::ostream>(&std::cerr);
-
-    std::string print_output;
-    auto print_file = arguments.value("print-output", print_output)
-                      && print_output != "stdout"
-                      && print_output != "stderr";
-    if (print_file)
-        print_stream = std::make_unique<std::ofstream>(print_output);
-
-    auto print_llove = false;
-    auto print_llvm = false;
-
-    if (std::vector<std::string> print; arguments.array("print", print))
-    {
-        std::set print_set(print.begin(), print.end());
-        print_llove = print_set.contains("llove");
-        print_llvm = print_set.contains("llvm");
-    }
-
-    while (parser.Ok())
-        if (auto ptr = parser.Parse())
-        {
-            if (print_llove)
-                *print_stream << ptr << std::endl;
-            ptr->Gen(builder);
-        }
-
-    if (!print_file)
-        print_stream.release();
-
     llove::SealInfo seal_info
     {
+        .Print = false,
+        .PrintStream = &std::cerr,
+        .OutputStream = &std::cout,
         .Format = llvm::CodeGenFileType::ObjectFile,
-        .Filename = "stdout",
         .Triple = llvm::sys::getDefaultTargetTriple(),
         .CPU = "generic",
         .Features = {},
@@ -278,10 +234,39 @@ int main(const int argc, const char *const *argv)
         .Level = llvm::OptimizationLevel::O2,
     };
 
+    std::string print_filename, output_filename;
+    auto print_file = arguments.value("print-output", print_filename)
+                      && print_filename != "stdout"
+                      && print_filename != "stderr";
+    auto output_file = arguments.value("output", output_filename)
+                       && output_filename != "stdout"
+                       && output_filename != "stderr";
+
+    if (print_file)
+        seal_info.PrintStream = new std::ofstream(print_filename);
+    if (output_file)
+        seal_info.OutputStream = new std::ofstream(output_filename);
+
+    auto print_llove = false;
+
+    if (std::vector<std::string> print; arguments.array("print", print))
+    {
+        std::set print_set(print.begin(), print.end());
+        print_llove = print_set.contains("llove");
+        seal_info.Print = print_set.contains("llvm");
+    }
+
+    while (parser.Ok())
+        if (auto ptr = parser.Parse())
+        {
+            if (print_llove)
+                *seal_info.PrintStream << ptr << std::endl;
+            ptr->Gen(builder);
+        }
+
     if (std::string format; arguments.value("format", format))
         seal_info.Format = CODE_GEN_FILE_TYPE.at(format);
 
-    (void) arguments.value("output", seal_info.Filename);
     (void) arguments.value("triple", seal_info.Triple);
     (void) arguments.value("cpu", seal_info.CPU);
     (void) arguments.array("features", seal_info.Features);
@@ -294,6 +279,10 @@ int main(const int argc, const char *const *argv)
 
     builder.Seal(seal_info);
 
-    stream.close();
+    if (print_file)
+        delete seal_info.PrintStream;
+    if (output_file)
+        delete seal_info.OutputStream;
+
     return 0;
 }

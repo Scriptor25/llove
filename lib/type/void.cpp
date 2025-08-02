@@ -17,14 +17,20 @@ unsigned llove::VoidType::SizeBits(Builder &builder) const
     return 0;
 }
 
-llvm::Type *llove::VoidType::Gen(Builder &builder) const
+llvm::Type *llove::VoidType::Gen(Builder &builder)
 {
-    return builder.GetVoidType();
+    if (m_IRType)
+        return m_IRType;
+
+    return m_IRType = builder.GetVoidType();
 }
 
-llvm::DIType *llove::VoidType::GenDbg(Builder &builder) const
+llvm::DIType *llove::VoidType::GenDbg(Builder &builder)
 {
-    return builder.GetDbgVoidType();
+    if (m_DIType)
+        return m_DIType;
+
+    return m_DIType = builder.GetDbgVoidType();
 }
 
 llove::TypePtr llove::VoidType::Reflect(Builder &builder) const

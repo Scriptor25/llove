@@ -50,8 +50,10 @@ namespace llove
 
     struct SealInfo final
     {
+        bool Print;
+        std::ostream *PrintStream;
+        std::ostream *OutputStream;
         llvm::CodeGenFileType Format;
-        std::string Filename;
         std::string Triple;
         std::string CPU;
         std::vector<std::string> Features;

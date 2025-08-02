@@ -1,4 +1,5 @@
 #include <cli/templates.hpp>
+#include <llove/error.hpp>
 
 bool YAML::convert<cli::OptionTemplate>::decode(const Node &node, cli::OptionTemplate &option)
 {
@@ -8,8 +9,12 @@ bool YAML::convert<cli::OptionTemplate>::decode(const Node &node, cli::OptionTem
     option.Pattern = node["pattern"].as<std::set<std::string>>();
     option.Type = node["type"].as<cli::OptionTemplateType>();
 
-    if (node["filter"].IsDefined())
-        option.Filter = node["filter"].as<std::set<std::string>>();
+    if (option.Type != cli::OptionTemplateType_Flag)
+    {
+        if (!node["filter"].IsDefined())
+            return false;
+        option.Filter = node["filter"].as<std::unique_ptr<cli::FilterTemplate>>();
+    }
 
     if (node["description"].IsDefined())
         option.Description = node["description"].as<std::string>();
@@ -32,4 +37,97 @@ bool YAML::convert<cli::OptionTemplateType>::decode(const Node &node, cli::Optio
 
     type = map.at(key);
     return true;
+}
+
+bool YAML::convert<std::unique_ptr<cli::FilterTemplate>>::decode(
+    const Node &node,
+    std::unique_ptr<cli::FilterTemplate> &ptr)
+{
+    if (node.IsSequence())
+    {
+        auto value_ptr = std::make_unique<cli::FilterTemplateValue>();
+        value_ptr->Type = cli::FilterTemplateType_Value;
+        value_ptr->Values = node.as<std::set<std::string>>();
+
+        ptr = std::move(value_ptr);
+        return true;
+    }
+
+    const auto value = node.as<std::string>();
+
+    if (value == "integer")
+    {
+        ptr = std::make_unique<cli::FilterTemplate>();
+        ptr->Type = cli::FilterTemplateType_Integer;
+        return true;
+    }
+
+    if (value == "string")
+    {
+        ptr = std::make_unique<cli::FilterTemplate>();
+        ptr->Type = cli::FilterTemplateType_String;
+        return true;
+    }
+
+    return false;
+}
+
+void cli::FilterTemplate::Validate(const std::string &pat, const std::string &val) const
+{
+    switch (Type)
+    {
+    case FilterTemplateType_Integer:
+        llove::Assert(
+            std::ranges::all_of(
+                val,
+                [](auto c)
+                {
+                    return std::isdigit(c);
+                }),
+            "illegal use of argument '{}': value '{}' does not match filter 'integer'",
+            pat,
+            val);
+        break;
+    case FilterTemplateType_String:
+        break;
+    default:
+        llove::Error("undefined filter type");
+    }
+}
+
+void cli::FilterTemplate::Stringify(std::string &filter_str) const
+{
+    switch (Type)
+    {
+    case FilterTemplateType_Integer:
+        filter_str = "integer";
+        break;
+    case FilterTemplateType_String:
+        filter_str = "string";
+        break;
+    default:
+        filter_str = "undefined";
+        break;
+    }
+}
+
+void cli::FilterTemplateValue::Validate(const std::string &pat, const std::string &val) const
+{
+    llove::Assert(
+        Values.empty() || Values.contains(val),
+        "illegal use of argument '{}': value '{}' does not match filter '[...]'",
+        pat,
+        val);
+}
+
+void cli::FilterTemplateValue::Stringify(std::string &filter_str) const
+{
+    filter_str += '[';
+    for (auto value = Values.begin(); value != Values.end(); ++value)
+    {
+        if (value != Values.begin())
+            filter_str += '|';
+        filter_str += '"' + *value + '"';
+    }
+    filter_str += ']';
 }

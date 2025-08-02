@@ -33,14 +33,22 @@ unsigned llove::ArrayType::SizeBits(Builder &builder) const
     return m_Size * m_Base->SizeBits(builder);
 }
 
-llvm::ArrayType *llove::ArrayType::Gen(Builder &builder) const
+llvm::ArrayType *llove::ArrayType::Gen(Builder &builder)
 {
-    return builder.GetArrayType(m_Base->Gen(builder), m_Size);
+    if (m_IRType)
+        return llvm::dyn_cast<llvm::ArrayType>(m_IRType);
+
+    const auto type = builder.GetArrayType(m_Base->Gen(builder), m_Size);
+    m_IRType = type;
+    return type;
 }
 
-llvm::DIType *llove::ArrayType::GenDbg(Builder &builder) const
+llvm::DIType *llove::ArrayType::GenDbg(Builder &builder)
 {
-    return builder.GetDbgArrayType(m_Base->GenDbg(builder), m_Size);
+    if (m_DIType)
+        return m_DIType;
+
+    return m_DIType = builder.GetDbgArrayType(m_Base->GenDbg(builder), m_Size);
 }
 
 llove::TypePtr llove::ArrayType::Reflect(Builder &builder) const
