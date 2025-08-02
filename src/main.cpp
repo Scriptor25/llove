@@ -109,6 +109,67 @@
 // --mc-option-emit-compact-unwind-non-canonical
 // --mc-option-ppc-use-full-register-names
 
+class stream_ref
+{
+public:
+    stream_ref()
+        : m_Stream(nullptr),
+          m_Cleanup(false)
+    {
+    }
+
+    stream_ref(std::ostream *stream, const bool cleanup)
+        : m_Stream(stream),
+          m_Cleanup(cleanup)
+    {
+    }
+
+    stream_ref(const stream_ref &) = delete;
+
+    stream_ref(stream_ref &&other) noexcept
+    {
+        m_Stream = other.m_Stream;
+        m_Cleanup = other.m_Cleanup;
+
+        other.m_Stream = nullptr;
+        other.m_Cleanup = false;
+    }
+
+    stream_ref &operator=(const stream_ref &) = delete;
+
+    stream_ref &operator=(stream_ref &&other) noexcept
+    {
+        std::swap(m_Stream, other.m_Stream);
+        std::swap(m_Cleanup, other.m_Cleanup);
+        return *this;
+    }
+
+    ~stream_ref()
+    {
+        if (m_Cleanup)
+            delete m_Stream;
+    }
+
+    std::ostream &operator*() const
+    {
+        return *m_Stream;
+    }
+
+    std::ostream *operator&() const
+    {
+        return m_Stream;
+    }
+
+    std::ostream *operator->() const
+    {
+        return m_Stream;
+    }
+
+private:
+    std::ostream *m_Stream;
+    bool m_Cleanup;
+};
+
 static void print_version()
 {
     std::cerr << "llove v0.0.0" << std::endl;
@@ -184,17 +245,73 @@ int main(const int argc, const char *const *argv) try
 
     std::ifstream stream(arguments.filename());
     if (!stream.is_open())
+    {
+        std::cerr << "failed to open file '" << arguments.filename() << "'" << std::endl;
         return 1;
+    }
 
     llove::Context types;
     llove::Builder builder(types, arguments.filename());
     llove::Parser parser(types, builder, stream, arguments.filename());
 
+    std::string print_filename, output_filename;
+    auto has_print_filename = arguments.value("print-output", print_filename);
+    auto has_output_filename = arguments.value("output", output_filename);
+
+    stream_ref print_stream_ref;
+    if (print_filename == "stdout")
+        print_stream_ref = stream_ref(&std::cout, false);
+    else if (!has_print_filename || print_filename == "stderr")
+        print_stream_ref = stream_ref(&std::cerr, false);
+    else
+    {
+        print_stream_ref = stream_ref(new std::ofstream(print_filename), true);
+        if (print_stream_ref->fail())
+        {
+            std::cerr << "failed to open file '" << print_filename << "'" << std::endl;
+            return 1;
+        }
+    }
+
+    stream_ref output_stream_ref;
+    if (!has_output_filename || output_filename == "stdout")
+        output_stream_ref = stream_ref(&std::cout, false);
+    else if (output_filename == "stderr")
+        output_stream_ref = stream_ref(&std::cerr, false);
+    else
+    {
+        output_stream_ref = stream_ref(
+            new std::ofstream(output_filename, std::ios_base::out | std::ios_base::binary),
+            true);
+        if (output_stream_ref->fail())
+        {
+            std::cerr << "failed to open file '" << output_filename << "'" << std::endl;
+            return 1;
+        }
+    }
+
+    auto print_llove = false, print_llvm = false;
+
+    if (std::vector<std::string> print; arguments.array("print", print))
+    {
+        std::set print_set(print.begin(), print.end());
+        print_llove = print_set.contains("llove");
+        print_llvm = print_set.contains("llvm");
+    }
+
+    while (parser.Ok())
+        if (auto ptr = parser.Parse())
+        {
+            if (print_llove)
+                *print_stream_ref << ptr << std::endl;
+            ptr->Gen(builder);
+        }
+
     llove::SealInfo seal_info
     {
-        .Print = false,
-        .PrintStream = nullptr,
-        .OutputStream = nullptr,
+        .Print = print_llvm,
+        .PrintStream = &print_stream_ref,
+        .OutputStream = &output_stream_ref,
         .Format = llvm::CodeGenFileType::ObjectFile,
         .Triple = llvm::sys::getDefaultTargetTriple(),
         .CPU = "generic",
@@ -203,41 +320,6 @@ int main(const int argc, const char *const *argv) try
         .Relocation = llvm::Reloc::PIC_,
         .Level = llvm::OptimizationLevel::O0,
     };
-
-    std::string print_filename, output_filename;
-    auto has_print_filename = arguments.value("print-output", print_filename);
-    auto has_output_filename = arguments.value("output", output_filename);
-
-    if (print_filename == "stdout")
-        seal_info.PrintStream = &std::cout;
-    else if (!has_print_filename || print_filename == "stderr")
-        seal_info.PrintStream = &std::cerr;
-    else
-        seal_info.PrintStream = new std::ofstream(print_filename);
-
-    if (!has_output_filename || output_filename == "stdout")
-        seal_info.OutputStream = &std::cout;
-    else if (output_filename == "stderr")
-        seal_info.OutputStream = &std::cerr;
-    else
-        seal_info.OutputStream = new std::ofstream(output_filename);
-
-    auto print_llove = false;
-
-    if (std::vector<std::string> print; arguments.array("print", print))
-    {
-        std::set print_set(print.begin(), print.end());
-        print_llove = print_set.contains("llove");
-        seal_info.Print = print_set.contains("llvm");
-    }
-
-    while (parser.Ok())
-        if (auto ptr = parser.Parse())
-        {
-            if (print_llove)
-                *seal_info.PrintStream << ptr << std::endl;
-            ptr->Gen(builder);
-        }
 
     if (std::string value; arguments.value("format", value))
     {
@@ -511,14 +593,9 @@ int main(const int argc, const char *const *argv) try
 
     builder.Seal(seal_info);
 
-    if (has_print_filename && print_filename != "stdout" && print_filename != "stderr")
-        delete seal_info.PrintStream;
-    if (has_output_filename && output_filename != "stdout" && output_filename != "stderr")
-        delete seal_info.OutputStream;
-
     return 0;
 }
-catch (const llove::ErrorStack *cause)
+catch (const std::shared_ptr<llove::ErrorStack> &cause)
 {
     cause->Print(std::cerr);
     return 1;

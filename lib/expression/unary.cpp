@@ -36,9 +36,9 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
         operand->AsField(),
         m_Suffix ? m_Operator : std::string{});
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::UnaryExpression::Reflect(Builder &builder) const try
@@ -49,9 +49,9 @@ llove::StatementPtr llove::UnaryExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<UnaryExpression>(m_Loc, m_Operator, std::move(operand), m_Suffix);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::UnaryExpression::Print(std::ostream &stream) const

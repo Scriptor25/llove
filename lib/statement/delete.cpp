@@ -42,9 +42,9 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
         builder.CreateCall(reference, {}, std::move(value));
     }
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::DeleteStatement::Reflect(Builder &builder) const try
@@ -55,9 +55,9 @@ llove::StatementPtr llove::DeleteStatement::Reflect(Builder &builder) const try
 
     return std::make_unique<DeleteStatement>(m_Loc, std::move(value));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::DeleteStatement::Print(std::ostream &stream) const

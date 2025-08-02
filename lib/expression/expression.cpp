@@ -36,9 +36,9 @@ void llove::Expression::Gen(Builder &builder) const try
         builder.PushDestructor(pointer, reference);
     }
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const try
@@ -64,7 +64,7 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const try
         }
     };
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }

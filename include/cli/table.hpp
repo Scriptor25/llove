@@ -25,7 +25,11 @@ namespace cli
         Table &operator<<(const char *cell);
 
     protected:
-        void PrintBorder(const std::vector<unsigned> &widths, std::string &&begin, std::string &&cross, std::string &&end) const;
+        void PrintBorder(
+            const std::vector<unsigned> &widths,
+            std::string &&begin,
+            std::string &&cross,
+            std::string &&end) const;
         void PrintData(const std::vector<unsigned> &widths, unsigned height, unsigned index) const;
         static std::pair<std::string, unsigned> TrimLine(std::string line, unsigned offset, unsigned max_width);
 

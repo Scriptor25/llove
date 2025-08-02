@@ -24,9 +24,9 @@ llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr ex
     const auto value = llvm::ConstantPointerNull::get(type->Gen(builder));
     return Value::CreateR(std::move(type), value);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::NullExpression::Reflect(Builder &builder) const try
@@ -37,9 +37,9 @@ llove::StatementPtr llove::NullExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<NullExpression>(m_Loc, std::move(type));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::NullExpression::Print(std::ostream &stream) const

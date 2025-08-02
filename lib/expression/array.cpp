@@ -38,9 +38,9 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr e
 
     return Value::CreateR(std::move(type), aggregate);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const try
@@ -55,9 +55,9 @@ llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<ArrayExpression>(m_Loc, std::move(values), std::move(type));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ArrayExpression::Print(std::ostream &stream) const

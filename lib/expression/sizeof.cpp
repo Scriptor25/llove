@@ -18,9 +18,9 @@ llove::ValuePtr llove::SizeofExpression::GenVal(Builder &builder, TypePtr expect
 
     return Value::CreateR(size_type, llvm::ConstantInt::get(size_type->Gen(builder), size >> 3));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::SizeofExpression::Reflect(Builder &builder) const try
@@ -31,9 +31,9 @@ llove::StatementPtr llove::SizeofExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<SizeofExpression>(m_Loc, std::move(type));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::SizeofExpression::Print(std::ostream &stream) const

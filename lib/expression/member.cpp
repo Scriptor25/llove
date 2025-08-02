@@ -72,9 +72,9 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
     return Value::CreateR(element.Type, result);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
@@ -84,9 +84,9 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
     auto value = m_Value->GenVal(builder, nullptr);
     return { .Candidates = builder.GetFunctions(m_Member, value->AsField()), .Self = std::move(value) };
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::MemberExpression::Reflect(Builder &builder) const try
@@ -97,9 +97,9 @@ llove::StatementPtr llove::MemberExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::MemberExpression::Print(std::ostream &stream) const

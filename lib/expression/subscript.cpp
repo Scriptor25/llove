@@ -28,9 +28,9 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
         Error("subscript on non-pointer and non-array value of type {}", value->GetType());
     }
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::SubscriptExpression::Reflect(Builder &builder) const try
@@ -45,9 +45,9 @@ llove::StatementPtr llove::SubscriptExpression::Reflect(Builder &builder) const 
 
     return std::make_unique<SubscriptExpression>(m_Loc, std::move(value), std::move(index));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::SubscriptExpression::Print(std::ostream &stream) const

@@ -1,7 +1,10 @@
 #include <ostream>
 #include <llove/error.hpp>
 
-llove::ErrorStack::ErrorStack(const ErrorStack *cause, std::optional<Location> loc, std::optional<std::string> message)
+llove::ErrorStack::ErrorStack(
+    const std::shared_ptr<ErrorStack> &cause,
+    std::optional<Location> loc,
+    std::optional<std::string> message)
     : m_Cause(cause),
       m_Loc(std::move(loc)),
       m_Message(std::move(message))

@@ -71,9 +71,9 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     const auto value = builder.CreateLoad(pointer, m_Type);
     return Value::CreateR(m_Type, value);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const try
@@ -92,9 +92,9 @@ llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<CreateExpression>(m_Loc, std::move(type), std::move(destination), std::move(arguments));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::CreateExpression::Print(std::ostream &stream) const

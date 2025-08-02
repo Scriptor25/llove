@@ -275,9 +275,9 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
 
     builder.SetInsertPoint(end_block);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const try
@@ -298,9 +298,9 @@ llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const try
         std::move(range),
         std::move(content));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ForEachStatement::Print(std::ostream &stream) const

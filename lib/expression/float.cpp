@@ -26,9 +26,9 @@ llove::ValuePtr llove::FloatExpression::GenVal(Builder &builder, const TypePtr e
     const auto value = llvm::ConstantFP::get(type->Gen(builder), m_Value);
     return Value::CreateR(std::move(type), value);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::FloatExpression::Reflect(Builder &builder) const try
@@ -39,9 +39,9 @@ llove::StatementPtr llove::FloatExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<FloatExpression>(m_Loc, m_Value, std::move(type));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::FloatExpression::Print(std::ostream &stream) const

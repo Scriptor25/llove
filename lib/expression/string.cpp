@@ -16,18 +16,18 @@ llove::ValuePtr llove::StringExpression::GenVal(Builder &builder, TypePtr expect
     const auto value = builder.CreateGlobalString(m_Value);
     return Value::CreateR(builder.GetTypes().GetPointer(builder.GetTypes().GetInteger(true, 8), false), value);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::StringExpression::Reflect(Builder &builder) const try
 {
     return std::make_unique<StringExpression>(m_Loc, m_Value);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::StringExpression::Print(std::ostream &stream) const

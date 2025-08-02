@@ -27,9 +27,9 @@ void llove::ScopeStatement::Gen(Builder &builder) const try
         ptr->Gen(builder);
     builder.PopFrame();
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::ScopeStatement::Reflect(Builder &builder) const try
@@ -40,9 +40,9 @@ llove::StatementPtr llove::ScopeStatement::Reflect(Builder &builder) const try
 
     return std::make_unique<ScopeStatement>(m_Loc, std::move(content));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ScopeStatement::Print(std::ostream &stream) const

@@ -27,9 +27,9 @@ llove::ValuePtr llove::IntegerExpression::GenVal(Builder &builder, const TypePtr
     const auto value = llvm::ConstantInt::get(type->Gen(builder), m_Value, type->IsSigned());
     return Value::CreateR(std::move(type), value);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::IntegerExpression::Reflect(Builder &builder) const try
@@ -40,9 +40,9 @@ llove::StatementPtr llove::IntegerExpression::Reflect(Builder &builder) const tr
 
     return std::make_unique<IntegerExpression>(m_Loc, m_Value, std::move(type));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::IntegerExpression::Print(std::ostream &stream) const

@@ -55,9 +55,9 @@ void llove::IfStatement::Gen(Builder &builder) const try
         builder.ClearInsertPoint();
     }
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const try
@@ -74,9 +74,9 @@ llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const try
 
     return std::make_unique<IfStatement>(m_Loc, std::move(condition), std::move(then), std::move(else_));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::IfStatement::Print(std::ostream &stream) const

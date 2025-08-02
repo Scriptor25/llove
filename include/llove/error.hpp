@@ -1,8 +1,10 @@
 #pragma once
 
 #include <format>
+#include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 #include <llove/location.hpp>
 
 namespace llove
@@ -10,12 +12,15 @@ namespace llove
     class ErrorStack final
     {
     public:
-        explicit ErrorStack(const ErrorStack *cause, std::optional<Location> loc, std::optional<std::string> message);
+        explicit ErrorStack(
+            const std::shared_ptr<ErrorStack> &cause,
+            std::optional<Location> loc,
+            std::optional<std::string> message);
 
         std::ostream &Print(std::ostream &stream) const;
 
     private:
-        const ErrorStack *m_Cause;
+        std::shared_ptr<ErrorStack> m_Cause;
         std::optional<Location> m_Loc;
         std::optional<std::string> m_Message;
     };
@@ -24,7 +29,7 @@ namespace llove
     [[noreturn]] void Error(std::string_view format, Args &&... args)
     {
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw new ErrorStack(nullptr, std::nullopt, message);
+        throw std::make_shared<ErrorStack>(nullptr, std::nullopt, message);
     }
 
     template<typename... Args>
@@ -34,14 +39,14 @@ namespace llove
             return;
 
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw new ErrorStack(nullptr, std::nullopt, message);
+        throw std::make_shared<ErrorStack>(nullptr, std::nullopt, message);
     }
 
     template<typename... Args>
     [[noreturn]] void Error(const Location &loc, std::string_view format, Args &&... args)
     {
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw new ErrorStack(nullptr, loc, message);
+        throw std::make_shared<ErrorStack>(nullptr, loc, message);
     }
 
     template<typename... Args>
@@ -51,21 +56,21 @@ namespace llove
             return;
 
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw new ErrorStack(nullptr, loc, message);
+        throw std::make_shared<ErrorStack>(nullptr, loc, message);
     }
 
     template<typename... Args>
-    [[noreturn]] void Error(const ErrorStack *cause, const Location &loc, std::string_view format, Args &&... args)
+    [[noreturn]] void Error(std::shared_ptr<ErrorStack> cause, Location loc, std::string_view format, Args &&... args)
     {
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw new ErrorStack(cause, loc, message);
+        throw std::make_shared<ErrorStack>(cause, loc, message);
     }
 
     template<typename... Args>
     void Assert(
         const bool condition,
-        const ErrorStack *cause,
-        const Location &loc,
+        std::shared_ptr<ErrorStack> cause,
+        Location loc,
         std::string_view format,
         Args &&... args)
     {
@@ -73,7 +78,7 @@ namespace llove
             return;
 
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw new ErrorStack(cause, loc, message);
+        throw std::make_shared<ErrorStack>(cause, loc, message);
     }
 }
 

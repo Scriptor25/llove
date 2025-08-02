@@ -32,9 +32,9 @@ void llove::YieldStatement::Gen(Builder &builder) const try
     builder.CallDestructors(mask, true);
     builder.CreateRet(result_value);
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::YieldStatement::Reflect(Builder &builder) const try
@@ -46,9 +46,9 @@ llove::StatementPtr llove::YieldStatement::Reflect(Builder &builder) const try
 
     return std::make_unique<YieldStatement>(m_Loc, std::move(value));
 }
-catch (const ErrorStack *cause)
+catch (const std::shared_ptr<ErrorStack> &cause)
 {
-    throw new ErrorStack(cause, m_Loc, std::nullopt);
+    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
 }
 
 std::ostream &llove::YieldStatement::Print(std::ostream &stream) const
