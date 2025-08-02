@@ -61,7 +61,7 @@ option-binutils-version:
   pattern: "--option-binutils-version"
   type: array
   filter: integer
-  description: "specify binutils version (major,minor)"
+  description: "specify binutils version <major,minor>"
 option-unsafe-fp-math:
   pattern: "--option-unsafe-fp-math"
   type: flag
