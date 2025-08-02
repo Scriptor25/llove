@@ -50,14 +50,22 @@ cli::Arguments::Arguments(const char *const *begin, const char *const *end)
                     val = *++i;
                 else
                     llove::Error("illegal use of argument '{}': must be a value", pat);
+
                 template_.Filter->Validate(pat, val);
                 m_Values.emplace(id, val);
                 break;
             }
             case OptionTemplateType_Array:
             {
-                llove::Assert(arg.size() == 2, "illegal use of argument '{}': must be a value", pat);
-                auto vals = SplitString(arg.at(1), ',');
+                std::string val_str;
+                if (arg.size() == 2)
+                    val_str = arg.at(1);
+                else if (arg.size() == 1)
+                    val_str = *++i;
+                else
+                    llove::Error("illegal use of argument '{}': must be an array", pat);
+
+                auto vals = SplitString(val_str, ',');
                 for (auto &val : vals)
                     template_.Filter->Validate(pat, val);
                 m_Arrays.emplace(id, std::move(vals));

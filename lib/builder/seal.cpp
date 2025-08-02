@@ -48,9 +48,6 @@ void llove::Builder::Seal(const SealInfo &info)
     std_ostream_adapter print_stream(*info.PrintStream);
     std_ostream_adapter output_stream(*info.OutputStream);
 
-    if (info.Print)
-        m_Module.print(print_stream, nullptr);
-
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();
@@ -88,7 +85,8 @@ void llove::Builder::Seal(const SealInfo &info)
     m_Module.setDataLayout(target_machine->createDataLayout());
     m_Module.setTargetTriple(target_triple);
 
-    m_Module.print(llvm::errs(), nullptr);
+    if (info.Print)
+        m_Module.print(print_stream, nullptr);
 
     // llvm::PassBuilder pb(target_machine);
     // auto mpm = pb.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);

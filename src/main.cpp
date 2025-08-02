@@ -9,6 +9,7 @@
 #include <llove/context.hpp>
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
+#include <llvm/MC/MCTargetOptions.h>
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/TargetParser/Host.h>
 
@@ -69,7 +70,7 @@
 // --option-xray-function-index
 // --option-debug-strict-dwarf
 // --option-hotpatch
-// --option-ppc-gen-scalar-mass-entities
+// --option-ppc-gen-scalar-mass-entries
 // --option-jmc-instrument
 // --option-enable-cfi-fixup
 // --option-mis-expect
@@ -152,34 +153,8 @@ static void print_help(const std::map<std::string, cli::OptionTemplate> &templat
     }
 }
 
-int main(const int argc, const char *const *argv)
+int main(const int argc, const char *const *argv) try
 {
-    static const std::map<std::string_view, llvm::CodeGenFileType> CODE_GEN_FILE_TYPE
-    {
-        { "asm", llvm::CodeGenFileType::AssemblyFile },
-        { "obj", llvm::CodeGenFileType::ObjectFile },
-    };
-
-    static const std::map<std::string_view, llvm::Reloc::Model> RELOC_MODEL
-    {
-        { "static", llvm::Reloc::Static },
-        { "pic", llvm::Reloc::PIC_ },
-        { "dynamic-no-pic", llvm::Reloc::DynamicNoPIC },
-        { "ropi", llvm::Reloc::ROPI },
-        { "rwpi", llvm::Reloc::RWPI },
-        { "ropi-rwpi", llvm::Reloc::ROPI_RWPI },
-    };
-
-    static const std::map<std::string_view, llvm::OptimizationLevel> OPTIMIZATION_LEVEL
-    {
-        { "0", llvm::OptimizationLevel::O0 },
-        { "1", llvm::OptimizationLevel::O1 },
-        { "2", llvm::OptimizationLevel::O2 },
-        { "3", llvm::OptimizationLevel::O3 },
-        { "s", llvm::OptimizationLevel::Os },
-        { "z", llvm::OptimizationLevel::Oz },
-    };
-
     if (argc == 1)
     {
         std::cerr << "no arguments. use '--help', '-h', '-?' or '?' for help." << std::endl;
@@ -218,8 +193,8 @@ int main(const int argc, const char *const *argv)
     llove::SealInfo seal_info
     {
         .Print = false,
-        .PrintStream = &std::cerr,
-        .OutputStream = &std::cout,
+        .PrintStream = nullptr,
+        .OutputStream = nullptr,
         .Format = llvm::CodeGenFileType::ObjectFile,
         .Triple = llvm::sys::getDefaultTargetTriple(),
         .CPU = "generic",
@@ -230,16 +205,21 @@ int main(const int argc, const char *const *argv)
     };
 
     std::string print_filename, output_filename;
-    auto print_file = arguments.value("print-output", print_filename)
-                      && print_filename != "stdout"
-                      && print_filename != "stderr";
-    auto output_file = arguments.value("output", output_filename)
-                       && output_filename != "stdout"
-                       && output_filename != "stderr";
+    auto has_print_filename = arguments.value("print-output", print_filename);
+    auto has_output_filename = arguments.value("output", output_filename);
 
-    if (print_file)
+    if (print_filename == "stdout")
+        seal_info.PrintStream = &std::cout;
+    else if (!has_print_filename || print_filename == "stderr")
+        seal_info.PrintStream = &std::cerr;
+    else
         seal_info.PrintStream = new std::ofstream(print_filename);
-    if (output_file)
+
+    if (!has_output_filename || output_filename == "stdout")
+        seal_info.OutputStream = &std::cout;
+    else if (output_filename == "stderr")
+        seal_info.OutputStream = &std::cerr;
+    else
         seal_info.OutputStream = new std::ofstream(output_filename);
 
     auto print_llove = false;
@@ -252,48 +232,294 @@ int main(const int argc, const char *const *argv)
     }
 
     while (parser.Ok())
-        try
+        if (auto ptr = parser.Parse())
         {
-            if (auto ptr = parser.Parse())
-            {
-                if (print_llove)
-                    *seal_info.PrintStream << ptr << std::endl;
-                ptr->Gen(builder);
-            }
-        }
-        catch (const llove::ErrorStack *cause)
-        {
-            cause->Print(std::cerr);
-            return 1;
+            if (print_llove)
+                *seal_info.PrintStream << ptr << std::endl;
+            ptr->Gen(builder);
         }
 
-    if (std::string format; arguments.value("format", format))
-        seal_info.Format = CODE_GEN_FILE_TYPE.at(format);
+    if (std::string value; arguments.value("format", value))
+    {
+        static const std::map<std::string_view, llvm::CodeGenFileType> VALUES
+        {
+            { "asm", llvm::CodeGenFileType::AssemblyFile },
+            { "obj", llvm::CodeGenFileType::ObjectFile },
+        };
+        seal_info.Format = VALUES.at(value);
+    }
 
     (void) arguments.value("triple", seal_info.Triple);
     (void) arguments.value("cpu", seal_info.CPU);
     (void) arguments.array("features", seal_info.Features);
 
-    if (std::string relocation; arguments.value("relocation", relocation))
-        seal_info.Relocation = RELOC_MODEL.at(relocation);
-
-    if (std::string level; arguments.value("level", level))
-        seal_info.Level = OPTIMIZATION_LEVEL.at(level);
-
-    try
+    if (std::string value; arguments.value("relocation", value))
     {
-        builder.Seal(seal_info);
-    }
-    catch (const llove::ErrorStack *cause)
-    {
-        cause->Print(std::cerr);
-        return 1;
+        static const std::map<std::string_view, llvm::Reloc::Model> VALUES
+        {
+            { "static", llvm::Reloc::Static },
+            { "pic", llvm::Reloc::PIC_ },
+            { "dynamic-no-pic", llvm::Reloc::DynamicNoPIC },
+            { "ropi", llvm::Reloc::ROPI },
+            { "rwpi", llvm::Reloc::RWPI },
+            { "ropi-rwpi", llvm::Reloc::ROPI_RWPI },
+        };
+        seal_info.Relocation = VALUES.at(value);
     }
 
-    if (print_file)
+    if (std::string value; arguments.value("level", value))
+    {
+        static const std::map<std::string_view, llvm::OptimizationLevel> VALUES
+        {
+            { "0", llvm::OptimizationLevel::O0 },
+            { "1", llvm::OptimizationLevel::O1 },
+            { "2", llvm::OptimizationLevel::O2 },
+            { "3", llvm::OptimizationLevel::O3 },
+            { "s", llvm::OptimizationLevel::Os },
+            { "z", llvm::OptimizationLevel::Oz },
+        };
+        seal_info.Level = VALUES.at(value);
+    }
+
+    if (std::vector<std::string> version; arguments.array("option-binutils-version", version))
+        seal_info.Options.BinutilsVersion = { std::stoi(version[0]), std::stoi(version[1]) };
+    seal_info.Options.UnsafeFPMath = arguments.flag("option-unsafe-fp-math");
+    seal_info.Options.NoInfsFPMath = arguments.flag("option-no-infs-fp-math");
+    seal_info.Options.NoNaNsFPMath = arguments.flag("option-no-nans-fp-math");
+    seal_info.Options.NoTrappingFPMath = arguments.flag("option-no-trapping-fp-math");
+    seal_info.Options.NoSignedZerosFPMath = arguments.flag("option-no-signed-zeros-fp-math");
+    seal_info.Options.ApproxFuncFPMath = arguments.flag("option-approx-func-fp-math");
+    seal_info.Options.EnableAIXExtendedAltivecABI = arguments.flag("option-enable-aix-extended-altivec-abi");
+    seal_info.Options.HonorSignDependentRoundingFPMathOption = arguments.flag(
+        "option-honor-sign-dependent-rounding-fp-math");
+    seal_info.Options.NoZerosInBSS = arguments.flag("option-no-zeros-in-bss");
+    seal_info.Options.GuaranteedTailCallOpt = arguments.flag("option-guaranteed-tail-call-opt");
+    seal_info.Options.StackSymbolOrdering = arguments.flag("option-stack-symbol-ordering");
+    seal_info.Options.EnableFastISel = arguments.flag("option-enable-fast-isel");
+    seal_info.Options.EnableGlobalISel = arguments.flag("option-enable-global-isel");
+    if (std::string value; arguments.value("option-global-isel-abort", value))
+    {
+        static const std::map<std::string_view, llvm::GlobalISelAbortMode> VALUES
+        {
+            { "enable", llvm::GlobalISelAbortMode::Enable },
+            { "disable", llvm::GlobalISelAbortMode::Disable },
+            { "disable-with-diag", llvm::GlobalISelAbortMode::DisableWithDiag },
+        };
+        seal_info.Options.GlobalISelAbort = VALUES.at(value);
+    }
+    if (std::string value; arguments.value("option-swift-async-frame-pointer", value))
+    {
+        static const std::map<std::string_view, llvm::SwiftAsyncFramePointerMode> VALUES
+        {
+            { "deployment-based", llvm::SwiftAsyncFramePointerMode::DeploymentBased },
+            { "always", llvm::SwiftAsyncFramePointerMode::Always },
+            { "never", llvm::SwiftAsyncFramePointerMode::Never },
+        };
+        seal_info.Options.SwiftAsyncFramePointer = VALUES.at(value);
+    }
+    seal_info.Options.UseInitArray = arguments.flag("option-use-init-array");
+    seal_info.Options.DisableIntegratedAS = arguments.flag("option-disable-integrated-as");
+    if (std::string value; arguments.value("option-compress-debug-sections", value))
+    {
+        static const std::map<std::string_view, llvm::DebugCompressionType> VALUES
+        {
+            { "none", llvm::DebugCompressionType::None },
+            { "zlib", llvm::DebugCompressionType::Zlib },
+            { "zstd", llvm::DebugCompressionType::Zstd },
+        };
+        seal_info.Options.CompressDebugSections = VALUES.at(value);
+    }
+    seal_info.Options.RelaxELFRelocations = arguments.flag("option-relax-elf-relocations");
+    seal_info.Options.FunctionSections = arguments.flag("option-function-sections");
+    seal_info.Options.DataSections = arguments.flag("option-data-sections");
+    seal_info.Options.IgnoreXCOFFVisibility = arguments.flag("option-ignore-xcoff-visibility");
+    seal_info.Options.XCOFFTracebackTable = arguments.flag("option-xcoff-traceback-table");
+    seal_info.Options.UniqueSectionNames = arguments.flag("option-unique-section-names");
+    seal_info.Options.UniqueBasicBlockSectionNames = arguments.flag("option-unique-basic-block-section-names");
+    seal_info.Options.TrapUnreachable = arguments.flag("option-trap-unreachable");
+    seal_info.Options.NoTrapAfterNoreturn = arguments.flag("option-no-trap-after-noreturn");
+    seal_info.Options.TLSSize = arguments.flag("option-tls-size");
+    seal_info.Options.EmulatedTLS = arguments.flag("option-emulated-tls");
+    seal_info.Options.EnableTLSDESC = arguments.flag("option-enable-tls-desc");
+    seal_info.Options.EnableIPRA = arguments.flag("option-enable-ipra");
+    seal_info.Options.EmitStackSizeSection = arguments.flag("option-emit-stack-size-section");
+    seal_info.Options.EnableMachineOutliner = arguments.flag("option-enable-machine-outliner");
+    seal_info.Options.EnableMachineFunctionSplitter = arguments.flag("option-enable-machine-function-splitter");
+    seal_info.Options.SupportsDefaultOutlining = arguments.flag("option-supports-default-outlining");
+    seal_info.Options.EmitAddrsig = arguments.flag("option-emit-addrsig");
+    if (std::string value; arguments.value("option-bb-sections", value))
+    {
+        static const std::map<std::string_view, llvm::BasicBlockSection> VALUES
+        {
+            { "all", llvm::BasicBlockSection::All },
+            { "list", llvm::BasicBlockSection::List },
+            { "labels", llvm::BasicBlockSection::Labels },
+            { "preset", llvm::BasicBlockSection::Preset },
+            { "none", llvm::BasicBlockSection::None },
+        };
+        seal_info.Options.BBSections = VALUES.at(value);
+    }
+    seal_info.Options.EmitCallSiteInfo = arguments.flag("option-emit-call-site-info");
+    seal_info.Options.SupportsDebugEntryValues = arguments.flag("option-supports-debug-entry-values");
+    seal_info.Options.EnableDebugEntryValues = arguments.flag("option-enable-debug-entry-values");
+    seal_info.Options.ValueTrackingVariableLocations = arguments.flag("option-value-tracking-variable-locations");
+    seal_info.Options.ForceDwarfFrameSection = arguments.flag("option-force-dwarf-frame-section");
+    seal_info.Options.XRayFunctionIndex = arguments.flag("option-xray-function-index");
+    seal_info.Options.DebugStrictDwarf = arguments.flag("option-debug-strict-dwarf");
+    seal_info.Options.Hotpatch = arguments.flag("option-hotpatch");
+    seal_info.Options.PPCGenScalarMASSEntries = arguments.flag("option-ppc-gen-scalar-mass-entries");
+    seal_info.Options.JMCInstrument = arguments.flag("option-jmc-instrument");
+    seal_info.Options.EnableCFIFixup = arguments.flag("option-enable-cfi-fixup");
+    seal_info.Options.MisExpect = arguments.flag("option-mis-expect");
+    seal_info.Options.XCOFFReadOnlyPointers = arguments.flag("option-xcoff-read-only-pointers");
+    (void) arguments.value("option-stack-usage-output", seal_info.Options.StackUsageOutput);
+    seal_info.Options.LoopAlignment = arguments.flag("option-loop-alignment");
+    if (std::string value; arguments.value("option-float-abi-type", value))
+    {
+        static const std::map<std::string_view, llvm::FloatABI::ABIType> VALUES
+        {
+            { "default", llvm::FloatABI::Default },
+            { "soft", llvm::FloatABI::Soft },
+            { "hard", llvm::FloatABI::Hard },
+        };
+        seal_info.Options.FloatABIType = VALUES.at(value);
+    }
+    if (std::string value; arguments.value("option-allow-fp-op-fusion", value))
+    {
+        static const std::map<std::string_view, llvm::FPOpFusion::FPOpFusionMode> VALUES
+        {
+            { "fast", llvm::FPOpFusion::Fast },
+            { "standard", llvm::FPOpFusion::Standard },
+            { "strict", llvm::FPOpFusion::Strict },
+        };
+        seal_info.Options.AllowFPOpFusion = VALUES.at(value);
+    }
+    if (std::string value; arguments.value("option-thread-model", value))
+    {
+        static const std::map<std::string_view, llvm::ThreadModel::Model> VALUES
+        {
+            { "posix", llvm::ThreadModel::POSIX },
+            { "single", llvm::ThreadModel::Single },
+        };
+        seal_info.Options.ThreadModel = VALUES.at(value);
+    }
+    if (std::string value; arguments.value("option-eabi-version", value))
+    {
+        static const std::map<std::string_view, llvm::EABI> VALUES
+        {
+            { "unknown", llvm::EABI::Unknown },
+            { "default", llvm::EABI::Default },
+            { "eabi4", llvm::EABI::EABI4 },
+            { "eabi5", llvm::EABI::EABI5 },
+            { "gnu", llvm::EABI::GNU },
+        };
+        seal_info.Options.EABIVersion = VALUES.at(value);
+    }
+    if (std::string value; arguments.value("option-debugger-tuning", value))
+    {
+        static const std::map<std::string_view, llvm::DebuggerKind> VALUES
+        {
+            { "default", llvm::DebuggerKind::Default },
+            { "gdb", llvm::DebuggerKind::GDB },
+            { "lldb", llvm::DebuggerKind::LLDB },
+            { "sce", llvm::DebuggerKind::SCE },
+            { "dbx", llvm::DebuggerKind::DBX },
+        };
+        seal_info.Options.DebuggerTuning = VALUES.at(value);
+    }
+    if (std::vector<std::string> values; arguments.array("option-fp-denormal-mode", values))
+    {
+        static const std::map<std::string_view, llvm::DenormalMode::DenormalModeKind> VALUES
+        {
+            { "ieee", llvm::DenormalMode::IEEE },
+            { "preserve-sign", llvm::DenormalMode::PreserveSign },
+            { "positive-zero", llvm::DenormalMode::PositiveZero },
+            { "dynamic", llvm::DenormalMode::Dynamic },
+        };
+        seal_info.Options.setFPDenormalMode({ VALUES.at(values[0]), VALUES.at(values[1]) });
+    }
+    if (std::vector<std::string> values; arguments.array("option-fp32-denormal-mode", values))
+    {
+        static const std::map<std::string_view, llvm::DenormalMode::DenormalModeKind> VALUES
+        {
+            { "ieee", llvm::DenormalMode::IEEE },
+            { "preserve-sign", llvm::DenormalMode::PreserveSign },
+            { "positive-zero", llvm::DenormalMode::PositiveZero },
+            { "dynamic", llvm::DenormalMode::Dynamic },
+        };
+        seal_info.Options.setFP32DenormalMode({ VALUES.at(values[0]), VALUES.at(values[1]) });
+    }
+    if (std::string value; arguments.value("option-exception-model", value))
+    {
+        static const std::map<std::string_view, llvm::ExceptionHandling> VALUES
+        {
+            { "none", llvm::ExceptionHandling::None },
+            { "dwarf-cfi", llvm::ExceptionHandling::DwarfCFI },
+            { "sjlj", llvm::ExceptionHandling::SjLj },
+            { "arm", llvm::ExceptionHandling::ARM },
+            { "win-eh", llvm::ExceptionHandling::WinEH },
+            { "wasm", llvm::ExceptionHandling::Wasm },
+            { "aix", llvm::ExceptionHandling::AIX },
+            { "zos", llvm::ExceptionHandling::ZOS },
+        };
+        seal_info.Options.ExceptionModel = VALUES.at(value);
+    }
+
+    seal_info.Options.MCOptions.MCRelaxAll = arguments.flag("mc-option-relax-all");
+    seal_info.Options.MCOptions.MCNoExecStack = arguments.flag("mc-option-no-exec-stack");
+    seal_info.Options.MCOptions.MCFatalWarnings = arguments.flag("mc-option-fatal-warnings");
+    seal_info.Options.MCOptions.MCNoWarn = arguments.flag("mc-option-no-warn");
+    seal_info.Options.MCOptions.MCNoDeprecatedWarn = arguments.flag("mc-option-no-deprecated-warn");
+    seal_info.Options.MCOptions.MCNoTypeCheck = arguments.flag("mc-option-no-type-check");
+    seal_info.Options.MCOptions.MCSaveTempLabels = arguments.flag("mc-option-save-temp-labels");
+    seal_info.Options.MCOptions.MCIncrementalLinkerCompatible = arguments.flag(
+        "mc-option-incremental-linker-compatible");
+    seal_info.Options.MCOptions.ShowMCEncoding = arguments.flag("mc-option-show-mc-encoding");
+    seal_info.Options.MCOptions.ShowMCInst = arguments.flag("mc-option-show-mc-inst");
+    seal_info.Options.MCOptions.AsmVerbose = arguments.flag("mc-option-asm-verbose");
+    seal_info.Options.MCOptions.PreserveAsmComments = arguments.flag("mc-option-preserve-asm-comments");
+    seal_info.Options.MCOptions.Dwarf64 = arguments.flag("mc-option-dwarf64");
+    if (std::string value; arguments.value("mc-option-emit-dwarf-unwind", value))
+    {
+        static const std::map<std::string_view, llvm::EmitDwarfUnwindType> VALUES
+        {
+            { "always", llvm::EmitDwarfUnwindType::Always },
+            { "no-compact-unwind", llvm::EmitDwarfUnwindType::NoCompactUnwind },
+            { "default", llvm::EmitDwarfUnwindType::Default },
+        };
+        seal_info.Options.MCOptions.EmitDwarfUnwind = VALUES.at(value);
+    }
+    if (std::string value; arguments.value("mc-option-dwarf-version", value))
+        seal_info.Options.MCOptions.DwarfVersion = std::stoi(value);
+    if (std::string value; arguments.value("mc-option-use-dwarf-directory", value))
+    {
+        static const std::map<std::string_view, llvm::MCTargetOptions::DwarfDirectory> VALUES
+        {
+            { "disable", llvm::MCTargetOptions::DisableDwarfDirectory },
+            { "enable", llvm::MCTargetOptions::EnableDwarfDirectory },
+            { "default", llvm::MCTargetOptions::DefaultDwarfDirectory },
+        };
+        seal_info.Options.MCOptions.MCUseDwarfDirectory = VALUES.at(value);
+    }
+    (void) arguments.value("mc-option-abi-name", seal_info.Options.MCOptions.ABIName);
+    (void) arguments.value("mc-option-assembly-language", seal_info.Options.MCOptions.AssemblyLanguage);
+    (void) arguments.value("mc-option-split-dwarf-file", seal_info.Options.MCOptions.SplitDwarfFile);
+    (void) arguments.value("mc-option-as-secure-log-file", seal_info.Options.MCOptions.AsSecureLogFile);
+    seal_info.Options.MCOptions.EmitCompactUnwindNonCanonical = arguments.flag(
+        "mc-option-emit-compact-unwind-non-canonical");
+    seal_info.Options.MCOptions.PPCUseFullRegisterNames = arguments.flag("mc-option-ppc-use-full-register-names");
+
+    builder.Seal(seal_info);
+
+    if (has_print_filename && print_filename != "stdout" && print_filename != "stderr")
         delete seal_info.PrintStream;
-    if (output_file)
+    if (has_output_filename && output_filename != "stdout" && output_filename != "stderr")
         delete seal_info.OutputStream;
 
     return 0;
+}
+catch (const llove::ErrorStack *cause)
+{
+    cause->Print(std::cerr);
+    return 1;
 }

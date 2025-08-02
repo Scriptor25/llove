@@ -212,7 +212,7 @@ option-emit-addrsig:
 option-bb-sections:
   pattern: "--option-bb-sections"
   type: value
-  filter: [ "all", "list", "labels", "present", "none" ]
+  filter: [ "all", "list", "labels", "preset", "none" ]
   description: ""
 option-emit-call-site-info:
   pattern: "--option-emit-call-site-info"
@@ -246,8 +246,8 @@ option-hotpatch:
   pattern: "--option-hotpatch"
   type: flag
   description: ""
-option-ppc-gen-scalar-mass-entities:
-  pattern: "--option-ppc-gen-scalar-mass-entities"
+option-ppc-gen-scalar-mass-entries:
+  pattern: "--option-ppc-gen-scalar-mass-entries"
   type: flag
   description: ""
 option-jmc-instrument:
@@ -268,7 +268,8 @@ option-xcoff-read-only-pointers:
   description: ""
 option-stack-usage-output:
   pattern: "--option-stack-usage-output"
-  type: flag
+  type: value
+  filter: string
   description: ""
 option-loop-alignment:
   pattern: "--option-loop-alignment"
@@ -301,14 +302,14 @@ option-debugger-tuning:
   description: ""
 option-fp-denormal-mode:
   pattern: "--option-fp-denormal-mode"
-  type: value
+  type: array
   filter: [ "ieee", "preserve-sign", "positive-zero", "dynamic" ]
-  description: ""
+  description: "<out,in>"
 option-fp32-denormal-mode:
   pattern: "--option-fp32-denormal-mode"
-  type: value
+  type: array
   filter: [ "ieee", "preserve-sign", "positive-zero", "dynamic" ]
-  description: ""
+  description: "<out,in>"
 option-exception-model:
   pattern: "--option-exception-model"
   type: value
@@ -372,9 +373,10 @@ mc-option-emit-dwarf-unwind:
   type: value
   filter: [ "always", "no-compact-unwind", "default" ]
   description: ""
-mc-option-dwarf-version=<version>:
-  pattern: "--mc-option-dwarf-version=<version>"
-  type: flag
+mc-option-dwarf-version:
+  pattern: "--mc-option-dwarf-version"
+  type: value
+  filter: integer
   description: ""
 mc-option-use-dwarf-directory:
   pattern: "--mc-option-use-dwarf-directory"
