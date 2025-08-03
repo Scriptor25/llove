@@ -1,6 +1,7 @@
 /.idea/
 /.vscode/
 /build/
+/build-min/
 
 *.o
 *.a
