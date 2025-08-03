@@ -50,6 +50,22 @@ jobs:
       with:
         submodules: recursive
 
+    # Linux: install via apt
+    - name: Install LLVM (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y llvm-18 clang-18
+
+    # Windows: download prebuilt LLVM
+    - name: Install LLVM (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/LLVM-18.1.8-win64.exe"
+        Invoke-WebRequest -Uri $url -OutFile llvm-installer.exe
+        Start-Process .\llvm-installer.exe -ArgumentList "/S" -NoNewWindow -Wait
+
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
@@ -74,3 +90,4 @@ jobs:
         cmake
         --build ${{ steps.strings.outputs.build-output-dir }}
         --config ${{ matrix.build_type }}
+        --parallel
