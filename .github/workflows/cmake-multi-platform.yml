@@ -50,21 +50,39 @@ jobs:
       with:
         submodules: recursive
 
-    # Linux: install via apt
     - name: Install LLVM (Linux)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get update
         sudo apt-get install -y llvm-18 clang-18
 
-    # Windows: download prebuilt LLVM
-    - name: Install LLVM (Windows)
+    - name: Cache LLVM (Windows)
       if: runner.os == 'Windows'
+      uses: actions/cache@v4
+      with:
+        path: llvm-installer.exe
+        key: llvm-18-${{ runner.os }}
+
+    - name: Download LLVM (Windows)
+      if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/LLVM-18.1.8-win64.exe"
         Invoke-WebRequest -Uri $url -OutFile llvm-installer.exe
+        
+    - name: Install LLVM (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
         Start-Process .\llvm-installer.exe -ArgumentList "/S" -NoNewWindow -Wait
+        echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+    - name: Verify LLVM (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        clang --version
+        llvm-config --version
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
