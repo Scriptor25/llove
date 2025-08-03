@@ -76,7 +76,8 @@ jobs:
       run: |
         7z x llvm.tar.xz
         7z x llvm.tar
-        echo "${{ github.workspace }}/clang+llvm-18.1.8-x86_64-pc-windows-msvc" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        Move-Item "clang+llvm-18.1.8-x86_64-pc-windows-msvc" $env:USERPROFILE\llvm
+        echo "$env:USERPROFILE\llvm\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Verify LLVM (Windows)
       if: runner.os == 'Windows'
