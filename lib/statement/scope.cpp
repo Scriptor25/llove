@@ -22,7 +22,7 @@ llove::ScopeStatement::ScopeStatement(Location loc, std::vector<StatementPtr> co
 void llove::ScopeStatement::Gen(Builder &builder) const try
 {
     builder.EmitLoc(m_Loc);
-    builder.PushFrame();
+    builder.PushFrame(m_Loc);
     for (auto &ptr : m_Content)
         ptr->Gen(builder);
     builder.PopFrame();

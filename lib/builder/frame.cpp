@@ -18,9 +18,10 @@ llove::ClassType::Ptr llove::Builder::GetClass() const
     return m_Class;
 }
 
-void llove::Builder::PushFrame()
+void llove::Builder::PushFrame(const std::optional<Location> &loc)
 {
     m_Stack.emplace_back();
+    m_DebugBuilder->PushFrame(loc);
 }
 
 void llove::Builder::PopFrame()
@@ -30,6 +31,7 @@ void llove::Builder::PopFrame()
     CallDestructors({}, false);
 
     m_Stack.pop_back();
+    m_DebugBuilder->PopFrame();
 }
 
 void llove::Builder::SetValue(const std::string &name, ValuePtr value)

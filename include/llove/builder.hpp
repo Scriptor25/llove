@@ -228,7 +228,7 @@ namespace llove
         Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
         Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
 
-        void PushFrame();
+        void PushFrame(const std::optional<Location> &loc = std::nullopt);
         void PopFrame();
 
         void SetValue(const std::string &name, ValuePtr value);

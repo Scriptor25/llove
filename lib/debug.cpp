@@ -38,9 +38,7 @@ llvm::DIScope *llove::DebugBuilder::GetScope() const
 {
     Assert(!m_Strip, "no debug information");
 
-    if (m_Stack.empty())
-        return m_CompileUnit;
-    return m_Stack.back();
+    return m_Scopes.empty() ? m_CompileUnit : m_Scopes.back();
 }
 
 llvm::DIType *llove::DebugBuilder::GetVoidType() const
@@ -85,7 +83,13 @@ llvm::DIType *llove::DebugBuilder::GetArrayType(llvm::DIType *base, const unsign
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createArrayType(size, 0, base, {});
+    const auto subrange = m_DIBuilder->getOrCreateSubrange(0, size);
+
+    return m_DIBuilder->createArrayType(
+        size,
+        0,
+        base,
+        m_DIBuilder->getOrCreateArray({ subrange }));
 }
 
 llvm::DIType *llove::DebugBuilder::GetStructType(const std::vector<llvm::Metadata *> &fields, const unsigned size) const
@@ -315,7 +319,8 @@ void llove::DebugBuilder::BeginFunction(
         loc.Row,
         llvm::DINode::FlagPrototyped,
         llvm::DISubprogram::SPFlagDefinition);
-    m_Stack.emplace_back(subprogram);
+    m_Subprograms.emplace_back(subprogram);
+    m_Scopes.emplace_back(subprogram);
 
     function->setSubprogram(subprogram);
 }
@@ -325,6 +330,26 @@ void llove::DebugBuilder::EndFunction()
     if (m_Strip)
         return;
 
-    m_DIBuilder->finalizeSubprogram(m_Stack.back());
-    m_Stack.pop_back();
+    m_DIBuilder->finalizeSubprogram(m_Subprograms.back());
+    m_Subprograms.pop_back();
+    m_Scopes.pop_back();
+}
+
+void llove::DebugBuilder::PushFrame(const std::optional<Location> &loc)
+{
+    if (m_Strip)
+        return;
+
+    auto scope = loc.has_value()
+                     ? m_DIBuilder->createLexicalBlock(GetScope(), GetScope()->getFile(), loc->Row, loc->Col)
+                     : GetScope();
+    m_Scopes.emplace_back(scope);
+}
+
+void llove::DebugBuilder::PopFrame()
+{
+    if (m_Strip)
+        return;
+
+    m_Scopes.pop_back();
 }

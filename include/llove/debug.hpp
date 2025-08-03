@@ -29,7 +29,10 @@ namespace llove
         llvm::DIType *GetStructType(const std::vector<llvm::Metadata *> &fields, unsigned size) const;
         llvm::DIType *GetFieldType(const std::string &name, llvm::DIType *type, unsigned size, unsigned offset) const;
         llvm::DIType *GetClassType(const std::string &name) const;
-        llvm::DIType *GetClassType(const std::string &name, const std::vector<llvm::Metadata *> &fields, unsigned size) const;
+        llvm::DIType *GetClassType(
+            const std::string &name,
+            const std::vector<llvm::Metadata *> &fields,
+            unsigned size) const;
         llvm::DISubroutineType *GetFunctionType(
             const std::vector<llvm::Metadata *> &parameters,
             llvm::DIType *result) const;
@@ -53,6 +56,9 @@ namespace llove
             llvm::Function *function);
         void EndFunction();
 
+        void PushFrame(const std::optional<Location> &loc);
+        void PopFrame();
+
     protected:
         [[nodiscard]] llvm::DIScope *GetScope() const;
 
@@ -62,6 +68,7 @@ namespace llove
         std::unique_ptr<llvm::DIBuilder> m_DIBuilder;
         llvm::DICompileUnit *m_CompileUnit = nullptr;
 
-        std::vector<llvm::DISubprogram *> m_Stack;
+        std::vector<llvm::DISubprogram *> m_Subprograms;
+        std::vector<llvm::DIScope *> m_Scopes;
     };
 }

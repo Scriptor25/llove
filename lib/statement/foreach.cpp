@@ -23,7 +23,7 @@ llove::ForEachStatement::ForEachStatement(
 void llove::ForEachStatement::Gen(Builder &builder) const try
 {
     builder.EmitLoc(m_Loc);
-    builder.PushFrame();
+    builder.PushFrame(m_Loc);
 
     const auto range = m_Range->GenVal(builder, nullptr);
     const auto type = range->GetType();
@@ -220,28 +220,29 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         const auto operator_ = builder.FindOperator("*", iterator->AsField(), false);
         Assert(operator_ != nullptr, "operator '*' not implemented for {}", iterator->AsField());
 
-        auto value = (*operator_)(builder, iterator);
+        auto storage = (*operator_)(builder, iterator);
 
         if (m_Reference)
         {
-            Assert(value->IsReferenceable(), "value is not referenceable");
-            Assert(!m_Mutable || value->IsMutable(), "reference mutability violation");
+            Assert(storage->IsReferenceable(), "value is not referenceable");
+            Assert(!m_Mutable || storage->IsMutable(), "reference mutability violation");
 
-            value = Value::CreateL(value->GetType(), value->GetPointer(), m_Mutable);
+            storage = Value::CreateL(storage->GetType(), storage->GetPointer(), m_Mutable);
         }
         else if (m_Mutable)
         {
-            auto pointer = builder.CreateAlloca(value->GetType());
-            builder.CreateStore(pointer, value);
+            auto pointer = builder.CreateAlloca(storage->GetType());
+            builder.CreateStore(pointer, storage);
 
-            value = Value::CreateL(value->GetType(), pointer, true);
+            storage = Value::CreateL(storage->GetType(), pointer, true);
         }
         else
         {
-            value = Value::CreateR(value->GetType(), value->Load(builder));
+            storage = Value::CreateR(storage->GetType(), storage->Load(builder));
         }
 
-        builder.SetValue(m_Name, std::move(value));
+        builder.GetDebug().CreateVariable(builder, m_Name, storage);
+        builder.SetValue(m_Name, std::move(storage));
     }
 
     {

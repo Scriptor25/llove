@@ -26,7 +26,7 @@ void llove::ForStatement::Gen(Builder &builder) const try
     auto use_end = false;
 
     builder.EmitLoc(m_Loc);
-    builder.PushFrame();
+    builder.PushFrame(m_Loc);
 
     if (m_Prefix)
         m_Prefix->Gen(builder);
