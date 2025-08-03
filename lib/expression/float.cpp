@@ -23,7 +23,7 @@ llove::ValuePtr llove::FloatExpression::GenVal(Builder &builder, const TypePtr e
 
     builder.EmitLoc(m_Loc);
 
-    const auto value = llvm::ConstantFP::get(type->Gen(builder), m_Value);
+    const auto value = llvm::ConstantFP::get(type->GenIR(builder), m_Value);
     return Value::CreateR(std::move(type), value);
 }
 catch (const std::shared_ptr<ErrorStack> &cause)

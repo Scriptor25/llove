@@ -132,15 +132,31 @@ void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReferen
     if (m_Opaque)
     {
         m_IRType = builder.GetOrCreateNamedStructType(m_Name);
+        m_DIType = builder.GetDebug().GetClassType(m_Name);
         return;
     }
 
-    std::vector<llvm::Type *> elements;
-    for (auto &field : m_Fields)
-        elements.emplace_back(field.Info.GenType(builder));
+    std::vector<llvm::Type *> ir_elements;
+    std::vector<llvm::Metadata *> di_elements;
 
-    // TODO: packed struct
-    m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, true);
+    unsigned offset = 0;
+    for (auto &field : m_Fields)
+    {
+        const auto size = field.Info.SizeBits(builder);
+
+        ir_elements.emplace_back(field.Info.GenIRType(builder));
+        di_elements.emplace_back(
+            builder.GetDebug().GetFieldType(
+                field.Name,
+                field.Info.GenDIType(builder),
+                size,
+                offset));
+
+        offset += size;
+    }
+
+    m_IRType = builder.GetOrCreateNamedStructType(m_Name, ir_elements, true);
+    m_DIType = builder.GetDebug().GetClassType(m_Name, di_elements, offset);
 }
 
 void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> functions)
@@ -166,7 +182,7 @@ unsigned llove::ClassType::SizeBits(Builder &builder) const
     return size;
 }
 
-llvm::StructType *llove::ClassType::Gen(Builder &builder)
+llvm::StructType *llove::ClassType::GenIR(Builder &builder)
 {
     if (m_IRType)
         return llvm::dyn_cast<llvm::StructType>(m_IRType);
@@ -180,21 +196,20 @@ llvm::StructType *llove::ClassType::Gen(Builder &builder)
 
     std::vector<llvm::Type *> elements;
     for (auto &field : m_Fields)
-        elements.emplace_back(field.Info.GenType(builder));
+        elements.emplace_back(field.Info.GenIRType(builder));
 
-    // TODO: packed struct
     const auto type = builder.GetOrCreateNamedStructType(m_Name, elements, true);
     m_IRType = type;
     return type;
 }
 
-llvm::DIType *llove::ClassType::GenDbg(Builder &builder)
+llvm::DIType *llove::ClassType::GenDI(Builder &builder)
 {
     if (m_DIType)
         return m_DIType;
 
     if (m_Opaque)
-        return m_DIType = builder.GetDbgClassType(m_Name);
+        return m_DIType = builder.GetDebug().GetClassType(m_Name);
 
     std::vector<llvm::Metadata *> fields;
 
@@ -202,16 +217,15 @@ llvm::DIType *llove::ClassType::GenDbg(Builder &builder)
     for (auto &field : m_Fields)
     {
         const auto size = field.Info.SizeBits(builder);
-        fields.emplace_back(builder.GetDbgFieldType(field.Name, field.Info.GenDbgType(builder), size, offset));
+        fields.emplace_back(builder.GetDebug().GetFieldType(field.Name, field.Info.GenDIType(builder), size, offset));
         offset += size;
     }
 
-    return m_DIType = builder.GetDbgClassType(m_Name, fields);
+    return m_DIType = builder.GetDebug().GetClassType(m_Name, fields, offset);
 }
 
 llove::TypePtr llove::ClassType::Reflect(Builder &builder) const
 {
-    // TODO: no reflection?
     return builder.GetTypes().GetClass(m_Name);
 }
 

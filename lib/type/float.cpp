@@ -27,7 +27,7 @@ unsigned llove::FloatType::SizeBits(Builder &builder) const
     return m_Bits;
 }
 
-llvm::Type *llove::FloatType::Gen(Builder &builder)
+llvm::Type *llove::FloatType::GenIR(Builder &builder)
 {
     if (m_IRType)
         return m_IRType;
@@ -35,12 +35,12 @@ llvm::Type *llove::FloatType::Gen(Builder &builder)
     return m_IRType = builder.GetFltType(m_Bits);
 }
 
-llvm::DIType *llove::FloatType::GenDbg(Builder &builder)
+llvm::DIType *llove::FloatType::GenDI(Builder &builder)
 {
     if (m_DIType)
         return m_DIType;
 
-    return m_DIType = builder.GetDbgFltType(m_Bits);
+    return m_DIType = builder.GetDebug().GetFloatType(m_Bits);
 }
 
 llove::TypePtr llove::FloatType::Reflect(Builder &builder) const

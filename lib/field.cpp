@@ -73,16 +73,16 @@ std::ostream &llove::Field::Print(std::ostream &stream, const bool has_name, con
     return stream << (Mutable ? "mut " : "") << (Reference ? "&" : "") << Type;
 }
 
-llvm::Type *llove::Field::GenType(Builder &builder) const
+llvm::Type *llove::Field::GenIRType(Builder &builder) const
 {
-    const auto type = Type->Gen(builder);
+    const auto type = Type->GenIR(builder);
     return Reference ? builder.GetPointerType(type) : type;
 }
 
-llvm::DIType *llove::Field::GenDbgType(Builder &builder) const
+llvm::DIType *llove::Field::GenDIType(Builder &builder) const
 {
-    const auto type = Type->GenDbg(builder);
-    return Reference ? builder.GetDbgPointerType(type) : type;
+    const auto type = Type->GenDI(builder);
+    return Reference ? builder.GetDebug().GetPointerType(type) : type;
 }
 
 llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool unstable_ownership) const

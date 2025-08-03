@@ -58,7 +58,7 @@ unsigned llove::FunctionType::SizeBits(Builder &builder) const
     return 64;
 }
 
-llvm::PointerType *llove::FunctionType::Gen(Builder &builder)
+llvm::PointerType *llove::FunctionType::GenIR(Builder &builder)
 {
     if (m_IRType)
         return llvm::dyn_cast<llvm::PointerType>(m_IRType);
@@ -69,13 +69,13 @@ llvm::PointerType *llove::FunctionType::Gen(Builder &builder)
     return type;
 }
 
-llvm::DIType *llove::FunctionType::GenDbg(Builder &builder)
+llvm::DIType *llove::FunctionType::GenDI(Builder &builder)
 {
     if (m_DIType)
         return m_DIType;
 
     const auto function = GenDbgFunction(builder);
-    return m_DIType = builder.GetDbgPointerType(function);
+    return m_DIType = builder.GetDebug().GetPointerType(function);
 }
 
 llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder)
@@ -85,11 +85,11 @@ llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder)
 
     std::vector<llvm::Type *> parameters;
     if (m_Self)
-        parameters.emplace_back(m_Self->GenType(builder));
+        parameters.emplace_back(m_Self->GenIRType(builder));
     for (auto &parameter : m_Parameters)
-        parameters.emplace_back(parameter.GenType(builder));
+        parameters.emplace_back(parameter.GenIRType(builder));
 
-    return m_IRFunction = builder.GetFunctionType(m_Result.GenType(builder), parameters, m_VarArg);
+    return m_IRFunction = builder.GetFunctionType(m_Result.GenIRType(builder), parameters, m_VarArg);
 }
 
 llvm::DISubroutineType *llove::FunctionType::GenDbgFunction(Builder &builder)
@@ -99,11 +99,11 @@ llvm::DISubroutineType *llove::FunctionType::GenDbgFunction(Builder &builder)
 
     std::vector<llvm::Metadata *> parameters;
     for (auto &parameter : m_Parameters)
-        parameters.emplace_back(parameter.GenDbgType(builder));
+        parameters.emplace_back(parameter.GenDIType(builder));
 
-    const auto result = m_Result.GenDbgType(builder);
+    const auto result = m_Result.GenDIType(builder);
 
-    return m_DIFunction = builder.GetDbgFunctionType(parameters, result);
+    return m_DIFunction = builder.GetDebug().GetFunctionType(parameters, result);
 }
 
 llove::TypePtr llove::FunctionType::Reflect(Builder &builder) const

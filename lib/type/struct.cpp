@@ -54,14 +54,14 @@ unsigned llove::StructType::SizeBits(Builder &builder) const
     return size;
 }
 
-llvm::StructType *llove::StructType::Gen(Builder &builder)
+llvm::StructType *llove::StructType::GenIR(Builder &builder)
 {
     if (m_IRType)
         return llvm::dyn_cast<llvm::StructType>(m_IRType);
 
     std::vector<llvm::Type *> fields;
     for (auto &field : m_Fields)
-        fields.emplace_back(field.Info.GenType(builder));
+        fields.emplace_back(field.Info.GenIRType(builder));
 
     // TODO: packed struct
     const auto type = builder.GetStructType(fields, true);
@@ -69,7 +69,7 @@ llvm::StructType *llove::StructType::Gen(Builder &builder)
     return type;
 }
 
-llvm::DIType *llove::StructType::GenDbg(Builder &builder)
+llvm::DIType *llove::StructType::GenDI(Builder &builder)
 {
     if (m_DIType)
         return m_DIType;
@@ -80,11 +80,16 @@ llvm::DIType *llove::StructType::GenDbg(Builder &builder)
     for (auto &field : m_Fields)
     {
         const auto field_size = field.Info.SizeBits(builder);
-        fields.emplace_back(builder.GetDbgFieldType(field.Name, field.Info.GenDbgType(builder), field_size, offset));
+        fields.emplace_back(
+            builder.GetDebug().GetFieldType(
+                field.Name,
+                field.Info.GenDIType(builder),
+                field_size,
+                offset));
         offset += field_size;
     }
 
-    return m_DIType = builder.GetDbgStructType(fields, offset);
+    return m_DIType = builder.GetDebug().GetStructType(fields, offset);
 }
 
 llove::TypePtr llove::StructType::Reflect(Builder &builder) const

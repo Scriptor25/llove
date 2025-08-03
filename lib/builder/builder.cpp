@@ -7,26 +7,54 @@
 #include <llove/value.hpp>
 #include <llvm/IR/Verifier.h>
 
-llove::Builder::Builder(Context &types, const std::filesystem::path &filepath)
-    : Builder(types, filepath, filepath.filename().replace_extension().string())
+llove::Builder::Builder(
+    Context &types,
+    const bool debug,
+    const bool optimized,
+    const bool profiling,
+    const llvm::DICompileUnit::DebugEmissionKind emission,
+    const std::filesystem::path &source_path,
+    const std::filesystem::path &debug_path,
+    const std::string &command_line)
+    : Builder(
+        types,
+        debug,
+        optimized,
+        profiling,
+        emission,
+        source_path,
+        debug_path,
+        command_line,
+        source_path.filename().replace_extension().string())
 {
 }
 
-llove::Builder::Builder(Context &types, const std::filesystem::path &filepath, const std::string &module_id)
+llove::Builder::Builder(
+    Context &types,
+    const bool debug,
+    const bool optimized,
+    const bool profiling,
+    const llvm::DICompileUnit::DebugEmissionKind emission,
+    const std::filesystem::path &source_path,
+    const std::filesystem::path &debug_path,
+    const std::string &command_line,
+    const std::string &module_id)
     : m_Types(types),
+      m_Debug(debug),
       m_Builder(m_Context),
-      m_Module(module_id, m_Context),
-      m_DIBuilder(m_Module)
+      m_Module(module_id, m_Context)
 {
-    m_Module.setSourceFileName(filepath.string());
+    m_Module.setSourceFileName(source_path.string());
 
-    m_CompileUnit = m_DIBuilder.createCompileUnit(
-        llvm::dwarf::DW_LANG_C,
-        m_DIBuilder.createFile(filepath.string(), filepath.parent_path().string()),
-        "LLove",
-        false,
-        "",
-        0u);
+    m_DebugBuilder = std::make_unique<DebugBuilder>(
+        m_Debug,
+        m_Module,
+        source_path,
+        debug_path,
+        optimized,
+        profiling,
+        command_line,
+        emission);
 }
 
 llove::Context &llove::Builder::GetTypes() const
@@ -34,14 +62,24 @@ llove::Context &llove::Builder::GetTypes() const
     return m_Types;
 }
 
-llvm::DIScope *llove::Builder::GetDbgScope() const
+bool llove::Builder::IsDebug() const
 {
-    return m_Stack.empty() ? m_CompileUnit : m_Stack.back().Scope;
+    return m_Debug;
 }
 
-llvm::DIFile *llove::Builder::GetDbgFile() const
+llove::DebugBuilder &llove::Builder::GetDebug() const
 {
-    return GetDbgScope()->getFile();
+    return *m_DebugBuilder;
+}
+
+void llove::Builder::EmitLoc(const Location &loc)
+{
+    m_DebugBuilder->EmitLoc(*this, loc);
+}
+
+llvm::LLVMContext &llove::Builder::GetContext()
+{
+    return m_Context;
 }
 
 std::string llove::Builder::Mangle(
@@ -119,18 +157,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
 
     Assert(function->empty(), "function is already defined");
 
-    const auto dbg_unit = m_DIBuilder.createFile(m_CompileUnit->getFilename(), m_CompileUnit->getDirectory());
-    const auto dbg_subprogram = m_DIBuilder.createFunction(
-        dbg_unit,
-        mangled,
-        fn.Name,
-        dbg_unit,
-        fn.Loc.Row,
-        function_type->GenDbgFunction(*this),
-        fn.Loc.Row,
-        llvm::DINode::FlagPrototyped,
-        llvm::DISubprogram::SPFlagDefinition);
-    function->setSubprogram(dbg_subprogram);
+    m_DebugBuilder->BeginFunction(*this, fn.Name, fn.Loc, function_type, mangled, function);
 
     m_Parent = function;
     m_Class = fn.Class;
@@ -139,12 +166,13 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     const auto entry_block = CreateBlock("entry", function);
     m_Builder.SetInsertPoint(entry_block);
 
-    PushFrame(dbg_subprogram);
-
-    EmitLoc();
+    m_DebugBuilder->EmitLoc(*this);
+    PushFrame();
     GenParameters(function, fn.Parameters, self);
     fn.Content->Gen(*this);
     PopFrame();
+
+    m_DebugBuilder->EndFunction();
 
     for (auto &block : *function)
     {
@@ -160,7 +188,6 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     }
 
     Assert(!verifyFunction(*function, &llvm::errs()), "function has errors");
-
     return reference;
 }
 
@@ -177,23 +204,10 @@ void llove::Builder::GenParameters(
         const auto argument = function->getArg(0);
         argument->setName("self");
 
-        const auto dbg_var = m_DIBuilder.createParameterVariable(
-            GetDbgScope(),
-            "self",
-            0u,
-            GetDbgFile(),
-            0u,
-            self->Type->GenDbg(*this),
-            true);
+        auto storage = Value::CreateL(self->Type, argument, self->Mutable);
 
-        m_DIBuilder.insertDeclare(
-            argument,
-            dbg_var,
-            m_DIBuilder.createExpression(),
-            llvm::DILocation::get(m_Context, 0u, 0u, GetDbgScope()),
-            m_Builder.GetInsertBlock());
-
-        SetValue("self", Value::CreateL(self->Type, argument, self->Mutable));
+        m_DebugBuilder->CreateParameter(*this, "self", 1u, storage);
+        SetValue("self", std::move(storage));
     }
 
     for (unsigned i = 0; i < function->arg_size() - offset; ++i)
@@ -242,7 +256,7 @@ void llove::Builder::GenParameters(
             storage = Value::CreateR(parameter.Info.Type, argument);
         }
 
-        CreateDbgParameter(parameter.Name, i, storage);
+        m_DebugBuilder->CreateParameter(*this, parameter.Name, i + offset + 1u, storage);
         SetValue(parameter.Name, storage);
     }
 }

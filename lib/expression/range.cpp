@@ -27,7 +27,7 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value *aggregate = llvm::Constant::getNullValue(range_type->Gen(builder));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(range_type->GenIR(builder));
     aggregate = builder.CreateInsertValue(aggregate, beg->Load(builder), 0);
     aggregate = builder.CreateInsertValue(aggregate, end->Load(builder), 1);
 

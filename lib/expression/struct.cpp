@@ -18,7 +18,7 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value *aggregate = llvm::Constant::getNullValue(type->Gen(builder));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
 
     for (auto &[key, value] : m_Values)
     {

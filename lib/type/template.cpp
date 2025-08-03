@@ -23,12 +23,12 @@ unsigned llove::TemplateType::SizeBits(Builder &builder) const
     Error("template");
 }
 
-llvm::Type *llove::TemplateType::Gen(Builder &builder)
+llvm::Type *llove::TemplateType::GenIR(Builder &builder)
 {
     Error("template");
 }
 
-llvm::DIType *llove::TemplateType::GenDbg(Builder &builder)
+llvm::DIType *llove::TemplateType::GenDI(Builder &builder)
 {
     Error("template");
 }
@@ -69,12 +69,12 @@ unsigned llove::ClassTemplateType::SizeBits(Builder &builder) const
     Error("template");
 }
 
-llvm::Type *llove::ClassTemplateType::Gen(Builder &builder)
+llvm::Type *llove::ClassTemplateType::GenIR(Builder &builder)
 {
     Error("template");
 }
 
-llvm::DIType *llove::ClassTemplateType::GenDbg(Builder &builder)
+llvm::DIType *llove::ClassTemplateType::GenDI(Builder &builder)
 {
     Error("template");
 }

@@ -1,4 +1,11 @@
+#include <ostream>
 #include <cli/table.hpp>
+
+template<typename T>
+static T ceil_div(T lhs, T rhs)
+{
+    return lhs / rhs + (lhs % rhs != 0);
+}
 
 cli::Table::Table(std::ostream &stream, const unsigned columns)
     : m_Stream(stream),
@@ -9,7 +16,7 @@ cli::Table::Table(std::ostream &stream, const unsigned columns)
 cli::Table::~Table()
 {
     std::vector<unsigned> widths(m_Columns);
-    std::vector<unsigned> heights(CeilDiv<unsigned>(m_Cells.size(), m_Columns));
+    std::vector<unsigned> heights(ceil_div<unsigned>(m_Cells.size(), m_Columns));
 
     for (unsigned i = 0; i < m_Cells.size(); ++i)
     {
@@ -21,7 +28,7 @@ cli::Table::~Table()
 
         if (cell_width > MAX_COLUMN_WIDTH)
         {
-            cell_height = CeilDiv<unsigned>(cell_width, MAX_COLUMN_WIDTH);
+            cell_height = ceil_div<unsigned>(cell_width, MAX_COLUMN_WIDTH);
             cell_width = MAX_COLUMN_WIDTH;
         }
 

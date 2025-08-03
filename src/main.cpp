@@ -7,7 +7,9 @@
 #include <cli/templates.hpp>
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/debug.hpp>
 #include <llove/parser.hpp>
+#include <llove/stream.hpp>
 #include <llove/tree.hpp>
 #include <llvm/MC/MCTargetOptions.h>
 #include <llvm/Passes/OptimizationLevel.h>
@@ -109,67 +111,6 @@
 // --mc-option-emit-compact-unwind-non-canonical
 // --mc-option-ppc-use-full-register-names
 
-class stream_ref
-{
-public:
-    stream_ref()
-        : m_Stream(nullptr),
-          m_Cleanup(false)
-    {
-    }
-
-    stream_ref(std::ostream *stream, const bool cleanup)
-        : m_Stream(stream),
-          m_Cleanup(cleanup)
-    {
-    }
-
-    stream_ref(const stream_ref &) = delete;
-
-    stream_ref(stream_ref &&other) noexcept
-    {
-        m_Stream = other.m_Stream;
-        m_Cleanup = other.m_Cleanup;
-
-        other.m_Stream = nullptr;
-        other.m_Cleanup = false;
-    }
-
-    stream_ref &operator=(const stream_ref &) = delete;
-
-    stream_ref &operator=(stream_ref &&other) noexcept
-    {
-        std::swap(m_Stream, other.m_Stream);
-        std::swap(m_Cleanup, other.m_Cleanup);
-        return *this;
-    }
-
-    ~stream_ref()
-    {
-        if (m_Cleanup)
-            delete m_Stream;
-    }
-
-    std::ostream &operator*() const
-    {
-        return *m_Stream;
-    }
-
-    std::ostream *operator&() const
-    {
-        return m_Stream;
-    }
-
-    std::ostream *operator->() const
-    {
-        return m_Stream;
-    }
-
-private:
-    std::ostream *m_Stream;
-    bool m_Cleanup;
-};
-
 static void print_version()
 {
     std::cerr << "llove v0.0.0" << std::endl;
@@ -182,7 +123,9 @@ static void print_help(const std::map<std::string, cli::OptionTemplate> &templat
     std::cerr
             << std::endl
             << "USAGE" << std::endl
-            << " llove <PATTERN{=<FILTER>},...> <filename>" << std::endl
+            << " llove <PATTERN{=<FILTER>},...> <FILENAME>" << std::endl
+            << std::endl
+            << "FILENAME: empty, \"stdin\" or existing filename" << std::endl
             << std::endl
             << "OPTIONS" << std::endl;
 
@@ -233,61 +176,88 @@ int main(const int argc, const char *const *argv) try
     if (arguments.flag("version"))
     {
         print_version();
-        if (arguments.filename().empty())
+        if (arguments.has_none_except({ "version" }))
             return 0;
     }
 
-    if (arguments.filename().empty())
+    auto input_filename = arguments.filename().empty() ? "stdin" : arguments.filename();
+
+    llove::stream_ref<std::istream> input_stream_ref;
+    if (input_filename == "stdin")
+        input_stream_ref = llove::stream_ref(&std::cin, false);
+    else
+        input_stream_ref = llove::stream_ref<std::ifstream>(input_filename);
+
+    if (input_stream_ref->fail())
     {
-        std::cerr << "missing filename. use '--help', '-h', '-?' or '?' for help." << std::endl;
+        std::cerr << "failed to open file '" << input_filename << "'" << std::endl;
         return 1;
     }
 
-    std::ifstream stream(arguments.filename());
-    if (!stream.is_open())
+    auto debug = arguments.flag("debug");
+    auto optimized = arguments.has_value_and_is_not("level", "0");
+    auto profiling = arguments.flag("profiling");
+
+    auto emission = llvm::DICompileUnit::DebugEmissionKind::FullDebug;
+    if (std::string value; arguments.value("debug-kind", value))
     {
-        std::cerr << "failed to open file '" << arguments.filename() << "'" << std::endl;
-        return 1;
+        static const std::map<std::string_view, llvm::DICompileUnit::DebugEmissionKind> VALUES
+        {
+            { "no-debug", llvm::DICompileUnit::NoDebug },
+            { "full-debug", llvm::DICompileUnit::FullDebug },
+            { "line-tables-only", llvm::DICompileUnit::LineTablesOnly },
+            { "debug-directives-only", llvm::DICompileUnit::DebugDirectivesOnly },
+        };
+        emission = VALUES.at(value);
     }
+
+    std::string debug_filename;
+    (void) arguments.value("debug-output", debug_filename);
 
     llove::Context types;
-    llove::Builder builder(types, arguments.filename());
-    llove::Parser parser(types, builder, stream, arguments.filename());
+    llove::Builder builder(
+        types,
+        debug,
+        optimized,
+        profiling,
+        emission,
+        input_filename,
+        debug_filename,
+        arguments.BuildCommandLine());
+    llove::Parser parser(types, builder, *input_stream_ref, input_filename);
 
-    std::string print_filename, output_filename;
-    auto has_print_filename = arguments.value("print-output", print_filename);
+    std::string output_filename, print_filename;
+    llove::stream_ref<std::ostream> output_stream_ref, print_stream_ref;
+
     auto has_output_filename = arguments.value("output", output_filename);
+    auto has_print_filename = arguments.value("print-output", print_filename);
 
-    stream_ref print_stream_ref;
-    if (print_filename == "stdout")
-        print_stream_ref = stream_ref(&std::cout, false);
-    else if (!has_print_filename || print_filename == "stderr")
-        print_stream_ref = stream_ref(&std::cerr, false);
+    if (!has_output_filename || output_filename == "stdout")
+        output_stream_ref = llove::stream_ref(&std::cout, false);
+    else if (output_filename == "stderr")
+        output_stream_ref = llove::stream_ref(&std::cerr, false);
     else
+        output_stream_ref = llove::stream_ref<std::ofstream>(
+            output_filename,
+            std::ios_base::out | std::ios_base::binary);
+
+    if (output_stream_ref->fail())
     {
-        print_stream_ref = stream_ref(new std::ofstream(print_filename), true);
-        if (print_stream_ref->fail())
-        {
-            std::cerr << "failed to open file '" << print_filename << "'" << std::endl;
-            return 1;
-        }
+        std::cerr << "failed to open file '" << output_filename << "'" << std::endl;
+        return 1;
     }
 
-    stream_ref output_stream_ref;
-    if (!has_output_filename || output_filename == "stdout")
-        output_stream_ref = stream_ref(&std::cout, false);
-    else if (output_filename == "stderr")
-        output_stream_ref = stream_ref(&std::cerr, false);
+    if (!has_print_filename || print_filename == "stderr")
+        print_stream_ref = llove::stream_ref(&std::cerr, false);
+    else if (print_filename == "stdout")
+        print_stream_ref = llove::stream_ref(&std::cout, false);
     else
+        print_stream_ref = llove::stream_ref<std::ofstream>(print_filename);
+
+    if (print_stream_ref->fail())
     {
-        output_stream_ref = stream_ref(
-            new std::ofstream(output_filename, std::ios_base::out | std::ios_base::binary),
-            true);
-        if (output_stream_ref->fail())
-        {
-            std::cerr << "failed to open file '" << output_filename << "'" << std::endl;
-            return 1;
-        }
+        std::cerr << "failed to open file '" << print_filename << "'" << std::endl;
+        return 1;
     }
 
     auto print_llove = false, print_llvm = false;
@@ -310,8 +280,8 @@ int main(const int argc, const char *const *argv) try
     llove::SealInfo seal_info
     {
         .Print = print_llvm,
-        .PrintStream = &print_stream_ref,
-        .OutputStream = &output_stream_ref,
+        .PrintStream = print_stream_ref.get(),
+        .OutputStream = output_stream_ref.get(),
         .Format = llvm::CodeGenFileType::ObjectFile,
         .Triple = llvm::sys::getDefaultTargetTriple(),
         .CPU = "generic",

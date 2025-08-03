@@ -286,12 +286,15 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
 
     m_TemplateArguments.clear();
 
-    name = template_.Name + '.';
+    name = template_.Name + '<';
     for (unsigned i = 0; i < arguments.size(); ++i)
     {
+        if (i)
+            name += ", ";
         m_TemplateArguments.emplace(template_.Parameters.at(i).first, arguments.at(i));
         name += arguments.at(i)->Mangle();
     }
+    name += '>';
     auto class_type = GetClass(std::move(name));
 
     if (template_.Instantiated)

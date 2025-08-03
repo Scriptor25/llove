@@ -24,7 +24,7 @@ llove::ValuePtr llove::IntegerExpression::GenVal(Builder &builder, const TypePtr
 
     builder.EmitLoc(m_Loc);
 
-    const auto value = llvm::ConstantInt::get(type->Gen(builder), m_Value, type->IsSigned());
+    const auto value = llvm::ConstantInt::get(type->GenIR(builder), m_Value, type->IsSigned());
     return Value::CreateR(std::move(type), value);
 }
 catch (const std::shared_ptr<ErrorStack> &cause)

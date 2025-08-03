@@ -18,7 +18,7 @@ output:
   description: "specify output filename. use 'stdout' or leave empty for standard output stream."
 include:
   pattern: [ "--include", "-i" ]
-  type: value
+  type: array
   filter: string
   description: "specify include directories."
 print:
@@ -56,6 +56,24 @@ level:
   type: value
   filter: [ "0", "1", "2", "3", "s", "z" ]
   description: "specify codegen optimization level."
+debug:
+  pattern: [ "--debug", "-g" ]
+  type: flag
+  description: "generate debug information."
+profiling:
+  pattern: [ "--profiling" ]
+  type: flag
+  description: "generate additional profiling information."
+debug-kind:
+  pattern: [ "--debug-kind", "-e" ]
+  type: value
+  filter: [ "no-debug", "full-debug", "line-tables-only", "debug-directives-only" ]
+  description: "specify what type of debug information is emitted."
+debug-output:
+  pattern: [ "--debug-output", "-do" ]
+  type: value
+  filter: string
+  description: "specify debug output destination. leave empty to not split the debug information from the output."
 
 option-binutils-version:
   pattern: "--option-binutils-version"

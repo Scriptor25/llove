@@ -1,16 +1,11 @@
 #pragma once
 
-#include <iostream>
+#include <iosfwd>
+#include <string>
 #include <vector>
 
 namespace cli
 {
-    template<typename T>
-    T CeilDiv(T lhs, T rhs)
-    {
-        return lhs / rhs + (lhs % rhs != 0);
-    }
-
     class Table final
     {
         static constexpr auto MAX_COLUMN_WIDTH = 37u;

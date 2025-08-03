@@ -18,11 +18,9 @@ llove::ClassType::Ptr llove::Builder::GetClass() const
     return m_Class;
 }
 
-void llove::Builder::PushFrame(llvm::DIScope *scope)
+void llove::Builder::PushFrame()
 {
-    if (!scope && !m_Stack.empty())
-        scope = m_Stack.back().Scope;
-    m_Stack.emplace_back(scope);
+    m_Stack.emplace_back();
 }
 
 void llove::Builder::PopFrame()

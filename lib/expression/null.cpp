@@ -21,7 +21,7 @@ llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr ex
 
     builder.EmitLoc(m_Loc);
 
-    const auto value = llvm::ConstantPointerNull::get(type->Gen(builder));
+    const auto value = llvm::ConstantPointerNull::get(type->GenIR(builder));
     return Value::CreateR(std::move(type), value);
 }
 catch (const std::shared_ptr<ErrorStack> &cause)

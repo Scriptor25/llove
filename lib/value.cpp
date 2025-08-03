@@ -102,7 +102,7 @@ llvm::Value *llove::LValue::Load(Builder &builder) const
 void llove::LValue::Store(Builder &builder, llvm::Value *value, const bool volatile_) const
 {
     Assert(m_Mutable, "store mutability violation");
-    Assert(m_Type->Gen(builder) == value->getType(), "store type mismatch");
+    Assert(m_Type->GenIR(builder) == value->getType(), "store type mismatch");
     builder.CreateStore(m_Pointer, value, volatile_);
 }
 

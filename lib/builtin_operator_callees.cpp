@@ -56,14 +56,14 @@ static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr ope
     {
     case llove::TypeId_Integer:
     {
-        const auto one_value = llvm::ConstantInt::get(operand->GetType()->Gen(builder), 1, false);
+        const auto one_value = llvm::ConstantInt::get(operand->GetType()->GenIR(builder), 1, false);
         const auto one = llove::Value::CreateR(operand->GetType(), one_value);
         result = builder.CreateAdd(operand, one);
         break;
     }
     case llove::TypeId_Float:
     {
-        const auto one_value = llvm::ConstantFP::get(operand->GetType()->Gen(builder), 1.0);
+        const auto one_value = llvm::ConstantFP::get(operand->GetType()->GenIR(builder), 1.0);
         const auto one = llove::Value::CreateR(operand->GetType(), one_value);
         result = builder.CreateFAdd(operand, one);
         break;
@@ -96,14 +96,14 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
     {
     case llove::TypeId_Integer:
     {
-        const auto one_value = llvm::ConstantInt::get(operand->GetType()->Gen(builder), 1, false);
+        const auto one_value = llvm::ConstantInt::get(operand->GetType()->GenIR(builder), 1, false);
         const auto one = llove::Value::CreateR(operand->GetType(), one_value);
         result = builder.CreateSub(operand, one);
         break;
     }
     case llove::TypeId_Float:
     {
-        const auto one_value = llvm::ConstantFP::get(operand->GetType()->Gen(builder), 1.0);
+        const auto one_value = llvm::ConstantFP::get(operand->GetType()->GenIR(builder), 1.0);
         const auto one = llove::Value::CreateR(operand->GetType(), one_value);
         result = builder.CreateFSub(operand, one);
         break;

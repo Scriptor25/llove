@@ -16,7 +16,7 @@ llove::ValuePtr llove::SizeofExpression::GenVal(Builder &builder, TypePtr expect
 
     builder.EmitLoc(m_Loc);
 
-    return Value::CreateR(size_type, llvm::ConstantInt::get(size_type->Gen(builder), size >> 3));
+    return Value::CreateR(size_type, llvm::ConstantInt::get(size_type->GenIR(builder), size >> 3));
 }
 catch (const std::shared_ptr<ErrorStack> &cause)
 {

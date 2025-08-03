@@ -3,11 +3,11 @@
 #include <filesystem>
 #include <map>
 #include <set>
+#include <llove/debug.hpp>
 #include <llove/forward.hpp>
 #include <llove/function.hpp>
 #include <llove/location.hpp>
 #include <llove/operator.hpp>
-#include <llvm/IR/DIBuilder.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
@@ -37,7 +37,6 @@ namespace llove
 
     struct Frame final
     {
-        llvm::DIScope *Scope = nullptr;
         std::map<llvm::Value *, FunctionReference> Destructors;
         std::map<std::string, ValuePtr> Values;
     };
@@ -59,13 +58,34 @@ namespace llove
     class Builder
     {
     public:
-        explicit Builder(Context &types, const std::filesystem::path &filepath);
-        explicit Builder(Context &types, const std::filesystem::path &filepath, const std::string &module_id);
+        Builder(
+            Context &types,
+            bool debug,
+            bool optimized,
+            bool profiling,
+            llvm::DICompileUnit::DebugEmissionKind emission,
+            const std::filesystem::path &source_path,
+            const std::filesystem::path &debug_path,
+            const std::string &command_line);
+        Builder(
+            Context &types,
+            bool debug,
+            bool optimized,
+            bool profiling,
+            llvm::DICompileUnit::DebugEmissionKind emission,
+            const std::filesystem::path &source_path,
+            const std::filesystem::path &debug_path,
+            const std::string &command_line,
+            const std::string &module_id);
 
         Context &GetTypes() const;
 
-        llvm::DIScope *GetDbgScope() const;
-        llvm::DIFile *GetDbgFile() const;
+        bool IsDebug() const;
+        DebugBuilder &GetDebug() const;
+
+        void EmitLoc(const Location &loc);
+
+        llvm::LLVMContext &GetContext();
 
         static std::string Mangle(
             bool interface,
@@ -95,27 +115,8 @@ namespace llove
             const std::vector<llvm::Type *> &fields,
             bool packed);
 
-        llvm::DIType *GetDbgVoidType();
-        llvm::DIType *GetDbgIntType(bool sign, unsigned bits);
-        llvm::DIType *GetDbgFltType(unsigned bits);
-        llvm::DIType *GetDbgPointerType();
-        llvm::DIType *GetDbgPointerType(llvm::DIType *base);
-        llvm::DIType *GetDbgArrayType(llvm::DIType *base, unsigned size);
-        llvm::DIType *GetDbgStructType(const std::vector<llvm::Metadata *> &fields, unsigned size);
-        llvm::DIType *GetDbgFieldType(const std::string &name, llvm::DIType *type, unsigned size, unsigned offset);
-        llvm::DIType *GetDbgClassType(const std::string &name);
-        llvm::DIType *GetDbgClassType(const std::string &name, const std::vector<llvm::Metadata *> &fields);
-        llvm::DISubroutineType *GetDbgFunctionType(
-            const std::vector<llvm::Metadata *> &parameters,
-            llvm::DIType *result);
-
-        void CreateDbgParameter(const std::string &name, unsigned index, const ValuePtr &value);
-        void CreateDbgVariable(const std::string &name, const ValuePtr &value);
-
-        void EmitLoc();
-        void EmitLoc(const Location &loc);
-        void EmitLoc(const GlobalPtr &ptr);
-        void EmitLoc(const StatementPtr &ptr);
+        llvm::BasicBlock *GetInsertBlock() const;
+        void SetCurrentDebugLocation(llvm::DebugLoc loc);
 
         llvm::Value *CreateAlloca(const TypePtr &type, llvm::Function *parent = nullptr);
 
@@ -227,7 +228,7 @@ namespace llove
         Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
         Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
 
-        void PushFrame(llvm::DIScope *scope = nullptr);
+        void PushFrame();
         void PopFrame();
 
         void SetValue(const std::string &name, ValuePtr value);
@@ -253,12 +254,12 @@ namespace llove
     private:
         Context &m_Types;
 
+        bool m_Debug;
+        std::unique_ptr<DebugBuilder> m_DebugBuilder;
+
         llvm::LLVMContext m_Context;
         llvm::IRBuilder<> m_Builder;
         llvm::Module m_Module;
-
-        llvm::DIBuilder m_DIBuilder;
-        llvm::DICompileUnit *m_CompileUnit;
 
         std::vector<FunctionReference> m_Functions;
 

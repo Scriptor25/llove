@@ -1,19 +1,30 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/tree.hpp>
 #include <llove/value.hpp>
+
+llvm::BasicBlock *llove::Builder::GetInsertBlock() const
+{
+    return m_Builder.GetInsertBlock();
+}
+
+void llove::Builder::SetCurrentDebugLocation(llvm::DebugLoc loc)
+{
+    m_Builder.SetCurrentDebugLocation(std::move(loc));
+}
 
 llvm::Value *llove::Builder::CreateAlloca(const TypePtr &type, llvm::Function *parent)
 {
     const auto insert_block = m_Builder.GetInsertBlock();
     m_Builder.SetInsertPointPastAllocas(parent ? parent : insert_block->getParent());
-    const auto pointer = m_Builder.CreateAlloca(type->Gen(*this));
+    const auto pointer = m_Builder.CreateAlloca(type->GenIR(*this));
     m_Builder.SetInsertPoint(insert_block);
     return pointer;
 }
 
 llvm::Value *llove::Builder::CreateLoad(llvm::Value *pointer, const TypePtr &type)
 {
-    return m_Builder.CreateLoad(type->Gen(*this), pointer);
+    return m_Builder.CreateLoad(type->GenIR(*this), pointer);
 }
 
 llvm::Value *llove::Builder::CreateStore(llvm::Value *pointer, llvm::Value *value, const bool volatile_)
@@ -115,7 +126,7 @@ llove::ValuePtr llove::Builder::CreatePointerOffset(const ValuePtr &pointer, con
 {
     auto type = As<PointerType>(pointer->GetType());
     const auto element_pointer = m_Builder.CreateConstGEP1_64(
-        type->GetBase()->Gen(*this),
+        type->GetBase()->GenIR(*this),
         pointer->Load(*this),
         offset);
     return Value::CreateR(std::move(type), element_pointer);
@@ -125,7 +136,7 @@ llove::ValuePtr llove::Builder::CreatePointerOffset(const ValuePtr &pointer, con
 {
     auto type = As<PointerType>(pointer->GetType());
     const auto element_pointer = m_Builder.CreateGEP(
-        type->GetBase()->Gen(*this),
+        type->GetBase()->GenIR(*this),
         pointer->Load(*this),
         offset->Load(*this));
     return Value::CreateR(std::move(type), element_pointer);
@@ -135,7 +146,7 @@ llove::ValuePtr llove::Builder::CreatePointerDifference(const ValuePtr &begin, c
 {
     const auto type = As<PointerType>(begin->GetType());
     const auto value = m_Builder.CreatePtrDiff(
-        type->GetBase()->Gen(*this),
+        type->GetBase()->GenIR(*this),
         begin->Load(*this),
         end->Load(*this));
     return Value::CreateR(m_Types.GetInteger(true, 64), value);
@@ -145,7 +156,7 @@ llove::ValuePtr llove::Builder::CreatePointerElement(const ValuePtr &pointer, co
 {
     const auto type = As<PointerType>(pointer->GetType());
     const auto value = m_Builder.CreateGEP(
-        type->GetBase()->Gen(*this),
+        type->GetBase()->GenIR(*this),
         pointer->Load(*this),
         index->Load(*this));
     return Value::CreateL(type->GetBase(), value, type->IsMutable());
@@ -160,7 +171,7 @@ llove::ValuePtr llove::Builder::CreateArrayElement(const ValuePtr &array, const 
 
     if (array->IsReferenceable())
     {
-        const auto element_pointer = m_Builder.CreateGEP(base_type->Gen(*this), array->GetPointer(), index_value);
+        const auto element_pointer = m_Builder.CreateGEP(base_type->GenIR(*this), array->GetPointer(), index_value);
         return Value::CreateL(base_type, element_pointer, array->IsMutable());
     }
 
@@ -173,18 +184,18 @@ llove::ValuePtr llove::Builder::CreateArrayElement(const ValuePtr &array, const 
     const auto pointer = CreateAlloca(type);
     CreateStore(pointer, array);
 
-    const auto element_pointer = m_Builder.CreateGEP(base_type->Gen(*this), pointer, index_value);
+    const auto element_pointer = m_Builder.CreateGEP(base_type->GenIR(*this), pointer, index_value);
     return Value::CreateL(base_type, element_pointer, false);
 }
 
 llvm::Value *llove::Builder::CreateArrayGEP(const TypePtr &type, llvm::Value *pointer, const unsigned index)
 {
-    return m_Builder.CreateConstGEP2_64(type->Gen(*this), pointer, 0, index);
+    return m_Builder.CreateConstGEP2_64(type->GenIR(*this), pointer, 0, index);
 }
 
 llvm::Value *llove::Builder::CreateStructGEP(const TypePtr &type, llvm::Value *pointer, const unsigned index)
 {
-    return m_Builder.CreateStructGEP(type->Gen(*this), pointer, index);
+    return m_Builder.CreateStructGEP(type->GenIR(*this), pointer, index);
 }
 
 llove::ValuePtr llove::Builder::CreateAdd(const ValuePtr &left, const ValuePtr &right)

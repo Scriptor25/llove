@@ -26,6 +26,7 @@ namespace llove
     class Context;
     class Parser;
     class Builder;
+    class DebugBuilder;
 
     struct Location;
 

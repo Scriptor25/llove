@@ -52,7 +52,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
     for (auto &function : m_Functions)
         builder.GenFunction(
             {
-                // TODO: loc
+                .Loc = function.Loc,
                 .Implicit = function.Implicit,
                 .Class = m_Type,
                 .Mutable = function.Mutable,
@@ -67,7 +67,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
     for (auto &function : m_Functions)
         builder.GenFunction(
             {
-                // TODO: loc
+                .Loc = function.Loc,
                 .Implicit = function.Implicit,
                 .Class = m_Type,
                 .Mutable = function.Mutable,

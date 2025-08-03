@@ -76,7 +76,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
             {
                 Assert(arguments.empty(), "invalid arguments for implicit default constructor");
 
-                const auto null = llvm::Constant::getNullValue(type->Gen(builder));
+                const auto null = llvm::Constant::getNullValue(type->GenIR(builder));
                 builder.CreateStore(pointer, null);
             }
             else
@@ -118,7 +118,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
                 Assert(arguments.empty(), "cannot construct non-class value");
                 Assert(type != nullptr, "missing type");
 
-                const auto null = llvm::Constant::getNullValue(type->Gen(builder));
+                const auto null = llvm::Constant::getNullValue(type->GenIR(builder));
                 value = Value::CreateR(type, null);
             }
             else
@@ -131,7 +131,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
     }
 
     auto storage = Value::CreateL(std::move(type), pointer, m_Info.Mutable);
-    builder.CreateDbgVariable(m_Name, storage);
+    builder.GetDebug().CreateVariable(builder, m_Name, storage);
     builder.SetValue(m_Name, std::move(storage));
 }
 catch (const std::shared_ptr<ErrorStack> &cause)

@@ -26,7 +26,7 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr e
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value *aggregate = llvm::Constant::getNullValue(type->Gen(builder));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
 
     for (unsigned index = 0; index < m_Values.size(); ++index)
     {

@@ -1,5 +1,6 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
+#include <llove/stream.hpp>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/MC/TargetRegistry.h>
@@ -9,45 +10,14 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/TargetParser/Host.h>
 
-class std_ostream_adapter final : public llvm::raw_pwrite_stream
-{
-public:
-    explicit std_ostream_adapter(std::ostream &stream)
-        : raw_pwrite_stream(true),
-          m_Stream(stream)
-    {
-    }
-
-    void write_impl(const char *ptr, const size_t size) override
-    {
-        m_Stream.write(ptr, static_cast<std::streamsize>(size));
-    }
-
-    [[nodiscard]] uint64_t current_pos() const override
-    {
-        return m_Stream.tellp();
-    }
-
-    void pwrite_impl(const char *ptr, const size_t size, const uint64_t offset) override
-    {
-        const auto current = m_Stream.tellp();
-        m_Stream.seekp(static_cast<std::streamsize>(offset));
-        m_Stream.write(ptr, static_cast<std::streamsize>(size));
-        m_Stream.seekp(current);
-    }
-
-private:
-    std::ostream &m_Stream;
-};
-
 void llove::Builder::Seal(const SealInfo &info)
 {
-    m_DIBuilder.finalize();
+    m_DebugBuilder->EndModule();
 
     Assert(!llvm::verifyModule(m_Module, &llvm::errs()), "module has errors");
 
-    std_ostream_adapter print_stream(*info.PrintStream);
-    std_ostream_adapter output_stream(*info.OutputStream);
+    raw_pwrite_stream_adapter print_stream(*info.PrintStream);
+    raw_pwrite_stream_adapter output_stream(*info.OutputStream);
 
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();

@@ -65,7 +65,7 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
     }
 
     const auto llvm_value = value->Load(*this);
-    const auto llvm_type = dst->Gen(*this);
+    const auto llvm_type = dst->GenIR(*this);
 
     llvm::Value *result = nullptr;
 
