@@ -60,20 +60,17 @@ jobs:
       if: runner.os == 'Windows'
       uses: actions/cache@v4
       with:
-        path: llvm.tar.xz
-        key: llvm-18-${{ runner.os }}
+        path: |
+          $env:USERPROFILE\llvm
+          $env:USERPROFILE\vcpkg
+        key: windows-cache
 
-    - name: Download LLVM (Windows)
+    - name: Install LLVM (Windows)
       if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz"
         Invoke-WebRequest -Uri $url -OutFile llvm.tar.xz
-        
-    - name: Install LLVM (Windows)
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
         7z x llvm.tar.xz
         7z x llvm.tar
         Move-Item clang+llvm-18.1.8-x86_64-pc-windows-msvc $env:USERPROFILE\llvm
@@ -86,7 +83,7 @@ jobs:
         llvm-config --version
 
     - name: Install vcpkg and dependencies (Windows)
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         git clone https://github.com/microsoft/vcpkg.git $env:USERPROFILE\vcpkg
