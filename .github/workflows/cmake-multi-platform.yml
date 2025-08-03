@@ -76,7 +76,7 @@ jobs:
       run: |
         7z x llvm.tar.xz
         7z x llvm.tar
-        Move-Item "clang+llvm-18.1.8-x86_64-pc-windows-msvc" $env:USERPROFILE\llvm
+        Move-Item clang+llvm-18.1.8-x86_64-pc-windows-msvc $env:USERPROFILE\llvm
         echo "$env:USERPROFILE\llvm\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Verify LLVM (Windows)
@@ -89,10 +89,10 @@ jobs:
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        git clone https://github.com/microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.bat
-        ./vcpkg/vcpkg.exe install libxml2:x64-windows-static
-        echo "${{ github.workspace }}/vcpkg/installed/x64-windows-static/lib" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        git clone https://github.com/microsoft/vcpkg.git $env:USERPROFILE\vcpkg
+        $env:USERPROFILE\vcpkg\bootstrap-vcpkg.bat
+        $env:USERPROFILE\vcpkg\vcpkg.exe install libxml2:x64-windows-static
+        echo "$env:USERPROFILE\vcpkg\installed\x64-windows-static\lib" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
