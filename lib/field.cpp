@@ -127,8 +127,7 @@ void llove::Field::Reflect(Builder &builder, Field &field) const
     field.Mutable = Mutable;
     field.Reference = Reference;
 
-    if (Type)
-        Type->Reflect(builder, field.Type);
+    Type::Reflect(builder, Type, field.Type);
 }
 
 std::string llove::GetFieldHash(const std::vector<Field> &fields)

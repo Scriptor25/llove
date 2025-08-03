@@ -565,7 +565,7 @@ int main(const int argc, const char *const *argv) try
 
     return 0;
 }
-catch (const std::shared_ptr<llove::ErrorStack> &cause)
+catch (const llove::ref_exception<llove::ErrorStack> &cause)
 {
     cause->Print(std::cerr);
     return 1;

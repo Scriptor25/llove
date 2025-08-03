@@ -58,12 +58,18 @@ namespace llove
 
         virtual std::ostream &Print(std::ostream &stream) const = 0;
 
-        template<typename T> requires std::is_base_of_v<Type, T>
-        void Reflect(Builder &builder, std::shared_ptr<T> &ref)
+        template<typename S, typename D> requires std::is_base_of_v<Type, S> && std::is_base_of_v<Type, D>
+        static void Reflect(Builder &builder, std::shared_ptr<S> src, std::shared_ptr<D> &dst)
         {
-            auto cast = std::dynamic_pointer_cast<T>(Reflect(builder));
+            if (!src)
+            {
+                dst = nullptr;
+                return;
+            }
+
+            auto cast = std::dynamic_pointer_cast<D>(src->Reflect(builder));
             Assert(cast != nullptr, "invalid reflection cast");
-            ref = cast;
+            dst = cast;
         }
 
     protected:
@@ -381,8 +387,7 @@ namespace llove
         using Ptr = std::shared_ptr<FunctionType>;
         static constexpr auto ID = TypeId_Function;
 
-        explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result);
-        explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result, Field self);
+        explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result, std::optional<Field> self);
 
         [[nodiscard]] unsigned GetParameterCount() const;
         [[nodiscard]] const Field &GetParameter(unsigned index) const;

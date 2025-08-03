@@ -20,7 +20,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal()
 
     Field result;
     if (SkipIf(TokenType_Other, ":"))
-        ParseField(result, false, false);
+        ParseField(result, false, true);
     else
         result.Type = m_Types.GetVoid();
 

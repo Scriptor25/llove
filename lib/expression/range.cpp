@@ -33,9 +33,9 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
 
     return Value::CreateR(std::move(range_type), aggregate);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const try
@@ -50,9 +50,9 @@ llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<RangeExpression>(m_Loc, std::move(beg), std::move(end));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::RangeExpression::Print(std::ostream &stream) const

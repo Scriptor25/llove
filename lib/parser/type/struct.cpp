@@ -9,7 +9,7 @@ llove::TypePtr llove::Parser::ParseStructType()
     while (!At(TokenType_Other, "}"))
     {
         Field field;
-        auto name = ParseField(field, true);
+        auto name = ParseField(field, true, true);
 
         fields.emplace_back(field, name);
 

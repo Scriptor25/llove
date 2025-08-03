@@ -16,7 +16,7 @@ llove::ExpressionPtr llove::Parser::ParseArrayExpression()
     }
     Expect(TokenType_Other, "]");
 
-    TypePtr type;
+    ArrayType::Ptr type;
     if (SkipIf(TokenType_Other, ":"))
         type = m_Types.GetArray(ParseType(), values.size());
 

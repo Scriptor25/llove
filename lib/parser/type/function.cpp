@@ -16,7 +16,7 @@ llove::TypePtr llove::Parser::ParseFunctionType()
             break;
         }
 
-        ParseField(parameters.emplace_back(), false, false);
+        ParseField(parameters.emplace_back(), false, true);
 
         if (!At(TokenType_Other, ")"))
             Expect(TokenType_Other, ",");
@@ -26,16 +26,16 @@ llove::TypePtr llove::Parser::ParseFunctionType()
     std::optional<Field> self;
     if (SkipIf(TokenType_Other, "["))
     {
-        ParseField(*self, false, false);
+        Field field;
+        ParseField(field, false, true);
         Expect(TokenType_Other, "]");
+
+        self = std::move(field);
     }
 
     Field result;
     if (SkipIf(TokenType_Operator, "=>"))
-        ParseField(result, false, false);
+        ParseField(result, false, true);
 
-    if (self)
-        return m_Types.GetFunction(std::move(parameters), vararg, std::move(result), std::move(*self));
-
-    return m_Types.GetFunction(std::move(parameters), vararg, std::move(result));
+    return m_Types.GetFunction(std::move(parameters), vararg, std::move(result), std::move(self));
 }

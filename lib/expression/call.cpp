@@ -35,9 +35,9 @@ llove::ValuePtr llove::CallExpression::GenVal(Builder &builder, TypePtr expect) 
 
     return builder.CreateCall(*candidate, std::move(arguments), std::move(self));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const try
@@ -52,9 +52,9 @@ llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<CallExpression>(m_Loc, std::move(callee), std::move(arguments));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::CallExpression::Print(std::ostream &stream) const

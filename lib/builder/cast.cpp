@@ -148,11 +148,11 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         break;
     }
 
-    Assert(result != nullptr, "cast from {} to {} not implemented", value->GetType(), dst);
+    Assert(result != nullptr, "illegal cast from '{}' to '{}'", src, dst);
     return Value::CreateR(std::move(dst), result);
 }
 
-bool llove::Builder::IsCastable(const Field &src, const Field &dst, bool implicit) const
+bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool implicit) const
 {
     if (src == dst)
         return true;

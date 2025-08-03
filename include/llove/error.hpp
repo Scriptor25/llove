@@ -9,18 +9,88 @@
 
 namespace llove
 {
+    template<typename T>
+    class ref_exception final : public std::exception
+    {
+    public:
+        ref_exception() noexcept
+            : m_Pointer(nullptr)
+        {
+        }
+
+        explicit ref_exception(T *pointer) noexcept
+            : m_Pointer(pointer)
+        {
+        }
+
+        explicit ref_exception(T &&value) noexcept
+            : m_Pointer(new T(value))
+        {
+        }
+
+        template<typename... Args>
+        explicit ref_exception(Args &&... args) noexcept
+            : m_Pointer(new T(std::forward<Args>(args)...))
+        {
+        }
+
+        ref_exception(const ref_exception &other) = delete;
+
+        ref_exception(ref_exception &&other) noexcept
+            : m_Pointer(other.m_Pointer)
+        {
+            other.m_Pointer = nullptr;
+        }
+
+        ref_exception &operator=(const ref_exception &other) = delete;
+
+        ref_exception &operator=(ref_exception &&other) noexcept
+        {
+            std::swap(m_Pointer, other.m_Pointer);
+            return *this;
+        }
+
+        ~ref_exception() noexcept override
+        {
+            delete m_Pointer;
+        }
+
+        explicit operator bool() const noexcept
+        {
+            return m_Pointer != nullptr;
+        }
+
+        bool operator!() const noexcept
+        {
+            return !m_Pointer;
+        }
+
+        T *operator->() const noexcept
+        {
+            return m_Pointer;
+        }
+
+        T &operator*() const noexcept
+        {
+            return *m_Pointer;
+        }
+
+    private:
+        T *m_Pointer;
+    };
+
     class ErrorStack final
     {
     public:
         explicit ErrorStack(
-            const std::shared_ptr<ErrorStack> &cause,
+            ref_exception<ErrorStack> cause,
             std::optional<Location> loc,
             std::optional<std::string> message);
 
         std::ostream &Print(std::ostream &stream) const;
 
     private:
-        std::shared_ptr<ErrorStack> m_Cause;
+        ref_exception<ErrorStack> m_Cause;
         std::optional<Location> m_Loc;
         std::optional<std::string> m_Message;
     };
@@ -29,7 +99,7 @@ namespace llove
     [[noreturn]] void Error(std::string_view format, Args &&... args)
     {
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw std::make_shared<ErrorStack>(nullptr, std::nullopt, message);
+        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, std::move(message));
     }
 
     template<typename... Args>
@@ -39,14 +109,14 @@ namespace llove
             return;
 
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw std::make_shared<ErrorStack>(nullptr, std::nullopt, message);
+        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, std::move(message));
     }
 
     template<typename... Args>
     [[noreturn]] void Error(const Location &loc, std::string_view format, Args &&... args)
     {
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw std::make_shared<ErrorStack>(nullptr, loc, message);
+        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::move(loc), std::move(message));
     }
 
     template<typename... Args>
@@ -56,20 +126,20 @@ namespace llove
             return;
 
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw std::make_shared<ErrorStack>(nullptr, loc, message);
+        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::move(loc), std::move(message));
     }
 
     template<typename... Args>
-    [[noreturn]] void Error(std::shared_ptr<ErrorStack> cause, Location loc, std::string_view format, Args &&... args)
+    [[noreturn]] void Error(ref_exception<ErrorStack> cause, Location loc, std::string_view format, Args &&... args)
     {
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw std::make_shared<ErrorStack>(cause, loc, message);
+        throw ref_exception<ErrorStack>(std::move(cause), std::move(loc), std::move(message));
     }
 
     template<typename... Args>
     void Assert(
         const bool condition,
-        std::shared_ptr<ErrorStack> cause,
+        ref_exception<ErrorStack> cause,
         Location loc,
         std::string_view format,
         Args &&... args)
@@ -78,7 +148,7 @@ namespace llove
             return;
 
         auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw std::make_shared<ErrorStack>(cause, loc, message);
+        throw ref_exception<ErrorStack>(cause, loc, message);
     }
 }
 

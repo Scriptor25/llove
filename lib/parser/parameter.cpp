@@ -2,5 +2,5 @@
 
 void llove::Parser::ParseParameter(Parameter &parameter)
 {
-    parameter.Name = ParseField(parameter.Info);
+    parameter.Name = ParseField(parameter.Info, true, true);
 }

@@ -4,7 +4,7 @@
 void llove::Parser::ParseClassField(ClassField &field)
 {
     Expect(TokenType_Symbol, "let");
-    field.Name = ParseField(field.Info, true);
+    field.Name = ParseField(field.Info, true, true);
     if (SkipIf(TokenType_Operator, "="))
     {
         field.Value = ParseExpression();

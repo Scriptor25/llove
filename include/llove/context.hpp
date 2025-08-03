@@ -39,8 +39,11 @@ namespace llove
         StructType::Ptr GetStruct(std::vector<Parameter> fields);
         RangeType::Ptr GetRange(TypePtr entry);
         ClassType::Ptr GetClass(std::string name);
-        FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result);
-        FunctionType::Ptr GetFunction(std::vector<Field> parameters, bool vararg, Field result, Field self);
+        FunctionType::Ptr GetFunction(
+            std::vector<Field> parameters,
+            bool vararg,
+            Field result,
+            std::optional<Field> self = std::nullopt);
 
         TypePtr TypeUnion(const TypePtr &left, const TypePtr &right);
         unsigned Difference(const TypePtr &left, const TypePtr &right);

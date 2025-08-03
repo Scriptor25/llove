@@ -64,16 +64,11 @@ llove::ClassType::Ptr llove::Context::GetClass(std::string name)
     return GetOrCreate<ClassType>(std::move(name));
 }
 
-llove::FunctionType::Ptr llove::Context::GetFunction(std::vector<Field> parameters, bool vararg, Field result)
-{
-    return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result));
-}
-
 llove::FunctionType::Ptr llove::Context::GetFunction(
     std::vector<Field> parameters,
     bool vararg,
     Field result,
-    Field self)
+    std::optional<Field> self)
 {
     return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result), std::move(self));
 }

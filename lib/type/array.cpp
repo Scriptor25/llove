@@ -54,9 +54,7 @@ llvm::DIType *llove::ArrayType::GenDI(Builder &builder)
 llove::TypePtr llove::ArrayType::Reflect(Builder &builder) const
 {
     TypePtr base;
-
-    if (m_Base)
-        m_Base->Reflect(builder, base);
+    Type::Reflect(builder, m_Base, base);
 
     return builder.GetTypes().GetArray(std::move(base), m_Size);
 }

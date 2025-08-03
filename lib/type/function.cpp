@@ -3,14 +3,11 @@
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
-llove::FunctionType::FunctionType(std::vector<Field> parameters, const bool vararg, Field result)
-    : m_Parameters(std::move(parameters)),
-      m_VarArg(vararg),
-      m_Result(std::move(result))
-{
-}
-
-llove::FunctionType::FunctionType(std::vector<Field> parameters, const bool vararg, Field result, Field self)
+llove::FunctionType::FunctionType(
+    std::vector<Field> parameters,
+    const bool vararg,
+    Field result,
+    std::optional<Field> self)
     : m_Parameters(std::move(parameters)),
       m_VarArg(vararg),
       m_Result(std::move(result)),

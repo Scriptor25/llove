@@ -45,9 +45,9 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
 
     Error("operator '{} {} {}' not implemented", left->AsField(), m_Operator, right->AsField());
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::BinaryExpression::Reflect(Builder &builder) const try
@@ -62,9 +62,9 @@ llove::StatementPtr llove::BinaryExpression::Reflect(Builder &builder) const try
 
     return std::make_unique<BinaryExpression>(m_Loc, m_Operator, std::move(left), std::move(right));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::BinaryExpression::Print(std::ostream &stream) const

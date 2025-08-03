@@ -267,7 +267,7 @@ namespace llove
     class ArrayExpression final : public Expression
     {
     public:
-        explicit ArrayExpression(Location loc, std::vector<ExpressionPtr> values, TypePtr type);
+        explicit ArrayExpression(Location loc, std::vector<ExpressionPtr> values, ArrayType::Ptr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
@@ -275,7 +275,7 @@ namespace llove
 
     private:
         std::vector<ExpressionPtr> m_Values;
-        TypePtr m_Type;
+        ArrayType::Ptr m_Type;
     };
 
     class BinaryExpression final : public Expression
@@ -372,14 +372,14 @@ namespace llove
     class NullExpression final : public Expression
     {
     public:
-        explicit NullExpression(Location loc, TypePtr type);
+        explicit NullExpression(Location loc, PointerType::Ptr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Builder &builder) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        TypePtr m_Type;
+        PointerType::Ptr m_Type;
     };
 
     class RangeExpression final : public Expression

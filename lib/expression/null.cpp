@@ -3,7 +3,7 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::NullExpression::NullExpression(Location loc, TypePtr type)
+llove::NullExpression::NullExpression(Location loc, PointerType::Ptr type)
     : Expression(std::move(loc)),
       m_Type(std::move(type))
 {
@@ -11,40 +11,38 @@ llove::NullExpression::NullExpression(Location loc, TypePtr type)
 
 llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
-    PointerType::Ptr type;
-    if (m_Type)
-        type = builder.GetTypes().GetPointer(m_Type, false);
-    else if (auto pointer_type = As<PointerType>(expect))
-        type = std::move(pointer_type);
-    else
-        type = builder.GetTypes().GetPointer(false);
+    auto type = m_Type
+                    ? m_Type
+                    : expect && expect->IsPointer()
+                    ? As<PointerType>(expect)
+                    : builder.GetTypes().GetPointer(false);
 
     builder.EmitLoc(m_Loc);
 
     const auto value = llvm::ConstantPointerNull::get(type->GenIR(builder));
     return Value::CreateR(std::move(type), value);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::NullExpression::Reflect(Builder &builder) const try
 {
-    TypePtr type;
-    if (m_Type)
-        m_Type->Reflect(builder, type);
+    PointerType::Ptr type;
+    Type::Reflect(builder, m_Type, type);
 
     return std::make_unique<NullExpression>(m_Loc, std::move(type));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::NullExpression::Print(std::ostream &stream) const
 {
+    stream << "null";
     if (m_Type)
-        return stream << "null:" << m_Type;
-    return stream << "null";
+        stream << ':' << m_Type->GetBase();
+    return stream;
 }

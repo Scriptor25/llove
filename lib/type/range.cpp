@@ -55,8 +55,7 @@ llvm::DIType *llove::RangeType::GenDI(Builder &builder)
 llove::TypePtr llove::RangeType::Reflect(Builder &builder) const
 {
     TypePtr entry;
-    if (m_Entry)
-        m_Entry->Reflect(builder, entry);
+    Type::Reflect(builder, m_Entry, entry);
 
     return builder.GetTypes().GetRange(std::move(entry));
 }

@@ -4,7 +4,7 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::ArrayExpression::ArrayExpression(Location loc, std::vector<ExpressionPtr> values, TypePtr type)
+llove::ArrayExpression::ArrayExpression(Location loc, std::vector<ExpressionPtr> values, ArrayType::Ptr type)
     : Expression(std::move(loc)),
       m_Values(std::move(values)),
       m_Type(std::move(type))
@@ -38,9 +38,9 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr e
 
     return Value::CreateR(std::move(type), aggregate);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const try
@@ -49,15 +49,14 @@ llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const try
     for (auto &value : m_Values)
         value->Reflect(builder, values.emplace_back());
 
-    TypePtr type;
-    if (m_Type)
-        m_Type->Reflect(builder, type);
+    ArrayType::Ptr type;
+    Type::Reflect(builder, m_Type, type);
 
     return std::make_unique<ArrayExpression>(m_Loc, std::move(values), std::move(type));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ArrayExpression::Print(std::ostream &stream) const
@@ -71,6 +70,6 @@ std::ostream &llove::ArrayExpression::Print(std::ostream &stream) const
     }
     stream << " ]";
     if (m_Type)
-        stream << ':' << m_Type;
+        stream << ':' << m_Type->GetBase();
     return stream;
 }

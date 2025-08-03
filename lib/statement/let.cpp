@@ -134,9 +134,9 @@ void llove::LetStatement::Gen(Builder &builder) const try
     builder.GetDebug().CreateVariable(builder, m_Name, storage);
     builder.SetValue(m_Name, std::move(storage));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::LetStatement::Reflect(Builder &builder) const try
@@ -155,9 +155,9 @@ llove::StatementPtr llove::LetStatement::Reflect(Builder &builder) const try
 
     return std::make_unique<LetStatement>(m_Loc, std::move(info), m_Name, std::move(value), std::move(arguments));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::LetStatement::Print(std::ostream &stream) const

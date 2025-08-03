@@ -81,7 +81,7 @@ namespace llove
         TypePtr ParseRangeType();
         TypePtr ParseStructType();
 
-        std::string ParseField(Field &field, bool require_name = false, bool allow_name = true);
+        std::string ParseField(Field &field, bool require_name, bool require_type);
 
         void ParseParameter(Parameter &parameter);
         bool ParseParameterList(

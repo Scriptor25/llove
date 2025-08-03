@@ -65,8 +65,7 @@ llvm::DIType *llove::PointerType::GenDI(Builder &builder)
 llove::TypePtr llove::PointerType::Reflect(Builder &builder) const
 {
     TypePtr base;
-    if (m_Base)
-        m_Base->Reflect(builder, base);
+    Type::Reflect(builder, m_Base, base);
 
     return builder.GetTypes().GetPointer(std::move(base), m_Mutable);
 }

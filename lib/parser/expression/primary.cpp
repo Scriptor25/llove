@@ -41,5 +41,5 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Symbol))
         return ParseSymbolExpression();
 
-    Error("unable to parse expression from {} : '{}'", m_Token.Type, m_Token.Value);
+    Error(m_Token.Loc, "unable to parse expression from {} : '{}'", m_Token.Type, m_Token.Value);
 }

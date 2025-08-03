@@ -83,7 +83,8 @@ llove::TypePtr llove::ClassTemplateType::Reflect(Builder &builder) const
 {
     std::vector<TypePtr> arguments;
     for (auto &argument : m_Arguments)
-        argument->Reflect(builder, arguments.emplace_back());
+        Type::Reflect(builder, argument, arguments.emplace_back());
+
     return builder.GetTypes().InstantiateTemplateClass(builder, m_Name, arguments);
 }
 

@@ -11,23 +11,28 @@ llove::StringExpression::StringExpression(Location loc, std::string value)
 
 llove::ValuePtr llove::StringExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
+    static std::map<std::string, llvm::Value *> string_cache;
+
     builder.EmitLoc(m_Loc);
 
-    const auto value = builder.CreateGlobalString(m_Value);
+    auto &value = string_cache[m_Value];
+    if (!value)
+        value = builder.CreateGlobalString(m_Value);
+
     return Value::CreateR(builder.GetTypes().GetPointer(builder.GetTypes().GetInteger(true, 8), false), value);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::StringExpression::Reflect(Builder &builder) const try
 {
     return std::make_unique<StringExpression>(m_Loc, m_Value);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::StringExpression::Print(std::ostream &stream) const

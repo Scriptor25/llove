@@ -13,7 +13,11 @@ llove::StructExpression::StructExpression(Location loc, std::map<std::string, Ex
 
 llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
-    auto type = m_Type ? As<StructType>(m_Type) : expect ? As<StructType>(expect) : nullptr;
+    auto type = m_Type
+                    ? As<StructType>(m_Type)
+                    : expect && expect->IsStruct()
+                    ? As<StructType>(expect)
+                    : nullptr;
     Assert(type != nullptr, "untyped struct expression");
 
     builder.EmitLoc(m_Loc);
@@ -33,9 +37,9 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
 
     return Value::CreateR(std::move(type), aggregate);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const try
@@ -45,14 +49,13 @@ llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const try
         value->Reflect(builder, values[key]);
 
     TypePtr type;
-    if (m_Type)
-        m_Type->Reflect(builder, type);
+    Type::Reflect(builder, m_Type, type);
 
     return std::make_unique<StructExpression>(m_Loc, std::move(values), std::move(type));
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::StructExpression::Print(std::ostream &stream) const

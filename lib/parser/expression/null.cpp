@@ -1,3 +1,4 @@
+#include <llove/context.hpp>
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
@@ -5,9 +6,9 @@ llove::ExpressionPtr llove::Parser::ParseNullExpression()
 {
     auto token = Expect(TokenType_Symbol, "null");
 
-    TypePtr type;
+    PointerType::Ptr type;
     if (SkipIf(TokenType_Other, ":"))
-        type = ParseType();
+        type = m_Types.GetPointer(ParseType(), false);
 
-    return std::make_unique<NullExpression>(std::move(token.Loc), type);
+    return std::make_unique<NullExpression>(std::move(token.Loc), std::move(type));
 }

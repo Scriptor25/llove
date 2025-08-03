@@ -17,40 +17,66 @@ llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect
 
     const auto functions = builder.GetFunctions(m_Name);
     if (functions.empty())
-        Error("undefined symbol name '{}'", m_Name);
+        Error("undefined symbol '{}'", m_Name);
     if (functions.size() > 1)
-        Error("ambiguous function symbol name '{}'", m_Name);
+        Error("ambiguous function symbol '{}'", m_Name);
 
     builder.EmitLoc(m_Loc);
 
     const auto &function = functions.front();
     return Value::CreateR(function.Type, function.Callee);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
 {
     // TODO: if symbol with name exists, add to candidates
 
-    auto candidates = builder.GetFunctions(m_Name);
+    std::vector<FunctionReference> candidates;
+
+    TypePtr symbol_type;
+    if (builder.HasValue(m_Name))
+    {
+        const auto value = builder.GetValue(m_Name);
+        symbol_type = value->GetType();
+
+        if (symbol_type->IsFunction())
+        {
+            FunctionReference reference
+            {
+                .Expose = false,
+                .Implicit = false,
+                .Name = m_Name,
+                .Type = As<FunctionType>(symbol_type),
+                .Callee = value->Load(builder),
+            };
+
+            candidates.emplace_back(std::move(reference));
+        }
+    }
+
+    auto functions = builder.GetFunctions(m_Name);
+    candidates.insert(candidates.end(), functions.begin(), functions.end());
+
+    Assert(!candidates.empty() || !symbol_type, "illegal callee symbol '{}', type '{}' is not a function type", m_Name, symbol_type);
     Assert(!candidates.empty(), "undefined symbol '{}'", m_Name);
     return { .Candidates = std::move(candidates) };
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::StatementPtr llove::SymbolExpression::Reflect(Builder &builder) const try
 {
     return std::make_unique<SymbolExpression>(m_Loc, m_Name);
 }
-catch (const std::shared_ptr<ErrorStack> &cause)
+catch (ref_exception<ErrorStack> &cause)
 {
-    throw std::make_shared<ErrorStack>(cause, m_Loc, std::nullopt);
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::SymbolExpression::Print(std::ostream &stream) const

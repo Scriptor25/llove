@@ -7,7 +7,7 @@ llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
     auto loc = Expect(TokenType_Symbol, "let").Loc;
 
     Field info;
-    auto name = ParseField(info, true);
+    auto name = ParseField(info, true, false);
 
     ExpressionPtr value;
     std::vector<ExpressionPtr> arguments;

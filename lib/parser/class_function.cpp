@@ -13,7 +13,7 @@ void llove::Parser::ParseClassFunction(ClassFunction &function, const bool requi
     function.VarArg = ParseParameterList("(", function.Parameters, ")");
 
     if (SkipIf(TokenType_Other, ":"))
-        ParseField(function.Result, false, false);
+        ParseField(function.Result, false, true);
     else
         function.Result.Type = m_Types.GetVoid();
 

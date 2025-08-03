@@ -2,10 +2,10 @@
 #include <llove/error.hpp>
 
 llove::ErrorStack::ErrorStack(
-    const std::shared_ptr<ErrorStack> &cause,
+    ref_exception<ErrorStack> cause,
     std::optional<Location> loc,
     std::optional<std::string> message)
-    : m_Cause(cause),
+    : m_Cause(std::move(cause)),
       m_Loc(std::move(loc)),
       m_Message(std::move(message))
 {
