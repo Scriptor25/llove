@@ -60,28 +60,29 @@ jobs:
       if: runner.os == 'Windows'
       uses: actions/cache@v4
       with:
-        path: llvm-installer.exe
+        path: llvm.tar.xz
         key: llvm-18-${{ runner.os }}
 
     - name: Download LLVM (Windows)
       if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
-        $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/LLVM-18.1.8-win64.exe"
-        Invoke-WebRequest -Uri $url -OutFile llvm-installer.exe
+        $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz"
+        Invoke-WebRequest -Uri $url -OutFile llvm.tar.xz
         
     - name: Install LLVM (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        Start-Process .\llvm-installer.exe -ArgumentList "/S" -NoNewWindow -Wait
-        echo "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        tar -xf llvm.tar.xz
+        $folder = Get-ChildItem -Directory LLVM-18* | Select-Option -First 1
+        Move-Item $folder.FullName $env:USERPROFILE\llvm
+        echo "$env:USERPROFILE\llvm\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
     - name: Verify LLVM (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
-        clang --version
         llvm-config --version
 
     - name: Set reusable strings
