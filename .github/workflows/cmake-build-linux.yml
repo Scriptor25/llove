@@ -1,4 +1,4 @@
-name: Build CMake - Multiplatform
+name: CMake Build - Linux
 
 on:
   # push:
