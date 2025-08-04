@@ -1,4 +1,4 @@
-name: Build CMake - Multiplatform
+name: CMake Build - Windows
 
 on:
   # push:
@@ -9,32 +9,18 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
 
     strategy:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-latest, windows-latest]
         build_type: [Release]
-        c_compiler: [gcc, clang, cl]
+        c_compiler: [cl]
         include:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          - os: ubuntu-latest
-            c_compiler: clang
-            cpp_compiler: clang++
-        exclude:
-          - os: windows-latest
-            c_compiler: gcc
-          - os: windows-latest
-            c_compiler: clang
-          - os: ubuntu-latest
-            c_compiler: cl
 
     steps:
     - uses: actions/checkout@v4
@@ -47,8 +33,7 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-    - name: Cache LLVM (Windows)
-      if: runner.os == 'Windows'
+    - name: Cache LLVM
       uses: actions/cache@v4
       with:
         path: |
@@ -56,8 +41,8 @@ jobs:
           $env:USERPROFILE\\vcpkg
         key: windows-cache
 
-    - name: Install LLVM (Windows)
-      if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+    - name: Install LLVM
+      if: steps.cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         $url = "https://github.com/llvm/llvm-project/releases/download/llvmorg-18.1.8/clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz"
@@ -67,14 +52,13 @@ jobs:
         Move-Item clang+llvm-18.1.8-x86_64-pc-windows-msvc $env:USERPROFILE\\llvm
         echo "$env:USERPROFILE\\llvm\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-    - name: Verify LLVM (Windows)
-      if: runner.os == 'Windows'
+    - name: Verify LLVM
       shell: pwsh
       run: |
         llvm-config --version
 
-    - name: Install vcpkg and dependencies (Windows)
-      if: runner.os == 'Windows' && steps.cache.outputs.cache-hit != 'true'
+    - name: Install vcpkg and dependencies
+      if: steps.cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         git clone --depth 1 https://github.com/microsoft/vcpkg.git $env:USERPROFILE\vcpkg
@@ -82,19 +66,7 @@ jobs:
         & "$env:USERPROFILE\\vcpkg\\vcpkg.exe" install libxml2:x64-windows-static zlib:x64-windows-static libffi:x64-windows-static
         echo "$env:USERPROFILE\\vcpkg\\installed\\x64-windows-static\\lib" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-    - name: Configure CMake (Linux)
-      if: runner.os == 'Linux'
-      run: >
-        cmake
-        -S ${{ github.workspace }}
-        -B ${{ steps.strings.outputs.build-output-dir }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        
-    - name: Configure CMake (Windows)
-      if: runner.os == 'Windows'
-      continue-on-error: true
+    - name: Configure CMake
       shell: pwsh
       run: >
         cmake
@@ -106,7 +78,6 @@ jobs:
         -DCMAKE_TOOLCHAIN_FILE=$HOME\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake
 
     - name: Build
-      if: success()
       run: >
         cmake
         --build ${{ steps.strings.outputs.build-output-dir }}
