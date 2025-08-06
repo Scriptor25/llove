@@ -7,9 +7,10 @@ static T ceil_div(T lhs, T rhs)
     return lhs / rhs + (lhs % rhs != 0);
 }
 
-cli::Table::Table(std::ostream &stream, const unsigned columns)
+cli::Table::Table(std::ostream &stream, const unsigned columns, const unsigned console_width)
     : m_Stream(stream),
-      m_Columns(columns)
+      m_Columns(columns),
+      m_MaxColumnWidth(console_width / columns - (3 * columns + 1))
 {
 }
 
@@ -26,10 +27,10 @@ cli::Table::~Table()
         auto cell_width = m_Cells.at(i).size();
         auto cell_height = 1u;
 
-        if (cell_width > MAX_COLUMN_WIDTH)
+        if (cell_width > m_MaxColumnWidth)
         {
-            cell_height = ceil_div<unsigned>(cell_width, MAX_COLUMN_WIDTH);
-            cell_width = MAX_COLUMN_WIDTH;
+            cell_height = ceil_div<unsigned>(cell_width, m_MaxColumnWidth);
+            cell_width = m_MaxColumnWidth;
         }
 
         width = std::max<unsigned>(width, cell_width);

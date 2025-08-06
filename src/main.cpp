@@ -15,6 +15,14 @@
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/TargetParser/Host.h>
 
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define VC_EXTRALEAN
+#include <windows.h>
+#elif defined(__linux__)
+#include <sys/ioctl.h>
+#endif
+
 // --format=<"asm"|"obj">
 // --output=<string|"stdout">
 // --include=<string,...>...
@@ -116,6 +124,19 @@ static void print_version()
     std::cerr << "llove v0.0.0" << std::endl;
 }
 
+static unsigned get_console_width()
+{
+#if defined(_WIN32)
+    CONSOLE_SCREEN_BUFFER_INFO info;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_ERROR_HANDLE), &info);
+    return info.srWindow.Right - csbi.srWindow.Left + 1;
+#elif defined(__linux__)
+    winsize size;
+    ioctl(fileno(stderr), TIOCGWINSZ, &size);
+    return size.ws_col;
+#endif
+}
+
 static void print_help(const std::map<std::string, cli::OptionTemplate> &templates)
 {
     print_version();
@@ -129,7 +150,8 @@ static void print_help(const std::map<std::string, cli::OptionTemplate> &templat
             << std::endl
             << "OPTIONS" << std::endl;
 
-    cli::Table table(std::cerr, 3);
+    const auto console_width = get_console_width();
+    cli::Table table(std::cerr, 3, console_width ? console_width : 120u);
 
     table << "PATTERN" << "FILTER" << "DESCRIPTION";
 

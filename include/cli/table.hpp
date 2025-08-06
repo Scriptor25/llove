@@ -8,11 +8,10 @@ namespace cli
 {
     class Table final
     {
-        static constexpr auto MAX_COLUMN_WIDTH = 37u;
         static constexpr auto PRINT_BORDER = true;
 
     public:
-        explicit Table(std::ostream &stream, unsigned columns);
+        explicit Table(std::ostream &stream, unsigned columns, unsigned console_width = 120u);
         ~Table();
 
         Table &operator<<(const std::string &cell);
@@ -31,6 +30,8 @@ namespace cli
     private:
         std::ostream &m_Stream;
         unsigned m_Columns;
+        unsigned m_MaxColumnWidth;
+
         std::vector<std::string> m_Cells;
     };
 }
