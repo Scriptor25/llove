@@ -23,23 +23,27 @@ void llove::IfStatement::Gen(Builder &builder) const try
 
     auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
     condition = builder.CreateCast(std::move(condition), builder.GetTypes().GetInteger(false, 1), false);
+
+    builder.EmitLoc(m_Loc);
     builder.CreateBranch(condition, then_block, else_block);
 
     builder.SetInsertPoint(then_block);
     m_Then->Gen(builder);
+
     if (builder.NoTerminator())
     {
+        builder.EmitLoc(m_Loc);
         builder.CreateBranch(end_block);
         use_end = true;
     }
 
     builder.SetInsertPoint(else_block);
     if (m_Else)
-    {
         m_Else->Gen(builder);
-    }
+
     if (builder.NoTerminator())
     {
+        builder.EmitLoc(m_Loc);
         builder.CreateBranch(end_block);
         use_end = true;
     }

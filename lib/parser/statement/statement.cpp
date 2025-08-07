@@ -15,6 +15,8 @@ llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
         return ParseLetStatement(inline_);
     if (At(TokenType_Other, "{"))
         return ParseScopeStatement();
+    if (At(TokenType_Symbol, "while"))
+        return ParseWhileStatement(inline_);
     if (At(TokenType_Symbol, "yield"))
         return ParseYieldStatement(inline_);
 

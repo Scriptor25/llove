@@ -30,15 +30,19 @@ void llove::ForStatement::Gen(Builder &builder) const try
 
     if (m_Prefix)
         m_Prefix->Gen(builder);
+
     builder.EmitLoc(m_Loc);
     builder.CreateBranch(head_block);
 
     builder.SetInsertPoint(head_block);
     if (m_Condition)
     {
-        const auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
+        auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
+        condition = builder.CreateCast(std::move(condition), builder.GetTypes().GetInteger(false, 1), false);
+
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(condition, loop_block, end_block);
+
         use_end = true;
     }
     else
@@ -53,6 +57,7 @@ void llove::ForStatement::Gen(Builder &builder) const try
     {
         if (m_Suffix)
             m_Suffix->Gen(builder);
+
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(head_block);
     }

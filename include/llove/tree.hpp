@@ -236,6 +236,20 @@ namespace llove
         std::vector<StatementPtr> m_Content;
     };
 
+    class WhileStatement final : public Statement
+    {
+    public:
+        explicit WhileStatement(Location loc, ExpressionPtr condition, StatementPtr content);
+
+        void Gen(Builder &builder) const override;
+        StatementPtr Reflect(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Condition;
+        StatementPtr m_Content;
+    };
+
     class YieldStatement final : public Statement
     {
     public:

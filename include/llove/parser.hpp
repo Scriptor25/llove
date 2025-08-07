@@ -106,6 +106,7 @@ namespace llove
         StatementPtr ParseIfStatement(bool inline_);
         StatementPtr ParseLetStatement(bool inline_);
         StatementPtr ParseScopeStatement();
+        StatementPtr ParseWhileStatement(bool inline_);
         StatementPtr ParseYieldStatement(bool inline_);
 
         ExpressionPtr ParseExpression();
