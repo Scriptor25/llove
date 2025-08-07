@@ -35,12 +35,15 @@ file(GLOB_RECURSE EXE_SOURCES src/*.cpp)
 file(GLOB_RECURSE LIB_SOURCES lib/*.cpp)
 
 add_library(libllove)
-set_target_properties(libllove PROPERTIES OUTPUT_NAME "llove")
 target_sources(libllove PRIVATE ${LIB_SOURCES})
 target_include_directories(libllove PUBLIC include ${LLVM_INCLUDE_DIRS})
 target_compile_definitions(libllove PUBLIC ${LLVM_DEFS_LIST})
 target_link_directories(libllove PUBLIC ${LLVM_LIBRARY_DIRS})
 target_link_libraries(libllove PUBLIC ${LLVM_LIBS_LIST})
+set_target_properties(libllove PROPERTIES
+        OUTPUT_NAME "llove"
+        UNITY_BUILD_MODE GROUP
+)
 
 set(CONFIG_INPUT ${CMAKE_SOURCE_DIR}/config.yaml)
 set(CONFIG_OUTPUT ${CMAKE_BINARY_DIR}/config.h)
@@ -55,7 +58,71 @@ add_custom_target(generate_config DEPENDS ${CONFIG_OUTPUT})
 
 add_executable(llove)
 add_dependencies(llove generate_config)
-set_target_properties(llove PROPERTIES OUTPUT_NAME "llove")
 target_sources(llove PRIVATE ${EXE_SOURCES})
 target_include_directories(llove PRIVATE ${CMAKE_BINARY_DIR} include)
 target_link_libraries(llove PRIVATE libllove yaml-cpp::yaml-cpp)
+set_target_properties(llove PROPERTIES
+        OUTPUT_NAME "llove"
+        UNITY_BUILD_MODE GROUP
+)
+
+file(GLOB LIBLLOVE_BUILDER_BUCKET_SOURCES lib/builder/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_BUILDER_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_builder_bucket"
+)
+file(GLOB LIBLLOVE_EXPRESSION_BUCKET_SOURCES lib/expression/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_EXPRESSION_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_expression_bucket"
+)
+file(GLOB LIBLLOVE_GLOBAL_BUCKET_SOURCES lib/global/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_GLOBAL_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_global_bucket"
+)
+file(GLOB LIBLLOVE_PARSER_EXPRESSION_BUCKET_SOURCES lib/parser/expression/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_PARSER_EXPRESSION_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_parser_expression_bucket"
+)
+file(GLOB LIBLLOVE_PARSER_GLOBAL_BUCKET_SOURCES lib/parser/global/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_PARSER_GLOBAL_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_parser_global_bucket"
+)
+file(GLOB LIBLLOVE_PARSER_STATEMENT_BUCKET_SOURCES lib/parser/statement/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_PARSER_STATEMENT_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_parser_statement_bucket"
+)
+file(GLOB LIBLLOVE_PARSER_TYPE_BUCKET_SOURCES lib/parser/type/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_PARSER_TYPE_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_parser_type_bucket"
+)
+file(GLOB LIBLLOVE_PARSER_BUCKET_SOURCES lib/parser/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_PARSER_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_parser_bucket"
+)
+file(GLOB LIBLLOVE_STATEMENT_BUCKET_SOURCES lib/statement/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_STATEMENT_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_statement_bucket"
+)
+file(GLOB LIBLLOVE_TYPE_BUCKET_SOURCES lib/type/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_TYPE_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_type_bucket"
+)
+file(GLOB LIBLLOVE_BUCKET_SOURCES lib/*.cpp)
+set_source_files_properties(
+        ${LIBLLOVE_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "libllove_bucket"
+)
+file(GLOB LLOVE_BUCKET_SOURCES src/*.cpp)
+set_source_files_properties(
+        ${LLOVE_BUCKET_SOURCES}
+        PROPERTIES UNITY_GROUP "llove_bucket"
+)
