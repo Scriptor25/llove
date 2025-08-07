@@ -126,3 +126,5 @@ set_source_files_properties(
         ${LLOVE_BUCKET_SOURCES}
         PROPERTIES UNITY_GROUP "llove_bucket"
 )
+
+install(TARGETS libllove llove)

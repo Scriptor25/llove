@@ -126,37 +126,22 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetDestructor() c
 
 void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReference> fields)
 {
+    m_DIType = nullptr;
+
     m_Opaque = fields.empty();
     m_Fields = std::move(fields);
 
     if (m_Opaque)
     {
         m_IRType = builder.GetOrCreateNamedStructType(m_Name);
-        m_DIType = builder.GetDebug().GetClassType(m_Name);
         return;
     }
 
-    std::vector<llvm::Type *> ir_elements;
-    std::vector<llvm::Metadata *> di_elements;
-
-    unsigned offset = 0;
+    std::vector<llvm::Type *> elements;
     for (auto &field : m_Fields)
-    {
-        const auto size = field.Info.SizeBits(builder);
+        elements.emplace_back(field.Info.GenIRType(builder));
 
-        ir_elements.emplace_back(field.Info.GenIRType(builder));
-        di_elements.emplace_back(
-            builder.GetDebug().GetFieldType(
-                field.Name,
-                field.Info.GenDIType(builder),
-                size,
-                offset));
-
-        offset += size;
-    }
-
-    m_IRType = builder.GetOrCreateNamedStructType(m_Name, ir_elements, true);
-    m_DIType = builder.GetDebug().GetClassType(m_Name, di_elements, offset);
+    m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, true);
 }
 
 void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> functions)
