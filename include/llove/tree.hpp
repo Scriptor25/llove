@@ -77,6 +77,20 @@ namespace llove
         StatementPtr m_Content;
     };
 
+    class ConstGlobal final : public Global
+    {
+    public:
+        explicit ConstGlobal(Location loc, std::string name, TypePtr type, ExpressionPtr value);
+
+        void Gen(Builder &builder) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_Name;
+        TypePtr m_Type;
+        ExpressionPtr m_Value;
+    };
+
     class DefinitionGlobal final : public Global
     {
     public:

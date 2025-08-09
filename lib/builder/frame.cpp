@@ -37,18 +37,21 @@ void llove::Builder::PopFrame()
 void llove::Builder::SetValue(const std::string &name, ValuePtr value)
 {
     Assert(!m_Stack.empty(), "stack is empty");
+    Assert(!m_Stack.back().Values.contains(name), "already defined value with name '{}'", name);
 
-    m_Stack.back().Values[name] = std::move(value);
+    m_Stack.back().Values.emplace(name, std::move(value));
 }
 
 bool llove::Builder::HasValue(const std::string &name) const
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    for (auto &frame : std::ranges::reverse_view(m_Stack))
-        if (frame.Values.contains(name))
-            return true;
-    return false;
+    return std::ranges::any_of(
+        m_Stack,
+        [&name](auto &frame)
+        {
+            return frame.Values.contains(name);
+        });
 }
 
 llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
@@ -58,7 +61,8 @@ llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
     for (auto &frame : std::ranges::reverse_view(m_Stack))
         if (frame.Values.contains(name))
             return frame.Values.at(name);
-    return nullptr;
+
+    Error("undefined value with name '{}'", name);
 }
 
 void llove::Builder::PushDestructor(llvm::Value *self, const FunctionReference &reference)

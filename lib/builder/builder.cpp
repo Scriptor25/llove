@@ -55,6 +55,8 @@ llove::Builder::Builder(
         profiling,
         command_line,
         emission);
+
+    m_Stack.emplace_back();
 }
 
 llove::Context &llove::Builder::GetTypes() const

@@ -17,6 +17,8 @@ llove::GlobalPtr llove::Parser::ParseGlobal()
         return ParseDefinitionGlobal();
     if (At(TokenType_Symbol, "class"))
         return ParseClassGlobal();
+    if (At(TokenType_Symbol, "const"))
+        return ParseConstGlobal();
 
     Error(m_Token.Loc, "unable to parse global from {} : '{}'", m_Token.Type, m_Token.Value);
 }
