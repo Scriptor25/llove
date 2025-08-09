@@ -129,9 +129,9 @@ static unsigned get_console_width()
 #if defined(_WIN32)
     CONSOLE_SCREEN_BUFFER_INFO info;
     GetConsoleScreenBufferInfo(GetStdHandle(STD_ERROR_HANDLE), &info);
-    return info.srWindow.Right - csbi.srWindow.Left + 1;
+    return info.srWindow.Right - info.srWindow.Left + 1;
 #elif defined(__linux__)
-    winsize size;
+    winsize size{};
     ioctl(fileno(stderr), TIOCGWINSZ, &size);
     return size.ws_col;
 #endif
@@ -248,26 +248,11 @@ int main(const int argc, const char *const *argv) try
         arguments.BuildCommandLine());
     llove::Parser parser(types, builder, *input_stream_ref, input_filename);
 
-    std::string output_filename, print_filename;
-    llove::stream_ref<std::ostream> output_stream_ref, print_stream_ref;
+    std::string print_filename, output_filename;
+    llove::stream_ref<std::ostream> print_stream_ref, output_stream_ref;
 
-    auto has_output_filename = arguments.value("output", output_filename);
     auto has_print_filename = arguments.value("print-output", print_filename);
-
-    if (!has_output_filename || output_filename == "stdout")
-        output_stream_ref = llove::stream_ref(&std::cout, false);
-    else if (output_filename == "stderr")
-        output_stream_ref = llove::stream_ref(&std::cerr, false);
-    else
-        output_stream_ref = llove::stream_ref<std::ofstream>(
-            output_filename,
-            std::ios_base::out | std::ios_base::binary);
-
-    if (output_stream_ref->fail())
-    {
-        std::cerr << "failed to open file '" << output_filename << "'" << std::endl;
-        return 1;
-    }
+    auto has_output_filename = arguments.value("output", output_filename);
 
     if (!has_print_filename || print_filename == "stderr")
         print_stream_ref = llove::stream_ref(&std::cerr, false);
@@ -298,6 +283,21 @@ int main(const int argc, const char *const *argv) try
                 *print_stream_ref << ptr << std::endl;
             ptr->Gen(builder);
         }
+
+    if (!has_output_filename || output_filename == "stdout")
+        output_stream_ref = llove::stream_ref(&std::cout, false);
+    else if (output_filename == "stderr")
+        output_stream_ref = llove::stream_ref(&std::cerr, false);
+    else
+        output_stream_ref = llove::stream_ref<std::ofstream>(
+            output_filename,
+            std::ios_base::out | std::ios_base::binary);
+
+    if (output_stream_ref->fail())
+    {
+        std::cerr << "failed to open file '" << output_filename << "'" << std::endl;
+        return 1;
+    }
 
     llove::SealInfo seal_info
     {

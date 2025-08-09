@@ -204,6 +204,12 @@ llove::Token llove::Parser::Next()
                     flt = false;
                     state = State_Num;
                     break;
+                case '.':
+                    value += '0';
+                    base = 10;
+                    flt = false;
+                    state = State_Num;
+                    break;
                 default:
                     value += '0';
                     base = 8;
