@@ -59,7 +59,7 @@ namespace llove
     {
     public:
         Builder(
-            Context &types,
+            Context &context,
             bool debug,
             bool optimized,
             bool profiling,
@@ -68,7 +68,7 @@ namespace llove
             const std::filesystem::path &debug_path,
             const std::string &command_line);
         Builder(
-            Context &types,
+            Context &context,
             bool debug,
             bool optimized,
             bool profiling,
@@ -78,14 +78,14 @@ namespace llove
             const std::string &command_line,
             const std::string &module_id);
 
-        Context &GetTypes() const;
+        Context &GetContext() const;
 
         bool IsDebug() const;
         DebugBuilder &GetDebug() const;
 
         void EmitLoc(const Location &loc);
 
-        llvm::LLVMContext &GetContext();
+        llvm::LLVMContext &GetLLVMContext();
 
         static std::string Mangle(
             bool interface,
@@ -252,14 +252,14 @@ namespace llove
         void Seal(const SealInfo &info);
 
     private:
-        Context &m_Types;
+        Context &m_Context;
 
         bool m_Debug;
         std::unique_ptr<DebugBuilder> m_DebugBuilder;
 
-        llvm::LLVMContext m_Context;
-        llvm::IRBuilder<> m_Builder;
-        llvm::Module m_Module;
+        llvm::LLVMContext m_LLVMContext;
+        llvm::IRBuilder<> m_LLVMBuilder;
+        llvm::Module m_LLVMModule;
 
         std::vector<FunctionReference> m_Functions;
 

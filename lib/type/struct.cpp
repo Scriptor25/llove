@@ -92,16 +92,16 @@ llvm::DIType *llove::StructType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetStructType(fields, offset);
 }
 
-llove::TypePtr llove::StructType::Reflect(Builder &builder) const
+llove::TypePtr llove::StructType::Reflect(Context &context) const
 {
     std::vector<Parameter> fields(m_Fields.size());
     for (unsigned i = 0; i < m_Fields.size(); ++i)
     {
         fields.at(i).Name = m_Fields.at(i).Name;
-        m_Fields.at(i).Info.Reflect(builder, fields.at(i).Info);
+        m_Fields.at(i).Info.Reflect(context, fields.at(i).Info);
     }
 
-    return builder.GetTypes().GetStruct(std::move(fields));
+    return context.GetStruct(std::move(fields));
 }
 
 std::string llove::StructType::Mangle() const

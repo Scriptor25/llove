@@ -74,7 +74,7 @@ void llove::Builder::PushDestructor(llvm::Value *self, const FunctionReference &
 
 void llove::Builder::CallDestructors(const std::set<llvm::Value *> &mask, const bool propagate)
 {
-    if (const auto block = m_Builder.GetInsertBlock(); !block || block->getTerminator())
+    if (const auto block = m_LLVMBuilder.GetInsertBlock(); !block || block->getTerminator())
         return;
 
     if (propagate)

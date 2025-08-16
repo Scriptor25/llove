@@ -15,7 +15,7 @@ void llove::Parser::ParseClassFunction(ClassFunction &function, const bool requi
     if (SkipIf(TokenType_Other, ":"))
         ParseField(function.Result, false, true);
     else
-        function.Result.Type = m_Types.GetVoid();
+        function.Result.Type = m_Context.GetVoid();
 
     if (!require_content && SkipIf(TokenType_Other, ";"))
         return;

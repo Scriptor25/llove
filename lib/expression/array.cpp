@@ -43,14 +43,14 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ArrayExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::ArrayExpression::Reflect(Context &context) const try
 {
     std::vector<ExpressionPtr> values;
     for (auto &value : m_Values)
-        value->Reflect(builder, values.emplace_back());
+        value->Reflect(context, values.emplace_back());
 
     ArrayType::Ptr type;
-    Type::Reflect(builder, m_Type, type);
+    Type::Reflect(context, m_Type, type);
 
     return std::make_unique<ArrayExpression>(m_Loc, std::move(values), std::move(type));
 }

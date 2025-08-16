@@ -37,8 +37,8 @@ void llove::ForStatement::Gen(Builder &builder) const try
     builder.SetInsertPoint(head_block);
     if (m_Condition)
     {
-        auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
-        condition = builder.CreateCast(std::move(condition), builder.GetTypes().GetInteger(false, 1), false);
+        auto condition = m_Condition->GenVal(builder, builder.GetContext().GetInteger(false, 1));
+        condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
 
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(condition, loop_block, end_block);
@@ -80,19 +80,19 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ForStatement::Reflect(Builder &builder) const try
+llove::StatementPtr llove::ForStatement::Reflect(Context &context) const try
 {
     StatementPtr prefix, suffix, content;
     ExpressionPtr condition;
 
     if (m_Prefix)
-        m_Prefix->Reflect(builder, prefix);
+        m_Prefix->Reflect(context, prefix);
     if (m_Suffix)
-        m_Suffix->Reflect(builder, suffix);
+        m_Suffix->Reflect(context, suffix);
     if (m_Condition)
-        m_Condition->Reflect(builder, condition);
+        m_Condition->Reflect(context, condition);
     if (m_Content)
-        m_Content->Reflect(builder, content);
+        m_Content->Reflect(context, content);
 
     return std::make_unique<ForStatement>(
         m_Loc,

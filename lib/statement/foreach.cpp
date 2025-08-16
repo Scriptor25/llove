@@ -39,7 +39,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
     {
         const auto array_type = As<ArrayType>(type);
         const auto base_type = array_type->GetBase();
-        auto iterator_type = builder.GetTypes().GetPointer(base_type, range->IsMutable());
+        auto iterator_type = builder.GetContext().GetPointer(base_type, range->IsMutable());
 
         if (range->IsReferenceable())
         {
@@ -75,7 +75,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             {
                 begin_pointer = builder.CreateLoad(
                     begin_pointer,
-                    builder.GetTypes().GetPointer(begin_fld.Type, begin_fld.Mutable));
+                    builder.GetContext().GetPointer(begin_fld.Type, begin_fld.Mutable));
                 begin = Value::CreateL(begin_fld.Type, begin_pointer, begin_fld.Mutable);
             }
             else
@@ -88,7 +88,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             {
                 end_pointer = builder.CreateLoad(
                     end_pointer,
-                    builder.GetTypes().GetPointer(end_fld.Type, end_fld.Mutable));
+                    builder.GetContext().GetPointer(end_fld.Type, end_fld.Mutable));
                 end = Value::CreateL(end_fld.Type, end_pointer, end_fld.Mutable);
             }
             else
@@ -103,7 +103,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             {
                 begin_value = builder.CreateLoad(
                     begin_value,
-                    builder.GetTypes().GetPointer(begin_fld.Type, begin_fld.Mutable));
+                    builder.GetContext().GetPointer(begin_fld.Type, begin_fld.Mutable));
                 begin = Value::CreateL(begin_fld.Type, begin_value, begin_fld.Mutable);
             }
             else
@@ -116,7 +116,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             {
                 end_value = builder.CreateLoad(
                     end_value,
-                    builder.GetTypes().GetPointer(end_fld.Type, end_fld.Mutable));
+                    builder.GetContext().GetPointer(end_fld.Type, end_fld.Mutable));
                 end = Value::CreateL(end_fld.Type, end_value, end_fld.Mutable);
             }
             else
@@ -281,15 +281,15 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ForEachStatement::Reflect(Builder &builder) const try
+llove::StatementPtr llove::ForEachStatement::Reflect(Context &context) const try
 {
     ExpressionPtr range;
     StatementPtr content;
 
     if (m_Range)
-        m_Range->Reflect(builder, range);
+        m_Range->Reflect(context, range);
     if (m_Content)
-        m_Content->Reflect(builder, content);
+        m_Content->Reflect(context, content);
 
     return std::make_unique<ForEachStatement>(
         m_Loc,

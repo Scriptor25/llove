@@ -2,8 +2,9 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::ConstGlobal::ConstGlobal(Location loc, std::string name, TypePtr type, ExpressionPtr value)
+llove::ConstGlobal::ConstGlobal(Location loc, const bool export_, std::string name, TypePtr type, ExpressionPtr value)
     : Global(std::move(loc)),
+      m_Export(export_),
       m_Name(std::move(name)),
       m_Type(std::move(type)),
       m_Value(std::move(value))

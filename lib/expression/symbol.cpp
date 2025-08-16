@@ -70,7 +70,7 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::SymbolExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::SymbolExpression::Reflect(Context &context) const try
 {
     return std::make_unique<SymbolExpression>(m_Loc, m_Name);
 }

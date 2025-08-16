@@ -2,8 +2,9 @@
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
 
-llove::ClassGlobal::ClassGlobal(Location loc, ClassType::Ptr type)
+llove::ClassGlobal::ClassGlobal(Location loc, const bool export_, ClassType::Ptr type)
     : Global(std::move(loc)),
+      m_Export(export_),
       m_Type(std::move(type)),
       m_Opaque(true)
 {
@@ -11,10 +12,12 @@ llove::ClassGlobal::ClassGlobal(Location loc, ClassType::Ptr type)
 
 llove::ClassGlobal::ClassGlobal(
     Location loc,
+    const bool export_,
     ClassType::Ptr type,
     std::vector<ClassField> fields,
     std::vector<ClassFunction> functions)
     : Global(std::move(loc)),
+      m_Export(export_),
       m_Type(std::move(type)),
       m_Opaque(false),
       m_Fields(std::move(fields)),
@@ -30,7 +33,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
     std::vector<ClassFieldReference> class_fields;
     for (auto &field : m_Fields)
         class_fields.emplace_back(field.Info, field.Name);
-    m_Type->SetFields(builder, std::move(class_fields));
+    m_Type->SetFields(std::move(class_fields));
 
     std::vector<ClassFunctionReference> class_functions;
     for (auto &function : m_Functions)

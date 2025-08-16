@@ -61,7 +61,7 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
         if (element->Reference)
         {
-            const auto pointer_type = builder.GetTypes().GetPointer(element->Type, element->Mutable);
+            const auto pointer_type = builder.GetContext().GetPointer(element->Type, element->Mutable);
             pointer = builder.CreateLoad(pointer, pointer_type);
             return Value::CreateL(element->Type, pointer, element->Mutable);
         }
@@ -144,7 +144,7 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
 
         if (element->Reference)
         {
-            const auto pointer_type = builder.GetTypes().GetPointer(element->Type, element->Mutable);
+            const auto pointer_type = builder.GetContext().GetPointer(element->Type, element->Mutable);
             pointer = builder.CreateLoad(pointer, pointer_type);
         }
 
@@ -174,11 +174,11 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::MemberExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::MemberExpression::Reflect(Context &context) const try
 {
     ExpressionPtr value;
     if (m_Value)
-        m_Value->Reflect(builder, value);
+        m_Value->Reflect(context, value);
 
     return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member);
 }

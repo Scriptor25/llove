@@ -22,11 +22,11 @@ void llove::Parser::ParseClassTemplate()
 
     if (SkipIf(TokenType_Other, ";"))
     {
-        m_Types.EmplaceTemplate(std::move(name), std::move(parameters));
+        m_Context.EmplaceTemplate(std::move(name), std::move(parameters));
         return;
     }
 
-    auto &template_ = m_Types.PushTemplate(std::move(name), std::move(parameters));
+    auto &template_ = m_Context.PushTemplate(std::move(name), std::move(parameters));
 
     Expect(TokenType_Other, "{");
     while (!At(TokenType_Other, "}"))
@@ -41,5 +41,5 @@ void llove::Parser::ParseClassTemplate()
     }
     Expect(TokenType_Other, "}");
 
-    m_Types.PopTemplate();
+    m_Context.PopTemplate();
 }

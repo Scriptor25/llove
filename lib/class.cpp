@@ -29,18 +29,18 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
     return stream << "): " << Result;
 }
 
-void llove::ClassField::Reflect(Builder &builder, ClassField &field) const
+void llove::ClassField::Reflect(Context &context, ClassField &field) const
 {
     field.Name = Name;
 
-    Info.Reflect(builder, field.Info);
+    Info.Reflect(context, field.Info);
 
     if (Value)
-        Value->Reflect(builder, field.Value);
+        Value->Reflect(context, field.Value);
 
     field.Arguments.resize(Arguments.size());
     for (unsigned i = 0; i < Arguments.size(); ++i)
-        Arguments.at(i)->Reflect(builder, field.Arguments.at(i));
+        Arguments.at(i)->Reflect(context, field.Arguments.at(i));
 }
 
 std::ostream &llove::ClassField::Print(std::ostream &stream) const
@@ -62,7 +62,7 @@ std::ostream &llove::ClassField::Print(std::ostream &stream) const
     return stream << ';';
 }
 
-void llove::ClassFunction::Reflect(Builder &builder, ClassFunction &function) const
+void llove::ClassFunction::Reflect(Context &context, ClassFunction &function) const
 {
     function.Loc = Loc;
     function.Expose = Expose;
@@ -75,13 +75,13 @@ void llove::ClassFunction::Reflect(Builder &builder, ClassFunction &function) co
     for (unsigned i = 0; i < Parameters.size(); ++i)
     {
         function.Parameters.at(i).Name = Parameters.at(i).Name;
-        Parameters.at(i).Info.Reflect(builder, function.Parameters.at(i).Info);
+        Parameters.at(i).Info.Reflect(context, function.Parameters.at(i).Info);
     }
 
-    Result.Reflect(builder, function.Result);
+    Result.Reflect(context, function.Result);
 
     if (Content)
-        Content->Reflect(builder, function.Content);
+        Content->Reflect(context, function.Content);
 }
 
 std::ostream &llove::ClassFunction::Print(std::ostream &stream) const

@@ -76,18 +76,18 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::CreateExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::CreateExpression::Reflect(Context &context) const try
 {
     TypePtr type;
-    Type::Reflect(builder, m_Type, type);
+    Type::Reflect(context, m_Type, type);
 
     ExpressionPtr destination;
     if (m_Destination)
-        m_Destination->Reflect(builder, destination);
+        m_Destination->Reflect(context, destination);
 
     std::vector<ExpressionPtr> arguments;
     for (auto &argument : m_Arguments)
-        argument->Reflect(builder, arguments.emplace_back());
+        argument->Reflect(context, arguments.emplace_back());
 
     return std::make_unique<CreateExpression>(m_Loc, std::move(type), std::move(destination), std::move(arguments));
 }

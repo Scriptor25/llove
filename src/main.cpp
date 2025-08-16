@@ -236,9 +236,9 @@ int main(const int argc, const char *const *argv) try
     std::string debug_filename;
     (void) arguments.value("debug-output", debug_filename);
 
-    llove::Context types;
+    llove::Context context;
     llove::Builder builder(
-        types,
+        context,
         debug,
         optimized,
         profiling,
@@ -246,7 +246,7 @@ int main(const int argc, const char *const *argv) try
         input_filename,
         debug_filename,
         arguments.BuildCommandLine());
-    llove::Parser parser(types, builder, *input_stream_ref, input_filename);
+    llove::Parser parser(context, *input_stream_ref, input_filename);
 
     std::string print_filename, output_filename;
     llove::stream_ref<std::ostream> print_stream_ref, output_stream_ref;
@@ -277,12 +277,18 @@ int main(const int argc, const char *const *argv) try
     }
 
     while (parser.Ok())
-        if (auto ptr = parser.Parse())
-        {
-            if (print_llove)
-                *print_stream_ref << ptr << std::endl;
-            ptr->Gen(builder);
-        }
+    {
+        auto ptr = parser.Parse();
+
+        context.InstantiateReflections(builder);
+
+        if (!ptr)
+            continue;
+
+        if (print_llove)
+            *print_stream_ref << ptr << std::endl;
+        ptr->Gen(builder);
+    }
 
     if (!has_output_filename || output_filename == "stdout")
         output_stream_ref = llove::stream_ref(&std::cout, false);

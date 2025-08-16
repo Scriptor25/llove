@@ -8,7 +8,7 @@ llove::ExpressionPtr llove::Parser::ParseNullExpression()
 
     PointerType::Ptr type;
     if (SkipIf(TokenType_Other, ":"))
-        type = m_Types.GetPointer(ParseType(), false);
+        type = m_Context.GetPointer(ParseType(), false);
 
     return std::make_unique<NullExpression>(std::move(token.Loc), std::move(type));
 }

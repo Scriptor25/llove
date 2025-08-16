@@ -9,12 +9,12 @@ llove::TypePtr llove::Parser::ParseArrayType()
         if (At(TokenType_Integer))
         {
             const auto size = Skip().IntegerValue;
-            base = m_Types.GetArray(std::move(base), size);
+            base = m_Context.GetArray(std::move(base), size);
         }
         else
         {
             const auto mutable_ = SkipIf(TokenType_Symbol, "mut");
-            base = m_Types.GetPointer(std::move(base), mutable_);
+            base = m_Context.GetPointer(std::move(base), mutable_);
         }
         Expect(TokenType_Other, "]");
     }

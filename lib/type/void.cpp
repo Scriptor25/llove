@@ -33,9 +33,9 @@ llvm::DIType *llove::VoidType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetVoidType();
 }
 
-llove::TypePtr llove::VoidType::Reflect(Builder &builder) const
+llove::TypePtr llove::VoidType::Reflect(Context &context) const
 {
-    return builder.GetTypes().GetVoid();
+    return context.GetVoid();
 }
 
 std::string llove::VoidType::Mangle() const

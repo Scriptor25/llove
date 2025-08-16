@@ -52,14 +52,14 @@ namespace llove
         [[nodiscard]] virtual unsigned SizeBits(Builder &builder) const = 0;
         virtual llvm::Type *GenIR(Builder &builder) = 0;
         virtual llvm::DIType *GenDI(Builder &builder) = 0;
-        virtual TypePtr Reflect(Builder &builder) const = 0;
+        virtual TypePtr Reflect(Context &context) const = 0;
 
         [[nodiscard]] virtual std::string Mangle() const = 0;
 
         virtual std::ostream &Print(std::ostream &stream) const = 0;
 
         template<typename S, typename D> requires std::is_base_of_v<Type, S> && std::is_base_of_v<Type, D>
-        static void Reflect(Builder &builder, std::shared_ptr<S> src, std::shared_ptr<D> &dst)
+        static void Reflect(Context &context, std::shared_ptr<S> src, std::shared_ptr<D> &dst)
         {
             if (!src)
             {
@@ -67,7 +67,7 @@ namespace llove
                 return;
             }
 
-            auto cast = std::dynamic_pointer_cast<D>(src->Reflect(builder));
+            auto cast = std::dynamic_pointer_cast<D>(src->Reflect(context));
             Assert(cast != nullptr, "invalid reflection cast");
             dst = cast;
         }
@@ -90,7 +90,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         [[nodiscard]] std::string Mangle() const override;
 
@@ -113,7 +113,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         [[nodiscard]] std::string Mangle() const override;
 
@@ -137,7 +137,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return v
@@ -163,7 +163,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::IntegerType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return <sign?i:u><bits>_
@@ -192,7 +192,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return f<bits>_
@@ -222,7 +222,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::PointerType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return p<mutable?m:i><base>
@@ -252,7 +252,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::ArrayType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return a<size>_<base>
@@ -284,7 +284,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return s<length>_<fields...>
@@ -312,7 +312,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return r<entry>
@@ -357,7 +357,7 @@ namespace llove
         [[nodiscard]] std::vector<ClassFunctionReference> GetConstructors() const;
         [[nodiscard]] std::optional<ClassFunctionReference> GetDestructor() const;
 
-        void SetFields(Builder &builder, std::vector<ClassFieldReference> fields);
+        void SetFields(std::vector<ClassFieldReference> fields);
         void SetFunctions(std::vector<ClassFunctionReference> functions);
 
         [[nodiscard]] TypeId GetId() const override;
@@ -365,7 +365,7 @@ namespace llove
         [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return c<length>_<name>
@@ -402,7 +402,7 @@ namespace llove
         llvm::DIType *GenDI(Builder &builder) override;
         llvm::FunctionType *GenFunction(Builder &builder);
         llvm::DISubroutineType *GenDbgFunction(Builder &builder);
-        TypePtr Reflect(Builder &builder) const override;
+        TypePtr Reflect(Context &context) const override;
 
         /**
          * @return x<vararg?v><self?s><length>_<parameters...><result><self>

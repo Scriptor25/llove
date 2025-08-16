@@ -42,14 +42,14 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::StructExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::StructExpression::Reflect(Context &context) const try
 {
     std::map<std::string, ExpressionPtr> values;
     for (auto &[key, value] : m_Values)
-        value->Reflect(builder, values[key]);
+        value->Reflect(context, values[key]);
 
     TypePtr type;
-    Type::Reflect(builder, m_Type, type);
+    Type::Reflect(context, m_Type, type);
 
     return std::make_unique<StructExpression>(m_Loc, std::move(values), std::move(type));
 }

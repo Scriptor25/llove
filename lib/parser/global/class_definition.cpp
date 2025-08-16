@@ -5,7 +5,7 @@
 llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
 {
     auto class_name = Expect(TokenType_Symbol).Value;
-    auto class_type = m_Types.GetClass(std::move(class_name));
+    auto class_type = m_Context.GetClass(std::move(class_name));
 
     auto mutable_ = SkipIf(TokenType_Symbol, "mut");
     auto name = At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
@@ -17,7 +17,7 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
     if (SkipIf(TokenType_Other, ":"))
         ParseField(result, false, true);
     else
-        result.Type = m_Types.GetVoid();
+        result.Type = m_Context.GetVoid();
 
     auto content = ParseScopeStatement();
 

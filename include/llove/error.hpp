@@ -1,7 +1,6 @@
 #pragma once
 
 #include <format>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -182,6 +181,32 @@ struct std::formatter<std::vector<T, A>> : std::formatter<T>
             std::format_to(ctx.out(), "'");
             std::formatter<T>::format(*i, ctx);
             std::format_to(ctx.out(), "'");
+        }
+        return ctx.out();
+    }
+};
+
+template<typename K, typename V>
+struct std::formatter<std::pair<K, V>> : std::formatter<std::string_view>
+{
+    template<typename FormatContext>
+    auto format(const std::pair<K, V> &pair, FormatContext &ctx) const
+    {
+        return std::format_to(ctx.out(), "'{}': '{}'", pair.first, pair.second);
+    }
+};
+
+template<typename K, typename V>
+struct std::formatter<std::map<K, V>> : std::formatter<std::pair<K, V>>
+{
+    template<typename FormatContext>
+    auto format(const std::map<K, V> &map, FormatContext &ctx) const
+    {
+        for (auto i = map.begin(); i != map.end(); ++i)
+        {
+            if (i != map.begin())
+                std::format_to(ctx.out(), ", ");
+            std::formatter<std::pair<K, V>>::format(*i, ctx);
         }
         return ctx.out();
     }

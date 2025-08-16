@@ -1,0 +1,21 @@
+import * from "import2.lov";
+import something from "import3.lov";
+import { symbol1, symbol2: foo, symbol3, ...remainder } from "import4.lov";
+
+interface main(): i32 {
+
+    hello();
+
+    something.foo();
+    something.bar();
+
+    symbol1();
+    foo();
+    symbol3();
+
+    remainder.x();
+    remainder.y();
+    remainder.z();
+
+    yield 0;
+}

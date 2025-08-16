@@ -47,11 +47,11 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::DeleteStatement::Reflect(Builder &builder) const try
+llove::StatementPtr llove::DeleteStatement::Reflect(Context &context) const try
 {
     ExpressionPtr value;
     if (m_Value)
-        m_Value->Reflect(builder, value);
+        m_Value->Reflect(context, value);
 
     return std::make_unique<DeleteStatement>(m_Loc, std::move(value));
 }

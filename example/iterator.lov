@@ -45,7 +45,7 @@ interface main(count: i32, args: i8[][]): i32 {
     foreach (&x : my_array) {
         putchar(x + 0x30);
     }
-    puts("\r\n");
+    puts("");
 
     let my_struct: iterable_struct_t = {
         begin: begin_str,

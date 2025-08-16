@@ -50,15 +50,15 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::BinaryExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::BinaryExpression::Reflect(Context &context) const try
 {
     ExpressionPtr left;
     if (m_Left)
-        m_Left->Reflect(builder, left);
+        m_Left->Reflect(context, left);
 
     ExpressionPtr right;
     if (m_Right)
-        m_Right->Reflect(builder, right);
+        m_Right->Reflect(context, right);
 
     return std::make_unique<BinaryExpression>(m_Loc, m_Operator, std::move(left), std::move(right));
 }

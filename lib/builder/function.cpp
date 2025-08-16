@@ -6,13 +6,13 @@ llvm::Function *llove::Builder::GetOrCreateFunction(
     const FunctionType::Ptr &type,
     const bool external)
 {
-    if (const auto function = m_Module.getFunction(name))
+    if (const auto function = m_LLVMModule.getFunction(name))
         return function;
     return llvm::Function::Create(
         type->GenFunction(*this),
         external ? llvm::Function::ExternalLinkage : llvm::Function::InternalLinkage,
         name,
-        m_Module);
+        m_LLVMModule);
 }
 
 llove::FunctionReference &llove::Builder::PushFunction(

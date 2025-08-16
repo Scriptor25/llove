@@ -24,8 +24,8 @@ void llove::WhileStatement::Gen(Builder &builder) const
 
     builder.SetInsertPoint(head_block);
 
-    auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
-    condition = builder.CreateCast(std::move(condition), builder.GetTypes().GetInteger(false, 1), false);
+    auto condition = m_Condition->GenVal(builder, builder.GetContext().GetInteger(false, 1));
+    condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
 
     builder.EmitLoc(m_Loc);
     builder.CreateBranch(condition, loop_block, end_block);
@@ -44,15 +44,15 @@ void llove::WhileStatement::Gen(Builder &builder) const
     builder.PopFrame();
 }
 
-llove::StatementPtr llove::WhileStatement::Reflect(Builder &builder) const
+llove::StatementPtr llove::WhileStatement::Reflect(Context &context) const
 {
     ExpressionPtr condition;
     StatementPtr content;
 
     if (m_Condition)
-        m_Condition->Reflect(builder, condition);
+        m_Condition->Reflect(context, condition);
     if (m_Content)
-        m_Content->Reflect(builder, content);
+        m_Content->Reflect(context, content);
 
     return std::make_unique<WhileStatement>(m_Loc, std::move(condition), std::move(content));
 }

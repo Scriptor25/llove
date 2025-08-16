@@ -51,12 +51,12 @@ llvm::DIType *llove::ArrayType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetArrayType(m_Base->GenDI(builder), m_Size);
 }
 
-llove::TypePtr llove::ArrayType::Reflect(Builder &builder) const
+llove::TypePtr llove::ArrayType::Reflect(Context &context) const
 {
     TypePtr base;
-    Type::Reflect(builder, m_Base, base);
+    Type::Reflect(context, m_Base, base);
 
-    return builder.GetTypes().GetArray(std::move(base), m_Size);
+    return context.GetArray(std::move(base), m_Size);
 }
 
 std::string llove::ArrayType::Mangle() const

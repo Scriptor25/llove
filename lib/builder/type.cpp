@@ -2,12 +2,12 @@
 
 llvm::Type *llove::Builder::GetVoidType()
 {
-    return llvm::Type::getVoidTy(m_Context);
+    return llvm::Type::getVoidTy(m_LLVMContext);
 }
 
 llvm::IntegerType *llove::Builder::GetIntType(const unsigned bits)
 {
-    return llvm::IntegerType::get(m_Context, bits);
+    return llvm::IntegerType::get(m_LLVMContext, bits);
 }
 
 llvm::Type *llove::Builder::GetFltType(const unsigned bits)
@@ -15,11 +15,11 @@ llvm::Type *llove::Builder::GetFltType(const unsigned bits)
     switch (bits)
     {
     case 16:
-        return llvm::Type::getHalfTy(m_Context);
+        return llvm::Type::getHalfTy(m_LLVMContext);
     case 32:
-        return llvm::Type::getFloatTy(m_Context);
+        return llvm::Type::getFloatTy(m_LLVMContext);
     case 64:
-        return llvm::Type::getDoubleTy(m_Context);
+        return llvm::Type::getDoubleTy(m_LLVMContext);
     default:
         return nullptr;
     }
@@ -27,24 +27,24 @@ llvm::Type *llove::Builder::GetFltType(const unsigned bits)
 
 llvm::ArrayType *llove::Builder::GetArrayType(llvm::Type *base, const unsigned size)
 {
-    (void) m_Context;
+    (void) m_LLVMContext;
     return llvm::ArrayType::get(base, size);
 }
 
 llvm::PointerType *llove::Builder::GetPointerType()
 {
-    return llvm::PointerType::getUnqual(m_Context);
+    return llvm::PointerType::getUnqual(m_LLVMContext);
 }
 
 llvm::PointerType *llove::Builder::GetPointerType(llvm::Type *base)
 {
-    (void) m_Context;
+    (void) m_LLVMContext;
     return llvm::PointerType::getUnqual(base);
 }
 
 llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> &fields, const bool packed)
 {
-    return llvm::StructType::get(m_Context, fields, packed);
+    return llvm::StructType::get(m_LLVMContext, fields, packed);
 }
 
 llvm::FunctionType *llove::Builder::GetFunctionType(
@@ -52,20 +52,20 @@ llvm::FunctionType *llove::Builder::GetFunctionType(
     const std::vector<llvm::Type *> &parameters,
     const bool vararg)
 {
-    (void) m_Context;
+    (void) m_LLVMContext;
     return llvm::FunctionType::get(result, parameters, vararg);
 }
 
 llvm::StructType *llove::Builder::GetNamedStructType(const std::string &name)
 {
-    return llvm::StructType::getTypeByName(m_Context, name);
+    return llvm::StructType::getTypeByName(m_LLVMContext, name);
 }
 
 llvm::StructType *llove::Builder::GetOrCreateNamedStructType(const std::string &name)
 {
-    if (const auto type = llvm::StructType::getTypeByName(m_Context, name))
+    if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, name))
         return type;
-    return llvm::StructType::create(m_Context, name);
+    return llvm::StructType::create(m_LLVMContext, name);
 }
 
 llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
@@ -73,10 +73,10 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
     const std::vector<llvm::Type *> &fields,
     const bool packed)
 {
-    if (const auto type = llvm::StructType::getTypeByName(m_Context, name))
+    if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, name))
     {
         type->setBody(fields, packed);
         return type;
     }
-    return llvm::StructType::create(m_Context, fields, name, packed);
+    return llvm::StructType::create(m_LLVMContext, fields, name, packed);
 }

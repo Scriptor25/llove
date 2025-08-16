@@ -19,11 +19,11 @@ llove::ValuePtr llove::RangeExpression::GenVal(Builder &builder, TypePtr expect)
     auto beg = m_Beg->GenVal(builder, std::move(type));
     auto end = m_End->GenVal(builder, beg->GetType());
 
-    auto entry = builder.GetTypes().TypeUnion(beg->GetType(), end->GetType());
+    auto entry = builder.GetContext().TypeUnion(beg->GetType(), end->GetType());
     beg = builder.CreateCast(std::move(beg), entry, true);
     end = builder.CreateCast(std::move(end), entry, true);
 
-    auto range_type = builder.GetTypes().GetRange(std::move(entry));
+    auto range_type = builder.GetContext().GetRange(std::move(entry));
 
     builder.EmitLoc(m_Loc);
 
@@ -38,15 +38,15 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::RangeExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::RangeExpression::Reflect(Context &context) const try
 {
     ExpressionPtr beg;
     if (m_Beg)
-        m_Beg->Reflect(builder, beg);
+        m_Beg->Reflect(context, beg);
 
     ExpressionPtr end;
     if (m_End)
-        m_End->Reflect(builder, end);
+        m_End->Reflect(context, end);
 
     return std::make_unique<RangeExpression>(m_Loc, std::move(beg), std::move(end));
 }

@@ -9,5 +9,5 @@ llove::TypePtr llove::Parser::ParseRangeType()
     auto entry = ParseType();
     Expect(TokenType_Operator, ">");
 
-    return m_Types.GetRange(std::move(entry));
+    return m_Context.GetRange(std::move(entry));
 }

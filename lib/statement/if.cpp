@@ -21,8 +21,8 @@ void llove::IfStatement::Gen(Builder &builder) const try
 
     builder.EmitLoc(m_Loc);
 
-    auto condition = m_Condition->GenVal(builder, builder.GetTypes().GetInteger(false, 1));
-    condition = builder.CreateCast(std::move(condition), builder.GetTypes().GetInteger(false, 1), false);
+    auto condition = m_Condition->GenVal(builder, builder.GetContext().GetInteger(false, 1));
+    condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
 
     builder.EmitLoc(m_Loc);
     builder.CreateBranch(condition, then_block, else_block);
@@ -64,17 +64,17 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::IfStatement::Reflect(Builder &builder) const try
+llove::StatementPtr llove::IfStatement::Reflect(Context &context) const try
 {
     ExpressionPtr condition;
     StatementPtr then, else_;
 
     if (m_Condition)
-        m_Condition->Reflect(builder, condition);
+        m_Condition->Reflect(context, condition);
     if (m_Then)
-        m_Then->Reflect(builder, then);
+        m_Then->Reflect(context, then);
     if (m_Else)
-        m_Else->Reflect(builder, else_);
+        m_Else->Reflect(context, else_);
 
     return std::make_unique<IfStatement>(m_Loc, std::move(condition), std::move(then), std::move(else_));
 }

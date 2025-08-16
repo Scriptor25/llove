@@ -16,7 +16,7 @@ llove::ValuePtr llove::FloatExpression::GenVal(Builder &builder, const TypePtr e
                     ? As<FloatType>(m_Type)
                     : expect && expect->IsFloat()
                     ? As<FloatType>(expect)
-                    : builder.GetTypes().GetFloat(64);
+                    : builder.GetContext().GetFloat(64);
 
     builder.EmitLoc(m_Loc);
 
@@ -28,10 +28,10 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::FloatExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::FloatExpression::Reflect(Context &context) const try
 {
     TypePtr type;
-    Type::Reflect(builder, m_Type, type);
+    Type::Reflect(context, m_Type, type);
 
     return std::make_unique<FloatExpression>(m_Loc, m_Value, std::move(type));
 }

@@ -33,9 +33,9 @@ llvm::DIType *llove::TemplateType::GenDI(Builder &builder)
     Error("template");
 }
 
-llove::TypePtr llove::TemplateType::Reflect(Builder &builder) const
+llove::TypePtr llove::TemplateType::Reflect(Context &context) const
 {
-    return builder.GetTypes().TemplateArgument(m_Name);
+    return context.TemplateArgument(m_Name);
 }
 
 std::string llove::TemplateType::Mangle() const
@@ -79,13 +79,13 @@ llvm::DIType *llove::ClassTemplateType::GenDI(Builder &builder)
     Error("template");
 }
 
-llove::TypePtr llove::ClassTemplateType::Reflect(Builder &builder) const
+llove::TypePtr llove::ClassTemplateType::Reflect(Context &context) const
 {
     std::vector<TypePtr> arguments;
     for (auto &argument : m_Arguments)
-        Type::Reflect(builder, argument, arguments.emplace_back());
+        Type::Reflect(context, argument, arguments.emplace_back());
 
-    return builder.GetTypes().InstantiateTemplateClass(builder, m_Name, arguments);
+    return context.InstantiateTemplateClass(m_Name, arguments);
 }
 
 std::string llove::ClassTemplateType::Mangle() const

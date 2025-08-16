@@ -19,14 +19,14 @@ llove::ValuePtr llove::StringExpression::GenVal(Builder &builder, TypePtr expect
     if (!value)
         value = builder.CreateGlobalString(m_Value);
 
-    return Value::CreateR(builder.GetTypes().GetPointer(builder.GetTypes().GetInteger(true, 8), false), value);
+    return Value::CreateR(builder.GetContext().GetPointer(builder.GetContext().GetInteger(true, 8), false), value);
 }
 catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::StringExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::StringExpression::Reflect(Context &context) const try
 {
     return std::make_unique<StringExpression>(m_Loc, m_Value);
 }

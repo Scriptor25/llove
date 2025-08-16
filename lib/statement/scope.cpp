@@ -32,11 +32,11 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ScopeStatement::Reflect(Builder &builder) const try
+llove::StatementPtr llove::ScopeStatement::Reflect(Context &context) const try
 {
     std::vector<StatementPtr> content(m_Content.size());
     for (unsigned i = 0; i < m_Content.size(); ++i)
-        m_Content.at(i)->Reflect(builder, content.at(i));
+        m_Content.at(i)->Reflect(context, content.at(i));
 
     return std::make_unique<ScopeStatement>(m_Loc, std::move(content));
 }

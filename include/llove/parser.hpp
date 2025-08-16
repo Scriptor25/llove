@@ -36,7 +36,7 @@ namespace llove
     class Parser final
     {
     public:
-        explicit Parser(Context &types, Builder &builder, std::istream &stream, const std::filesystem::path &filepath);
+        explicit Parser(Context &context, std::istream &stream, const std::filesystem::path &filepath);
 
         [[nodiscard]] bool Ok() const;
         GlobalPtr Parse();
@@ -89,11 +89,14 @@ namespace llove
             std::vector<Parameter> &parameters,
             const std::string &end);
 
+        void ParseTypeAlias();
+        void ParseImport();
+
         GlobalPtr ParseGlobal();
         GlobalPtr ParseClassDefinitionGlobal(Location loc);
-        GlobalPtr ParseClassGlobal();
-        GlobalPtr ParseConstGlobal();
-        GlobalPtr ParseDefinitionGlobal();
+        GlobalPtr ParseClassGlobal(bool export_);
+        GlobalPtr ParseConstGlobal(bool export_);
+        GlobalPtr ParseDefinitionGlobal(bool export_);
 
         void ParseClassField(ClassField &field);
         void ParseClassFunction(ClassFunction &function, bool require_content);
@@ -133,8 +136,7 @@ namespace llove
         ExpressionPtr ParseUnaryExpression(ExpressionPtr operand);
 
     private:
-        Context &m_Types;
-        Builder &m_Builder;
+        Context &m_Context;
 
         std::istream &m_Stream;
         int m_Buffer;

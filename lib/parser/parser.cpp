@@ -2,9 +2,8 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::Parser::Parser(Context &types, Builder &builder, std::istream &stream, const std::filesystem::path &filepath)
-    : m_Types(types),
-      m_Builder(builder),
+llove::Parser::Parser(Context &context, std::istream &stream, const std::filesystem::path &filepath)
+    : m_Context(context),
       m_Stream(stream),
       m_Buffer(0),
       m_Loc(filepath, 1u, 0u)

@@ -34,9 +34,10 @@ namespace llove
     class ClassGlobal final : public Global
     {
     public:
-        explicit ClassGlobal(Location loc, ClassType::Ptr type);
+        explicit ClassGlobal(Location loc, bool export_, ClassType::Ptr type);
         explicit ClassGlobal(
             Location loc,
+            bool export_,
             ClassType::Ptr type,
             std::vector<ClassField> fields,
             std::vector<ClassFunction> functions);
@@ -45,6 +46,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
+        bool m_Export;
         ClassType::Ptr m_Type;
         bool m_Opaque;
         std::vector<ClassField> m_Fields;
@@ -80,12 +82,13 @@ namespace llove
     class ConstGlobal final : public Global
     {
     public:
-        explicit ConstGlobal(Location loc, std::string name, TypePtr type, ExpressionPtr value);
+        explicit ConstGlobal(Location loc, bool export_, std::string name, TypePtr type, ExpressionPtr value);
 
         void Gen(Builder &builder) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
+        bool m_Export;
         std::string m_Name;
         TypePtr m_Type;
         ExpressionPtr m_Value;
@@ -126,13 +129,13 @@ namespace llove
 
         virtual ~Statement() = default;
         virtual void Gen(Builder &builder) const = 0;
-        virtual StatementPtr Reflect(Builder &builder) const = 0;
+        virtual StatementPtr Reflect(Context &context) const = 0;
         virtual std::ostream &Print(std::ostream &stream) const = 0;
 
         template<typename T> requires std::is_base_of_v<Statement, T>
-        void Reflect(Builder &builder, std::unique_ptr<T> &ref) const
+        void Reflect(Context &context, std::unique_ptr<T> &ref) const
         {
-            auto ptr = Reflect(builder).release();
+            auto ptr = Reflect(context).release();
             auto cast = dynamic_cast<T *>(ptr);
             Assert(cast, "invalid reflection cast");
             ref = std::unique_ptr<T>(cast);
@@ -148,7 +151,7 @@ namespace llove
         explicit DeleteStatement(Location loc, ExpressionPtr value);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -166,7 +169,7 @@ namespace llove
             StatementPtr content);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -188,7 +191,7 @@ namespace llove
             StatementPtr content);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -205,7 +208,7 @@ namespace llove
         explicit IfStatement(Location loc, ExpressionPtr condition, StatementPtr then, StatementPtr else_);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -225,7 +228,7 @@ namespace llove
             std::vector<ExpressionPtr> arguments);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -243,7 +246,7 @@ namespace llove
         explicit ScopeStatement(Location loc, std::vector<StatementPtr> content);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -256,7 +259,7 @@ namespace llove
         explicit WhileStatement(Location loc, ExpressionPtr condition, StatementPtr content);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -270,7 +273,7 @@ namespace llove
         explicit YieldStatement(Location loc, ExpressionPtr value);
 
         void Gen(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -298,7 +301,7 @@ namespace llove
         explicit ArrayExpression(Location loc, std::vector<ExpressionPtr> values, ArrayType::Ptr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -312,7 +315,7 @@ namespace llove
         explicit BinaryExpression(Location loc, std::string operator_, ExpressionPtr left, ExpressionPtr right);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -327,7 +330,7 @@ namespace llove
         explicit CallExpression(Location loc, ExpressionPtr callee, std::vector<ExpressionPtr> arguments);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -345,7 +348,7 @@ namespace llove
             std::vector<ExpressionPtr> arguments);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -360,7 +363,7 @@ namespace llove
         explicit FloatExpression(Location loc, double_t value, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -374,7 +377,7 @@ namespace llove
         explicit IntegerExpression(Location loc, uint64_t value, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -389,7 +392,7 @@ namespace llove
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         CalleeInfo GenCallee(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -403,7 +406,7 @@ namespace llove
         explicit NullExpression(Location loc, PointerType::Ptr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -416,7 +419,7 @@ namespace llove
         explicit RangeExpression(Location loc, ExpressionPtr beg, ExpressionPtr end);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -430,7 +433,7 @@ namespace llove
         explicit SizeofExpression(Location loc, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -443,7 +446,7 @@ namespace llove
         explicit StringExpression(Location loc, std::string value);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -456,7 +459,7 @@ namespace llove
         explicit StructExpression(Location loc, std::map<std::string, ExpressionPtr> values, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -470,7 +473,7 @@ namespace llove
         explicit SubscriptExpression(Location loc, ExpressionPtr value, ExpressionPtr index);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -485,7 +488,7 @@ namespace llove
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         CalleeInfo GenCallee(Builder &builder) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -498,7 +501,7 @@ namespace llove
         explicit UnaryExpression(Location loc, std::string operator_, ExpressionPtr operand, bool suffix);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:

@@ -13,7 +13,7 @@ llove::SubscriptExpression::SubscriptExpression(Location loc, ExpressionPtr valu
 
 llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypePtr expect) const try
 {
-    const auto value = m_Value->GenVal(builder, expect ? builder.GetTypes().GetPointer(expect, false) : nullptr);
+    const auto value = m_Value->GenVal(builder, expect ? builder.GetContext().GetPointer(expect, false) : nullptr);
     const auto index = m_Index->GenVal(builder, nullptr);
 
     builder.EmitLoc(m_Loc);
@@ -33,15 +33,15 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::SubscriptExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::SubscriptExpression::Reflect(Context &context) const try
 {
     ExpressionPtr value;
     if (m_Value)
-        m_Value->Reflect(builder, value);
+        m_Value->Reflect(context, value);
 
     ExpressionPtr index;
     if (m_Index)
-        m_Index->Reflect(builder, index);
+        m_Index->Reflect(context, index);
 
     return std::make_unique<SubscriptExpression>(m_Loc, std::move(value), std::move(index));
 }

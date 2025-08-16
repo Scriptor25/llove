@@ -37,5 +37,5 @@ llove::TypePtr llove::Parser::ParseFunctionType()
     if (SkipIf(TokenType_Operator, "=>"))
         ParseField(result, false, true);
 
-    return m_Types.GetFunction(std::move(parameters), vararg, std::move(result), std::move(self));
+    return m_Context.GetFunction(std::move(parameters), vararg, std::move(result), std::move(self));
 }

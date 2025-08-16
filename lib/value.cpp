@@ -115,7 +115,7 @@ void llove::LValue::Store(Builder &builder, const ValuePtr value, const bool vol
 
 llove::ValuePtr llove::LValue::Reference(Builder &builder) const
 {
-    return CreateR(builder.GetTypes().GetPointer(m_Type, m_Mutable), m_Pointer);
+    return CreateR(builder.GetContext().GetPointer(m_Type, m_Mutable), m_Pointer);
 }
 
 llvm::Value *llove::LValue::GetPointer() const

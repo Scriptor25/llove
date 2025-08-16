@@ -62,12 +62,12 @@ llvm::DIType *llove::PointerType::GenDI(Builder &builder)
                           : builder.GetDebug().GetPointerType();
 }
 
-llove::TypePtr llove::PointerType::Reflect(Builder &builder) const
+llove::TypePtr llove::PointerType::Reflect(Context &context) const
 {
     TypePtr base;
-    Type::Reflect(builder, m_Base, base);
+    Type::Reflect(context, m_Base, base);
 
-    return builder.GetTypes().GetPointer(std::move(base), m_Mutable);
+    return context.GetPointer(std::move(base), m_Mutable);
 }
 
 std::string llove::PointerType::Mangle() const

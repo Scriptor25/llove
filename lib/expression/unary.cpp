@@ -41,11 +41,11 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::UnaryExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::UnaryExpression::Reflect(Context &context) const try
 {
     ExpressionPtr operand;
     if (m_Operand)
-        m_Operand->Reflect(builder, operand);
+        m_Operand->Reflect(context, operand);
 
     return std::make_unique<UnaryExpression>(m_Loc, m_Operator, std::move(operand), m_Suffix);
 }

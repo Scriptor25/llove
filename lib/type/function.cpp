@@ -103,22 +103,22 @@ llvm::DISubroutineType *llove::FunctionType::GenDbgFunction(Builder &builder)
     return m_DIFunction = builder.GetDebug().GetFunctionType(parameters, result);
 }
 
-llove::TypePtr llove::FunctionType::Reflect(Builder &builder) const
+llove::TypePtr llove::FunctionType::Reflect(Context &context) const
 {
     std::vector<Field> parameters;
     Field result, self;
 
     for (auto &parameter : m_Parameters)
-        parameter.Reflect(builder, parameters.emplace_back());
+        parameter.Reflect(context, parameters.emplace_back());
 
-    m_Result.Reflect(builder, result);
+    m_Result.Reflect(context, result);
 
     if (!m_Self)
-        return builder.GetTypes().GetFunction(std::move(parameters), m_VarArg, std::move(result));
+        return context.GetFunction(std::move(parameters), m_VarArg, std::move(result));
 
-    m_Self->Reflect(builder, self);
+    m_Self->Reflect(context, self);
 
-    return builder.GetTypes().GetFunction(std::move(parameters), m_VarArg, std::move(result), std::move(self));
+    return context.GetFunction(std::move(parameters), m_VarArg, std::move(result), std::move(self));
 }
 
 std::string llove::FunctionType::Mangle() const

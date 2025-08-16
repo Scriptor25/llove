@@ -43,7 +43,7 @@ namespace llove
 
         bool operator==(const Field &other) const;
 
-        void Reflect(Builder &builder, Field &field) const;
+        void Reflect(Context &context, Field &field) const;
 
         bool Mutable = false;
         bool Reference = false;

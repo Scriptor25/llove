@@ -40,15 +40,15 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::CallExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::CallExpression::Reflect(Context &context) const try
 {
     ExpressionPtr callee;
     if (m_Callee)
-        m_Callee->Reflect(builder, callee);
+        m_Callee->Reflect(context, callee);
 
     std::vector<ExpressionPtr> arguments;
     for (auto &argument : m_Arguments)
-        argument->Reflect(builder, arguments.emplace_back());
+        argument->Reflect(context, arguments.emplace_back());
 
     return std::make_unique<CallExpression>(m_Loc, std::move(callee), std::move(arguments));
 }

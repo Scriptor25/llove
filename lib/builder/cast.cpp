@@ -76,18 +76,18 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         {
         case TypeId_Integer:
             if (As<IntegerType>(dst)->GetBits() == 1)
-                result = m_Builder.CreateIsNotNull(llvm_value);
+                result = m_LLVMBuilder.CreateIsNotNull(llvm_value);
             else
-                result = m_Builder.CreateIntCast(
+                result = m_LLVMBuilder.CreateIntCast(
                     llvm_value,
                     llvm_type,
                     As<IntegerType>(dst)->IsSigned());
             break;
         case TypeId_Float:
             if (As<IntegerType>(src)->IsSigned())
-                result = m_Builder.CreateSIToFP(llvm_value, llvm_type);
+                result = m_LLVMBuilder.CreateSIToFP(llvm_value, llvm_type);
             else
-                result = m_Builder.CreateUIToFP(llvm_value, llvm_type);
+                result = m_LLVMBuilder.CreateUIToFP(llvm_value, llvm_type);
             break;
         default:
             break;
@@ -99,14 +99,14 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         {
         case TypeId_Integer:
             if (As<IntegerType>(dst)->GetBits() == 1)
-                result = m_Builder.CreateIsNotNull(llvm_value);
+                result = m_LLVMBuilder.CreateIsNotNull(llvm_value);
             else if (As<IntegerType>(dst)->IsSigned())
-                result = m_Builder.CreateFPToSI(llvm_value, llvm_type);
+                result = m_LLVMBuilder.CreateFPToSI(llvm_value, llvm_type);
             else
-                result = m_Builder.CreateFPToUI(llvm_value, llvm_type);
+                result = m_LLVMBuilder.CreateFPToUI(llvm_value, llvm_type);
             break;
         case TypeId_Float:
-            result = m_Builder.CreateFPCast(llvm_value, llvm_type);
+            result = m_LLVMBuilder.CreateFPCast(llvm_value, llvm_type);
             break;
         default:
             break;
@@ -118,13 +118,13 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         {
         case TypeId_Integer:
             if (As<IntegerType>(dst)->GetBits() == 1)
-                result = m_Builder.CreateIsNotNull(llvm_value);
+                result = m_LLVMBuilder.CreateIsNotNull(llvm_value);
             else
-                result = m_Builder.CreatePtrToInt(llvm_value, llvm_type);
+                result = m_LLVMBuilder.CreatePtrToInt(llvm_value, llvm_type);
             break;
         case TypeId_Pointer:
             if (As<PointerType>(src)->IsMutable() || !As<PointerType>(dst)->IsMutable())
-                result = m_Builder.CreatePointerCast(llvm_value, llvm_type);
+                result = m_LLVMBuilder.CreatePointerCast(llvm_value, llvm_type);
             break;
         default:
             break;

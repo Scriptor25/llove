@@ -124,24 +124,13 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetDestructor() c
     return std::nullopt;
 }
 
-void llove::ClassType::SetFields(Builder &builder, std::vector<ClassFieldReference> fields)
+void llove::ClassType::SetFields(std::vector<ClassFieldReference> fields)
 {
+    m_IRType = nullptr;
     m_DIType = nullptr;
 
     m_Opaque = fields.empty();
     m_Fields = std::move(fields);
-
-    if (m_Opaque)
-    {
-        m_IRType = builder.GetOrCreateNamedStructType(m_Name);
-        return;
-    }
-
-    std::vector<llvm::Type *> elements;
-    for (auto &field : m_Fields)
-        elements.emplace_back(field.Info.GenIRType(builder));
-
-    m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, true);
 }
 
 void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> functions)
@@ -209,9 +198,9 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetClassType(m_Name, fields, offset);
 }
 
-llove::TypePtr llove::ClassType::Reflect(Builder &builder) const
+llove::TypePtr llove::ClassType::Reflect(Context &context) const
 {
-    return builder.GetTypes().GetClass(m_Name);
+    return context.GetClass(m_Name);
 }
 
 std::string llove::ClassType::Mangle() const

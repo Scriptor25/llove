@@ -266,10 +266,7 @@ void llove::Context::EmplaceTemplate(
     };
 }
 
-llove::TypePtr llove::Context::InstantiateTemplateClass(
-    Builder &builder,
-    std::string name,
-    const std::vector<TypePtr> &arguments)
+llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const std::vector<TypePtr> &arguments)
 {
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
@@ -299,16 +296,16 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
 
     std::vector<ClassField> reflection_fields;
     for (auto &field : template_.Fields)
-        field.Reflect(builder, reflection_fields.emplace_back());
+        field.Reflect(*this, reflection_fields.emplace_back());
 
     std::vector<ClassFunction> reflection_functions;
     for (auto &function : template_.Functions)
-        function.Reflect(builder, reflection_functions.emplace_back());
+        function.Reflect(*this, reflection_functions.emplace_back());
 
     std::vector<ClassFieldReference> fields;
     for (auto &field : reflection_fields)
         fields.emplace_back(field.Info, field.Name);
-    class_type->SetFields(builder, std::move(fields));
+    class_type->SetFields(std::move(fields));
 
     std::vector<ClassFunctionReference> functions;
     for (const auto &function : reflection_functions)
@@ -327,41 +324,51 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(
     }
     class_type->SetFunctions(std::move(functions));
 
-    for (const auto &function : reflection_functions)
-        builder.GenFunction(
-            {
-                .Loc = function.Loc,
-                .Interface = false,
-                .Implicit = function.Implicit,
-                .Class = class_type,
-                .Mutable = function.Mutable,
-                .Expose = function.Expose,
-                .Name = function.Name,
-                .Parameters = function.Parameters,
-                .VarArg = function.VarArg,
-                .Result = function.Result,
-                .Content = nullptr,
-            }
-        );
-
-    for (const auto &function : reflection_functions)
-        builder.GenFunction(
-            {
-                .Loc = function.Loc,
-                .Interface = false,
-                .Implicit = function.Implicit,
-                .Class = class_type,
-                .Mutable = function.Mutable,
-                .Expose = function.Expose,
-                .Name = function.Name,
-                .Parameters = function.Parameters,
-                .VarArg = function.VarArg,
-                .Result = function.Result,
-                .Content = function.Content.get(),
-            }
-        );
+    m_Reflections[class_type] = std::move(reflection_functions);
 
     return class_type;
+}
+
+void llove::Context::InstantiateReflections(Builder &builder)
+{
+    for (auto &[class_type, functions] : m_Reflections)
+    {
+        for (const auto &function : functions)
+            builder.GenFunction(
+                {
+                    .Loc = function.Loc,
+                    .Interface = false,
+                    .Implicit = function.Implicit,
+                    .Class = class_type,
+                    .Mutable = function.Mutable,
+                    .Expose = function.Expose,
+                    .Name = function.Name,
+                    .Parameters = function.Parameters,
+                    .VarArg = function.VarArg,
+                    .Result = function.Result,
+                    .Content = nullptr,
+                }
+            );
+
+        for (const auto &function : functions)
+            builder.GenFunction(
+                {
+                    .Loc = function.Loc,
+                    .Interface = false,
+                    .Implicit = function.Implicit,
+                    .Class = class_type,
+                    .Mutable = function.Mutable,
+                    .Expose = function.Expose,
+                    .Name = function.Name,
+                    .Parameters = function.Parameters,
+                    .VarArg = function.VarArg,
+                    .Result = function.Result,
+                    .Content = function.Content.get(),
+                }
+            );
+    }
+
+    m_Reflections.clear();
 }
 
 llove::TypePtr llove::Context::TemplateArgument(const std::string &name) const

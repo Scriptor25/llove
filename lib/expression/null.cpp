@@ -15,7 +15,7 @@ llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr ex
                     ? m_Type
                     : expect && expect->IsPointer()
                     ? As<PointerType>(expect)
-                    : builder.GetTypes().GetPointer(false);
+                    : builder.GetContext().GetPointer(false);
 
     builder.EmitLoc(m_Loc);
 
@@ -27,10 +27,10 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::NullExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::NullExpression::Reflect(Context &context) const try
 {
     PointerType::Ptr type;
-    Type::Reflect(builder, m_Type, type);
+    Type::Reflect(context, m_Type, type);
 
     return std::make_unique<NullExpression>(m_Loc, std::move(type));
 }

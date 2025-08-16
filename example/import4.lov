@@ -1,0 +1,6 @@
+export define symbol1() {}
+export define symbol2() {}
+export define symbol3() {}
+export define x() {}
+export define y() {}
+export define z() {}

@@ -52,12 +52,12 @@ llvm::DIType *llove::RangeType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetStructType({ begin, end }, 2 * entry_size);
 }
 
-llove::TypePtr llove::RangeType::Reflect(Builder &builder) const
+llove::TypePtr llove::RangeType::Reflect(Context &context) const
 {
     TypePtr entry;
-    Type::Reflect(builder, m_Entry, entry);
+    Type::Reflect(context, m_Entry, entry);
 
-    return builder.GetTypes().GetRange(std::move(entry));
+    return context.GetRange(std::move(entry));
 }
 
 std::string llove::RangeType::Mangle() const

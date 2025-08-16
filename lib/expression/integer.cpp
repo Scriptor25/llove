@@ -17,7 +17,7 @@ llove::ValuePtr llove::IntegerExpression::GenVal(Builder &builder, const TypePtr
                     ? As<IntegerType>(m_Type)
                     : expect && expect->IsInteger()
                     ? As<IntegerType>(expect)
-                    : builder.GetTypes().GetInteger(false, 64);
+                    : builder.GetContext().GetInteger(false, 64);
 
     builder.EmitLoc(m_Loc);
 
@@ -29,10 +29,10 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::IntegerExpression::Reflect(Builder &builder) const try
+llove::StatementPtr llove::IntegerExpression::Reflect(Context &context) const try
 {
     TypePtr type;
-    Type::Reflect(builder, m_Type, type);
+    Type::Reflect(context, m_Type, type);
 
     return std::make_unique<IntegerExpression>(m_Loc, m_Value, std::move(type));
 }

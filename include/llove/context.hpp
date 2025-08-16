@@ -55,10 +55,8 @@ namespace llove
 
         void EmplaceTemplate(std::string name, std::vector<std::pair<std::string, TemplateType::Ptr>> parameters);
 
-        TypePtr InstantiateTemplateClass(
-            Builder &builder,
-            std::string name,
-            const std::vector<TypePtr> &arguments);
+        TypePtr InstantiateTemplateClass(std::string name, const std::vector<TypePtr> &arguments);
+        void InstantiateReflections(Builder &builder);
 
         [[nodiscard]] TypePtr TemplateArgument(const std::string &name) const;
 
@@ -70,10 +68,12 @@ namespace llove
         std::map<std::string, ClassTemplate> m_ClassTemplates;
         ClassTemplate *m_CurrentTemplate = nullptr;
         std::map<std::string, TypePtr> m_TemplateArguments;
+
+        std::map<ClassType::Ptr, std::vector<ClassFunction>> m_Reflections;
     };
 
     template<typename T>
-    typename T::Ptr As(TypePtr type)
+    T::Ptr As(TypePtr type)
     {
         Assert(type != nullptr, "type must not be null");
         auto ptr = std::dynamic_pointer_cast<T>(type);

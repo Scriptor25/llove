@@ -30,7 +30,7 @@ bool llove::Field::GetCastError(
     {
         if (strict || !builder.IsCastable(src, dst, true))
             return true;
-        error += builder.GetTypes().Difference(dst.Type, src.Type);
+        error += builder.GetContext().Difference(dst.Type, src.Type);
     }
 
     return false;
@@ -122,12 +122,12 @@ bool llove::Field::operator==(const Field &other) const
            && Type == other.Type;
 }
 
-void llove::Field::Reflect(Builder &builder, Field &field) const
+void llove::Field::Reflect(Context &context, Field &field) const
 {
     field.Mutable = Mutable;
     field.Reference = Reference;
 
-    Type::Reflect(builder, Type, field.Type);
+    Type::Reflect(context, Type, field.Type);
 }
 
 std::string llove::GetFieldHash(const std::vector<Field> &fields)

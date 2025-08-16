@@ -8,7 +8,7 @@
 #include <llvm/IR/Verifier.h>
 
 llove::Builder::Builder(
-    Context &types,
+    Context &context,
     const bool debug,
     const bool optimized,
     const bool profiling,
@@ -17,7 +17,7 @@ llove::Builder::Builder(
     const std::filesystem::path &debug_path,
     const std::string &command_line)
     : Builder(
-        types,
+        context,
         debug,
         optimized,
         profiling,
@@ -30,7 +30,7 @@ llove::Builder::Builder(
 }
 
 llove::Builder::Builder(
-    Context &types,
+    Context &context,
     const bool debug,
     const bool optimized,
     const bool profiling,
@@ -39,16 +39,16 @@ llove::Builder::Builder(
     const std::filesystem::path &debug_path,
     const std::string &command_line,
     const std::string &module_id)
-    : m_Types(types),
+    : m_Context(context),
       m_Debug(debug),
-      m_Builder(m_Context),
-      m_Module(module_id, m_Context)
+      m_LLVMBuilder(m_LLVMContext),
+      m_LLVMModule(module_id, m_LLVMContext)
 {
-    m_Module.setSourceFileName(source_path.string());
+    m_LLVMModule.setSourceFileName(source_path.string());
 
     m_DebugBuilder = std::make_unique<DebugBuilder>(
         m_Debug,
-        m_Module,
+        m_LLVMModule,
         source_path,
         debug_path,
         optimized,
@@ -59,9 +59,9 @@ llove::Builder::Builder(
     m_Stack.emplace_back();
 }
 
-llove::Context &llove::Builder::GetTypes() const
+llove::Context &llove::Builder::GetContext() const
 {
-    return m_Types;
+    return m_Context;
 }
 
 bool llove::Builder::IsDebug() const
@@ -79,9 +79,9 @@ void llove::Builder::EmitLoc(const Location &loc)
     m_DebugBuilder->EmitLoc(*this, loc);
 }
 
-llvm::LLVMContext &llove::Builder::GetContext()
+llvm::LLVMContext &llove::Builder::GetLLVMContext()
 {
-    return m_Context;
+    return m_LLVMContext;
 }
 
 std::string llove::Builder::Mangle(
@@ -116,7 +116,7 @@ std::string llove::Builder::Mangle(
 
 llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
 {
-    return m_Builder.CreateGlobalStringPtr(value, {}, 0, &m_Module);
+    return m_LLVMBuilder.CreateGlobalStringPtr(value, {}, 0, &m_LLVMModule);
 }
 
 llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
@@ -144,11 +144,11 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
             .Reference = true,
             .Type = fn.Class,
         };
-        function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result, *self);
+        function_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result, *self);
     }
     else
     {
-        function_type = m_Types.GetFunction(type_parameters, fn.VarArg, fn.Result);
+        function_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result);
     }
 
     const auto function = GetOrCreateFunction(mangled, function_type, fn.Interface);
@@ -166,7 +166,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
     m_Result = fn.Result;
 
     const auto entry_block = CreateBlock("entry", function);
-    m_Builder.SetInsertPoint(entry_block);
+    m_LLVMBuilder.SetInsertPoint(entry_block);
 
     m_DebugBuilder->EmitLoc(*this);
     PushFrame();
@@ -182,8 +182,8 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
             continue;
         if (fn.Result.Type->IsVoid())
         {
-            m_Builder.SetInsertPoint(&block);
-            m_Builder.CreateRetVoid();
+            m_LLVMBuilder.SetInsertPoint(&block);
+            m_LLVMBuilder.CreateRetVoid();
             continue;
         }
         Error("not all paths yield");
@@ -227,7 +227,7 @@ void llove::Builder::GenParameters(
         else if (parameter.Info.Type->IsClass())
         {
             const auto pointer = CreateAlloca(parameter.Info.Type, function);
-            m_Builder.CreateStore(argument, pointer);
+            m_LLVMBuilder.CreateStore(argument, pointer);
 
             storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);
 
@@ -249,7 +249,7 @@ void llove::Builder::GenParameters(
         else if (parameter.Info.Mutable)
         {
             const auto pointer = CreateAlloca(parameter.Info.Type, function);
-            m_Builder.CreateStore(argument, pointer);
+            m_LLVMBuilder.CreateStore(argument, pointer);
 
             storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);
         }

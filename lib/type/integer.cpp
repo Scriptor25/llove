@@ -51,9 +51,9 @@ llvm::DIType *llove::IntegerType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetIntegerType(m_Sign, m_Bits);
 }
 
-llove::TypePtr llove::IntegerType::Reflect(Builder &builder) const
+llove::TypePtr llove::IntegerType::Reflect(Context &context) const
 {
-    return builder.GetTypes().GetInteger(m_Sign, m_Bits);
+    return context.GetInteger(m_Sign, m_Bits);
 }
 
 std::string llove::IntegerType::Mangle() const

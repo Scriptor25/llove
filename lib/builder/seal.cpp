@@ -14,7 +14,7 @@ void llove::Builder::Seal(const SealInfo &info)
 {
     m_DebugBuilder->EndModule();
 
-    Assert(!llvm::verifyModule(m_Module, &llvm::errs()), "module has errors");
+    Assert(!llvm::verifyModule(m_LLVMModule, &llvm::errs()), "module has errors");
 
     raw_pwrite_stream_adapter print_stream(*info.PrintStream);
     raw_pwrite_stream_adapter output_stream(*info.OutputStream);
@@ -53,15 +53,15 @@ void llove::Builder::Seal(const SealInfo &info)
         cpu,
         features);
 
-    m_Module.setDataLayout(target_machine->createDataLayout());
-    m_Module.setTargetTriple(target_triple);
+    m_LLVMModule.setDataLayout(target_machine->createDataLayout());
+    m_LLVMModule.setTargetTriple(target_triple);
 
     llvm::LoopAnalysisManager lam;
     llvm::FunctionAnalysisManager fam;
     llvm::CGSCCAnalysisManager cgam;
     llvm::ModuleAnalysisManager mam;
     llvm::PassInstrumentationCallbacks pic;
-    llvm::StandardInstrumentations si(m_Context, true);
+    llvm::StandardInstrumentations si(m_LLVMContext, true);
 
     si.registerCallbacks(pic, &mam);
 
@@ -73,10 +73,10 @@ void llove::Builder::Seal(const SealInfo &info)
     pb.crossRegisterProxies(lam, fam, cgam, mam);
 
     auto mpm = pb.buildPerModuleDefaultPipeline(info.Level);
-    mpm.run(m_Module, mam);
+    mpm.run(m_LLVMModule, mam);
 
     if (info.Print)
-        m_Module.print(print_stream, nullptr);
+        m_LLVMModule.print(print_stream, nullptr);
 
     // TODO: pls tell llvm devs to update their codegen system!!!
     llvm::legacy::PassManager codegen_pass;
@@ -87,5 +87,5 @@ void llove::Builder::Seal(const SealInfo &info)
         info.Format);
     Assert(!emit_error, "target machine cannot emit specified codegen type");
 
-    codegen_pass.run(m_Module);
+    codegen_pass.run(m_LLVMModule);
 }

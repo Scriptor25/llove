@@ -139,19 +139,19 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::LetStatement::Reflect(Builder &builder) const try
+llove::StatementPtr llove::LetStatement::Reflect(Context &context) const try
 {
     Field info;
     ExpressionPtr value;
     std::vector<ExpressionPtr> arguments(m_Arguments.size());
 
-    m_Info.Reflect(builder, info);
+    m_Info.Reflect(context, info);
 
     if (m_Value)
-        m_Value->Reflect(builder, value);
+        m_Value->Reflect(context, value);
 
     for (unsigned i = 0; i < m_Arguments.size(); ++i)
-        m_Arguments.at(i)->Reflect(builder, arguments.at(i));
+        m_Arguments.at(i)->Reflect(context, arguments.at(i));
 
     return std::make_unique<LetStatement>(m_Loc, std::move(info), m_Name, std::move(value), std::move(arguments));
 }

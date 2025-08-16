@@ -203,14 +203,14 @@ void llove::DebugBuilder::CreateParameter(
             value->GetPointer(),
             local_variable,
             m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetContext(), 0u, 0u, GetScope()),
+            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
             builder.GetInsertBlock());
     else
         m_DIBuilder->insertDbgValueIntrinsic(
             value->Load(builder),
             local_variable,
             m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetContext(), 0u, 0u, GetScope()),
+            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
             builder.GetInsertBlock());
 }
 
@@ -232,14 +232,14 @@ void llove::DebugBuilder::CreateVariable(Builder &builder, const std::string &na
             value->GetPointer(),
             local_variable,
             m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetContext(), 0u, 0u, GetScope()),
+            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
             builder.GetInsertBlock());
     else
         m_DIBuilder->insertDbgValueIntrinsic(
             value->Load(builder),
             local_variable,
             m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetContext(), 0u, 0u, GetScope()),
+            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
             builder.GetInsertBlock());
 }
 
@@ -258,7 +258,7 @@ void llove::DebugBuilder::EmitLoc(Builder &builder, const Location &loc) const
 
     builder.SetCurrentDebugLocation(
         llvm::DILocation::get(
-            builder.GetContext(),
+            builder.GetLLVMContext(),
             loc.Row,
             loc.Col,
             GetScope()));
@@ -271,7 +271,7 @@ void llove::DebugBuilder::EmitLoc(Builder &builder, const GlobalPtr &ptr) const
 
     builder.SetCurrentDebugLocation(
         llvm::DILocation::get(
-            builder.GetContext(),
+            builder.GetLLVMContext(),
             ptr->Loc().Row,
             ptr->Loc().Col,
             GetScope()));
@@ -284,7 +284,7 @@ void llove::DebugBuilder::EmitLoc(Builder &builder, const StatementPtr &ptr) con
 
     builder.SetCurrentDebugLocation(
         llvm::DILocation::get(
-            builder.GetContext(),
+            builder.GetLLVMContext(),
             ptr->Loc().Row,
             ptr->Loc().Col,
             GetScope()));

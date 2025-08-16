@@ -43,9 +43,9 @@ llvm::DIType *llove::FloatType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetFloatType(m_Bits);
 }
 
-llove::TypePtr llove::FloatType::Reflect(Builder &builder) const
+llove::TypePtr llove::FloatType::Reflect(Context &context) const
 {
-    return builder.GetTypes().GetFloat(m_Bits);
+    return context.GetFloat(m_Bits);
 }
 
 std::string llove::FloatType::Mangle() const

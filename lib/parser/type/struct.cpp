@@ -18,5 +18,5 @@ llove::TypePtr llove::Parser::ParseStructType()
     }
     Expect(TokenType_Other, "}");
 
-    return m_Types.GetStruct(std::move(fields));
+    return m_Context.GetStruct(std::move(fields));
 }
