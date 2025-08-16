@@ -89,14 +89,13 @@ namespace llove
             std::vector<Parameter> &parameters,
             const std::string &end);
 
-        void ParseTypeAlias();
-
         GlobalPtr ParseGlobal();
         GlobalPtr ParseClassDefinitionGlobal(Location loc);
         GlobalPtr ParseClassGlobal(bool export_);
         GlobalPtr ParseConstGlobal(bool export_);
         GlobalPtr ParseDefinitionGlobal(bool export_);
         GlobalPtr ParseImportGlobal();
+        GlobalPtr ParseTypeGlobal(bool export_);
 
         void ParseClassField(ClassField &field);
         void ParseClassFunction(ClassFunction &function, bool require_content);

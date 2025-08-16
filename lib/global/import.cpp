@@ -26,9 +26,11 @@ void llove::ImportGlobal::Gen(Builder &builder) const
 
     std::vector<std::pair<std::string, ValuePtr>> values;
     while (parser.Ok())
-        if (auto ptr = parser.Parse())
-            if (auto [name, value] = ptr->GenImport(builder, m_As, m_Symbols); value)
-                values.emplace_back(std::move(name), std::move(value));
+    {
+        auto ptr = parser.Parse();
+        if (auto [name, value] = ptr->GenImport(builder, m_As, m_Symbols); value)
+            values.emplace_back(std::move(name), std::move(value));
+    }
 
     if (m_As.empty())
         return;
@@ -55,7 +57,9 @@ std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
 {
-    Error("TODO: llove::ImportGlobal::GenImport");
+    // TODO: check recursion
+    Gen(builder);
+    return {};
 }
 
 std::ostream &llove::ImportGlobal::Print(std::ostream &stream) const

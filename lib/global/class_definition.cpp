@@ -56,7 +56,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassDefinitionGlobal::GenImport(
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
 {
-    Error("TODO: llove::ClassDefinitionGlobal::GenImport");
+    return {};
 }
 
 std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const

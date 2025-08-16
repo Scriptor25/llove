@@ -3,16 +3,13 @@
 
 llove::GlobalPtr llove::Parser::ParseGlobal()
 {
-    if (At(TokenType_Symbol, "type"))
-    {
-        ParseTypeAlias();
-        return nullptr;
-    }
-
     if (At(TokenType_Symbol, "import"))
         return ParseImportGlobal();
 
     const auto export_ = SkipIf(TokenType_Symbol, "export");
+
+    if (At(TokenType_Symbol, "type"))
+        return ParseTypeGlobal(export_);
 
     if (At(TokenType_Symbol, "define", "interface"))
         return ParseDefinitionGlobal(export_);

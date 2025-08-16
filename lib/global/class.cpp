@@ -56,6 +56,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
         builder.GenFunction(
             {
                 .Loc = function.Loc,
+                .Export = m_Export,
                 .Implicit = function.Implicit,
                 .Class = m_Type,
                 .Mutable = function.Mutable,
@@ -64,6 +65,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
                 .Parameters = function.Parameters,
                 .VarArg = function.VarArg,
                 .Result = function.Result,
+                .Content = nullptr,
             }
         );
 
@@ -71,6 +73,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
         builder.GenFunction(
             {
                 .Loc = function.Loc,
+                .Export = m_Export,
                 .Implicit = function.Implicit,
                 .Class = m_Type,
                 .Mutable = function.Mutable,
@@ -93,7 +96,61 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
 {
-    Error("TODO: llove::ClassGlobal::GenImport");
+    auto &name = m_Type->GetName();
+
+    if (!m_Export)
+    {
+        Assert(!symbols.contains(name), m_Loc, "symbol is not marked for export");
+        return {};
+    }
+
+    Assert(!symbols.contains(name) || symbols.at(name) == name, m_Loc, "class export does not support name remapping");
+    builder.GetContext().Set(m_Type->Mangle(), m_Type);
+    builder.GetContext().SetNamed(name, m_Type);
+
+    if (m_Opaque)
+        return {};
+
+    std::vector<ClassFieldReference> class_fields;
+    for (auto &field : m_Fields)
+        class_fields.emplace_back(field.Info, field.Name);
+    m_Type->SetFields(std::move(class_fields));
+
+    std::vector<ClassFunctionReference> class_functions;
+    for (auto &function : m_Functions)
+    {
+        std::vector<Field> parameters;
+        for (auto &parameter : function.Parameters)
+            parameters.emplace_back(parameter.Info);
+        class_functions.emplace_back(
+            function.Expose,
+            function.Implicit,
+            function.Mutable,
+            function.Name,
+            parameters,
+            function.VarArg,
+            function.Result);
+    }
+    m_Type->SetFunctions(std::move(class_functions));
+
+    for (auto &function : m_Functions)
+        builder.GenFunction(
+            {
+                .Loc = function.Loc,
+                .Export = m_Export,
+                .Implicit = function.Implicit,
+                .Class = m_Type,
+                .Mutable = function.Mutable,
+                .Expose = function.Expose,
+                .Name = function.Name,
+                .Parameters = function.Parameters,
+                .VarArg = function.VarArg,
+                .Result = function.Result,
+                .Content = nullptr,
+            }
+        );
+
+    return {};
 }
 
 std::ostream &llove::ClassGlobal::Print(std::ostream &stream) const

@@ -14,7 +14,7 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal(const bool export_)
 
     auto name = Expect(TokenType_Symbol).Value;
     auto type = m_Context.GetClass(std::move(name));
-    m_Context.Set(type->GetName(), type);
+    m_Context.SetNamed(type->GetName(), type);
 
     if (SkipIf(TokenType_Other, ";"))
         return std::make_unique<ClassGlobal>(std::move(loc), export_, std::move(type));

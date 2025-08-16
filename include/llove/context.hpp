@@ -15,9 +15,12 @@ namespace llove
     {
     public:
         Context() = default;
+        explicit Context(Context &parent);
 
-        [[nodiscard]] TypePtr Get(const std::string &id) const;
-        void Set(const std::string &id, TypePtr type);
+        [[nodiscard]] TypePtr GetNamed(const std::string &id) const;
+        void SetNamed(const std::string &id, TypePtr type);
+
+        void Set(const std::string &hash, TypePtr type);
 
         template<typename T, typename... Args> requires std::is_base_of_v<Type, T>
         std::shared_ptr<T> GetOrCreate(Args &&... args)
@@ -26,6 +29,15 @@ namespace llove
             auto hash = type->Mangle();
             if (m_Types.contains(hash))
                 return std::dynamic_pointer_cast<T>(m_Types.at(hash));
+
+            auto parent = m_Parent;
+            while (parent)
+            {
+                if (parent->m_Types.contains(hash))
+                    return std::dynamic_pointer_cast<T>(parent->m_Types.at(hash));
+                parent = parent->m_Parent;
+            }
+
             m_Types.emplace(hash, type);
             return type;
         }
@@ -61,6 +73,8 @@ namespace llove
         [[nodiscard]] TypePtr TemplateArgument(const std::string &name) const;
 
     private:
+        Context *m_Parent = nullptr;
+
         std::map<std::string, TypePtr> m_Types;
         std::map<std::string, TypePtr> m_Named;
 

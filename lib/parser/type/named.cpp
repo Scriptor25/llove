@@ -3,8 +3,10 @@
 
 llove::TypePtr llove::Parser::ParseNamedType()
 {
-    const auto name = Expect(TokenType_Symbol).Value;
-    if (auto type = m_Context.Get(name))
+    const auto token = Expect(TokenType_Symbol);
+
+    const auto &name = token.Value;
+    if (auto type = m_Context.GetNamed(name))
         return type;
 
     if (name == "void")
@@ -36,5 +38,5 @@ llove::TypePtr llove::Parser::ParseNamedType()
     if (name == "f64")
         return m_Context.GetFloat(64);
 
-    Error("undefined type '{}'", name);
+    Error(token.Loc, "undefined type '{}'", name);
 }

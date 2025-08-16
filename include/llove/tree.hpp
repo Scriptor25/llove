@@ -164,6 +164,24 @@ namespace llove
         std::filesystem::path m_Filepath;
     };
 
+    class TypeGlobal final : public Global
+    {
+    public:
+        explicit TypeGlobal(Location loc, bool export_, std::string name, TypePtr type);
+
+        void Gen(Builder &builder) const override;
+        std::pair<std::string, ValuePtr> GenImport(
+            Builder &builder,
+            const std::string &as,
+            const std::map<std::string, std::string> &symbols) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        bool m_Export;
+        std::string m_Name;
+        TypePtr m_Type;
+    };
+
     class Statement
     {
     public:

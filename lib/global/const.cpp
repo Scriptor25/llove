@@ -52,7 +52,7 @@ std::pair<std::string, llove::ValuePtr> llove::ConstGlobal::GenImport(
 
 std::ostream &llove::ConstGlobal::Print(std::ostream &stream) const
 {
-    stream << "const " << m_Name;
+    stream << (m_Export ? "export " : "") << "const " << m_Name;
 
     if (m_Type)
         stream << ": " << m_Type;

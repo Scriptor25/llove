@@ -100,6 +100,7 @@ std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
 std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
 {
     stream
+            << (m_Export ? "export " : "")
             << (m_Interface ? "interface " : "define ")
             << (m_Implicit ? "implicit " : "")
             << m_Name

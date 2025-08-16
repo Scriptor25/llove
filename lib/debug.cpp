@@ -22,7 +22,7 @@ llove::DebugBuilder::DebugBuilder(
     m_CompileUnit = m_DIBuilder->createCompileUnit(
         /* TODO: submit on https://dwarfstd.org/ for official language code */
         0x8086,
-        m_DIBuilder->createFile(source_path.string(), source_path.parent_path().string()),
+        m_DIBuilder->createFile(source_path.filename().string(), source_path.parent_path().string()),
         "LLove",
         optimized,
         command_line,

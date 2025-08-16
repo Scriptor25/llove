@@ -279,14 +279,11 @@ int main(const int argc, const char *const *argv) try
     while (parser.Ok())
     {
         auto ptr = parser.Parse();
+        if (print_llove)
+            *print_stream_ref << ptr << std::endl;
 
         context.InstantiateReflections(builder);
 
-        if (!ptr)
-            continue;
-
-        if (print_llove)
-            *print_stream_ref << ptr << std::endl;
         ptr->Gen(builder);
     }
 

@@ -4,19 +4,31 @@
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 
-llove::TypePtr llove::Context::Get(const std::string &id) const
+llove::Context::Context(Context &parent)
+    : m_Parent(&parent)
+{
+}
+
+llove::TypePtr llove::Context::GetNamed(const std::string &id) const
 {
     for (auto &template_ : std::ranges::reverse_view(m_TemplateTypes))
         if (template_.contains(id))
             return template_.at(id);
     if (m_Named.contains(id))
         return m_Named.at(id);
+    if (m_Parent)
+        return m_Parent->GetNamed(id);
     return nullptr;
 }
 
-void llove::Context::Set(const std::string &id, TypePtr type)
+void llove::Context::SetNamed(const std::string &id, TypePtr type)
 {
-    m_Named[id] = std::move(type);
+    m_Named.emplace(id, std::move(type));
+}
+
+void llove::Context::Set(const std::string &hash, TypePtr type)
+{
+    m_Types.emplace(hash, std::move(type));
 }
 
 llove::VoidType::Ptr llove::Context::GetVoid()
