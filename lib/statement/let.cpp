@@ -98,7 +98,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
 
             if (auto destructor = class_type->GetDestructor())
             {
-                const auto &reference = builder.GenFunction(
+                const auto function = builder.GenFunction(
                     {
                         .Class = class_type,
                         .Mutable = destructor->Mutable,
@@ -108,7 +108,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
                         .Result = destructor->Result,
                     });
 
-                builder.PushDestructor(pointer, reference);
+                builder.PushDestructor(pointer, function);
             }
         }
         else

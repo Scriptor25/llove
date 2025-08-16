@@ -23,7 +23,7 @@ void llove::Expression::Gen(Builder &builder) const try
         const auto pointer = builder.CreateAlloca(class_type);
         builder.CreateStore(pointer, value);
 
-        const auto &reference = builder.GenFunction(
+        const auto function = builder.GenFunction(
             {
                 .Class = class_type,
                 .Mutable = destructor->Mutable,
@@ -33,7 +33,7 @@ void llove::Expression::Gen(Builder &builder) const try
                 .Result = destructor->Result,
             });
 
-        builder.PushDestructor(pointer, reference);
+        builder.PushDestructor(pointer, function);
     }
 }
 catch (ref_exception<ErrorStack> &cause)

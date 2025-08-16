@@ -20,6 +20,9 @@ namespace llove
     {
         Location Loc;
 
+        bool Register = true;
+        bool Export = false;
+
         bool Interface = false;
         bool Implicit = false;
 
@@ -243,9 +246,9 @@ namespace llove
 
         llvm::Value *CreateGlobalString(const std::string &value);
 
-        FunctionReference &GenFunction(const FunctionInfo &fn);
+        llove::FunctionReference GenFunction(const FunctionInfo &fn);
         void GenParameters(
-            llvm::Function *function,
+            llvm::Function *parent,
             const std::vector<Parameter> &parameters,
             const std::optional<Field> &self = std::nullopt);
 

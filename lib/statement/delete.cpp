@@ -29,7 +29,7 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
             value = Value::CreateL(type, pointer, false);
         }
 
-        const auto &reference = builder.GenFunction(
+        const auto function = builder.GenFunction(
             {
                 .Class = std::move(class_type),
                 .Mutable = destructor->Mutable,
@@ -39,7 +39,7 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
             });
 
         builder.EmitLoc(m_Loc);
-        builder.CreateCall(reference, {}, std::move(value));
+        builder.CreateCall(function, {}, std::move(value));
     }
 }
 catch (ref_exception<ErrorStack> &cause)

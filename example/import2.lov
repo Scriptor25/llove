@@ -3,3 +3,5 @@ interface puts(str: i8[]): i32;
 export define hello() {
     puts("Hello World!");
 }
+
+export const FOO = "FOO -> BAR";

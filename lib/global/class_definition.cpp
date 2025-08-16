@@ -51,6 +51,14 @@ catch (ref_exception<ErrorStack> &cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
+std::pair<std::string, llove::ValuePtr> llove::ClassDefinitionGlobal::GenImport(
+    Builder &builder,
+    const std::string &as,
+    const std::map<std::string, std::string> &symbols) const
+{
+    Error("TODO: llove::ClassDefinitionGlobal::GenImport");
+}
+
 std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const
 {
     stream

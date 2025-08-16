@@ -36,6 +36,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool export_)
 
     return std::make_unique<DefinitionGlobal>(
         std::move(loc),
+        export_,
         interface,
         implicit,
         std::move(name),

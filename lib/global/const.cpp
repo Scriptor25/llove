@@ -22,6 +22,34 @@ void llove::ConstGlobal::Gen(Builder &builder) const
     builder.SetValue(m_Name, std::move(value));
 }
 
+std::pair<std::string, llove::ValuePtr> llove::ConstGlobal::GenImport(
+    Builder &builder,
+    const std::string &as,
+    const std::map<std::string, std::string> &symbols) const
+{
+    if (!m_Export)
+    {
+        Assert(!symbols.contains(m_Name), m_Loc, "symbol is not marked for export");
+        return {};
+    }
+
+    if (as.empty() && !symbols.empty() && !symbols.contains(m_Name))
+        return {};
+
+    auto value = m_Value->GenVal(builder, m_Type);
+    auto type = m_Type ? m_Type : value->GetType();
+
+    value = builder.CreateCast(std::move(value), std::move(type), true);
+
+    if ((as.empty() && symbols.empty()) || (symbols.contains(m_Name) && symbols.at(m_Name) == m_Name))
+    {
+        builder.SetValue(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, std::move(value));
+        return {};
+    }
+
+    return { m_Name, std::move(value) };
+}
+
 std::ostream &llove::ConstGlobal::Print(std::ostream &stream) const
 {
     stream << "const " << m_Name;

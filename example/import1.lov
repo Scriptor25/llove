@@ -2,7 +2,11 @@ import * from "import2.lov";
 import something from "import3.lov";
 import { symbol1, symbol2: foo, symbol3, ...remainder } from "import4.lov";
 
+interface puts(str: i8[]): i32;
+
 interface main(): i32 {
+
+    puts(FOO);
 
     hello();
 

@@ -10,10 +10,7 @@ llove::GlobalPtr llove::Parser::ParseGlobal()
     }
 
     if (At(TokenType_Symbol, "import"))
-    {
-        ParseImport();
-        return nullptr;
-    }
+        return ParseImportGlobal();
 
     const auto export_ = SkipIf(TokenType_Symbol, "export");
 

@@ -4,3 +4,5 @@ export define symbol3() {}
 export define x() {}
 export define y() {}
 export define z() {}
+
+export const TEST = "ABC";

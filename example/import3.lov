@@ -1,2 +1,4 @@
 export define foo() {}
 export define bar() {}
+
+export const HELLO = "Hello World!";

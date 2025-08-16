@@ -25,6 +25,10 @@ namespace llove
 
         virtual ~Global() = default;
         virtual void Gen(Builder &builder) const = 0;
+        virtual std::pair<std::string, ValuePtr> GenImport(
+            Builder &builder,
+            const std::string &as,
+            const std::map<std::string, std::string> &symbols) const = 0;
         virtual std::ostream &Print(std::ostream &stream) const = 0;
 
     protected:
@@ -43,6 +47,10 @@ namespace llove
             std::vector<ClassFunction> functions);
 
         void Gen(Builder &builder) const override;
+        std::pair<std::string, ValuePtr> GenImport(
+            Builder &builder,
+            const std::string &as,
+            const std::map<std::string, std::string> &symbols) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -67,6 +75,10 @@ namespace llove
             StatementPtr content);
 
         void Gen(Builder &builder) const override;
+        std::pair<std::string, ValuePtr> GenImport(
+            Builder &builder,
+            const std::string &as,
+            const std::map<std::string, std::string> &symbols) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -85,6 +97,10 @@ namespace llove
         explicit ConstGlobal(Location loc, bool export_, std::string name, TypePtr type, ExpressionPtr value);
 
         void Gen(Builder &builder) const override;
+        std::pair<std::string, ValuePtr> GenImport(
+            Builder &builder,
+            const std::string &as,
+            const std::map<std::string, std::string> &symbols) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
@@ -99,6 +115,7 @@ namespace llove
     public:
         explicit DefinitionGlobal(
             Location loc,
+            bool export_,
             bool interface,
             bool implicit,
             std::string name,
@@ -108,9 +125,14 @@ namespace llove
             StatementPtr content);
 
         void Gen(Builder &builder) const override;
+        std::pair<std::string, ValuePtr> GenImport(
+            Builder &builder,
+            const std::string &as,
+            const std::map<std::string, std::string> &symbols) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
+        bool m_Export;
         bool m_Interface;
         bool m_Implicit;
         std::string m_Name;
@@ -118,6 +140,28 @@ namespace llove
         bool m_VarArg;
         Field m_Result;
         StatementPtr m_Content;
+    };
+
+    class ImportGlobal final : public Global
+    {
+    public:
+        explicit ImportGlobal(
+            Location loc,
+            std::string as,
+            std::map<std::string, std::string> symbols,
+            std::filesystem::path filepath);
+
+        void Gen(Builder &builder) const override;
+        std::pair<std::string, ValuePtr> GenImport(
+            Builder &builder,
+            const std::string &as,
+            const std::map<std::string, std::string> &symbols) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::string m_As;
+        std::map<std::string, std::string> m_Symbols;
+        std::filesystem::path m_Filepath;
     };
 
     class Statement

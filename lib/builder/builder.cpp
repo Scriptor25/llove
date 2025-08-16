@@ -119,7 +119,7 @@ llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
     return m_LLVMBuilder.CreateGlobalStringPtr(value, {}, 0, &m_LLVMModule);
 }
 
-llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
+llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 {
     const auto mangled = Mangle(
         fn.Interface,
@@ -135,7 +135,7 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
         type_parameters.emplace_back(parameter.Info);
 
     std::optional<Field> self;
-    FunctionType::Ptr function_type;
+    FunctionType::Ptr callee_type;
 
     if (fn.Class)
     {
@@ -144,39 +144,48 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
             .Reference = true,
             .Type = fn.Class,
         };
-        function_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result, *self);
+        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result, *self);
     }
     else
     {
-        function_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result);
+        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result);
     }
 
-    const auto function = GetOrCreateFunction(mangled, function_type, fn.Interface);
-    auto &reference = PushFunction(fn.Expose, fn.Implicit, fn.Name, function_type, function);
+    const auto callee = GetOrCreateFunction(mangled, callee_type, fn.Export || fn.Interface);
+
+    auto function = fn.Register
+                        ? PushFunction(fn.Expose, fn.Implicit, fn.Name, callee_type, callee)
+                        : FunctionReference{
+                            .Expose = fn.Expose,
+                            .Implicit = fn.Implicit,
+                            .Name = fn.Name,
+                            .Type = callee_type,
+                            .Callee = callee,
+                        };
 
     if (!fn.Content)
-        return reference;
+        return function;
 
-    Assert(function->empty(), "function is already defined");
+    Assert(callee->empty(), "function is already defined");
 
-    m_DebugBuilder->BeginFunction(*this, fn.Name, fn.Loc, function_type, mangled, function);
+    m_DebugBuilder->BeginFunction(*this, fn.Name, fn.Loc, callee_type, mangled, callee);
 
-    m_Parent = function;
+    m_Parent = callee;
     m_Class = fn.Class;
     m_Result = fn.Result;
 
-    const auto entry_block = CreateBlock("entry", function);
+    const auto entry_block = CreateBlock("entry", callee);
     m_LLVMBuilder.SetInsertPoint(entry_block);
 
     m_DebugBuilder->EmitLoc(*this);
     PushFrame();
-    GenParameters(function, fn.Parameters, self);
+    GenParameters(callee, fn.Parameters, self);
     fn.Content->Gen(*this);
     PopFrame();
 
     m_DebugBuilder->EndFunction();
 
-    for (auto &block : *function)
+    for (auto &block : *callee)
     {
         if (block.getTerminator())
             continue;
@@ -189,12 +198,12 @@ llove::FunctionReference &llove::Builder::GenFunction(const FunctionInfo &fn)
         Error("not all paths yield");
     }
 
-    Assert(!verifyFunction(*function, &llvm::errs()), "function has errors");
-    return reference;
+    Assert(!verifyFunction(*callee, &llvm::errs()), "function has errors");
+    return function;
 }
 
 void llove::Builder::GenParameters(
-    llvm::Function *function,
+    llvm::Function *parent,
     const std::vector<Parameter> &parameters,
     const std::optional<Field> &self)
 {
@@ -203,7 +212,7 @@ void llove::Builder::GenParameters(
     {
         offset = 1u;
 
-        const auto argument = function->getArg(0);
+        const auto argument = parent->getArg(0);
         argument->setName("self");
 
         auto storage = Value::CreateL(self->Type, argument, self->Mutable);
@@ -212,11 +221,11 @@ void llove::Builder::GenParameters(
         SetValue("self", std::move(storage));
     }
 
-    for (unsigned i = 0; i < function->arg_size() - offset; ++i)
+    for (unsigned i = 0; i < parent->arg_size() - offset; ++i)
     {
         auto &parameter = parameters.at(i);
 
-        const auto argument = function->getArg(i + offset);
+        const auto argument = parent->getArg(i + offset);
         argument->setName(parameter.Name);
 
         ValuePtr storage;
@@ -226,7 +235,7 @@ void llove::Builder::GenParameters(
         }
         else if (parameter.Info.Type->IsClass())
         {
-            const auto pointer = CreateAlloca(parameter.Info.Type, function);
+            const auto pointer = CreateAlloca(parameter.Info.Type, parent);
             m_LLVMBuilder.CreateStore(argument, pointer);
 
             storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);
@@ -234,7 +243,7 @@ void llove::Builder::GenParameters(
             auto class_type = As<ClassType>(parameter.Info.Type);
             if (const auto destructor = class_type->GetDestructor())
             {
-                const auto &reference = GenFunction(
+                const auto function = GenFunction(
                     {
                         .Class = std::move(class_type),
                         .Mutable = destructor->Mutable,
@@ -243,12 +252,12 @@ void llove::Builder::GenParameters(
                         .Result = destructor->Result,
                     });
 
-                PushDestructor(pointer, reference);
+                PushDestructor(pointer, function);
             }
         }
         else if (parameter.Info.Mutable)
         {
-            const auto pointer = CreateAlloca(parameter.Info.Type, function);
+            const auto pointer = CreateAlloca(parameter.Info.Type, parent);
             m_LLVMBuilder.CreateStore(argument, pointer);
 
             storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);

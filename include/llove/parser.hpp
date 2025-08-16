@@ -90,13 +90,13 @@ namespace llove
             const std::string &end);
 
         void ParseTypeAlias();
-        void ParseImport();
 
         GlobalPtr ParseGlobal();
         GlobalPtr ParseClassDefinitionGlobal(Location loc);
         GlobalPtr ParseClassGlobal(bool export_);
         GlobalPtr ParseConstGlobal(bool export_);
         GlobalPtr ParseDefinitionGlobal(bool export_);
+        GlobalPtr ParseImportGlobal();
 
         void ParseClassField(ClassField &field);
         void ParseClassFunction(ClassFunction &function, bool require_content);
