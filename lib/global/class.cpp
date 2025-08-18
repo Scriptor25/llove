@@ -92,6 +92,7 @@ catch (ref_exception<ErrorStack> &cause)
 }
 
 std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
+    Context &context,
     Builder &builder,
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
@@ -104,9 +105,8 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
         return {};
     }
 
-    Assert(!symbols.contains(name) || symbols.at(name) == name, m_Loc, "class export does not support name remapping");
     builder.GetContext().Set(m_Type->Mangle(), m_Type);
-    builder.GetContext().SetNamed(name, m_Type);
+    builder.GetContext().SetNamed(symbols.contains(name) ? symbols.at(name) : name, m_Type);
 
     if (m_Opaque)
         return {};

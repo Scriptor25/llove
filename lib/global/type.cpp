@@ -16,11 +16,12 @@ void llove::TypeGlobal::Gen(Builder &builder) const
 }
 
 std::pair<std::string, llove::ValuePtr> llove::TypeGlobal::GenImport(
+    Context &context,
     Builder &builder,
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
 {
-    builder.GetContext().SetNamed(m_Name, m_Type);
+    context.SetNamed(m_Name, m_Type);
 
     if (!m_Export)
     {

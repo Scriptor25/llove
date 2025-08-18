@@ -1,6 +1,6 @@
 import * from "import2.lov";
 import something from "import3.lov";
-import { symbol1, symbol2: foo, symbol3, ...remainder } from "import4.lov";
+import { symbol1, symbol2: foo, symbol3, MyClass: myclass, ...remainder } from "import4.lov";
 
 interface puts(str: i8[]): i32;
 
@@ -20,6 +20,14 @@ interface main(): i32 {
     remainder.x();
     remainder.y();
     remainder.z();
+
+    let c1: myclass(0);
+    let c2: myclass(123);
+    let c3 = create myclass(456);
+
+    c1.get();
+    c2.get();
+    c3.get();
 
     yield 0;
 }

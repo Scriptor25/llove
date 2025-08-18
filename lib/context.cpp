@@ -4,8 +4,8 @@
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 
-llove::Context::Context(Context &parent)
-    : m_Parent(&parent)
+llove::Context::Context(Context *parent)
+    : m_Parent(parent)
 {
 }
 
@@ -16,8 +16,6 @@ llove::TypePtr llove::Context::GetNamed(const std::string &id) const
             return template_.at(id);
     if (m_Named.contains(id))
         return m_Named.at(id);
-    if (m_Parent)
-        return m_Parent->GetNamed(id);
     return nullptr;
 }
 

@@ -26,6 +26,7 @@ namespace llove
         virtual ~Global() = default;
         virtual void Gen(Builder &builder) const = 0;
         virtual std::pair<std::string, ValuePtr> GenImport(
+            Context &context,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const = 0;
@@ -48,6 +49,7 @@ namespace llove
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
+            Context &context,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const override;
@@ -76,6 +78,7 @@ namespace llove
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
+            Context &context,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const override;
@@ -98,6 +101,7 @@ namespace llove
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
+            Context &context,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const override;
@@ -126,6 +130,7 @@ namespace llove
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
+            Context &context,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const override;
@@ -153,6 +158,7 @@ namespace llove
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
+            Context &context,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const override;
@@ -171,6 +177,7 @@ namespace llove
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
+            Context &context,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const override;

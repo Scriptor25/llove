@@ -17,18 +17,19 @@ llove::ImportGlobal::ImportGlobal(
 {
 }
 
-void llove::ImportGlobal::Gen(Builder &builder) const
+void llove::ImportGlobal::Gen(Builder &builder) const try
 {
     std::ifstream stream(m_Filepath);
     Assert(stream.is_open(), "failed to open import file '{}'", m_Filepath.string());
 
-    Parser parser(builder.GetContext(), stream, m_Filepath);
+    Context context(&builder.GetContext());
+    Parser parser(context, stream, m_Filepath);
 
     std::vector<std::pair<std::string, ValuePtr>> values;
     while (parser.Ok())
     {
         auto ptr = parser.Parse();
-        if (auto [name, value] = ptr->GenImport(builder, m_As, m_Symbols); value)
+        if (auto [name, value] = ptr->GenImport(context, builder, m_As, m_Symbols); value)
             values.emplace_back(std::move(name), std::move(value));
     }
 
@@ -51,8 +52,13 @@ void llove::ImportGlobal::Gen(Builder &builder) const
     auto value = Value::CreateR(type, aggregate);
     builder.SetValue(m_As, std::move(value));
 }
+catch (ref_exception<ErrorStack> &cause)
+{
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
+}
 
 std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
+    Context &context,
     Builder &builder,
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const

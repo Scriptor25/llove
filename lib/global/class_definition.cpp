@@ -52,6 +52,7 @@ catch (ref_exception<ErrorStack> &cause)
 }
 
 std::pair<std::string, llove::ValuePtr> llove::ClassDefinitionGlobal::GenImport(
+    Context &context,
     Builder &builder,
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
