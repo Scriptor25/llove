@@ -217,10 +217,19 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
 
     if (m_Name.front() != '_')
     {
-        const auto operator_ = builder.FindOperator("*", iterator->AsField(), false);
-        Assert(operator_ != nullptr, "operator '*' not implemented for {}", iterator->AsField());
+        ValuePtr storage;
 
-        auto storage = (*operator_)(builder, iterator);
+        if (const auto iterator_type = iterator->GetType(); iterator_type->IsInteger() || iterator_type->IsFloat())
+        {
+            storage = Value::CreateR(iterator_type, iterator->Load(builder));
+        }
+        else
+        {
+            const auto operator_ = builder.FindOperator("*", iterator->AsField(), false);
+            Assert(operator_ != nullptr, "operator '*' not implemented for {}", iterator->AsField());
+
+            storage = (*operator_)(builder, iterator);
+        }
 
         if (m_Reference)
         {

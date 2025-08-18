@@ -20,6 +20,15 @@ static bool isdigit(const int c, const int base)
     }
 }
 
+static unsigned ctoi(const int c)
+{
+    if ('A' <= c && c <= 'F')
+        return c - 'A' + 0xA;
+    if ('a' <= c && c <= 'f')
+        return c - 'a' + 0xa;
+    return c - '0';
+}
+
 void llove::Parser::RemoveEscape(std::string &raw, std::string &value)
 {
     if (m_Buffer != '\\')
@@ -56,6 +65,22 @@ void llove::Parser::RemoveEscape(std::string &raw, std::string &value)
     case 'v':
         value += '\v';
         break;
+    case 'x':
+    {
+        unsigned buffer = 0;
+
+        raw += static_cast<char>(m_Buffer);
+        Get();
+        buffer = (ctoi(m_Buffer) & 0b1111) << 4;
+        raw += static_cast<char>(m_Buffer);
+        Get();
+        buffer |= ctoi(m_Buffer) & 0b1111;
+        raw += static_cast<char>(m_Buffer);
+
+        value += static_cast<char>(buffer);
+
+        break;
+    }
     default:
         value += static_cast<char>(m_Buffer);
         break;

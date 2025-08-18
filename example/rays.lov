@@ -1,0 +1,50 @@
+type string_t = i8[];
+type stream_t = [];
+type size_t = u64;
+
+interface fopen(filename: string_t, mode: string_t): stream_t;
+interface fprintf(stream: stream_t, format: string_t, ...): i32;
+interface fflush(stream: stream_t): i32;
+interface fclose(stream: stream_t): i32;
+
+interface fputc(character: i32, stream: stream_t): i32;
+interface fputs(str: string_t, stream: stream_t): i32;
+interface fwrite(ptr: [], size: size_t, count: size_t, stream: stream_t): size_t;
+
+interface strlen(str: string_t): size_t;
+
+class Stream {
+
+    expose mut create(filename: string_t, mode: string_t) {
+        self.stream = fopen(filename, mode);
+    }
+
+    expose mut delete() {
+        if (self.stream)
+            fclose(self.stream);
+        self.stream = null;
+    }
+
+    expose write(ptr: [], size: size_t, count: size_t) {
+        fwrite(ptr, size, count, self.stream);
+    }
+
+    expose write(str: string_t) {
+        fwrite(str, 1, strlen(str), self.stream);
+    }
+
+    let mut stream: stream_t;
+}
+
+interface main(): i32 {
+
+    let stream: Stream("out.ppm", "wb");
+
+    stream.write("P6 100 100 255 ");
+
+    foreach (j : (0)..(100))
+    foreach (i : (0)..(100))
+        stream.write("\xff\x00\x00", 3, 1);
+
+    yield 0;
+}

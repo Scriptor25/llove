@@ -6,7 +6,7 @@ interface strlen(str: i8[]): u64;
 type iterable_struct_t = {
     begin: () => i8[],
     end:   () => i8[],
-}
+};
 
 define begin_str(): i8[] {
     yield "Hello!\r\n";
