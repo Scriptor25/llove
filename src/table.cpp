@@ -7,10 +7,11 @@ static T ceil_div(T lhs, T rhs)
     return lhs / rhs + (lhs % rhs != 0);
 }
 
-cli::Table::Table(std::ostream &stream, const unsigned columns, const unsigned console_width)
+cli::Table::Table(std::ostream &stream, const unsigned columns, const unsigned console_width, const bool ascii)
     : m_Stream(stream),
       m_Columns(columns),
-      m_MaxColumnWidth(console_width / columns - (3 * columns + 1))
+      m_MaxColumnWidth(console_width / columns - (3 * columns + 1)),
+      m_Ascii(ascii)
 {
 }
 
@@ -73,15 +74,15 @@ void cli::Table::PrintBorder(
 {
     if (PRINT_BORDER)
     {
-        m_Stream << begin;
+        m_Stream << (m_Ascii ? "+" : begin);
         for (unsigned i = 0; i < m_Columns; ++i)
         {
             if (i)
-                m_Stream << cross;
+                m_Stream << (m_Ascii ? "+" : cross);
             for (unsigned j = 0; j < widths.at(i) + 2; ++j)
-                m_Stream << "─";
+                m_Stream << (m_Ascii ? "-" : "─");
         }
-        m_Stream << end << std::endl;
+        m_Stream << (m_Ascii ? "+" : end) << std::endl;
     }
 }
 
@@ -93,7 +94,7 @@ void cli::Table::PrintData(const std::vector<unsigned> &widths, const unsigned h
     {
         if (PRINT_BORDER)
         {
-            m_Stream << "│";
+            m_Stream << (m_Ascii ? "|" : "│");
         }
         for (unsigned j = 0; j < m_Columns; ++j)
         {
@@ -119,7 +120,7 @@ void cli::Table::PrintData(const std::vector<unsigned> &widths, const unsigned h
                 m_Stream << ' ';
             if (PRINT_BORDER)
             {
-                m_Stream << "│";
+                m_Stream << (m_Ascii ? "|" : "│");
             }
             else
             {

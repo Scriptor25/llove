@@ -11,7 +11,7 @@ namespace cli
         static constexpr auto PRINT_BORDER = true;
 
     public:
-        explicit Table(std::ostream &stream, unsigned columns, unsigned console_width = 120u);
+        explicit Table(std::ostream &stream, unsigned columns, unsigned console_width = 120u, bool ascii = false);
         ~Table();
 
         Table &operator<<(const std::string &cell);
@@ -31,6 +31,7 @@ namespace cli
         std::ostream &m_Stream;
         unsigned m_Columns;
         unsigned m_MaxColumnWidth;
+        bool m_Ascii;
 
         std::vector<std::string> m_Cells;
     };

@@ -137,7 +137,7 @@ static unsigned get_console_width()
 #endif
 }
 
-static void print_help(const std::map<std::string, cli::OptionTemplate> &templates)
+static void print_help(const std::map<std::string, cli::OptionTemplate> &templates, const bool ascii)
 {
     print_version();
 
@@ -151,7 +151,7 @@ static void print_help(const std::map<std::string, cli::OptionTemplate> &templat
             << "OPTIONS" << std::endl;
 
     const auto console_width = get_console_width();
-    cli::Table table(std::cerr, 3, console_width ? console_width : 120u);
+    cli::Table table(std::cerr, 3, console_width ? console_width : 120u, ascii);
 
     table << "PATTERN" << "FILTER" << "DESCRIPTION";
 
@@ -191,7 +191,7 @@ int main(const int argc, const char *const *argv) try
 
     if (arguments.flag("help"))
     {
-        print_help(arguments.templates());
+        print_help(arguments.templates(), arguments.flag("ascii"));
         return 0;
     }
 

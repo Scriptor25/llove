@@ -2,6 +2,10 @@ help:
   pattern: [ "--help", "-h", "-?", "?" ]
   type: flag
   description: "print this help text."
+ascii:
+  pattern: "--ascii"
+  type: flag
+  description: "print help table with ascii characters."
 version:
   pattern: [ "--version", "-v" ]
   type: flag
