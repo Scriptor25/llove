@@ -34,11 +34,6 @@ llove::VoidType::Ptr llove::Context::GetVoid()
     return GetOrCreate<VoidType>();
 }
 
-llove::ArgPointerType::Ptr llove::Context::GetArgPointer()
-{
-    return GetOrCreate<ArgPointerType>();
-}
-
 llove::IntegerType::Ptr llove::Context::GetInteger(bool sign, unsigned bits)
 {
     return GetOrCreate<IntegerType>(sign, bits);

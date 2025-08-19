@@ -5,5 +5,5 @@ llove::TypePtr llove::Parser::ParseArgPointerType()
 {
     Expect(TokenType_Operator, "<...>");
 
-    return m_Context.GetArgPointer();
+    return m_Context.GetPointer(false);
 }

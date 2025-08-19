@@ -19,7 +19,6 @@ namespace llove
     {
         TypeId_Template,
         TypeId_Void,
-        TypeId_ArgPointer,
         TypeId_Integer,
         TypeId_Float,
         TypeId_Pointer,
@@ -145,29 +144,6 @@ namespace llove
          * @return v
          */
         [[nodiscard]] std::string Mangle() const override;
-
-        std::ostream &Print(std::ostream &stream) const override;
-    };
-
-    class ArgPointerType final : public Type
-    {
-    public:
-        using Ptr = std::shared_ptr<ArgPointerType>;
-        static constexpr auto ID = TypeId_ArgPointer;
-
-        explicit ArgPointerType() = default;
-
-        TypeId GetId() const override;
-        bool IsArgPointer() const override;
-        unsigned SizeBits(Builder &builder) const override;
-        llvm::Type *GenIR(Builder &builder) override;
-        llvm::DIType *GenDI(Builder &builder) override;
-        TypePtr Reflect(Context &context) const override;
-
-        /**
-         * @return va
-         */
-        std::string Mangle() const override;
 
         std::ostream &Print(std::ostream &stream) const override;
     };

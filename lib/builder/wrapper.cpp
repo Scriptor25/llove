@@ -17,7 +17,7 @@ llvm::Value *llove::Builder::CreateAlloca(const TypePtr &type, llvm::Function *p
     return CreateAlloca(type->GenIR(*this), parent);
 }
 
-llvm::Value *llove::Builder::CreateAlloca(llvm::Type *type, llvm::Function *parent)
+llvm::AllocaInst *llove::Builder::CreateAlloca(llvm::Type *type, llvm::Function *parent)
 {
     const auto insert_block = m_LLVMBuilder.GetInsertBlock();
     m_LLVMBuilder.SetInsertPointPastAllocas(parent ? parent : insert_block->getParent());
@@ -461,4 +461,41 @@ bool llove::Builder::NoTerminator() const
 llvm::BasicBlock *llove::Builder::CreateBlock(const std::string &name, llvm::Function *parent)
 {
     return llvm::BasicBlock::Create(m_LLVMContext, name, parent);
+}
+
+llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
+{
+    return m_LLVMBuilder.CreateGlobalStringPtr(value, {}, 0, &m_LLVMModule);
+}
+
+llvm::Value *llove::Builder::CreateVAStart(llvm::Value *ap)
+{
+    const auto intrinsic = llvm::Intrinsic::getDeclaration(&m_LLVMModule, llvm::Intrinsic::vastart);
+    return m_LLVMBuilder.CreateCall(
+        llvm::FunctionType::get(llvm::Type::getVoidTy(m_LLVMContext), { ap->getType() }, false),
+        intrinsic,
+        { ap });
+}
+
+llvm::Value *llove::Builder::CreateVAEnd(llvm::Value *ap)
+{
+    const auto intrinsic = llvm::Intrinsic::getDeclaration(&m_LLVMModule, llvm::Intrinsic::vaend);
+    return m_LLVMBuilder.CreateCall(
+        llvm::FunctionType::get(llvm::Type::getVoidTy(m_LLVMContext), { ap->getType() }, false),
+        intrinsic,
+        { ap });
+}
+
+llvm::Value *llove::Builder::CreateVACopy(llvm::Value *dst_ap, llvm::Value *src_ap)
+{
+    const auto intrinsic = llvm::Intrinsic::getDeclaration(&m_LLVMModule, llvm::Intrinsic::vacopy);
+    return m_LLVMBuilder.CreateCall(
+        llvm::FunctionType::get(llvm::Type::getVoidTy(m_LLVMContext), { dst_ap->getType(), src_ap->getType() }, false),
+        intrinsic,
+        { dst_ap, src_ap });
+}
+
+llvm::Value *llove::Builder::CreateVAArg(llvm::Value *ap, llvm::Type *type)
+{
+    return m_LLVMBuilder.CreateVAArg(ap, type);
 }

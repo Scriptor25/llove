@@ -81,8 +81,17 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
     return llvm::StructType::create(m_LLVMContext, fields, name, packed);
 }
 
-llvm::StructType *llove::Builder::GetArgListType()
+llvm::StructType *llove::Builder::GetVAListTagType()
 {
-    auto element = llvm::PointerType::getUnqual(m_LLVMContext);
-    return llvm::StructType::get(m_LLVMContext, { element }, false);
+    if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, "__va_list_tag"))
+        return type;
+    return llvm::StructType::create(
+        m_LLVMContext,
+        {
+            llvm::IntegerType::get(m_LLVMContext, 32),
+            llvm::IntegerType::get(m_LLVMContext, 32),
+            llvm::PointerType::getUnqual(m_LLVMContext),
+            llvm::PointerType::getUnqual(m_LLVMContext),
+        },
+        "__va_list_tag"); // TODO: target dependent
 }

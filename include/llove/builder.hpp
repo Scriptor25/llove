@@ -118,13 +118,13 @@ namespace llove
             const std::vector<llvm::Type *> &fields,
             bool packed);
 
-        llvm::StructType *GetArgListType();
+        llvm::StructType *GetVAListTagType();
 
         llvm::BasicBlock *GetInsertBlock() const;
         void SetCurrentDebugLocation(llvm::DebugLoc loc);
 
         llvm::Value *CreateAlloca(const TypePtr &type, llvm::Function *parent = nullptr);
-        llvm::Value *CreateAlloca(llvm::Type *type, llvm::Function *parent = nullptr);
+        llvm::AllocaInst *CreateAlloca(llvm::Type *type, llvm::Function *parent = nullptr);
 
         llvm::Value *CreateLoad(llvm::Value *pointer, const TypePtr &type);
         llvm::Value *CreateStore(llvm::Value *pointer, llvm::Value *value, bool volatile_ = false);

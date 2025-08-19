@@ -37,7 +37,6 @@ namespace llove
         }
 
         VoidType::Ptr GetVoid();
-        ArgPointerType::Ptr GetArgPointer();
         IntegerType::Ptr GetInteger(bool sign, unsigned bits);
         FloatType::Ptr GetFloat(unsigned bits);
         PointerType::Ptr GetPointer(bool mutable_);

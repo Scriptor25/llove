@@ -114,31 +114,6 @@ std::string llove::Builder::Mangle(
     return mangled + result.Mangle();
 }
 
-llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
-{
-    return m_LLVMBuilder.CreateGlobalStringPtr(value, {}, 0, &m_LLVMModule);
-}
-
-llvm::Value *llove::Builder::CreateVAStart(llvm::Value *ap)
-{
-    return m_LLVMBuilder.CreateUnaryIntrinsic(llvm::Intrinsic::vastart, ap);
-}
-
-llvm::Value *llove::Builder::CreateVAEnd(llvm::Value *ap)
-{
-    return m_LLVMBuilder.CreateUnaryIntrinsic(llvm::Intrinsic::vaend, ap);
-}
-
-llvm::Value *llove::Builder::CreateVACopy(llvm::Value *dst_ap, llvm::Value *src_ap)
-{
-    return m_LLVMBuilder.CreateBinaryIntrinsic(llvm::Intrinsic::vacopy, dst_ap, src_ap);
-}
-
-llvm::Value *llove::Builder::CreateVAArg(llvm::Value *ap, llvm::Type *type)
-{
-    return m_LLVMBuilder.CreateVAArg(ap, type);
-}
-
 llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 {
     const auto mangled = Mangle(
@@ -204,7 +179,11 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 
     if (fn.VarArg.first && !fn.VarArg.second.empty())
     {
-        const auto ap = CreateAlloca(GetArgListType(), callee);
+        // TODO: target dependent
+        const auto array_type = GetArrayType(GetVAListTagType(), 1);
+        const auto pointer = CreateAlloca(array_type, callee);
+        pointer->setAlignment(llvm::Align(16));
+        const auto ap = m_LLVMBuilder.CreateConstInBoundsGEP2_64(array_type, pointer, 0, 0);
         CreateVAStart(ap);
         DeferAction(
             nullptr,
@@ -212,7 +191,7 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
             {
                 CreateVAEnd(ap);
             });
-        SetValue(fn.VarArg.second, Value::CreateR(m_Context.GetArgPointer(), ap));
+        SetValue(fn.VarArg.second, Value::CreateR(m_Context.GetPointer(false), ap));
     }
 
     fn.Content->Gen(*this);

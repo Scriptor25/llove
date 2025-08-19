@@ -43,6 +43,9 @@ class Stream {
 
 interface main(): i32 {
 
+    let test: Stream("out.txt", "w");
+    test.format("hello %u world!%c", 123:u32, 0x10);
+
     let stream: Stream("out.ppm", "wb");
 
     let width: u32 = 200;
