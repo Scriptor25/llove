@@ -21,5 +21,8 @@ llove::TypePtr llove::Parser::ParseBaseType()
     if (At(TokenType_Symbol))
         return ParseNamedType();
 
+    if (At(TokenType_Operator, "<...>"))
+        return ParseArgPointerType();
+
     Error(m_Token.Loc, "unable to parse type from {} : '{}'", m_Token.Type, m_Token.Value);
 }

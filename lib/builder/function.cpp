@@ -240,7 +240,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
                 .Expose = candidate.Expose,
                 .Name = candidate.Name,
                 .Parameters = std::move(parameters),
-                .VarArg = candidate.VarArg,
+                .VarArg = { candidate.VarArg, {} },
                 .Result = candidate.Result,
             });
     }

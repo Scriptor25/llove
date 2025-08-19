@@ -29,7 +29,7 @@ void llove::Expression::Gen(Builder &builder) const try
                 .Mutable = destructor->Mutable,
                 .Expose = destructor->Expose,
                 .Name = destructor->Name,
-                .VarArg = destructor->VarArg,
+                .VarArg = { destructor->VarArg, {} },
                 .Result = destructor->Result,
             });
 

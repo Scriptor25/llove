@@ -1,3 +1,4 @@
+#include <utility>
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
@@ -8,7 +9,7 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     const bool mutable_,
     std::string name,
     std::vector<Parameter> parameters,
-    const bool vararg,
+    std::pair<bool, std::string> vararg,
     Field result,
     StatementPtr content)
     : Global(std::move(loc)),
@@ -16,7 +17,7 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
       m_Mutable(mutable_),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
-      m_VarArg(vararg),
+      m_VarArg(std::move(vararg)),
       m_Result(std::move(result)),
       m_Content(std::move(content))
 {
@@ -27,7 +28,7 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
     std::vector<Field> parameters;
     for (auto &parameter : m_Parameters)
         parameters.emplace_back(parameter.Info);
-    const auto class_function = m_ClassType->GetFunction(m_Name, m_Mutable, parameters, m_VarArg, m_Result);
+    const auto class_function = m_ClassType->GetFunction(m_Name, m_Mutable, parameters, m_VarArg.first, m_Result);
 
     Assert(class_function.has_value(), "class function prototype mismatch");
 
@@ -76,11 +77,13 @@ std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (m_VarArg)
+    if (m_VarArg.first)
     {
         if (!m_Parameters.empty())
             stream << ", ";
         stream << "...";
+        if (!m_VarArg.second.empty())
+            stream << m_VarArg.second;
     }
 
     stream << "): " << m_Result;

@@ -52,7 +52,7 @@ bool llove::FunctionType::IsFunction() const
 
 unsigned llove::FunctionType::SizeBits(Builder &builder) const
 {
-    return 64;
+    return 64; // TODO: target dependent
 }
 
 llvm::PointerType *llove::FunctionType::GenIR(Builder &builder)

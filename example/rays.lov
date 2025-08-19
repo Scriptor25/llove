@@ -4,6 +4,7 @@ type size_t = u64;
 
 interface fopen(filename: string_t, mode: string_t): stream_t;
 interface fprintf(stream: stream_t, format: string_t, ...): i32;
+interface vfprintf(stream: stream_t, format: string_t, arg: <...>): i32;
 interface fflush(stream: stream_t): i32;
 interface fclose(stream: stream_t): i32;
 
@@ -33,6 +34,10 @@ class Stream {
         fwrite(str, 1, strlen(str), self.stream);
     }
 
+    expose format(format: string_t, ...arg) {
+        vfprintf(self.stream, format, arg);
+    }
+
     let mut stream: stream_t;
 }
 
@@ -40,11 +45,19 @@ interface main(): i32 {
 
     let stream: Stream("out.ppm", "wb");
 
-    stream.write("P6 100 100 255 ");
+    let width: u32 = 200;
+    let height: u32 = 100;
 
-    foreach (j : (0)..(100))
-    foreach (i : (0)..(100))
-        stream.write("\xff\x00\x00", 3, 1);
+    stream.format("P6 %u %u 255 ", width, height);
+
+    foreach (j : (0)..height)
+    foreach (i : (0)..width) {
+        let ir: u32 = 0;
+        let ig: u32 = 0;
+        let ib: u32 = 0;
+
+        stream.format("%c%c%c", ir, ig, ib);
+    }
 
     yield 0;
 }

@@ -106,7 +106,7 @@ llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool 
 unsigned llove::Field::SizeBits(Builder &builder) const
 {
     if (Reference)
-        return 64;
+        return 64; // TODO: target dependent
     return Type->SizeBits(builder);
 }
 

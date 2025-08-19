@@ -98,11 +98,13 @@ std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (VarArg)
+    if (VarArg.first)
     {
         if (!Parameters.empty())
             stream << ", ";
         stream << "...";
+        if (!VarArg.second.empty())
+            stream << VarArg.second;
     }
     stream << "): " << Result;
     if (!Content)

@@ -28,7 +28,7 @@ void llove::Builder::PopFrame()
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    CallDestructors({}, false);
+    CallDeferred({}, false);
 
     m_Stack.pop_back();
     m_DebugBuilder->PopFrame();
@@ -65,35 +65,44 @@ llove::ValuePtr llove::Builder::GetValue(const std::string &name) const
     Error("undefined value with name '{}'", name);
 }
 
-void llove::Builder::PushDestructor(llvm::Value *self, const FunctionReference &reference)
+void llove::Builder::DeferAction(llvm::Value *key, std::function<void()> action)
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    m_Stack.back().Destructors[self] = reference;
+    m_Stack.back().Deferred.emplace_back(key, action);
 }
 
-void llove::Builder::CallDestructors(const std::set<llvm::Value *> &mask, const bool propagate)
+void llove::Builder::PushDestructor(llvm::Value *self, const FunctionReference &callee)
 {
+    Assert(!m_Stack.empty(), "stack is empty");
+
+    auto action = [this, self, callee]
+    {
+        auto self_value = Value::CreateL(callee.Type->GetSelf()->Type, self, true);
+        CreateCall(callee, {}, std::move(self_value));
+    };
+
+    DeferAction(self, action);
+}
+
+void llove::Builder::CallDeferred(const std::set<llvm::Value *> &mask, const bool propagate)
+{
+    Assert(!m_Stack.empty(), "stack is empty");
+
     if (const auto block = m_LLVMBuilder.GetInsertBlock(); !block || block->getTerminator())
         return;
 
     if (propagate)
     {
         for (auto &frame : std::ranges::reverse_view(m_Stack))
-            for (auto &[self, callee] : frame.Destructors)
-                if (!mask.contains(self))
-                {
-                    auto self_value = Value::CreateL(callee.Type->GetSelf()->Type, self, true);
-                    CreateCall(callee, {}, std::move(self_value));
-                }
+            for (auto &[key, action] : frame.Deferred)
+                if (!mask.contains(key))
+                    action();
     }
     else
     {
-        for (auto &frame = m_Stack.back(); auto &[self, callee] : frame.Destructors)
-            if (!mask.contains(self))
-            {
-                auto self_value = Value::CreateL(callee.Type->GetSelf()->Type, self, true);
-                CreateCall(callee, {}, std::move(self_value));
-            }
+        for (auto &frame = m_Stack.back(); auto &[key, action] : frame.Deferred)
+            if (!mask.contains(key))
+                action();
     }
 }

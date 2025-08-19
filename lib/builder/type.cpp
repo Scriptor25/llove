@@ -80,3 +80,9 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
     }
     return llvm::StructType::create(m_LLVMContext, fields, name, packed);
 }
+
+llvm::StructType *llove::Builder::GetArgListType()
+{
+    auto element = llvm::PointerType::getUnqual(m_LLVMContext);
+    return llvm::StructType::get(m_LLVMContext, { element }, false);
+}

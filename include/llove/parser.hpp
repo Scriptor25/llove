@@ -72,6 +72,7 @@ namespace llove
 
         TypePtr ParseType();
 
+        TypePtr ParseArgPointerType();
         TypePtr ParseArrayType();
         TypePtr ParseBaseType();
         TypePtr ParseClassType();
@@ -84,7 +85,7 @@ namespace llove
         std::string ParseField(Field &field, bool require_name, bool require_type);
 
         void ParseParameter(Parameter &parameter);
-        bool ParseParameterList(
+        std::pair<bool, std::string> ParseParameterList(
             const std::string &begin,
             std::vector<Parameter> &parameters,
             const std::string &end);

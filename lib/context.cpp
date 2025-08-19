@@ -34,6 +34,11 @@ llove::VoidType::Ptr llove::Context::GetVoid()
     return GetOrCreate<VoidType>();
 }
 
+llove::ArgPointerType::Ptr llove::Context::GetArgPointer()
+{
+    return GetOrCreate<ArgPointerType>();
+}
+
 llove::IntegerType::Ptr llove::Context::GetInteger(bool sign, unsigned bits)
 {
     return GetOrCreate<IntegerType>(sign, bits);
@@ -195,7 +200,7 @@ unsigned llove::Context::Difference(const TypePtr &left, const TypePtr &right)
         {
             const auto right_int = As<IntegerType>(right);
             const auto sign_error = false != right_int->IsSigned() ? 1u : 0u;
-            const auto bits_error = 64u != right_int->GetBits() ? 5u : 0u;
+            const auto bits_error = 64u != right_int->GetBits() ? 5u : 0u; // TODO: target dependent
             return 4u + sign_error + bits_error;
         }
         case TypeId_Pointer:
@@ -329,7 +334,7 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const 
             function.Mutable,
             function.Name,
             parameters,
-            function.VarArg,
+            function.VarArg.first,
             function.Result);
     }
     class_type->SetFunctions(std::move(functions));

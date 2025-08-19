@@ -1,6 +1,5 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
-#include <llove/tree.hpp>
 #include <llove/value.hpp>
 
 llvm::BasicBlock *llove::Builder::GetInsertBlock() const
@@ -15,9 +14,14 @@ void llove::Builder::SetCurrentDebugLocation(llvm::DebugLoc loc)
 
 llvm::Value *llove::Builder::CreateAlloca(const TypePtr &type, llvm::Function *parent)
 {
+    return CreateAlloca(type->GenIR(*this), parent);
+}
+
+llvm::Value *llove::Builder::CreateAlloca(llvm::Type *type, llvm::Function *parent)
+{
     const auto insert_block = m_LLVMBuilder.GetInsertBlock();
     m_LLVMBuilder.SetInsertPointPastAllocas(parent ? parent : insert_block->getParent());
-    const auto pointer = m_LLVMBuilder.CreateAlloca(type->GenIR(*this));
+    const auto pointer = m_LLVMBuilder.CreateAlloca(type);
     m_LLVMBuilder.SetInsertPoint(insert_block);
     return pointer;
 }
@@ -149,7 +153,7 @@ llove::ValuePtr llove::Builder::CreatePointerDifference(const ValuePtr &begin, c
         type->GetBase()->GenIR(*this),
         begin->Load(*this),
         end->Load(*this));
-    return Value::CreateR(m_Context.GetInteger(true, 64), value);
+    return Value::CreateR(m_Context.GetInteger(true, 64), value); // TODO: target dependent
 }
 
 llove::ValuePtr llove::Builder::CreatePointerElement(const ValuePtr &pointer, const ValuePtr &index)
@@ -374,7 +378,7 @@ llove::ValuePtr llove::Builder::CreateFCmpGE(const ValuePtr &left, const ValuePt
 
 llvm::Value *llove::Builder::CreatePCmpEQ(llvm::Value *left, llvm::Value *right)
 {
-    const auto int_type = GetIntType(64);
+    const auto int_type = GetIntType(64); // TODO: target dependent
     const auto left_int = m_LLVMBuilder.CreatePtrToInt(left, int_type);
     const auto right_int = m_LLVMBuilder.CreatePtrToInt(right, int_type);
     return m_LLVMBuilder.CreateICmpEQ(left_int, right_int);
@@ -388,7 +392,7 @@ llove::ValuePtr llove::Builder::CreatePCmpEQ(const ValuePtr &left, const ValuePt
 
 llvm::Value *llove::Builder::CreatePCmpNE(llvm::Value *left, llvm::Value *right)
 {
-    const auto int_type = GetIntType(64);
+    const auto int_type = GetIntType(64); // TODO: target dependent
     const auto left_int = m_LLVMBuilder.CreatePtrToInt(left, int_type);
     const auto right_int = m_LLVMBuilder.CreatePtrToInt(right, int_type);
     return m_LLVMBuilder.CreateICmpNE(left_int, right_int);

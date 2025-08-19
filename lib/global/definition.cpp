@@ -1,3 +1,4 @@
+#include <utility>
 #include <llove/builder.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -9,7 +10,7 @@ llove::DefinitionGlobal::DefinitionGlobal(
     const bool implicit,
     std::string name,
     std::vector<Parameter> parameters,
-    const bool vararg,
+    std::pair<bool, std::string> vararg,
     Field result,
     StatementPtr content)
     : Global(std::move(loc)),
@@ -18,7 +19,7 @@ llove::DefinitionGlobal::DefinitionGlobal(
       m_Implicit(implicit),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
-      m_VarArg(vararg),
+      m_VarArg(std::move(vararg)),
       m_Result(std::move(result)),
       m_Content(std::move(content))
 {
@@ -113,11 +114,13 @@ std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (m_VarArg)
+    if (m_VarArg.first)
     {
         if (!m_Parameters.empty())
             stream << ", ";
         stream << "...";
+        if (!m_VarArg.second.empty())
+            stream << m_VarArg.second;
     }
 
     stream << "): " << m_Result;

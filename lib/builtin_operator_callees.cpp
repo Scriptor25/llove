@@ -70,6 +70,7 @@ static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr ope
     }
     case llove::TypeId_Pointer:
     {
+        // TODO: target dependent
         const auto one_value = llvm::ConstantInt::get(builder.GetIntType(64), 1, false);
         const auto one = llove::Value::CreateR(builder.GetContext().GetInteger(false, 64), one_value);
         result = builder.CreatePointerOffset(operand, one);
@@ -110,6 +111,7 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
     }
     case llove::TypeId_Pointer:
     {
+        // TODO: target dependent
         const auto one_value = llvm::ConstantInt::get(builder.GetIntType(64), -1, false);
         const auto one = llove::Value::CreateR(builder.GetContext().GetInteger(true, 64), one_value);
         result = builder.CreatePointerOffset(operand, one);

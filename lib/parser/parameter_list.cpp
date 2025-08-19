@@ -1,11 +1,12 @@
 #include <llove/parser.hpp>
 
-bool llove::Parser::ParseParameterList(
+std::pair<bool, std::string> llove::Parser::ParseParameterList(
     const std::string &begin,
     std::vector<Parameter> &parameters,
     const std::string &end)
 {
     auto vararg = false;
+    std::string vararg_name;
 
     Expect(TokenType_Other, begin);
     while (!At(TokenType_Other, end))
@@ -13,6 +14,8 @@ bool llove::Parser::ParseParameterList(
         if (SkipIf(TokenType_Operator, "..."))
         {
             vararg = true;
+            if (At(TokenType_Symbol))
+                vararg_name = Skip().Value;
             break;
         }
 
@@ -23,5 +26,5 @@ bool llove::Parser::ParseParameterList(
     }
     Expect(TokenType_Other, end);
 
-    return vararg;
+    return { vararg, vararg_name };
 }

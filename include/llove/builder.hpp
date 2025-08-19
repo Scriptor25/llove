@@ -32,7 +32,7 @@ namespace llove
 
         std::string Name;
         std::vector<Parameter> Parameters;
-        bool VarArg = false;
+        std::pair<bool, std::string> VarArg;
         Field Result;
 
         Statement *Content = nullptr;
@@ -40,7 +40,7 @@ namespace llove
 
     struct Frame final
     {
-        std::map<llvm::Value *, FunctionReference> Destructors;
+        std::vector<std::pair<llvm::Value *, std::function<void()>>> Deferred;
         std::map<std::string, ValuePtr> Values;
     };
 
@@ -118,10 +118,13 @@ namespace llove
             const std::vector<llvm::Type *> &fields,
             bool packed);
 
+        llvm::StructType *GetArgListType();
+
         llvm::BasicBlock *GetInsertBlock() const;
         void SetCurrentDebugLocation(llvm::DebugLoc loc);
 
         llvm::Value *CreateAlloca(const TypePtr &type, llvm::Function *parent = nullptr);
+        llvm::Value *CreateAlloca(llvm::Type *type, llvm::Function *parent = nullptr);
 
         llvm::Value *CreateLoad(llvm::Value *pointer, const TypePtr &type);
         llvm::Value *CreateStore(llvm::Value *pointer, llvm::Value *value, bool volatile_ = false);
@@ -238,15 +241,21 @@ namespace llove
         bool HasValue(const std::string &name) const;
         ValuePtr GetValue(const std::string &name) const;
 
-        void PushDestructor(llvm::Value *self, const FunctionReference &reference);
-        void CallDestructors(const std::set<llvm::Value *> &mask, bool propagate);
+        void DeferAction(llvm::Value *key, std::function<void()> action);
+        void PushDestructor(llvm::Value *self, const FunctionReference &callee);
+        void CallDeferred(const std::set<llvm::Value *> &mask, bool propagate);
 
         ValuePtr CreateCast(ValuePtr value, TypePtr dst, bool implicit);
         bool IsCastable(const Field &src, const Field &dst, bool implicit) const;
 
         llvm::Value *CreateGlobalString(const std::string &value);
 
-        llove::FunctionReference GenFunction(const FunctionInfo &fn);
+        llvm::Value *CreateVAStart(llvm::Value *ap);
+        llvm::Value *CreateVAEnd(llvm::Value *ap);
+        llvm::Value *CreateVACopy(llvm::Value *dst_ap, llvm::Value *src_ap);
+        llvm::Value *CreateVAArg(llvm::Value *ap, llvm::Type *type);
+
+        FunctionReference GenFunction(const FunctionInfo &fn);
         void GenParameters(
             llvm::Function *parent,
             const std::vector<Parameter> &parameters,

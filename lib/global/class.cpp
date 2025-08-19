@@ -47,7 +47,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
             function.Mutable,
             function.Name,
             parameters,
-            function.VarArg,
+            function.VarArg.first,
             function.Result);
     }
     m_Type->SetFunctions(std::move(class_functions));
@@ -128,7 +128,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
             function.Mutable,
             function.Name,
             parameters,
-            function.VarArg,
+            function.VarArg.first,
             function.Result);
     }
     m_Type->SetFunctions(std::move(class_functions));

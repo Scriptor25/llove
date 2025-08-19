@@ -119,6 +119,26 @@ llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
     return m_LLVMBuilder.CreateGlobalStringPtr(value, {}, 0, &m_LLVMModule);
 }
 
+llvm::Value *llove::Builder::CreateVAStart(llvm::Value *ap)
+{
+    return m_LLVMBuilder.CreateUnaryIntrinsic(llvm::Intrinsic::vastart, ap);
+}
+
+llvm::Value *llove::Builder::CreateVAEnd(llvm::Value *ap)
+{
+    return m_LLVMBuilder.CreateUnaryIntrinsic(llvm::Intrinsic::vaend, ap);
+}
+
+llvm::Value *llove::Builder::CreateVACopy(llvm::Value *dst_ap, llvm::Value *src_ap)
+{
+    return m_LLVMBuilder.CreateBinaryIntrinsic(llvm::Intrinsic::vacopy, dst_ap, src_ap);
+}
+
+llvm::Value *llove::Builder::CreateVAArg(llvm::Value *ap, llvm::Type *type)
+{
+    return m_LLVMBuilder.CreateVAArg(ap, type);
+}
+
 llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 {
     const auto mangled = Mangle(
@@ -127,7 +147,7 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
         fn.Mutable,
         fn.Name,
         fn.Parameters,
-        fn.VarArg,
+        fn.VarArg.first,
         fn.Result);
 
     std::vector<Field> type_parameters;
@@ -144,11 +164,11 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
             .Reference = true,
             .Type = fn.Class,
         };
-        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result, *self);
+        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg.first, fn.Result, *self);
     }
     else
     {
-        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg, fn.Result);
+        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg.first, fn.Result);
     }
 
     const auto callee = GetOrCreateFunction(mangled, callee_type, fn.Export || fn.Interface);
@@ -179,8 +199,24 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 
     m_DebugBuilder->EmitLoc(*this);
     PushFrame();
+
     GenParameters(callee, fn.Parameters, self);
+
+    if (fn.VarArg.first && !fn.VarArg.second.empty())
+    {
+        const auto ap = CreateAlloca(GetArgListType(), callee);
+        CreateVAStart(ap);
+        DeferAction(
+            nullptr,
+            [this, ap]
+            {
+                CreateVAEnd(ap);
+            });
+        SetValue(fn.VarArg.second, Value::CreateR(m_Context.GetArgPointer(), ap));
+    }
+
     fn.Content->Gen(*this);
+
     PopFrame();
 
     m_DebugBuilder->EndFunction();

@@ -13,7 +13,7 @@ void llove::YieldStatement::Gen(Builder &builder) const try
     if (!m_Value)
     {
         builder.EmitLoc(m_Loc);
-        builder.CallDestructors({}, true);
+        builder.CallDeferred({}, true);
         builder.CreateRetVoid();
         return;
     }
@@ -29,7 +29,7 @@ void llove::YieldStatement::Gen(Builder &builder) const try
         mask.emplace(value->GetPointer());
 
     builder.EmitLoc(m_Loc);
-    builder.CallDestructors(mask, true);
+    builder.CallDeferred(mask, true);
     builder.CreateRet(result_value);
 }
 catch (ref_exception<ErrorStack> &cause)
