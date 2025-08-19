@@ -4,7 +4,7 @@ type size_t = u64;
 
 interface fopen(filename: string_t, mode: string_t): stream_t;
 interface fprintf(stream: stream_t, format: string_t, ...): i32;
-interface vfprintf(stream: stream_t, format: string_t, arg: <...>): i32;
+interface vfprintf(stream: stream_t, format: string_t, arg: []): i32;
 interface fflush(stream: stream_t): i32;
 interface fclose(stream: stream_t): i32;
 
