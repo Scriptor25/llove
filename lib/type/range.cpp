@@ -33,7 +33,7 @@ llvm::StructType *llove::RangeType::GenIR(Builder &builder)
         return llvm::dyn_cast<llvm::StructType>(m_IRType);
 
     const auto entry = m_Entry->GenIR(builder);
-    const auto type = builder.GetStructType({ entry, entry }, true);
+    const auto type = builder.GetStructType({ entry, entry }, false);
     m_IRType = type;
     return type;
 }

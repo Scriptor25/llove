@@ -579,5 +579,19 @@ namespace llove
         bool m_Suffix;
     };
 
+    class VariadicExpression final : public Expression
+    {
+    public:
+        explicit VariadicExpression(Location loc, ExpressionPtr list, TypePtr type);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_List;
+        TypePtr m_Type;
+    };
+
     extern unsigned PrintDepth;
 }

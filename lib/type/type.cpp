@@ -10,6 +10,11 @@ bool llove::Type::IsVoid() const
     return false;
 }
 
+bool llove::Type::IsVariadic() const
+{
+    return false;
+}
+
 bool llove::Type::IsArgPointer() const
 {
     return false;

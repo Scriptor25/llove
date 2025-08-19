@@ -139,11 +139,11 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
             .Reference = true,
             .Type = fn.Class,
         };
-        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg.first, fn.Result, *self);
+        callee_type = m_Context.GetFunction(std::move(type_parameters), fn.VarArg.first, fn.Result, *self);
     }
     else
     {
-        callee_type = m_Context.GetFunction(type_parameters, fn.VarArg.first, fn.Result);
+        callee_type = m_Context.GetFunction(std::move(type_parameters), fn.VarArg.first, fn.Result);
     }
 
     const auto callee = GetOrCreateFunction(mangled, callee_type, fn.Export || fn.Interface);
@@ -174,28 +174,8 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 
     m_DebugBuilder->EmitLoc(*this);
     PushFrame();
-
-    GenParameters(callee, fn.Parameters, self);
-
-    if (fn.VarArg.first && !fn.VarArg.second.empty())
-    {
-        // TODO: target dependent
-        const auto array_type = GetArrayType(GetVAListTagType(), 1);
-        const auto pointer = CreateAlloca(array_type, callee);
-        pointer->setAlignment(llvm::Align(16));
-        const auto ap = m_LLVMBuilder.CreateConstInBoundsGEP2_64(array_type, pointer, 0, 0);
-        CreateVAStart(ap);
-        DeferAction(
-            nullptr,
-            [this, ap]
-            {
-                CreateVAEnd(ap);
-            });
-        SetValue(fn.VarArg.second, Value::CreateR(m_Context.GetPointer(false), ap));
-    }
-
+    GenParameters(callee, fn.Parameters, fn.VarArg, self);
     fn.Content->Gen(*this);
-
     PopFrame();
 
     m_DebugBuilder->EndFunction();
@@ -220,27 +200,26 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 void llove::Builder::GenParameters(
     llvm::Function *parent,
     const std::vector<Parameter> &parameters,
+    const std::pair<bool, std::string> &variadic,
     const std::optional<Field> &self)
 {
-    auto offset = 0u;
+    auto iterator = parent->arg_begin();
+    auto index = 1u;
+
     if (self)
     {
-        offset = 1u;
-
-        const auto argument = parent->getArg(0);
+        const auto argument = iterator++;
         argument->setName("self");
 
         auto storage = Value::CreateL(self->Type, argument, self->Mutable);
 
-        m_DebugBuilder->CreateParameter(*this, "self", 1u, storage);
+        m_DebugBuilder->CreateParameter(*this, "self", index++, storage);
         SetValue("self", std::move(storage));
     }
 
-    for (unsigned i = 0; i < parent->arg_size() - offset; ++i)
+    for (auto &parameter : parameters)
     {
-        auto &parameter = parameters.at(i);
-
-        const auto argument = parent->getArg(i + offset);
+        const auto argument = iterator++;
         argument->setName(parameter.Name);
 
         ValuePtr storage;
@@ -282,7 +261,17 @@ void llove::Builder::GenParameters(
             storage = Value::CreateR(parameter.Info.Type, argument);
         }
 
-        m_DebugBuilder->CreateParameter(*this, parameter.Name, i + offset + 1u, storage);
+        m_DebugBuilder->CreateParameter(*this, parameter.Name, index++, storage);
         SetValue(parameter.Name, storage);
+    }
+
+    if (variadic.first && !variadic.second.empty())
+    {
+        const auto type = m_Context.GetVariadic();
+        const auto pointer = CreateAlloca(type, parent);
+
+        CreateStore(pointer, iterator++);
+
+        SetValue(variadic.second, Value::CreateL(type, pointer, true));
     }
 }

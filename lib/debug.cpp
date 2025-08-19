@@ -166,6 +166,7 @@ llvm::DIType *llove::DebugBuilder::GetClassType(
 }
 
 llvm::DISubroutineType *llove::DebugBuilder::GetFunctionType(
+    llvm::DIType *self,
     const std::vector<llvm::Metadata *> &parameters,
     llvm::DIType *result) const
 {
@@ -173,6 +174,9 @@ llvm::DISubroutineType *llove::DebugBuilder::GetFunctionType(
 
     std::vector<llvm::Metadata *> elements;
     elements.emplace_back(result);
+
+    if (self)
+        elements.emplace_back(self);
 
     for (auto &parameter : parameters)
         elements.emplace_back(parameter);
@@ -315,7 +319,7 @@ void llove::DebugBuilder::BeginFunction(
         name,
         GetScope()->getFile(),
         loc.Row,
-        function_type->GenDbgFunction(builder),
+        function_type->GenDIFunction(builder),
         loc.Row,
         llvm::DINode::FlagPrototyped,
         llvm::DISubprogram::SPFlagDefinition);

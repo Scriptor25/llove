@@ -18,7 +18,7 @@ std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
             stream << ", ";
         stream << Type->GetParameter(i);
     }
-    if (Type->IsVarArg())
+    if (Type->HasVariadic())
     {
         if (Type->GetParameterCount())
             stream << ", ";

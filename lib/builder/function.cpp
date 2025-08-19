@@ -94,7 +94,7 @@ bool llove::Builder::HasFunction(
 
         if (parameter_count > arguments.size())
             continue;
-        if (!function_type->IsVarArg() && parameter_count < arguments.size())
+        if (!function_type->HasVariadic() && parameter_count < arguments.size())
             continue;
 
         unsigned i;
@@ -134,7 +134,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         if (parameter_count > arguments.size())
             continue;
-        if (!function_type->IsVarArg() && parameter_count < arguments.size())
+        if (!function_type->HasVariadic() && parameter_count < arguments.size())
             continue;
 
         if (parameter_count != arguments.size())

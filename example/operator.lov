@@ -1,5 +1,3 @@
-interface printf(format: i8[], ...): i32;
-
 type vec3 = {
     mut x: f64,
     mut y: f64,

@@ -36,12 +36,6 @@ llvm::PointerType *llove::Builder::GetPointerType()
     return llvm::PointerType::getUnqual(m_LLVMContext);
 }
 
-llvm::PointerType *llove::Builder::GetPointerType(llvm::Type *base)
-{
-    (void) m_LLVMContext;
-    return llvm::PointerType::getUnqual(base);
-}
-
 llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> &fields, const bool packed)
 {
     return llvm::StructType::get(m_LLVMContext, fields, packed);
@@ -49,11 +43,10 @@ llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> 
 
 llvm::FunctionType *llove::Builder::GetFunctionType(
     llvm::Type *result,
-    const std::vector<llvm::Type *> &parameters,
-    const bool vararg)
+    const std::vector<llvm::Type *> &parameters)
 {
     (void) m_LLVMContext;
-    return llvm::FunctionType::get(result, parameters, vararg);
+    return llvm::FunctionType::get(result, parameters, false);
 }
 
 llvm::StructType *llove::Builder::GetNamedStructType(const std::string &name)
@@ -81,17 +74,7 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
     return llvm::StructType::create(m_LLVMContext, fields, name, packed);
 }
 
-llvm::StructType *llove::Builder::GetVAListTagType()
+llvm::StructType *llove::Builder::GetVariadicType()
 {
-    if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, "__va_list_tag"))
-        return type;
-    return llvm::StructType::create(
-        m_LLVMContext,
-        {
-            llvm::IntegerType::get(m_LLVMContext, 32),
-            llvm::IntegerType::get(m_LLVMContext, 32),
-            llvm::PointerType::getUnqual(m_LLVMContext),
-            llvm::PointerType::getUnqual(m_LLVMContext),
-        },
-        "__va_list_tag"); // TODO: target dependent
+    return GetOrCreateNamedStructType("variadic", { GetIntType(32), GetPointerType() }, false);
 }

@@ -34,6 +34,11 @@ llove::VoidType::Ptr llove::Context::GetVoid()
     return GetOrCreate<VoidType>();
 }
 
+llove::VariadicType::Ptr llove::Context::GetVariadic()
+{
+    return GetOrCreate<VariadicType>();
+}
+
 llove::IntegerType::Ptr llove::Context::GetInteger(bool sign, unsigned bits)
 {
     return GetOrCreate<IntegerType>(sign, bits);
@@ -76,11 +81,11 @@ llove::ClassType::Ptr llove::Context::GetClass(std::string name)
 
 llove::FunctionType::Ptr llove::Context::GetFunction(
     std::vector<Field> parameters,
-    bool vararg,
+    bool variadic,
     Field result,
     std::optional<Field> self)
 {
-    return GetOrCreate<FunctionType>(std::move(parameters), vararg, std::move(result), std::move(self));
+    return GetOrCreate<FunctionType>(std::move(parameters), variadic, std::move(result), std::move(self));
 }
 
 llove::TypePtr llove::Context::TypeUnion(const TypePtr &left, const TypePtr &right)

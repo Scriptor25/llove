@@ -35,12 +35,9 @@ unsigned llove::ArrayType::SizeBits(Builder &builder) const
 
 llvm::ArrayType *llove::ArrayType::GenIR(Builder &builder)
 {
-    if (m_IRType)
-        return llvm::dyn_cast<llvm::ArrayType>(m_IRType);
-
-    const auto type = builder.GetArrayType(m_Base->GenIR(builder), m_Size);
-    m_IRType = type;
-    return type;
+    if (!m_IRType)
+        m_IRType = builder.GetArrayType(m_Base->GenIR(builder), m_Size);
+    return llvm::dyn_cast<llvm::ArrayType>(m_IRType);
 }
 
 llvm::DIType *llove::ArrayType::GenDI(Builder &builder)

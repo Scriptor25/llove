@@ -1,5 +1,4 @@
 interface putchar(c: i32): i32;
-interface printf(format: i8[], ...): i32;
 interface strlen(s: i8[]): u64;
 interface free(block: [mut]);
 interface malloc(count: u64): [mut];

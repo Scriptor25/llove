@@ -17,13 +17,18 @@ llvm::Value *llove::Builder::CreateAlloca(const TypePtr &type, llvm::Function *p
     return CreateAlloca(type->GenIR(*this), parent);
 }
 
-llvm::AllocaInst *llove::Builder::CreateAlloca(llvm::Type *type, llvm::Function *parent)
+llvm::Value *llove::Builder::CreateAlloca(llvm::Type *type, llvm::Function *parent)
 {
     const auto insert_block = m_LLVMBuilder.GetInsertBlock();
     m_LLVMBuilder.SetInsertPointPastAllocas(parent ? parent : insert_block->getParent());
     const auto pointer = m_LLVMBuilder.CreateAlloca(type);
     m_LLVMBuilder.SetInsertPoint(insert_block);
     return pointer;
+}
+
+llvm::Value *llove::Builder::CreateLoad(llvm::Value *pointer, llvm::Type *type)
+{
+    return m_LLVMBuilder.CreateLoad(type, pointer);
 }
 
 llvm::Value *llove::Builder::CreateLoad(llvm::Value *pointer, const TypePtr &type)
@@ -77,9 +82,41 @@ llove::ValuePtr llove::Builder::CreateCall(
 
         argument_values.emplace_back(parameter.GenCast(*this, std::move(argument)));
     }
-    for (; i < arguments.size(); ++i)
+
+    if (function_type->HasVariadic())
     {
-        argument_values.emplace_back(arguments.at(i)->Load(*this));
+        if (const auto count = arguments.size() - i; count == 1 && arguments.at(i)->GetType()->IsVariadic())
+        {
+            argument_values.emplace_back(arguments.at(i++)->Load(*this));
+        }
+        else
+        {
+            std::vector<llvm::Type *> elements;
+            for (auto j = i; j < arguments.size(); ++j)
+            {
+                const auto argument_type = arguments.at(j)->GetType();
+                elements.emplace_back(argument_type->GenIR(*this));
+            }
+
+            const auto count_type = GetIntType(32);
+            const auto count_value = llvm::ConstantInt::get(count_type, count, false);
+
+            const auto elements_type = llvm::StructType::get(m_LLVMContext, elements, true);
+            const auto elements_pointer = CreateAlloca(elements_type);
+
+            for (auto j = 0; i < arguments.size(); ++i, ++j)
+            {
+                const auto value = arguments.at(i)->Load(*this);
+                const auto pointer = m_LLVMBuilder.CreateStructGEP(elements_type, elements_pointer, j);
+                m_LLVMBuilder.CreateStore(value, pointer);
+            }
+
+            llvm::Value *aggregate = llvm::Constant::getNullValue(GetVariadicType());
+            aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, count_value, 0);
+            aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, elements_pointer, 1);
+
+            argument_values.emplace_back(aggregate);
+        }
     }
 
     const auto result_value = m_LLVMBuilder.CreateCall(
@@ -98,7 +135,19 @@ llove::ValuePtr llove::Builder::CreateCall(const ValuePtr &callee)
     const auto function_type = As<FunctionType>(callee->GetType());
     auto &function_result = function_type->GetResult();
 
-    const auto result_value = m_LLVMBuilder.CreateCall(function_type->GenFunction(*this), callee->Load(*this));
+    std::vector<llvm::Value *> arguments;
+    if (function_type->HasVariadic())
+    {
+        auto count = llvm::Constant::getNullValue(GetIntType(32));
+        auto pointer = llvm::Constant::getNullValue(GetPointerType());
+
+        arguments.emplace_back(llvm::ConstantStruct::get(GetVariadicType(), { count, pointer }));
+    }
+
+    const auto result_value = m_LLVMBuilder.CreateCall(
+        function_type->GenFunction(*this),
+        callee->Load(*this),
+        arguments);
 
     if (function_result.Reference)
         return Value::CreateL(function_result.Type, result_value, function_result.Mutable);
@@ -202,10 +251,33 @@ llvm::Value *llove::Builder::CreateStructGEP(const TypePtr &type, llvm::Value *p
     return m_LLVMBuilder.CreateStructGEP(type->GenIR(*this), pointer, index);
 }
 
+llvm::Value *llove::Builder::CreateGEP(llvm::Type *type, llvm::Value *pointer, const unsigned index)
+{
+    return m_LLVMBuilder.CreateConstGEP1_64(type, pointer, index);
+}
+
+llvm::Value *llove::Builder::CreateNotNull(llvm::Value *value)
+{
+    return m_LLVMBuilder.CreateIsNotNull(value);
+}
+
+llvm::Value *llove::Builder::CreatePHI(llvm::Type *type, std::map<llvm::BasicBlock *, llvm::Value *> operands)
+{
+    const auto node = m_LLVMBuilder.CreatePHI(type, operands.size());
+    for (auto &[block, value] : operands)
+        node->addIncoming(value, block);
+    return node;
+}
+
 llove::ValuePtr llove::Builder::CreateAdd(const ValuePtr &left, const ValuePtr &right)
 {
     const auto value = m_LLVMBuilder.CreateAdd(left->Load(*this), right->Load(*this));
     return Value::CreateR(left->GetType(), value);
+}
+
+llvm::Value *llove::Builder::CreateSub(llvm::Value *left, llvm::Value *right)
+{
+    return m_LLVMBuilder.CreateSub(left, right);
 }
 
 llove::ValuePtr llove::Builder::CreateSub(const ValuePtr &left, const ValuePtr &right)
@@ -466,36 +538,4 @@ llvm::BasicBlock *llove::Builder::CreateBlock(const std::string &name, llvm::Fun
 llvm::Value *llove::Builder::CreateGlobalString(const std::string &value)
 {
     return m_LLVMBuilder.CreateGlobalStringPtr(value, {}, 0, &m_LLVMModule);
-}
-
-llvm::Value *llove::Builder::CreateVAStart(llvm::Value *ap)
-{
-    const auto intrinsic = llvm::Intrinsic::getDeclaration(&m_LLVMModule, llvm::Intrinsic::vastart);
-    return m_LLVMBuilder.CreateCall(
-        llvm::FunctionType::get(llvm::Type::getVoidTy(m_LLVMContext), { ap->getType() }, false),
-        intrinsic,
-        { ap });
-}
-
-llvm::Value *llove::Builder::CreateVAEnd(llvm::Value *ap)
-{
-    const auto intrinsic = llvm::Intrinsic::getDeclaration(&m_LLVMModule, llvm::Intrinsic::vaend);
-    return m_LLVMBuilder.CreateCall(
-        llvm::FunctionType::get(llvm::Type::getVoidTy(m_LLVMContext), { ap->getType() }, false),
-        intrinsic,
-        { ap });
-}
-
-llvm::Value *llove::Builder::CreateVACopy(llvm::Value *dst_ap, llvm::Value *src_ap)
-{
-    const auto intrinsic = llvm::Intrinsic::getDeclaration(&m_LLVMModule, llvm::Intrinsic::vacopy);
-    return m_LLVMBuilder.CreateCall(
-        llvm::FunctionType::get(llvm::Type::getVoidTy(m_LLVMContext), { dst_ap->getType(), src_ap->getType() }, false),
-        intrinsic,
-        { dst_ap, src_ap });
-}
-
-llvm::Value *llove::Builder::CreateVAArg(llvm::Value *ap, llvm::Type *type)
-{
-    return m_LLVMBuilder.CreateVAArg(ap, type);
 }

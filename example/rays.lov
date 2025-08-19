@@ -3,8 +3,6 @@ type stream_t = [];
 type size_t = u64;
 
 interface fopen(filename: string_t, mode: string_t): stream_t;
-interface fprintf(stream: stream_t, format: string_t, ...): i32;
-interface vfprintf(stream: stream_t, format: string_t, arg: []): i32;
 interface fflush(stream: stream_t): i32;
 interface fclose(stream: stream_t): i32;
 
@@ -13,6 +11,57 @@ interface fputs(str: string_t, stream: stream_t): i32;
 interface fwrite(ptr: [], size: size_t, count: size_t, stream: stream_t): size_t;
 
 interface strlen(str: string_t): size_t;
+
+define fprint(stream: stream_t, str: string_t) {
+    let beg = str;
+    let end = str + strlen(str);
+
+    foreach (c : beg..end) {
+        fputc(c, stream);
+    }
+}
+
+define fprint(stream: stream_t, buf: string_t, from: u64, to: u64) {
+    let beg = buf + from;
+    let end = buf + to;
+
+    foreach (c : beg..end) {
+        fputc(c, stream);
+    }
+}
+
+define fformat(stream: stream_t, format: string_t, ...arg) {
+
+    let beg = format;
+    let end = format + strlen(format);
+
+    let mut state: u1 = 0;
+
+    foreach (c : beg..end) {
+        if (state) {
+            if (c == 's') {
+                let value = arg{i8[]};
+                fprint(stream, value);
+            } else if (c == 'c') {
+                let value = arg{i8};
+                fputc(value, stream);
+            } else if (c == 'u') {
+                let value = arg{u32};
+                let mut buffer: i8[32];
+                let mut index: i32 = 32;
+                for (let mut x = value; x > 0; x /= 10) {
+                    buffer[--index] = (x % 10) + 0x30;
+                }
+                fprint(stream, buffer, index, 32);
+            }
+            state = 0;
+        } else if (c == '%') {
+            state = 1;
+        } else {
+            fputc(c, stream);
+        }
+    }
+}
 
 class Stream {
 
@@ -35,16 +84,17 @@ class Stream {
     }
 
     expose format(format: string_t, ...arg) {
-        vfprintf(self.stream, format, arg);
+        fformat(self.stream, format, arg);
+    }
+
+    expose flush() {
+        fflush(self.stream);
     }
 
     let mut stream: stream_t;
 }
 
 interface main(): i32 {
-
-    let test: Stream("out.txt", "w");
-    test.format("hello %u world!%c", 123:u32, 0x10);
 
     let stream: Stream("out.ppm", "wb");
 
@@ -55,9 +105,13 @@ interface main(): i32 {
 
     foreach (j : (0)..height)
     foreach (i : (0)..width) {
-        let ir: u32 = 0;
-        let ig: u32 = 0;
-        let ib: u32 = 0;
+        let r: f64 = i / (width  - 1.0);
+        let g: f64 = j / (height - 1.0);
+        let b: f64 = 0.2;
+
+        let ir: u8 = (r * 255.999);
+        let ig: u8 = (g * 255.999);
+        let ib: u8 = (b * 255.999);
 
         stream.format("%c%c%c", ir, ig, ib);
     }

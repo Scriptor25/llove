@@ -76,7 +76,7 @@ std::ostream &llove::Field::Print(std::ostream &stream, const bool has_name, con
 llvm::Type *llove::Field::GenIRType(Builder &builder) const
 {
     const auto type = Type->GenIR(builder);
-    return Reference ? builder.GetPointerType(type) : type;
+    return Reference ? builder.GetPointerType() : type;
 }
 
 llvm::DIType *llove::Field::GenDIType(Builder &builder) const

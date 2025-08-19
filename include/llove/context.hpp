@@ -37,6 +37,7 @@ namespace llove
         }
 
         VoidType::Ptr GetVoid();
+        VariadicType::Ptr GetVariadic();
         IntegerType::Ptr GetInteger(bool sign, unsigned bits);
         FloatType::Ptr GetFloat(unsigned bits);
         PointerType::Ptr GetPointer(bool mutable_);
@@ -47,7 +48,7 @@ namespace llove
         ClassType::Ptr GetClass(std::string name);
         FunctionType::Ptr GetFunction(
             std::vector<Field> parameters,
-            bool vararg,
+            bool variadic,
             Field result,
             std::optional<Field> self = std::nullopt);
 

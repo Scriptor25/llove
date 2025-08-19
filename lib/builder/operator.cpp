@@ -14,7 +14,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &operator
         if (function.Name != operator_)
             continue;
 
-        if (suffix != function_type->IsVarArg())
+        if (suffix != function_type->HasVariadic())
             continue;
 
         auto error = 0u;
@@ -75,7 +75,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
         if (function.Name != operator_)
             continue;
 
-        if (function_type->IsVarArg())
+        if (function_type->HasVariadic())
             continue;
 
         auto error = 0u;

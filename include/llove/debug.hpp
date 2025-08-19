@@ -38,6 +38,7 @@ namespace llove
             const std::vector<llvm::Metadata *> &fields,
             unsigned size) const;
         [[nodiscard]] llvm::DISubroutineType *GetFunctionType(
+            llvm::DIType *self,
             const std::vector<llvm::Metadata *> &parameters,
             llvm::DIType *result) const;
 

@@ -134,6 +134,7 @@ namespace llove
         ExpressionPtr ParseSymbolExpression();
         ExpressionPtr ParseUnaryExpression();
         ExpressionPtr ParseUnaryExpression(ExpressionPtr operand);
+        ExpressionPtr ParseVariadicExpression(ExpressionPtr list);
 
     private:
         Context &m_Context;

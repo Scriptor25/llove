@@ -56,17 +56,16 @@ unsigned llove::StructType::SizeBits(Builder &builder) const
 
 llvm::StructType *llove::StructType::GenIR(Builder &builder)
 {
-    if (m_IRType)
-        return llvm::dyn_cast<llvm::StructType>(m_IRType);
+    if (!m_IRType)
+    {
+        std::vector<llvm::Type *> fields;
+        for (auto &field : m_Fields)
+            fields.emplace_back(field.Info.GenIRType(builder));
 
-    std::vector<llvm::Type *> fields;
-    for (auto &field : m_Fields)
-        fields.emplace_back(field.Info.GenIRType(builder));
-
-    // TODO: packed struct
-    const auto type = builder.GetStructType(fields, true);
-    m_IRType = type;
-    return type;
+        // TODO: packed struct
+        m_IRType = builder.GetStructType(fields, false);
+    }
+    return llvm::dyn_cast<llvm::StructType>(m_IRType);
 }
 
 llvm::DIType *llove::StructType::GenDI(Builder &builder)

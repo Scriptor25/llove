@@ -6,13 +6,13 @@ llove::TypePtr llove::Parser::ParseFunctionType()
     Expect(TokenType_Other, "(");
 
     std::vector<Field> parameters;
-    auto vararg = false;
+    auto variadic = false;
 
     while (!At(TokenType_Other, ")"))
     {
         if (SkipIf(TokenType_Operator, "..."))
         {
-            vararg = true;
+            variadic = true;
             break;
         }
 
@@ -37,5 +37,5 @@ llove::TypePtr llove::Parser::ParseFunctionType()
     if (SkipIf(TokenType_Operator, "=>"))
         ParseField(result, false, true);
 
-    return m_Context.GetFunction(std::move(parameters), vararg, std::move(result), std::move(self));
+    return m_Context.GetFunction(std::move(parameters), variadic, std::move(result), std::move(self));
 }

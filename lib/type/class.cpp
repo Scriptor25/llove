@@ -158,23 +158,24 @@ unsigned llove::ClassType::SizeBits(Builder &builder) const
 
 llvm::StructType *llove::ClassType::GenIR(Builder &builder)
 {
-    if (m_IRType)
-        return llvm::dyn_cast<llvm::StructType>(m_IRType);
-
-    if (m_Opaque)
+    if (!m_IRType)
     {
-        const auto type = builder.GetOrCreateNamedStructType(m_Name);
-        m_IRType = type;
-        return type;
+        if (m_Opaque)
+        {
+            const auto type = builder.GetOrCreateNamedStructType(m_Name);
+            m_IRType = type;
+            return type;
+        }
+
+        std::vector<llvm::Type *> elements;
+        for (auto &field : m_Fields)
+            elements.emplace_back(field.Info.GenIRType(builder));
+
+        // TODO: packed struct
+        m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, false);
     }
 
-    std::vector<llvm::Type *> elements;
-    for (auto &field : m_Fields)
-        elements.emplace_back(field.Info.GenIRType(builder));
-
-    const auto type = builder.GetOrCreateNamedStructType(m_Name, elements, true);
-    m_IRType = type;
-    return type;
+    return llvm::dyn_cast<llvm::StructType>(m_IRType);
 }
 
 llvm::DIType *llove::ClassType::GenDI(Builder &builder)
@@ -183,7 +184,7 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
         return m_DIType;
 
     if (m_Opaque)
-        return m_DIType = builder.GetDebug().GetClassType(m_Name);
+        return builder.GetDebug().GetClassType(m_Name);
 
     std::vector<llvm::Metadata *> fields;
 
@@ -191,11 +192,12 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
     for (auto &field : m_Fields)
     {
         const auto size = field.Info.SizeBits(builder);
-        fields.emplace_back(builder.GetDebug().GetFieldType(field.Name, field.Info.GenDIType(builder), size, offset));
+        fields.emplace_back(
+            builder.GetDebug().GetFieldType(field.Name, field.Info.GenDIType(builder), size, offset));
         offset += size;
     }
 
-    return m_DIType = builder.GetDebug().GetClassType(m_Name, fields, offset);
+    return builder.GetDebug().GetClassType(m_Name, fields, offset);
 }
 
 llove::TypePtr llove::ClassType::Reflect(Context &context) const

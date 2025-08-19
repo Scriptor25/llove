@@ -19,6 +19,7 @@ namespace llove
     {
         TypeId_Template,
         TypeId_Void,
+        TypeId_Variadic,
         TypeId_Integer,
         TypeId_Float,
         TypeId_Pointer,
@@ -40,6 +41,7 @@ namespace llove
 
         [[nodiscard]] virtual bool IsTemplate() const;
         [[nodiscard]] virtual bool IsVoid() const;
+        [[nodiscard]] virtual bool IsVariadic() const;
         [[nodiscard]] virtual bool IsArgPointer() const;
         [[nodiscard]] virtual bool IsInteger() const;
         [[nodiscard]] virtual bool IsFloat() const;
@@ -142,6 +144,29 @@ namespace llove
 
         /**
          * @return v
+         */
+        [[nodiscard]] std::string Mangle() const override;
+
+        std::ostream &Print(std::ostream &stream) const override;
+    };
+
+    class VariadicType final : public Type
+    {
+    public:
+        using Ptr = std::shared_ptr<VariadicType>;
+        static constexpr auto ID = TypeId_Variadic;
+
+        explicit VariadicType() = default;
+
+        [[nodiscard]] TypeId GetId() const override;
+        [[nodiscard]] bool IsVariadic() const override;
+        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
+        llvm::Type *GenIR(Builder &builder) override;
+        llvm::DIType *GenDI(Builder &builder) override;
+        TypePtr Reflect(Context &context) const override;
+
+        /**
+         * @return z
          */
         [[nodiscard]] std::string Mangle() const override;
 
@@ -388,11 +413,11 @@ namespace llove
         using Ptr = std::shared_ptr<FunctionType>;
         static constexpr auto ID = TypeId_Function;
 
-        explicit FunctionType(std::vector<Field> parameters, bool vararg, Field result, std::optional<Field> self);
+        explicit FunctionType(std::vector<Field> parameters, bool variadic, Field result, std::optional<Field> self);
 
         [[nodiscard]] unsigned GetParameterCount() const;
         [[nodiscard]] const Field &GetParameter(unsigned index) const;
-        [[nodiscard]] bool IsVarArg() const;
+        [[nodiscard]] bool HasVariadic() const;
         [[nodiscard]] const Field &GetResult() const;
         [[nodiscard]] const std::optional<Field> &GetSelf() const;
 
@@ -402,7 +427,7 @@ namespace llove
         llvm::PointerType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         llvm::FunctionType *GenFunction(Builder &builder);
-        llvm::DISubroutineType *GenDbgFunction(Builder &builder);
+        llvm::DISubroutineType *GenDIFunction(Builder &builder);
         TypePtr Reflect(Context &context) const override;
 
         /**
@@ -418,7 +443,7 @@ namespace llove
 
     private:
         std::vector<Field> m_Parameters;
-        bool m_VarArg;
+        bool m_Variadic;
         Field m_Result;
         std::optional<Field> m_Self;
     };

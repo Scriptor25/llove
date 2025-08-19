@@ -42,24 +42,18 @@ unsigned llove::PointerType::SizeBits(Builder &builder) const
 
 llvm::PointerType *llove::PointerType::GenIR(Builder &builder)
 {
-    if (m_IRType)
-        return llvm::dyn_cast<llvm::PointerType>(m_IRType);
-
-    const auto type = m_Base
-                          ? builder.GetPointerType(m_Base->GenIR(builder))
-                          : builder.GetPointerType();
-    m_IRType = type;
-    return type;
+    if (!m_IRType)
+        m_IRType = builder.GetPointerType();
+    return llvm::dyn_cast<llvm::PointerType>(m_IRType);
 }
 
 llvm::DIType *llove::PointerType::GenDI(Builder &builder)
 {
-    if (m_DIType)
-        return m_DIType;
-
-    return m_DIType = m_Base
-                          ? builder.GetDebug().GetPointerType(m_Base->GenDI(builder))
-                          : builder.GetDebug().GetPointerType();
+    if (!m_DIType)
+        m_DIType = m_Base
+                       ? builder.GetDebug().GetPointerType(m_Base->GenDI(builder))
+                       : builder.GetDebug().GetPointerType();
+    return m_DIType;
 }
 
 llove::TypePtr llove::PointerType::Reflect(Context &context) const

@@ -104,12 +104,10 @@ namespace llove
         llvm::Type *GetFltType(unsigned bits);
         llvm::ArrayType *GetArrayType(llvm::Type *base, unsigned size);
         llvm::PointerType *GetPointerType();
-        llvm::PointerType *GetPointerType(llvm::Type *base);
         llvm::StructType *GetStructType(const std::vector<llvm::Type *> &fields, bool packed);
         llvm::FunctionType *GetFunctionType(
             llvm::Type *result,
-            const std::vector<llvm::Type *> &parameters,
-            bool vararg);
+            const std::vector<llvm::Type *> &parameters);
 
         llvm::StructType *GetNamedStructType(const std::string &name);
         llvm::StructType *GetOrCreateNamedStructType(const std::string &name);
@@ -118,14 +116,15 @@ namespace llove
             const std::vector<llvm::Type *> &fields,
             bool packed);
 
-        llvm::StructType *GetVAListTagType();
+        llvm::StructType *GetVariadicType();
 
         llvm::BasicBlock *GetInsertBlock() const;
         void SetCurrentDebugLocation(llvm::DebugLoc loc);
 
         llvm::Value *CreateAlloca(const TypePtr &type, llvm::Function *parent = nullptr);
-        llvm::AllocaInst *CreateAlloca(llvm::Type *type, llvm::Function *parent = nullptr);
+        llvm::Value *CreateAlloca(llvm::Type *type, llvm::Function *parent = nullptr);
 
+        llvm::Value *CreateLoad(llvm::Value *pointer, llvm::Type *type);
         llvm::Value *CreateLoad(llvm::Value *pointer, const TypePtr &type);
         llvm::Value *CreateStore(llvm::Value *pointer, llvm::Value *value, bool volatile_ = false);
         llvm::Value *CreateStore(llvm::Value *pointer, const ValuePtr &value, bool volatile_ = false);
@@ -149,8 +148,14 @@ namespace llove
         ValuePtr CreateArrayElement(const ValuePtr &array, const ValuePtr &index);
         llvm::Value *CreateArrayGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
         llvm::Value *CreateStructGEP(const TypePtr &type, llvm::Value *pointer, unsigned index);
+        llvm::Value *CreateGEP(llvm::Type *type, llvm::Value *pointer, unsigned index);
+
+        llvm::Value *CreateNotNull(llvm::Value *value);
+
+        llvm::Value *CreatePHI(llvm::Type *type, std::map<llvm::BasicBlock *, llvm::Value *> operands);
 
         ValuePtr CreateAdd(const ValuePtr &left, const ValuePtr &right);
+        llvm::Value *CreateSub(llvm::Value *left, llvm::Value *right);
         ValuePtr CreateSub(const ValuePtr &left, const ValuePtr &right);
         ValuePtr CreateMul(const ValuePtr &left, const ValuePtr &right);
         ValuePtr CreateDiv(const ValuePtr &left, const ValuePtr &right);
@@ -250,15 +255,11 @@ namespace llove
 
         llvm::Value *CreateGlobalString(const std::string &value);
 
-        llvm::Value *CreateVAStart(llvm::Value *ap);
-        llvm::Value *CreateVAEnd(llvm::Value *ap);
-        llvm::Value *CreateVACopy(llvm::Value *dst_ap, llvm::Value *src_ap);
-        llvm::Value *CreateVAArg(llvm::Value *ap, llvm::Type *type);
-
         FunctionReference GenFunction(const FunctionInfo &fn);
         void GenParameters(
             llvm::Function *parent,
             const std::vector<Parameter> &parameters,
+            const std::pair<bool, std::string> &variadic,
             const std::optional<Field> &self = std::nullopt);
 
         void Seal(const SealInfo &info);
