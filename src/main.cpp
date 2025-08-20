@@ -587,6 +587,8 @@ int main(const int argc, const char *const *argv) try
 
     builder.Seal(seal_info);
 
+    llvm::llvm_shutdown();
+
     return 0;
 }
 catch (const llove::ref_exception<llove::ErrorStack> &cause)

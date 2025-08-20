@@ -40,12 +40,13 @@ void llove::Builder::Seal(const SealInfo &info)
     const auto target = llvm::TargetRegistry::lookupTarget(target_triple, target_error);
     Assert(target != nullptr, "failed to get target for triple '{}': {}", target_triple, target_error);
 
-    const auto target_machine = target->createTargetMachine(
-        target_triple,
-        cpu,
-        features,
-        info.Options,
-        info.Relocation);
+    const auto target_machine = std::unique_ptr<llvm::TargetMachine>(
+        target->createTargetMachine(
+            target_triple,
+            cpu,
+            features,
+            info.Options,
+            info.Relocation));
     Assert(
         target_machine != nullptr,
         "failed to create target machine for triple '{}', cpu '{}' and features '{}'",
@@ -65,7 +66,7 @@ void llove::Builder::Seal(const SealInfo &info)
 
     si.registerCallbacks(pic, &mam);
 
-    llvm::PassBuilder pb(target_machine);
+    llvm::PassBuilder pb(target_machine.get());
     pb.registerLoopAnalyses(lam);
     pb.registerFunctionAnalyses(fam);
     pb.registerCGSCCAnalyses(cgam);
