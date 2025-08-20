@@ -10,6 +10,9 @@
 
 namespace cli
 {
+    template<typename T>
+    bool convert_value(T &dst, const std::string &value);
+
     class Arguments final
     {
     public:
@@ -33,6 +36,27 @@ namespace cli
         [[nodiscard]] bool has_value(const std::string &id) const;
         [[nodiscard]] bool has_value_and_is(const std::string &id, const std::string &value) const;
         [[nodiscard]] bool has_value_and_is_not(const std::string &id, const std::string &value) const;
+
+        template<typename T>
+        [[nodiscard]] bool value(const std::string &id, T &dst) const
+        {
+            if (!m_Values.contains(id))
+                return false;
+
+            return cli::convert_value<T>(dst, m_Values.at(id));
+        }
+
+        template<typename T>
+        [[nodiscard]] bool array(const std::string &id, std::vector<T> &dst) const
+        {
+            if (!m_Arrays.contains(id))
+                return false;
+
+            for (auto &entry : m_Arrays.at(id))
+                if (!cli::convert_value<T>(dst.emplace_back(), entry))
+                    return false;
+            return true;
+        }
 
     private:
         std::map<std::string, OptionTemplate> m_Templates;
