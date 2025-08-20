@@ -1,40 +1,42 @@
+import { format } from "format.lov";
+
 interface malloc(count: u64): [mut];
 interface free(block: [mut]);
 
 class test {
 
     expose mut create() {
-        printf("test:create()\r\n");
+        format("test:create()\r\n");
         self.data_ptr = null;
-        printf("=> self={ data_ptr: %p }\r\n", self.data_ptr);
+        format("=> self={{ data_ptr: {p} }\r\n", self.data_ptr);
     }
 
     expose mut create(data: i32) {
-        printf("test:create(i32)\r\n");
+        format("test:create(i32)\r\n");
         self.data_ptr = malloc(sizeof i32);
         *self.data_ptr = data;
-        printf("=> self={ data_ptr: %p }\r\n", self.data_ptr);
+        format("=> self={{ data_ptr: {p} }\r\n", self.data_ptr);
     }
 
     expose mut =(data: i32): mut &test {
-        printf("test{ data_ptr: %p }:=(i32)\r\n", self.data_ptr);
+        format("test{{ data_ptr: {p} }:=(i32)\r\n", self.data_ptr);
         *self.data_ptr = data;
         yield self;
     }
 
     expose mut create(mut other: test) {
-        printf("test:create(test)\r\n");
+        format("test:create(test)\r\n");
         self.data_ptr = other.data_ptr;
         other.data_ptr = null;
-        printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
+        format("=> self={{ data_ptr: {p} }, other={{ data_ptr: {p} }\r\n", self.data_ptr, other.data_ptr);
     }
 
     expose mut =(mut other: test): mut &test {
-        printf("test{ data_ptr: %p }:=(test)\r\n", self.data_ptr);
+        format("test{{ data_ptr: {p} }:=(test)\r\n", self.data_ptr);
         let data_ptr = self.data_ptr;
         self.data_ptr = other.data_ptr;
         other.data_ptr = data_ptr;
-        printf("=> self={ data_ptr: %p }, other={ data_ptr: %p }\r\n", self.data_ptr, other.data_ptr);
+        format("=> self={{ data_ptr: {p} }, other={{ data_ptr: {p} }\r\n", self.data_ptr, other.data_ptr);
         yield self;
     }
 
@@ -48,7 +50,7 @@ class test {
     }
 
     expose mut delete() {
-        printf("test{ data_ptr: %p }:delete()\r\n", self.data_ptr);
+        format("test{{ data_ptr: {p} }:delete()\r\n", self.data_ptr);
         if (self.data_ptr) {
             free(self.data_ptr);
         }
@@ -69,29 +71,29 @@ class test {
 class<T> unique {
 
     expose mut create() {
-        printf("unique:create()\r\n");
+        format("unique:create()\r\n");
         self.ptr = null;
     }
 
     expose mut create(ptr: T[mut]) {
-        printf("unique:create(T[mut])\r\n");
+        format("unique:create(T[mut])\r\n");
         self.ptr = ptr;
     }
 
     expose mut create(mut val: T) {
-        printf("unique:create(T)\r\n");
+        format("unique:create(T)\r\n");
         self.ptr = malloc(sizeof T);
         create[*self.ptr] T($val);
     }
 
     expose mut create(mut other: class<T> unique) {
-        printf("unique:create(unique)\r\n");
+        format("unique:create(unique)\r\n");
         self.ptr = other.ptr;
         other.ptr = null;
     }
 
     expose mut =(mut other: class<T> unique): mut &class<T> unique {
-        printf("unique{ ptr: %p }:=(unique)\r\n", self.ptr);
+        format("unique{{ ptr: {p} }:=(unique)\r\n", self.ptr);
         let ptr = self.ptr;
         self.ptr = other.ptr;
         other.ptr = ptr;
@@ -108,7 +110,7 @@ class<T> unique {
     }
 
     expose mut delete() {
-        printf("unique{ ptr: %p }:delete()\r\n", self.ptr);
+        format("unique{{ ptr: {p} }:delete()\r\n", self.ptr);
         if (self.ptr) {
             delete *self.ptr;
             free(self.ptr);
@@ -139,11 +141,11 @@ interface main(): i32 {
 
     let u: class<test> unique(create test(0));
 
-    printf("%d (%p)\r\n", (*u).data(), (*u).get());
+    format("{i32} ({p})\r\n", (*u).data(), (*u).get());
 
     *u = create test(123);
 
-    printf("%d (%p)\r\n", (*u).data(), (*u).get());
+    format("{i32} ({p})\r\n", (*u).data(), (*u).get());
 
     yield 0;
 }

@@ -170,15 +170,15 @@ int main(const int argc, const char *const *argv) try
     }
 
     while (parser.Ok())
-    {
-        auto ptr = parser.Parse();
-        if (print_llove)
-            *print_stream_ref << ptr << std::endl;
+        if (auto ptr = parser.Parse())
+        {
+            if (print_llove)
+                *print_stream_ref << ptr << std::endl;
 
-        context.InstantiateReflections(builder);
+            context.InstantiateReflections(builder);
 
-        ptr->Gen(builder);
-    }
+            ptr->Gen(builder);
+        }
 
     if (!has_output_filename || output_filename == "stdout")
         output_stream_ref = llove::stream_ref(&std::cout, false);

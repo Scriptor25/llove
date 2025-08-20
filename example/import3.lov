@@ -1,6 +1,0 @@
-export define foo() {}
-export define bar() {}
-
-export const HELLO = "Hello World!";
-
-type some_non_exported_type = (i8[]) => i32;

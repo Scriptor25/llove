@@ -1,8 +1,10 @@
+import { format } from "format.lov";
+
 type vec3 = {
     mut x: f64,
     mut y: f64,
     mut z: f64,
-}
+};
 
 define +(&l: vec3, &r: vec3): vec3 {
     yield {
@@ -37,9 +39,9 @@ interface main(count: i32, args: i8[][]): i32 {
     let v: vec3 = { x: 3.0, y: 2.0, z: 1.0 };
     let w = u + v;
 
-    printf("%f %f %f\r\n", u.x, u.y, u.z);
-    printf("%f %f %f\r\n", v.x, v.y, v.z);
-    printf("%f %f %f\r\n", w.x, w.y, w.z);
+    format("{f64} {f64} {f64}\r\n", u.x, u.y, u.z);
+    format("{f64} {f64} {f64}\r\n", v.x, v.y, v.z);
+    format("{f64} {f64} {f64}\r\n", w.x, w.y, w.z);
 
     yield 0;
 }

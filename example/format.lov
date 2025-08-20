@@ -6,6 +6,7 @@ export type stream_t = stream[mut];
 
 interface strlen(str: string_t): u64;
 interface fputc(c: i32, stream: stream_t): i32;
+interface putchar(c: i32): i32;
 
 export define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t) {
     let beg = str;
@@ -265,4 +266,12 @@ define push_stream(c: i32, ptr: [mut]) {
 
 export define format(stream: stream_t, format: string_t, ...args) {
     format(push_stream, stream, format, args);
+}
+
+define push_stdout(c: i32, ptr: [mut]) {
+    putchar(c);
+}
+
+export define format(format: string_t, ...args) {
+    format(push_stdout, null as [mut], format, args);
 }
