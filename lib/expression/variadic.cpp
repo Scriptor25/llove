@@ -22,7 +22,7 @@ llove::ValuePtr llove::VariadicExpression::GenVal(Builder &builder, TypePtr expe
     const auto count_pointer = builder.CreateStructGEP(list_type, list_pointer, 0);
     const auto data_pointer = builder.CreateStructGEP(list_type, list_pointer, 1);
 
-    const auto count = builder.CreateLoad(count_pointer, builder.GetIntType(32));
+    const auto count = builder.CreateLoad(count_pointer, builder.GetIntegerType(32));
     const auto data = builder.CreateLoad(data_pointer, builder.GetPointerType());
 
     const auto get_block = builder.CreateBlock("get", builder.GetParent());

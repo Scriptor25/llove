@@ -38,7 +38,7 @@ llvm::IntegerType *llove::IntegerType::GenIR(Builder &builder)
     if (m_IRType)
         return llvm::dyn_cast<llvm::IntegerType>(m_IRType);
 
-    const auto type = builder.GetIntType(m_Bits);
+    const auto type = builder.GetIntegerType(m_Bits);
     m_IRType = type;
     return type;
 }

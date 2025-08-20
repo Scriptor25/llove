@@ -104,12 +104,15 @@ namespace llove
         void ParseClassTemplate();
 
         StatementPtr ParseStatement(bool inline_);
+        StatementPtr ParseBreakStatement(bool inline_);
+        StatementPtr ParseContinueStatement(bool inline_);
         StatementPtr ParseDeleteStatement(bool inline_);
         StatementPtr ParseForStatement(bool inline_);
         StatementPtr ParseForEachStatement(bool inline_);
         StatementPtr ParseIfStatement(bool inline_);
         StatementPtr ParseLetStatement(bool inline_);
         StatementPtr ParseScopeStatement();
+        StatementPtr ParseSwitchStatement();
         StatementPtr ParseWhileStatement(bool inline_);
         StatementPtr ParseYieldStatement(bool inline_);
 
@@ -119,6 +122,7 @@ namespace llove
         ExpressionPtr ParseBinaryExpression();
         ExpressionPtr ParseBinaryExpression(ExpressionPtr left, unsigned min_precedence);
         ExpressionPtr ParseCallExpression(ExpressionPtr callee);
+        ExpressionPtr ParseCastExpression(ExpressionPtr value);
         ExpressionPtr ParseCreateExpression();
         ExpressionPtr ParseFloatExpression();
         ExpressionPtr ParseIntegerExpression();
@@ -131,6 +135,7 @@ namespace llove
         ExpressionPtr ParseStringExpression();
         ExpressionPtr ParseStructExpression();
         ExpressionPtr ParseSubscriptExpression(ExpressionPtr value);
+        ExpressionPtr ParseSwitchExpression();
         ExpressionPtr ParseSymbolExpression();
         ExpressionPtr ParseUnaryExpression();
         ExpressionPtr ParseUnaryExpression(ExpressionPtr operand);

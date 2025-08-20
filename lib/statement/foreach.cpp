@@ -22,8 +22,13 @@ llove::ForEachStatement::ForEachStatement(
 
 void llove::ForEachStatement::Gen(Builder &builder) const try
 {
+    const auto parent = builder.GetParent();
+    const auto head_block = builder.CreateBlock("head", parent);
+    const auto loop_block = builder.CreateBlock("loop", parent);
+    const auto tail_block = builder.CreateBlock("tail", parent);
+
     builder.EmitLoc(m_Loc);
-    builder.PushFrame(m_Loc);
+    builder.PushFrame(m_Loc, head_block, tail_block);
 
     const auto range = m_Range->GenVal(builder, nullptr);
     const auto type = range->GetType();
@@ -206,11 +211,6 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         iterator = Value::CreateL(begin->GetType(), pointer, true);
     }
 
-    const auto parent = builder.GetParent();
-    const auto head_block = builder.CreateBlock("head", parent);
-    const auto loop_block = builder.CreateBlock("loop", parent);
-    const auto end_block = builder.CreateBlock("end", parent);
-
     builder.CreateBranch(head_block);
 
     builder.SetInsertPoint(head_block);
@@ -263,7 +263,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             end->AsField());
 
         const auto condition = (*operator_)(builder, iterator, end);
-        builder.CreateBranch(condition, loop_block, end_block);
+        builder.CreateBranch(condition, loop_block, tail_block);
     }
 
     builder.SetInsertPoint(loop_block);
@@ -283,7 +283,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
 
     builder.PopFrame();
 
-    builder.SetInsertPoint(end_block);
+    builder.SetInsertPoint(tail_block);
 }
 catch (ref_exception<ErrorStack> &cause)
 {

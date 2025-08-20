@@ -3,6 +3,10 @@
 
 llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
 {
+    if (At(TokenType_Symbol, "break"))
+        return ParseBreakStatement(inline_);
+    if (At(TokenType_Symbol, "continue"))
+        return ParseContinueStatement(inline_);
     if (At(TokenType_Symbol, "delete"))
         return ParseDeleteStatement(inline_);
     if (At(TokenType_Symbol, "for"))
@@ -15,6 +19,8 @@ llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
         return ParseLetStatement(inline_);
     if (At(TokenType_Other, "{"))
         return ParseScopeStatement();
+    if (At(TokenType_Symbol, "switch"))
+        return ParseSwitchStatement();
     if (At(TokenType_Symbol, "while"))
         return ParseWhileStatement(inline_);
     if (At(TokenType_Symbol, "yield"))

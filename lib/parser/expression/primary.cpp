@@ -38,6 +38,9 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Symbol, "sizeof"))
         return ParseSizeofExpression();
 
+    if (At(TokenType_Symbol, "switch"))
+        return ParseSwitchExpression();
+
     if (At(TokenType_Symbol))
         return ParseSymbolExpression();
 

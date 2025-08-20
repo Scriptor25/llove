@@ -56,105 +56,6 @@ void llove::Builder::CreateRet(llvm::Value *value)
     m_LLVMBuilder.CreateRet(value);
 }
 
-llove::ValuePtr llove::Builder::CreateCall(
-    const FunctionReference &function,
-    std::vector<ValuePtr> arguments,
-    ValuePtr self)
-{
-    auto &function_type = function.Type;
-    auto &function_self = function_type->GetSelf();
-    auto &function_result = function_type->GetResult();
-
-    Assert(!self == !function_self, "illegal function call, function self does not match self");
-
-    std::vector<llvm::Value *> argument_values;
-
-    if (self)
-    {
-        argument_values.emplace_back(function_self->GenCast(*this, std::move(self)));
-    }
-
-    unsigned i;
-    for (i = 0; i < function_type->GetParameterCount(); ++i)
-    {
-        auto &parameter = function_type->GetParameter(i);
-        auto &argument = arguments.at(i);
-
-        argument_values.emplace_back(parameter.GenCast(*this, std::move(argument)));
-    }
-
-    if (function_type->HasVariadic())
-    {
-        if (const auto count = arguments.size() - i; count == 1 && arguments.at(i)->GetType()->IsVariadic())
-        {
-            argument_values.emplace_back(arguments.at(i++)->Load(*this));
-        }
-        else
-        {
-            std::vector<llvm::Type *> elements;
-            for (auto j = i; j < arguments.size(); ++j)
-            {
-                const auto argument_type = arguments.at(j)->GetType();
-                elements.emplace_back(argument_type->GenIR(*this));
-            }
-
-            const auto count_type = GetIntType(32);
-            const auto count_value = llvm::ConstantInt::get(count_type, count, false);
-
-            const auto elements_type = llvm::StructType::get(m_LLVMContext, elements, true);
-            const auto elements_pointer = CreateAlloca(elements_type);
-
-            for (auto j = 0; i < arguments.size(); ++i, ++j)
-            {
-                const auto value = arguments.at(i)->Load(*this);
-                const auto pointer = m_LLVMBuilder.CreateStructGEP(elements_type, elements_pointer, j);
-                m_LLVMBuilder.CreateStore(value, pointer);
-            }
-
-            llvm::Value *aggregate = llvm::Constant::getNullValue(GetVariadicType());
-            aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, count_value, 0);
-            aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, elements_pointer, 1);
-
-            argument_values.emplace_back(aggregate);
-        }
-    }
-
-    const auto result_value = m_LLVMBuilder.CreateCall(
-        function_type->GenFunction(*this),
-        function.Callee,
-        argument_values);
-
-    if (function_result.Reference)
-        return Value::CreateL(function_result.Type, result_value, function_result.Mutable);
-
-    return Value::CreateR(function_result.Type, result_value);
-}
-
-llove::ValuePtr llove::Builder::CreateCall(const ValuePtr &callee)
-{
-    const auto function_type = As<FunctionType>(callee->GetType());
-    auto &function_result = function_type->GetResult();
-
-    std::vector<llvm::Value *> arguments;
-    if (function_type->HasVariadic())
-    {
-        auto count = llvm::Constant::getNullValue(GetIntType(32));
-        auto pointer = llvm::Constant::getNullValue(GetPointerType());
-
-        arguments.emplace_back(llvm::ConstantStruct::get(GetVariadicType(), { count, pointer }));
-    }
-
-    const auto result_value = m_LLVMBuilder.CreateCall(
-        function_type->GenFunction(*this),
-        callee->Load(*this),
-        arguments);
-
-    if (function_result.Reference)
-        return Value::CreateL(function_result.Type, result_value, function_result.Mutable);
-
-    return Value::CreateR(function_result.Type, result_value);
-}
-
 llvm::Value *llove::Builder::CreateInsertValue(llvm::Value *aggregate, llvm::Value *value, const unsigned index)
 {
     return m_LLVMBuilder.CreateInsertValue(aggregate, value, index);
@@ -261,7 +162,7 @@ llvm::Value *llove::Builder::CreateNotNull(llvm::Value *value)
     return m_LLVMBuilder.CreateIsNotNull(value);
 }
 
-llvm::Value *llove::Builder::CreatePHI(llvm::Type *type, std::map<llvm::BasicBlock *, llvm::Value *> operands)
+llvm::Value *llove::Builder::CreatePHI(llvm::Type *type, const std::map<llvm::BasicBlock *, llvm::Value *> &operands)
 {
     const auto node = m_LLVMBuilder.CreatePHI(type, operands.size());
     for (auto &[block, value] : operands)
@@ -450,7 +351,7 @@ llove::ValuePtr llove::Builder::CreateFCmpGE(const ValuePtr &left, const ValuePt
 
 llvm::Value *llove::Builder::CreatePCmpEQ(llvm::Value *left, llvm::Value *right)
 {
-    const auto int_type = GetIntType(64); // TODO: target dependent
+    const auto int_type = GetIntegerType(64); // TODO: target dependent
     const auto left_int = m_LLVMBuilder.CreatePtrToInt(left, int_type);
     const auto right_int = m_LLVMBuilder.CreatePtrToInt(right, int_type);
     return m_LLVMBuilder.CreateICmpEQ(left_int, right_int);
@@ -464,7 +365,7 @@ llove::ValuePtr llove::Builder::CreatePCmpEQ(const ValuePtr &left, const ValuePt
 
 llvm::Value *llove::Builder::CreatePCmpNE(llvm::Value *left, llvm::Value *right)
 {
-    const auto int_type = GetIntType(64); // TODO: target dependent
+    const auto int_type = GetIntegerType(64); // TODO: target dependent
     const auto left_int = m_LLVMBuilder.CreatePtrToInt(left, int_type);
     const auto right_int = m_LLVMBuilder.CreatePtrToInt(right, int_type);
     return m_LLVMBuilder.CreateICmpNE(left_int, right_int);
@@ -513,6 +414,16 @@ void llove::Builder::CreateBranch(llvm::Value *condition, llvm::BasicBlock *then
 void llove::Builder::CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_)
 {
     m_LLVMBuilder.CreateCondBr(condition->Load(*this), then, else_);
+}
+
+void llove::Builder::CreateSwitch(
+    const ValuePtr &condition,
+    llvm::BasicBlock *default_block,
+    const std::map<llvm::ConstantInt *, llvm::BasicBlock *> &cases)
+{
+    const auto node = m_LLVMBuilder.CreateSwitch(condition->Load(*this), default_block);
+    for (auto &[key, block] : cases)
+        node->addCase(key, block);
 }
 
 void llove::Builder::SetInsertPoint(llvm::BasicBlock *block)

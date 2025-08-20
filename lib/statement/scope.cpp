@@ -34,9 +34,9 @@ catch (ref_exception<ErrorStack> &cause)
 
 llove::StatementPtr llove::ScopeStatement::Reflect(Context &context) const try
 {
-    std::vector<StatementPtr> content(m_Content.size());
-    for (unsigned i = 0; i < m_Content.size(); ++i)
-        m_Content.at(i)->Reflect(context, content.at(i));
+    std::vector<StatementPtr> content;
+    for (auto &statement : m_Content)
+        statement->Reflect(context, content.emplace_back());
 
     return std::make_unique<ScopeStatement>(m_Loc, std::move(content));
 }

@@ -80,13 +80,4 @@ namespace llove
 
         std::map<ClassType::Ptr, std::vector<ClassFunction>> m_Reflections;
     };
-
-    template<typename T>
-    T::Ptr As(TypePtr type)
-    {
-        Assert(type != nullptr, "type must not be null");
-        auto ptr = std::dynamic_pointer_cast<T>(type);
-        Assert(ptr != nullptr, "illegal cast from id {} to id {} (type {}) ", type->GetId(), T::ID, type);
-        return ptr;
-    }
 }

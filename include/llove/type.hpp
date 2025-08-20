@@ -447,6 +447,15 @@ namespace llove
         Field m_Result;
         std::optional<Field> m_Self;
     };
+
+    template<typename T>
+    T::Ptr As(TypePtr type)
+    {
+        Assert(type != nullptr, "type must not be null");
+        auto ptr = std::dynamic_pointer_cast<T>(type);
+        Assert(ptr != nullptr, "illegal cast from id {} to id {} (type {}) ", type->GetId(), T::ID, type);
+        return ptr;
+    }
 }
 
 template<typename T> requires std::is_base_of_v<llove::Type, T>

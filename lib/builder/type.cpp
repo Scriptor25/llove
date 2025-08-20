@@ -5,12 +5,12 @@ llvm::Type *llove::Builder::GetVoidType()
     return llvm::Type::getVoidTy(m_LLVMContext);
 }
 
-llvm::IntegerType *llove::Builder::GetIntType(const unsigned bits)
+llvm::IntegerType *llove::Builder::GetIntegerType(const unsigned bits)
 {
     return llvm::IntegerType::get(m_LLVMContext, bits);
 }
 
-llvm::Type *llove::Builder::GetFltType(const unsigned bits)
+llvm::Type *llove::Builder::GetFloatType(const unsigned bits)
 {
     switch (bits)
     {
@@ -76,5 +76,5 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
 
 llvm::StructType *llove::Builder::GetVariadicType()
 {
-    return GetOrCreateNamedStructType("variadic", { GetIntType(32), GetPointerType() }, false);
+    return GetOrCreateNamedStructType("variadic", { GetIntegerType(32), GetPointerType() }, false);
 }

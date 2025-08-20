@@ -30,7 +30,7 @@ unsigned llove::FloatType::SizeBits(Builder &builder) const
 llvm::Type *llove::FloatType::GenIR(Builder &builder)
 {
     if (!m_IRType)
-        m_IRType = builder.GetFltType(m_Bits);
+        m_IRType = builder.GetFloatType(m_Bits);
     return m_IRType;
 }
 

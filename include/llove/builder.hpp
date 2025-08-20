@@ -40,8 +40,11 @@ namespace llove
 
     struct Frame final
     {
-        std::vector<std::pair<llvm::Value *, std::function<void()>>> Deferred;
+        llvm::BasicBlock *Head = nullptr;
+        llvm::BasicBlock *Tail = nullptr;
+
         std::map<std::string, ValuePtr> Values;
+        std::vector<std::pair<llvm::Value *, std::function<void()>>> Deferred;
     };
 
     struct SealInfo final
@@ -100,8 +103,8 @@ namespace llove
             const Field &result);
 
         llvm::Type *GetVoidType();
-        llvm::IntegerType *GetIntType(unsigned bits);
-        llvm::Type *GetFltType(unsigned bits);
+        llvm::IntegerType *GetIntegerType(unsigned bits);
+        llvm::Type *GetFloatType(unsigned bits);
         llvm::ArrayType *GetArrayType(llvm::Type *base, unsigned size);
         llvm::PointerType *GetPointerType();
         llvm::StructType *GetStructType(const std::vector<llvm::Type *> &fields, bool packed);
@@ -152,7 +155,7 @@ namespace llove
 
         llvm::Value *CreateNotNull(llvm::Value *value);
 
-        llvm::Value *CreatePHI(llvm::Type *type, std::map<llvm::BasicBlock *, llvm::Value *> operands);
+        llvm::Value *CreatePHI(llvm::Type *type, const std::map<llvm::BasicBlock *, llvm::Value *> &operands);
 
         ValuePtr CreateAdd(const ValuePtr &left, const ValuePtr &right);
         llvm::Value *CreateSub(llvm::Value *left, llvm::Value *right);
@@ -199,6 +202,10 @@ namespace llove
         void CreateBranch(llvm::BasicBlock *block);
         void CreateBranch(llvm::Value *condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
         void CreateBranch(const ValuePtr &condition, llvm::BasicBlock *then, llvm::BasicBlock *else_);
+        void CreateSwitch(
+            const ValuePtr &condition,
+            llvm::BasicBlock *default_block,
+            const std::map<llvm::ConstantInt *, llvm::BasicBlock *> &cases);
 
         void SetInsertPoint(llvm::BasicBlock *block);
         void ClearInsertPoint();
@@ -207,6 +214,9 @@ namespace llove
         llvm::Function *GetParent() const;
         const Field &GetResult() const;
         ClassType::Ptr GetClass() const;
+
+        llvm::BasicBlock *GetHead() const;
+        llvm::BasicBlock *GetTail() const;
 
         llvm::Function *GetOrCreateFunction(const std::string &name, const FunctionType::Ptr &type, bool external);
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent = nullptr);
@@ -239,7 +249,10 @@ namespace llove
         Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
         Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
 
-        void PushFrame(const std::optional<Location> &loc = std::nullopt);
+        void PushFrame(
+            const std::optional<Location> &loc = std::nullopt,
+            llvm::BasicBlock *head = nullptr,
+            llvm::BasicBlock *tail = nullptr);
         void PopFrame();
 
         void SetValue(const std::string &name, ValuePtr value);

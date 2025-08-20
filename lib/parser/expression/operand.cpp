@@ -43,6 +43,12 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             continue;
         }
 
+        if (At(TokenType_Symbol, "as"))
+        {
+            expression = ParseCastExpression(std::move(expression));
+            continue;
+        }
+
         return expression;
     }
 }

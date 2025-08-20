@@ -214,6 +214,26 @@ namespace llove
         Location m_Loc;
     };
 
+    class BreakStatement final : public Statement
+    {
+    public:
+        explicit BreakStatement(Location loc);
+
+        void Gen(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+    };
+
+    class ContinueStatement final : public Statement
+    {
+    public:
+        explicit ContinueStatement(Location loc);
+
+        void Gen(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+    };
+
     class DeleteStatement final : public Statement
     {
     public:
@@ -322,6 +342,30 @@ namespace llove
         std::vector<StatementPtr> m_Content;
     };
 
+    struct SwitchStatementCase final
+    {
+        bool IsDefault;
+        std::vector<ExpressionPtr> Keys;
+        StatementPtr Content;
+    };
+
+    class SwitchStatement final : public Statement
+    {
+    public:
+        explicit SwitchStatement(
+            Location loc,
+            ExpressionPtr condition,
+            std::vector<SwitchStatementCase> cases);
+
+        void Gen(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Condition;
+        std::vector<SwitchStatementCase> m_Cases;
+    };
+
     class WhileStatement final : public Statement
     {
     public:
@@ -405,6 +449,20 @@ namespace llove
     private:
         ExpressionPtr m_Callee;
         std::vector<ExpressionPtr> m_Arguments;
+    };
+
+    class CastExpression final : public Expression
+    {
+    public:
+        explicit CastExpression(Location loc, ExpressionPtr value, TypePtr type);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Value;
+        TypePtr m_Type;
     };
 
     class CreateExpression final : public Expression
@@ -548,6 +606,27 @@ namespace llove
     private:
         ExpressionPtr m_Value;
         ExpressionPtr m_Index;
+    };
+
+    struct SwitchExpressionCase final
+    {
+        bool IsDefault;
+        std::vector<ExpressionPtr> Keys;
+        ExpressionPtr Value;
+    };
+
+    class SwitchExpression final : public Expression
+    {
+    public:
+        explicit SwitchExpression(Location loc, ExpressionPtr condition, std::vector<SwitchExpressionCase> cases);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Condition;
+        std::vector<SwitchExpressionCase> m_Cases;
     };
 
     class SymbolExpression final : public Expression

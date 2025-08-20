@@ -30,7 +30,7 @@ bool llove::Field::GetCastError(
     {
         if (strict || !builder.IsCastable(src, dst, true))
             return true;
-        error += builder.GetContext().Difference(dst.Type, src.Type);
+        error += builder.GetContext().Difference(src.Type, dst.Type);
     }
 
     return false;

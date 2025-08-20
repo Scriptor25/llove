@@ -18,9 +18,35 @@ llove::ClassType::Ptr llove::Builder::GetClass() const
     return m_Class;
 }
 
-void llove::Builder::PushFrame(const std::optional<Location> &loc)
+llvm::BasicBlock *llove::Builder::GetHead() const
 {
-    m_Stack.emplace_back();
+    Assert(!m_Stack.empty(), "stack is empty");
+
+    return m_Stack.back().Head;
+}
+
+llvm::BasicBlock *llove::Builder::GetTail() const
+{
+    Assert(!m_Stack.empty(), "stack is empty");
+
+    return m_Stack.back().Tail;
+}
+
+void llove::Builder::PushFrame(const std::optional<Location> &loc, llvm::BasicBlock *head, llvm::BasicBlock *tail)
+{
+    if (!m_Stack.empty())
+    {
+        const auto &frame = m_Stack.back();
+        if (!head)
+            head = frame.Head;
+        if (!tail)
+            tail = frame.Tail;
+    }
+
+    auto &frame = m_Stack.emplace_back();
+    frame.Head = head;
+    frame.Tail = tail;
+
     m_DebugBuilder->PushFrame(loc);
 }
 

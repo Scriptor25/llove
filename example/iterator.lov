@@ -37,14 +37,14 @@ interface main(count: i32, args: i8[][]): i32 {
 
     let my_range = args..(args + count);
     foreach (arg : my_range) {
-        printf("%s\r\n", arg);
+        puts(arg);
     }
 
     let my_array = [0, 1, 2, 3, 4, 5]:i32;
     foreach (&x : my_array) {
         putchar(x + 0x30);
     }
-    puts("");
+    putchar('\n');
 
     let my_struct: iterable_struct_t = {
         begin: begin_str,

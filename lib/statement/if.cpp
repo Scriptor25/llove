@@ -15,9 +15,9 @@ void llove::IfStatement::Gen(Builder &builder) const try
     const auto parent = builder.GetParent();
     const auto then_block = builder.CreateBlock("then", parent);
     const auto else_block = builder.CreateBlock("else", parent);
-    const auto end_block = builder.CreateBlock("end");
+    const auto tail_block = builder.CreateBlock("tail");
 
-    auto use_end = false;
+    auto use_tail = false;
 
     builder.EmitLoc(m_Loc);
 
@@ -33,8 +33,8 @@ void llove::IfStatement::Gen(Builder &builder) const try
     if (builder.NoTerminator())
     {
         builder.EmitLoc(m_Loc);
-        builder.CreateBranch(end_block);
-        use_end = true;
+        builder.CreateBranch(tail_block);
+        use_tail = true;
     }
 
     builder.SetInsertPoint(else_block);
@@ -44,18 +44,18 @@ void llove::IfStatement::Gen(Builder &builder) const try
     if (builder.NoTerminator())
     {
         builder.EmitLoc(m_Loc);
-        builder.CreateBranch(end_block);
-        use_end = true;
+        builder.CreateBranch(tail_block);
+        use_tail = true;
     }
 
-    if (use_end)
+    if (use_tail)
     {
-        end_block->insertInto(parent);
-        builder.SetInsertPoint(end_block);
+        tail_block->insertInto(parent);
+        builder.SetInsertPoint(tail_block);
     }
     else
     {
-        end_block->deleteValue();
+        tail_block->deleteValue();
         builder.ClearInsertPoint();
     }
 }
