@@ -68,8 +68,9 @@ namespace llove
 
         ~stream_ref()
         {
-            if (m_Cleanup)
+            if (m_Cleanup && m_Stream)
                 delete m_Stream;
+            m_Stream = nullptr;
         }
 
         T &operator*() const
