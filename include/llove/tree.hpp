@@ -158,7 +158,7 @@ namespace llove
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
-            Context &context,
+            Context &parent,
             Builder &builder,
             const std::string &as,
             const std::map<std::string, std::string> &symbols) const override;

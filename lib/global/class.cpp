@@ -97,16 +97,16 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
 {
+    if (!m_Export)
+        return {};
+
     auto &name = m_Type->GetName();
 
-    if (!m_Export)
-    {
-        Assert(!symbols.contains(name), m_Loc, "symbol is not marked for export");
+    if (!(as.empty() && symbols.empty() || symbols.contains(name)))
         return {};
-    }
 
-    builder.GetContext().Set(m_Type->Mangle(), m_Type);
-    builder.GetContext().SetNamed(symbols.contains(name) ? symbols.at(name) : name, m_Type);
+    context.GetParent()->Set(m_Type->Mangle(), m_Type);
+    context.GetParent()->SetNamed(symbols.contains(name) ? symbols.at(name) : name, m_Type);
 
     if (m_Opaque)
         return {};

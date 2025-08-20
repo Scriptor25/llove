@@ -56,10 +56,7 @@ std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
     const std::map<std::string, std::string> &symbols) const
 {
     if (!m_Export)
-    {
-        Assert(!symbols.contains(m_Name), m_Loc, "symbol is not marked for export");
         return {};
-    }
 
     if (as.empty() && !symbols.empty() && !symbols.contains(m_Name))
         return {};

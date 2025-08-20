@@ -9,13 +9,20 @@ llove::Context::Context(Context *parent)
 {
 }
 
+llove::Context *llove::Context::GetParent() const
+{
+    return m_Parent;
+}
+
 llove::TypePtr llove::Context::GetNamed(const std::string &id) const
 {
     for (auto &template_ : std::ranges::reverse_view(m_TemplateTypes))
         if (template_.contains(id))
             return template_.at(id);
+
     if (m_Named.contains(id))
         return m_Named.at(id);
+
     return nullptr;
 }
 

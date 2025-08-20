@@ -58,14 +58,30 @@ catch (ref_exception<ErrorStack> &cause)
 }
 
 std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
-    Context &context,
+    Context &parent,
     Builder &builder,
     const std::string &as,
-    const std::map<std::string, std::string> &symbols) const
+    const std::map<std::string, std::string> &symbols) const try
 {
     // TODO: check recursion
-    Gen(builder);
+
+    std::ifstream stream(m_Filepath);
+    Assert(stream.is_open(), "failed to open import file '{}'", m_Filepath.string());
+
+    Context context(&parent);
+    Parser parser(context, stream, m_Filepath);
+
+    while (parser.Ok())
+    {
+        auto ptr = parser.Parse();
+        (void) ptr->GenImport(context, builder, m_As, m_Symbols);
+    }
+
     return {};
+}
+catch (ref_exception<ErrorStack> &cause)
+{
+    throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 std::ostream &llove::ImportGlobal::Print(std::ostream &stream) const

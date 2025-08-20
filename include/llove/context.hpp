@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <llove/class_template.hpp>
-#include <llove/error.hpp>
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
 #include <llove/type.hpp>
@@ -16,6 +15,8 @@ namespace llove
     public:
         Context() = default;
         explicit Context(Context *parent);
+
+        Context *GetParent() const;
 
         [[nodiscard]] TypePtr GetNamed(const std::string &id) const;
         void SetNamed(const std::string &id, TypePtr type);
@@ -30,8 +31,10 @@ namespace llove
 
             auto type = std::make_shared<T>(std::forward<Args>(args)...);
             auto hash = type->Mangle();
+
             if (m_Types.contains(hash))
                 return std::dynamic_pointer_cast<T>(m_Types.at(hash));
+
             m_Types.emplace(hash, type);
             return type;
         }

@@ -24,13 +24,10 @@ std::pair<std::string, llove::ValuePtr> llove::TypeGlobal::GenImport(
     context.SetNamed(m_Name, m_Type);
 
     if (!m_Export)
-    {
-        Assert(!symbols.contains(m_Name), m_Loc, "symbol is not marked for export");
         return {};
-    }
 
-    if ((as.empty() && symbols.empty()) || symbols.contains(m_Name))
-        builder.GetContext().SetNamed(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, m_Type);
+    if (as.empty() && symbols.empty() || symbols.contains(m_Name))
+        context.GetParent()->SetNamed(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, m_Type);
 
     return {};
 }
