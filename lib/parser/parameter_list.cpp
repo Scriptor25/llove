@@ -5,17 +5,17 @@ std::pair<bool, std::string> llove::Parser::ParseParameterList(
     std::vector<Parameter> &parameters,
     const std::string &end)
 {
-    auto vararg = false;
-    std::string vararg_name;
+    auto is_variadic = false;
+    std::string variadic_name;
 
     Expect(TokenType_Other, begin);
     while (!At(TokenType_Other, end))
     {
         if (SkipIf(TokenType_Operator, "..."))
         {
-            vararg = true;
+            is_variadic = true;
             if (At(TokenType_Symbol))
-                vararg_name = Skip().Value;
+                variadic_name = Skip().Value;
             break;
         }
 
@@ -26,5 +26,5 @@ std::pair<bool, std::string> llove::Parser::ParseParameterList(
     }
     Expect(TokenType_Other, end);
 
-    return { vararg, vararg_name };
+    return { is_variadic, variadic_name };
 }

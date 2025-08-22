@@ -1,5 +1,4 @@
 #include <llove/builder.hpp>
-#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -20,7 +19,7 @@ llove::LetStatement::LetStatement(
 
 void llove::LetStatement::Gen(Builder &builder) const try
 {
-    Assert(m_Info.Type != nullptr || m_Value != nullptr, "missing type or value");
+    Assert(m_Info.Type != nullptr || m_Value != nullptr, "missing at least one of type or value");
 
     auto value = m_Value ? m_Value->GenVal(builder, m_Info.Type) : nullptr;
     auto type = m_Info.Type ? m_Info.Type : value->GetType();
@@ -44,7 +43,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
     }
     else
     {
-        pointer = builder.CreateAlloca(type);
+        pointer = builder.CreateAlloca(type->GenIR(builder));
 
         if (type->IsClass())
         {
@@ -69,15 +68,14 @@ void llove::LetStatement::Gen(Builder &builder) const try
                 {
                     Assert(!value->IsReferenceable(), "illegal implicit copy");
                     value = builder.CreateCast(std::move(value), type, true);
-                    builder.CreateStore(pointer, value);
+                    builder.CreateStore(value->Load(builder), pointer);
                 }
             }
             else if (constructors.empty())
             {
-                Assert(arguments.empty(), "invalid arguments for implicit default constructor");
+                Assert(arguments.empty(), "illegal arguments for implicit default constructor");
 
-                const auto null = llvm::Constant::getNullValue(type->GenIR(builder));
-                builder.CreateStore(pointer, null);
+                builder.CreateStore(llvm::Constant::getNullValue(type->GenIR(builder)), pointer);
             }
             else
             {
@@ -104,7 +102,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
                         .Mutable = destructor->Mutable,
                         .Expose = destructor->Expose,
                         .Name = destructor->Name,
-                        .VarArg = { destructor->VarArg, {} },
+                        .Variadic = { destructor->Variadic, {} },
                         .Result = destructor->Result,
                     });
 
@@ -116,17 +114,15 @@ void llove::LetStatement::Gen(Builder &builder) const try
             if (!value)
             {
                 Assert(arguments.empty(), "cannot construct non-class value");
-                Assert(type != nullptr, "missing type");
 
-                const auto null = llvm::Constant::getNullValue(type->GenIR(builder));
-                value = Value::CreateR(type, null);
+                value = Value::CreateR(type, llvm::Constant::getNullValue(type->GenIR(builder)));
             }
-            else
+            else if (type)
             {
                 value = builder.CreateCast(std::move(value), type, true);
             }
 
-            builder.CreateStore(pointer, value);
+            builder.CreateStore(value->Load(builder), pointer);
         }
     }
 
@@ -143,15 +139,15 @@ llove::StatementPtr llove::LetStatement::Reflect(Context &context) const try
 {
     Field info;
     ExpressionPtr value;
-    std::vector<ExpressionPtr> arguments(m_Arguments.size());
+    std::vector<ExpressionPtr> arguments;
 
     m_Info.Reflect(context, info);
 
     if (m_Value)
         m_Value->Reflect(context, value);
 
-    for (unsigned i = 0; i < m_Arguments.size(); ++i)
-        m_Arguments.at(i)->Reflect(context, arguments.at(i));
+    for (auto &argument : m_Arguments)
+        argument->Reflect(context, arguments.emplace_back());
 
     return std::make_unique<LetStatement>(m_Loc, std::move(info), m_Name, std::move(value), std::move(arguments));
 }
@@ -163,20 +159,19 @@ catch (ref_exception<ErrorStack> &cause)
 std::ostream &llove::LetStatement::Print(std::ostream &stream) const
 {
     m_Info.Print(stream << "let ", true, m_Name);
+
     if (m_Value)
+        return stream << " = " << m_Value << ';';
+
+    if (m_Arguments.empty())
+        return stream << ';';
+
+    stream << '(';
+    for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
     {
-        stream << " = " << m_Value;
+        if (i != m_Arguments.begin())
+            stream << ", ";
+        stream << *i;
     }
-    else if (!m_Arguments.empty())
-    {
-        stream << '(';
-        for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
-        {
-            if (i != m_Arguments.begin())
-                stream << ", ";
-            stream << *i;
-        }
-        stream << ')';
-    }
-    return stream << ';';
+    return stream << ");";
 }

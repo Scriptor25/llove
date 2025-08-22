@@ -33,6 +33,8 @@ void llove::ImportGlobal::Gen(Builder &builder) const try
             values.emplace_back(std::move(name), std::move(value));
     }
 
+    stream.close();
+
     if (m_As.empty())
         return;
 
@@ -76,6 +78,8 @@ std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
         auto ptr = parser.Parse();
         (void) ptr->GenImport(context, builder, m_As, m_Symbols);
     }
+
+    stream.close();
 
     return {};
 }

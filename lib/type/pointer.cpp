@@ -35,11 +35,6 @@ bool llove::PointerType::IsPointer() const
     return true;
 }
 
-unsigned llove::PointerType::SizeBits(Builder &builder) const
-{
-    return 64; // TODO: target dependent
-}
-
 llvm::PointerType *llove::PointerType::GenIR(Builder &builder)
 {
     if (!m_IRType)

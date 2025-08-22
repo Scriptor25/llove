@@ -1,5 +1,4 @@
 #include <llove/builder.hpp>
-#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -20,8 +19,8 @@ void llove::Expression::Gen(Builder &builder) const try
     const auto class_type = As<ClassType>(type);
     if (const auto destructor = class_type->GetDestructor())
     {
-        const auto pointer = builder.CreateAlloca(class_type);
-        builder.CreateStore(pointer, value);
+        const auto pointer = builder.CreateAlloca(class_type->GenIR(builder));
+        builder.CreateStore(value->Load(builder), pointer);
 
         const auto function = builder.GenFunction(
             {
@@ -29,7 +28,7 @@ void llove::Expression::Gen(Builder &builder) const try
                 .Mutable = destructor->Mutable,
                 .Expose = destructor->Expose,
                 .Name = destructor->Name,
-                .VarArg = { destructor->VarArg, {} },
+                .Variadic = { destructor->Variadic, {} },
                 .Result = destructor->Result,
             });
 

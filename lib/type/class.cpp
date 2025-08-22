@@ -62,7 +62,7 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetFunction(
     const std::string &name,
     const bool mutable_,
     const std::vector<Field> &parameters,
-    const bool vararg,
+    const bool variadic,
     const Field &result) const
 {
     for (auto &function : m_Functions)
@@ -71,7 +71,7 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetFunction(
             continue;
         if (function.Mutable != mutable_)
             continue;
-        if (function.VarArg != vararg)
+        if (function.Variadic != variadic)
             continue;
         if (function.Parameters.size() != parameters.size())
             continue;
@@ -148,14 +148,6 @@ bool llove::ClassType::IsClass() const
     return true;
 }
 
-unsigned llove::ClassType::SizeBits(Builder &builder) const
-{
-    auto size = 0u;
-    for (auto &field : m_Fields)
-        size += field.Info.SizeBits(builder);
-    return size;
-}
-
 llvm::StructType *llove::ClassType::GenIR(Builder &builder)
 {
     if (!m_IRType)
@@ -183,8 +175,10 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
     if (m_DIType)
         return m_DIType;
 
+    m_DIType = builder.GetDebug().GetClassType(m_Name);
+
     if (m_Opaque)
-        return builder.GetDebug().GetClassType(m_Name);
+        return m_DIType;
 
     std::vector<llvm::Metadata *> fields;
 
@@ -197,7 +191,7 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
         offset += size;
     }
 
-    return builder.GetDebug().GetClassType(m_Name, fields, offset);
+    return m_DIType = builder.GetDebug().GetClassType(m_Name, fields, offset);
 }
 
 llove::TypePtr llove::ClassType::Reflect(Context &context) const

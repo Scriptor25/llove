@@ -198,7 +198,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         if (parameter_count > argument_count)
             continue;
-        if (!function.VarArg && parameter_count < argument_count)
+        if (!function.Variadic && parameter_count < argument_count)
             continue;
 
         if (parameter_count != argument_count)
@@ -240,7 +240,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
                 .Expose = candidate.Expose,
                 .Name = candidate.Name,
                 .Parameters = std::move(parameters),
-                .VarArg = { candidate.VarArg, {} },
+                .Variadic = { candidate.Variadic, {} },
                 .Result = candidate.Result,
             });
     }

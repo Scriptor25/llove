@@ -10,6 +10,11 @@ llvm::IntegerType *llove::Builder::GetIntegerType(const unsigned bits)
     return llvm::IntegerType::get(m_LLVMContext, bits);
 }
 
+llvm::IntegerType *llove::Builder::GetPointerSizeType()
+{
+    return GetDataLayout().getIntPtrType(m_LLVMContext);
+}
+
 llvm::Type *llove::Builder::GetFloatType(const unsigned bits)
 {
     switch (bits)
@@ -36,17 +41,17 @@ llvm::PointerType *llove::Builder::GetPointerType()
     return llvm::PointerType::getUnqual(m_LLVMContext);
 }
 
-llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> &fields, const bool packed)
-{
-    return llvm::StructType::get(m_LLVMContext, fields, packed);
-}
-
 llvm::FunctionType *llove::Builder::GetFunctionType(
     llvm::Type *result,
     const std::vector<llvm::Type *> &parameters)
 {
     (void) m_LLVMContext;
     return llvm::FunctionType::get(result, parameters, false);
+}
+
+llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> &fields, const bool packed)
+{
+    return llvm::StructType::get(m_LLVMContext, fields, packed);
 }
 
 llvm::StructType *llove::Builder::GetNamedStructType(const std::string &name)
@@ -58,6 +63,7 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(const std::string &
 {
     if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, name))
         return type;
+
     return llvm::StructType::create(m_LLVMContext, name);
 }
 
@@ -71,6 +77,7 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
         type->setBody(fields, packed);
         return type;
     }
+
     return llvm::StructType::create(m_LLVMContext, fields, name, packed);
 }
 

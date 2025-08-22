@@ -20,7 +20,7 @@ void llove::ForStatement::Gen(Builder &builder) const try
 {
     const auto parent = builder.GetParent();
     const auto head_block = builder.CreateBlock("head", parent);
-    const auto loop_block = builder.CreateBlock("loop", parent);
+    auto loop_block = builder.CreateBlock("loop", parent);
     const auto tail_block = builder.CreateBlock("tail");
 
     auto use_tail = false;
@@ -41,7 +41,7 @@ void llove::ForStatement::Gen(Builder &builder) const try
         condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
 
         builder.EmitLoc(m_Loc);
-        builder.CreateBranch(condition, loop_block, tail_block);
+        builder.CreateBranch(condition->Load(builder), loop_block, tail_block);
 
         use_tail = true;
     }
@@ -53,7 +53,8 @@ void llove::ForStatement::Gen(Builder &builder) const try
 
     builder.SetInsertPoint(loop_block);
     m_Content->Gen(builder);
-    if (builder.NoTerminator())
+    loop_block = builder.GetInsertBlock();
+    if (!loop_block->getTerminator())
     {
         if (m_Suffix)
             m_Suffix->Gen(builder);
@@ -70,7 +71,7 @@ void llove::ForStatement::Gen(Builder &builder) const try
     else
     {
         tail_block->deleteValue();
-        builder.ClearInsertPoint();
+        builder.ClearInsertionPoint();
     }
 
     builder.PopFrame();

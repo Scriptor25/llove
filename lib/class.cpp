@@ -20,7 +20,7 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (VarArg)
+    if (Variadic)
     {
         if (!Parameters.empty())
             stream << ", ";
@@ -69,7 +69,7 @@ void llove::ClassFunction::Reflect(Context &context, ClassFunction &function) co
     function.Implicit = Implicit;
     function.Mutable = Mutable;
     function.Name = Name;
-    function.VarArg = VarArg;
+    function.Variadic = Variadic;
 
     function.Parameters.resize(Parameters.size());
     for (unsigned i = 0; i < Parameters.size(); ++i)
@@ -98,13 +98,13 @@ std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (VarArg.first)
+    if (Variadic.first)
     {
         if (!Parameters.empty())
             stream << ", ";
         stream << "...";
-        if (!VarArg.second.empty())
-            stream << VarArg.second;
+        if (!Variadic.second.empty())
+            stream << Variadic.second;
     }
     stream << "): " << Result;
     if (!Content)

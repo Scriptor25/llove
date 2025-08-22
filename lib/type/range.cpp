@@ -22,11 +22,6 @@ bool llove::RangeType::IsRange() const
     return true;
 }
 
-unsigned llove::RangeType::SizeBits(Builder &builder) const
-{
-    return 2 * m_Entry->SizeBits(builder);
-}
-
 llvm::StructType *llove::RangeType::GenIR(Builder &builder)
 {
     if (m_IRType)

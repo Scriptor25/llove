@@ -73,11 +73,6 @@ debug-kind:
   type: value
   filter: [ "no-debug", "full-debug", "line-tables-only", "debug-directives-only" ]
   description: "specify what type of debug information is emitted."
-debug-output:
-  pattern: [ "--debug-output", "-do" ]
-  type: value
-  filter: string
-  description: "specify debug output destination. leave empty to not split the debug information from the output."
 
 option-binutils-version:
   pattern: "--option-binutils-version"

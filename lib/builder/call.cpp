@@ -37,6 +37,8 @@ llove::ValuePtr llove::Builder::CreateCall(
         }
         else
         {
+            const auto type = GetVariadicType();
+
             std::vector<llvm::Type *> elements;
             for (auto j = i; j < arguments.size(); ++j)
             {
@@ -44,7 +46,7 @@ llove::ValuePtr llove::Builder::CreateCall(
                 elements.emplace_back(argument_type->GenIR(*this));
             }
 
-            const auto count_type = GetIntegerType(32);
+            const auto count_type = type->getElementType(0);
             const auto count_value = llvm::ConstantInt::get(count_type, count, false);
 
             const auto elements_type = llvm::StructType::get(m_LLVMContext, elements, true);
@@ -57,7 +59,7 @@ llove::ValuePtr llove::Builder::CreateCall(
                 m_LLVMBuilder.CreateStore(value, pointer);
             }
 
-            llvm::Value *aggregate = llvm::Constant::getNullValue(GetVariadicType());
+            llvm::Value *aggregate = llvm::Constant::getNullValue(type);
             aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, count_value, 0);
             aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, elements_pointer, 1);
 

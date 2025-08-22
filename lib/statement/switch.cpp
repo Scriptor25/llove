@@ -44,7 +44,8 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
 
         builder.SetInsertPoint(case_block);
         content->Gen(builder);
-        if (builder.NoTerminator())
+        case_block = builder.GetInsertBlock();
+        if (!case_block->getTerminator())
         {
             builder.EmitLoc(m_Loc);
             builder.CreateBranch(tail_block);
@@ -53,7 +54,7 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
     }
 
     builder.SetInsertPoint(default_block);
-    if (builder.NoTerminator())
+    if (!default_block->getTerminator())
     {
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(tail_block);
@@ -61,7 +62,7 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
     }
 
     builder.SetInsertPoint(block);
-    builder.CreateSwitch(condition, default_block, cases);
+    builder.CreateSwitch(condition->Load(builder), default_block, cases);
 
     builder.PopFrame();
 
@@ -73,7 +74,7 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
     else
     {
         tail_block->deleteValue();
-        builder.ClearInsertPoint();
+        builder.ClearInsertionPoint();
     }
 }
 catch (ref_exception<ErrorStack> &cause)

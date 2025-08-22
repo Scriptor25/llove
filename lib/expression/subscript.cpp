@@ -21,9 +21,9 @@ llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypeP
     switch (value->GetType()->GetId())
     {
     case TypeId_Pointer:
-        return builder.CreatePointerElement(value, index);
+        return builder.GetPointerElement(value, index);
     case TypeId_Array:
-        return builder.CreateArrayElement(value, index);
+        return builder.GetArrayElement(value, index);
     default:
         Error("subscript on non-pointer and non-array value of type {}", value->GetType());
     }

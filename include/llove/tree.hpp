@@ -72,7 +72,7 @@ namespace llove
             bool mutable_,
             std::string name,
             std::vector<Parameter> parameters,
-            std::pair<bool, std::string> vararg,
+            std::pair<bool, std::string> variadic,
             Field result,
             StatementPtr content);
 
@@ -89,7 +89,7 @@ namespace llove
         bool m_Mutable;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
-        std::pair<bool, std::string> m_VarArg;
+        std::pair<bool, std::string> m_Variadic;
         Field m_Result;
         StatementPtr m_Content;
     };
@@ -124,7 +124,7 @@ namespace llove
             bool implicit,
             std::string name,
             std::vector<Parameter> parameters,
-            std::pair<bool, std::string> vararg,
+            std::pair<bool, std::string> variadic,
             Field result,
             StatementPtr content);
 
@@ -142,7 +142,7 @@ namespace llove
         bool m_Implicit;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
-        std::pair<bool, std::string> m_VarArg;
+        std::pair<bool, std::string> m_Variadic;
         Field m_Result;
         StatementPtr m_Content;
     };

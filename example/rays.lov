@@ -3,36 +3,96 @@ import { string_t, stream_t, format } from "format.lov";
 interface fopen(filename: string_t, mode: string_t): stream_t;
 interface fclose(stream: stream_t): i32;
 
-class Stream {
+class stream {
 
     expose mut create(filename: string_t, mode: string_t) {
-        self.stream = fopen(filename, mode);
+        self.file = fopen(filename, mode);
     }
 
     expose mut delete() {
-        if (self.stream)
-            fclose(self.stream);
-        self.stream = null;
+        if (self.file)
+            fclose(self.file);
+        self.file = null;
     }
 
     expose format(format: string_t, ...args) {
-        format(self.stream, format, args);
+        format(self.file, format, args);
     }
 
-    let mut stream: stream_t;
+    let mut file: stream_t;
+}
+
+class vec3 {
+
+    expose mut create() {
+        self.x = 0.0;
+        self.y = 0.0;
+        self.z = 0.0;
+    }
+
+    expose mut create(s: f64) {
+        self.x = s;
+        self.y = s;
+        self.z = s;
+    }
+
+    expose mut create(x: f64, y: f64, z: f64) {
+        self.x = x;
+        self.y = y;
+        self.z = z;
+    }
+
+    expose implicit mut create(&v: vec3) {
+        self.x = v.x;
+        self.y = v.y;
+        self.z = v.z;
+    }
+
+    expose mut create(v: vec3) {
+        self.x = v.x;
+        self.y = v.y;
+        self.z = v.z;
+    }
+
+    expose mut $(): vec3 {
+        let copy = self;
+        self.x = 0.0;
+        self.y = 0.0;
+        self.z = 0.0;
+        yield copy;
+    }
+
+    let mut x: f64;
+    let mut y: f64;
+    let mut z: f64;
+}
+
+class ray {
+
+    expose mut create() {
+        create[self.origin] vec3;
+        create[self.direction] vec3;
+    }
+
+    expose mut create(mut origin: vec3, mut direction: vec3) {
+        create[self.origin] vec3($origin);
+        create[self.direction] vec3($direction);
+    }
+
+    let mut origin: vec3;
+    let mut direction: vec3;
 }
 
 interface main(): i32 {
 
-    let stream: Stream("out.ppm", "wb");
+    let stream: stream("out.ppm", "wb");
 
     let width: u32 = 200;
     let height: u32 = 100;
 
     stream.format("P6 {u32} {u32} 255 ", width, height);
 
-    foreach (j : (0)..height)
-    foreach (i : (0)..width) {
+    foreach (j : (0)..height) foreach (i : (0)..width) {
         let r: f64 = i / (width  - 1.0);
         let g: f64 = j / (height - 1.0);
         let b: f64 = 0.2;

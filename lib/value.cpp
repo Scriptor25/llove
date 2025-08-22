@@ -96,21 +96,21 @@ bool llove::LValue::IsMutable() const
 
 llvm::Value *llove::LValue::Load(Builder &builder) const
 {
-    return builder.CreateLoad(m_Pointer, m_Type);
+    return builder.CreateLoad(m_Type->GenIR(builder), m_Pointer);
 }
 
 void llove::LValue::Store(Builder &builder, llvm::Value *value, const bool volatile_) const
 {
     Assert(m_Mutable, "store mutability violation");
     Assert(m_Type->GenIR(builder) == value->getType(), "store type mismatch");
-    builder.CreateStore(m_Pointer, value, volatile_);
+    builder.CreateStore(value, m_Pointer, volatile_);
 }
 
 void llove::LValue::Store(Builder &builder, const ValuePtr value, const bool volatile_) const
 {
     Assert(m_Mutable, "store mutability violation");
     Assert(m_Type == value->GetType(), "store type mismatch");
-    builder.CreateStore(m_Pointer, value, volatile_);
+    builder.CreateStore(value->Load(builder), m_Pointer, volatile_);
 }
 
 llove::ValuePtr llove::LValue::Reference(Builder &builder) const

@@ -27,7 +27,7 @@ namespace llove
 
         std::string Name;
         std::vector<Field> Parameters;
-        bool VarArg = false;
+        bool Variadic = false;
         Field Result;
     };
 
@@ -53,7 +53,7 @@ namespace llove
         bool Mutable = false;
         std::string Name;
         std::vector<Parameter> Parameters;
-        std::pair<bool, std::string> VarArg;
+        std::pair<bool, std::string> Variadic;
         Field Result;
         StatementPtr Content;
     };

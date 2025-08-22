@@ -51,29 +51,28 @@ static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr ope
 {
     const auto pre = suffix ? operand->Load(builder) : nullptr;
 
-    llove::ValuePtr result;
-    switch (operand->GetType()->GetId())
+    auto type = operand->GetType();
+
+    llvm::Value *result;
+    switch (type->GetId())
     {
     case llove::TypeId_Integer:
     {
-        const auto one_value = llvm::ConstantInt::get(operand->GetType()->GenIR(builder), 1, false);
-        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
-        result = builder.CreateAdd(operand, one);
+        const auto offset = llvm::ConstantInt::get(type->GenIR(builder), 1u, false);
+        result = builder.CreateAdd(operand->Load(builder), offset);
         break;
     }
     case llove::TypeId_Float:
     {
-        const auto one_value = llvm::ConstantFP::get(operand->GetType()->GenIR(builder), 1.0);
-        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
-        result = builder.CreateFAdd(operand, one);
+        const auto offset = llvm::ConstantFP::get(type->GenIR(builder), 1.0);
+        result = builder.CreateFAdd(operand->Load(builder), offset);
         break;
     }
     case llove::TypeId_Pointer:
     {
-        // TODO: target dependent
-        const auto one_value = llvm::ConstantInt::get(builder.GetIntegerType(64), 1, false);
-        const auto one = llove::Value::CreateR(builder.GetContext().GetInteger(false, 64), one_value);
-        result = builder.CreatePointerOffset(operand, one);
+        const auto base_type = llove::As<llove::PointerType>(type)->GetBase();
+        const auto offset = llvm::ConstantInt::get(builder.GetPointerSizeType(), 1u, false);
+        result = builder.CreateGEP(base_type->GenIR(builder), operand->Load(builder), offset);
         break;
     }
     default:
@@ -83,7 +82,7 @@ static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr ope
     operand->Store(builder, result);
 
     if (suffix)
-        return llove::Value::CreateR(operand->GetType(), pre);
+        return llove::Value::CreateR(std::move(type), pre);
 
     return operand;
 }
@@ -92,29 +91,28 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
 {
     const auto pre = suffix ? operand->Load(builder) : nullptr;
 
-    llove::ValuePtr result;
-    switch (operand->GetType()->GetId())
+    auto type = operand->GetType();
+
+    llvm::Value *result;
+    switch (type->GetId())
     {
     case llove::TypeId_Integer:
     {
-        const auto one_value = llvm::ConstantInt::get(operand->GetType()->GenIR(builder), 1, false);
-        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
-        result = builder.CreateSub(operand, one);
+        const auto offset = llvm::ConstantInt::get(type->GenIR(builder), 1, false);
+        result = builder.CreateSub(operand->Load(builder), offset);
         break;
     }
     case llove::TypeId_Float:
     {
-        const auto one_value = llvm::ConstantFP::get(operand->GetType()->GenIR(builder), 1.0);
-        const auto one = llove::Value::CreateR(operand->GetType(), one_value);
-        result = builder.CreateFSub(operand, one);
+        const auto offset = llvm::ConstantFP::get(type->GenIR(builder), 1.0);
+        result = builder.CreateFSub(operand->Load(builder), offset);
         break;
     }
     case llove::TypeId_Pointer:
     {
-        // TODO: target dependent
-        const auto one_value = llvm::ConstantInt::get(builder.GetIntegerType(64), -1, false);
-        const auto one = llove::Value::CreateR(builder.GetContext().GetInteger(true, 64), one_value);
-        result = builder.CreatePointerOffset(operand, one);
+        const auto base_type = llove::As<llove::PointerType>(type)->GetBase();
+        const auto offset = llvm::ConstantInt::get(builder.GetPointerSizeType(), -1, true);
+        result = builder.CreateGEP(base_type->GenIR(builder), operand->Load(builder), offset);
         break;
     }
     default:
@@ -124,7 +122,7 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
     operand->Store(builder, result);
 
     if (suffix)
-        return llove::Value::CreateR(operand->GetType(), pre);
+        return llove::Value::CreateR(std::move(type), pre);
 
     return operand;
 }
@@ -153,26 +151,51 @@ static llove::ValuePtr operator_add(llove::Builder &builder, llove::ValuePtr lef
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    if (left_type->GetId() == llove::TypeId_Pointer && right_type->GetId() == llove::TypeId_Integer)
-        return builder.CreatePointerOffset(left, right);
-    if (left_type->GetId() == llove::TypeId_Integer && right_type->GetId() == llove::TypeId_Pointer)
-        return builder.CreatePointerOffset(right, left);
+    if ((left_type->IsPointer() && right_type->IsInteger()) || (left_type->IsInteger() && right_type->IsPointer()))
+    {
+        llove::PointerType::Ptr type;
+        llove::ValuePtr base, offset;
+
+        if (left_type->IsPointer())
+        {
+            type = llove::As<llove::PointerType>(left_type);
+            base = std::move(left);
+            offset = std::move(right);
+        }
+        else
+        {
+            type = llove::As<llove::PointerType>(right_type);
+            base = std::move(right);
+            offset = std::move(left);
+        }
+
+        const auto base_type = type->GetBase();
+        const auto pointer = builder.CreateGEP(
+            base_type->GenIR(builder),
+            base->Load(builder),
+            offset->Load(builder));
+
+        return llove::Value::CreateR(std::move(type), pointer);
+    }
 
     const auto type = builder.GetContext().TypeUnion(left_type, right_type);
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateAdd(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFAdd(left, right);
-    default:
+        result = builder.CreateAdd(left->Load(builder), right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFAdd(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} + {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} + {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_sub(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -180,29 +203,44 @@ static llove::ValuePtr operator_sub(llove::Builder &builder, llove::ValuePtr lef
     const auto left_type = left->GetType();
     const auto right_type = right->GetType();
 
-    if (left_type->GetId() == llove::TypeId_Pointer && right_type->GetId() == llove::TypeId_Integer)
+    if (left_type->IsPointer() && right_type->IsInteger())
     {
         const auto offset = builder.CreateNeg(right);
-        return builder.CreatePointerOffset(left, offset);
+        const auto base_type = llove::As<llove::PointerType>(left_type)->GetBase();
+
+        const auto pointer = builder.CreateGEP(
+            base_type->GenIR(builder),
+            left->Load(builder),
+            offset->Load(builder));
+
+        return llove::Value::CreateR(left_type, pointer);
     }
-    if (left_type->GetId() == llove::TypeId_Pointer && right_type->GetId() == llove::TypeId_Pointer)
-        return builder.CreatePointerDifference(left, right);
+    if (left_type->IsPointer() && right_type->IsPointer())
+    {
+        const auto base_type = llove::As<llove::PointerType>(left_type)->GetBase();
+        const auto value = builder.CreatePtrDiff(base_type->GenIR(builder), left->Load(builder), right->Load(builder));
+        auto int_type = builder.GetContext().GetInteger(true, builder.GetDataLayout().getPointerSizeInBits());
+        return llove::Value::CreateR(std::move(int_type), value);
+    }
 
     const auto type = builder.GetContext().TypeUnion(left_type, right_type);
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateSub(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFSub(left, right);
-    default:
+        result = builder.CreateSub(left->Load(builder), right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFSub(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} - {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} - {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_mul(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -214,17 +252,20 @@ static llove::ValuePtr operator_mul(llove::Builder &builder, llove::ValuePtr lef
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateMul(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFMul(left, right);
-    default:
+        result = builder.CreateMul(left->Load(builder), right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFMul(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} * {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} * {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_div(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -236,17 +277,23 @@ static llove::ValuePtr operator_div(llove::Builder &builder, llove::ValuePtr lef
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *value;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateDiv(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFDiv(left, right);
-    default:
+        value = builder.CreateDiv(
+            llove::As<llove::IntegerType>(type)->IsSigned(),
+            left->Load(builder),
+            right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        value = builder.CreateFDiv(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} / {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} / {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, value);
 }
 
 static llove::ValuePtr operator_rem(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -258,17 +305,23 @@ static llove::ValuePtr operator_rem(llove::Builder &builder, llove::ValuePtr lef
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateRem(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFRem(left, right);
-    default:
+        result = builder.CreateRem(
+            llove::As<llove::IntegerType>(type)->IsSigned(),
+            left->Load(builder),
+            right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFRem(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} % {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} % {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_and(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -280,15 +333,17 @@ static llove::ValuePtr operator_and(llove::Builder &builder, llove::ValuePtr lef
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateAnd(left, right);
-    default:
+        result = builder.CreateAnd(left->Load(builder), right->Load(builder));
         break;
+    default:
+        llove::Error("operator '{} & {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} & {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_or(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -300,15 +355,17 @@ static llove::ValuePtr operator_or(llove::Builder &builder, llove::ValuePtr left
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateOr(left, right);
-    default:
+        result = builder.CreateOr(left->Load(builder), right->Load(builder));
         break;
+    default:
+        llove::Error("operator '{} | {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} | {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_xor(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -320,15 +377,17 @@ static llove::ValuePtr operator_xor(llove::Builder &builder, llove::ValuePtr lef
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateXor(left, right);
-    default:
+        result = builder.CreateXor(left->Load(builder), right->Load(builder));
         break;
+    default:
+        llove::Error("operator '{} ^ {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} ^ {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_eq(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)

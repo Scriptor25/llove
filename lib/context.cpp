@@ -341,7 +341,7 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const 
             function.Mutable,
             function.Name,
             parameters,
-            function.VarArg.first,
+            function.Variadic.first,
             function.Result);
     }
     class_type->SetFunctions(std::move(functions));
@@ -366,7 +366,7 @@ void llove::Context::InstantiateReflections(Builder &builder)
                     .Expose = function.Expose,
                     .Name = function.Name,
                     .Parameters = function.Parameters,
-                    .VarArg = function.VarArg,
+                    .Variadic = function.Variadic,
                     .Result = function.Result,
                     .Content = nullptr,
                 }
@@ -383,7 +383,7 @@ void llove::Context::InstantiateReflections(Builder &builder)
                     .Expose = function.Expose,
                     .Name = function.Name,
                     .Parameters = function.Parameters,
-                    .VarArg = function.VarArg,
+                    .Variadic = function.Variadic,
                     .Result = function.Result,
                     .Content = function.Content.get(),
                 }

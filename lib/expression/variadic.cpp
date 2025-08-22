@@ -19,11 +19,11 @@ llove::ValuePtr llove::VariadicExpression::GenVal(Builder &builder, TypePtr expe
     Assert(list_type->IsVariadic(), "list operand must be variadic");
 
     const auto list_pointer = list->GetPointer();
-    const auto count_pointer = builder.CreateStructGEP(list_type, list_pointer, 0);
-    const auto data_pointer = builder.CreateStructGEP(list_type, list_pointer, 1);
+    const auto count_pointer = builder.CreateStructGEP(list_type->GenIR(builder), list_pointer, 0);
+    const auto data_pointer = builder.CreateStructGEP(list_type->GenIR(builder), list_pointer, 1);
 
-    const auto count = builder.CreateLoad(count_pointer, builder.GetIntegerType(32));
-    const auto data = builder.CreateLoad(data_pointer, builder.GetPointerType());
+    const auto count = builder.CreateLoad(builder.GetIntegerType(32), count_pointer);
+    const auto data = builder.CreateLoad(builder.GetPointerType(), data_pointer);
 
     const auto get_block = builder.CreateBlock("get", builder.GetParent());
     const auto empty_block = builder.CreateBlock("empty", builder.GetParent());
@@ -33,7 +33,7 @@ llove::ValuePtr llove::VariadicExpression::GenVal(Builder &builder, TypePtr expe
     builder.CreateBranch(condition, get_block, empty_block);
 
     builder.SetInsertPoint(get_block);
-    const auto get_value = builder.CreateLoad(data, type);
+    const auto get_value = builder.CreateLoad(type, data);
     llvm::Value *aggregate = llvm::Constant::getNullValue(list_type->GenIR(builder));
     aggregate = builder.CreateInsertValue(
         aggregate,
@@ -43,7 +43,7 @@ llove::ValuePtr llove::VariadicExpression::GenVal(Builder &builder, TypePtr expe
         aggregate,
         builder.CreateGEP(type, data, 1),
         1);
-    builder.CreateStore(list_pointer, aggregate);
+    builder.CreateStore(aggregate, list_pointer);
     builder.CreateBranch(end_block);
 
     builder.SetInsertPoint(empty_block);

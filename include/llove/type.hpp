@@ -52,7 +52,7 @@ namespace llove
         [[nodiscard]] virtual bool IsClass() const;
         [[nodiscard]] virtual bool IsFunction() const;
 
-        [[nodiscard]] virtual unsigned SizeBits(Builder &builder) const = 0;
+        virtual unsigned SizeBits(Builder &builder);
         virtual llvm::Type *GenIR(Builder &builder) = 0;
         virtual llvm::DIType *GenDI(Builder &builder) = 0;
         virtual TypePtr Reflect(Context &context) const = 0;
@@ -90,7 +90,7 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsTemplate() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
+        unsigned SizeBits(Builder &builder) override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -113,7 +113,7 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsTemplate() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
+        unsigned SizeBits(Builder &builder) override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -137,7 +137,7 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsVoid() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
+        unsigned SizeBits(Builder &builder) override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -160,7 +160,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsVariadic() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -186,7 +185,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsInteger() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::IntegerType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -215,7 +213,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsFloat() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::Type *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -245,7 +242,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsPointer() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::PointerType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -268,14 +264,13 @@ namespace llove
         using Ptr = std::shared_ptr<ArrayType>;
         static constexpr auto ID = TypeId_Array;
 
-        explicit ArrayType(TypePtr base, unsigned size);
+        explicit ArrayType(TypePtr base, unsigned count);
 
         [[nodiscard]] TypePtr GetBase() const;
-        [[nodiscard]] unsigned GetSize() const;
+        [[nodiscard]] unsigned GetCount() const;
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsArray() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::ArrayType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -289,7 +284,7 @@ namespace llove
 
     private:
         TypePtr m_Base;
-        unsigned m_Size;
+        unsigned m_Count;
     };
 
     class StructType final : public Type
@@ -307,7 +302,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsStruct() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -335,7 +329,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsRange() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -375,7 +368,7 @@ namespace llove
             const std::string &name,
             bool mutable_,
             const std::vector<Field> &parameters,
-            bool vararg,
+            bool variadic,
             const Field &result) const;
 
         [[nodiscard]] bool HasFunction(const std::string &name) const;
@@ -388,7 +381,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsClass() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::StructType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         TypePtr Reflect(Context &context) const override;
@@ -423,7 +415,6 @@ namespace llove
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsFunction() const override;
-        [[nodiscard]] unsigned SizeBits(Builder &builder) const override;
         llvm::PointerType *GenIR(Builder &builder) override;
         llvm::DIType *GenDI(Builder &builder) override;
         llvm::FunctionType *GenFunction(Builder &builder);
@@ -431,7 +422,7 @@ namespace llove
         TypePtr Reflect(Context &context) const override;
 
         /**
-         * @return x<vararg?v><self?s><length>_<parameters...><result><self>
+         * @return x<variadic?v><self?s><length>_<parameters...><result><self>
          */
         [[nodiscard]] std::string Mangle() const override;
 
@@ -453,7 +444,7 @@ namespace llove
     {
         Assert(type != nullptr, "type must not be null");
         auto ptr = std::dynamic_pointer_cast<T>(type);
-        Assert(ptr != nullptr, "illegal cast from id {} to id {} (type {}) ", type->GetId(), T::ID, type);
+        Assert(ptr != nullptr, "illegal cast from {} to {} (type {}) ", type->GetId(), T::ID, type);
         return ptr;
     }
 }

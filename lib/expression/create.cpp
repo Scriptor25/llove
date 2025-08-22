@@ -1,5 +1,4 @@
 #include <llove/builder.hpp>
-#include <llove/context.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
@@ -58,7 +57,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     }
     else
     {
-        pointer = builder.CreateAlloca(m_Type);
+        pointer = builder.CreateAlloca(m_Type->GenIR(builder));
     }
 
     builder.EmitLoc(m_Loc);
@@ -68,7 +67,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     if (destination)
         return destination;
 
-    const auto value = builder.CreateLoad(pointer, m_Type);
+    const auto value = builder.CreateLoad(m_Type->GenIR(builder), pointer);
     return Value::CreateR(m_Type, value);
 }
 catch (ref_exception<ErrorStack> &cause)

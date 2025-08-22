@@ -47,7 +47,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
             function.Mutable,
             function.Name,
             parameters,
-            function.VarArg.first,
+            function.Variadic.first,
             function.Result);
     }
     m_Type->SetFunctions(std::move(class_functions));
@@ -63,7 +63,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
                 .Expose = function.Expose,
                 .Name = function.Name,
                 .Parameters = function.Parameters,
-                .VarArg = function.VarArg,
+                .Variadic = function.Variadic,
                 .Result = function.Result,
                 .Content = nullptr,
             }
@@ -80,7 +80,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
                 .Expose = function.Expose,
                 .Name = function.Name,
                 .Parameters = function.Parameters,
-                .VarArg = function.VarArg,
+                .Variadic = function.Variadic,
                 .Result = function.Result,
                 .Content = function.Content.get(),
             }
@@ -128,7 +128,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
             function.Mutable,
             function.Name,
             parameters,
-            function.VarArg.first,
+            function.Variadic.first,
             function.Result);
     }
     m_Type->SetFunctions(std::move(class_functions));
@@ -144,7 +144,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
                 .Expose = function.Expose,
                 .Name = function.Name,
                 .Parameters = function.Parameters,
-                .VarArg = function.VarArg,
+                .Variadic = function.Variadic,
                 .Result = function.Result,
                 .Content = nullptr,
             }

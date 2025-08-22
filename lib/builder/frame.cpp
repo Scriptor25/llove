@@ -8,7 +8,7 @@ llvm::Function *llove::Builder::GetParent() const
     return m_Parent;
 }
 
-const llove::Field &llove::Builder::GetResult() const
+llove::Field llove::Builder::GetResult() const
 {
     return m_Result;
 }

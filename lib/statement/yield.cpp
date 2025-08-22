@@ -20,7 +20,7 @@ void llove::YieldStatement::Gen(Builder &builder) const try
 
     builder.EmitLoc(m_Loc);
 
-    auto &result = builder.GetResult();
+    const auto result = builder.GetResult();
     const auto value = m_Value->GenVal(builder, result.Type);
     const auto result_value = result.GenCast(builder, value, true);
 

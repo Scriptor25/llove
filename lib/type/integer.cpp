@@ -28,19 +28,11 @@ bool llove::IntegerType::IsInteger() const
     return true;
 }
 
-unsigned llove::IntegerType::SizeBits(Builder &builder) const
-{
-    return m_Bits;
-}
-
 llvm::IntegerType *llove::IntegerType::GenIR(Builder &builder)
 {
-    if (m_IRType)
-        return llvm::dyn_cast<llvm::IntegerType>(m_IRType);
-
-    const auto type = builder.GetIntegerType(m_Bits);
-    m_IRType = type;
-    return type;
+    if (!m_IRType)
+        m_IRType = builder.GetIntegerType(m_Bits);
+    return llvm::dyn_cast<llvm::IntegerType>(m_IRType);
 }
 
 llvm::DIType *llove::IntegerType::GenDI(Builder &builder)

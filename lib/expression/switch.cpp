@@ -35,7 +35,7 @@ llove::ValuePtr llove::SwitchExpression::GenVal(Builder &builder, TypePtr expect
             continue;
 
         builder.SetInsertPoint(default_block);
-        const auto value = content->GenVal(builder, expect);
+        const auto value = content->GenVal(builder, std::move(expect));
         nodes.emplace(builder.GetInsertBlock(), value->Load(builder));
         builder.CreateBranch(tail_block);
 
@@ -68,7 +68,7 @@ llove::ValuePtr llove::SwitchExpression::GenVal(Builder &builder, TypePtr expect
     }
 
     builder.SetInsertPoint(block);
-    builder.CreateSwitch(condition, default_block, cases);
+    builder.CreateSwitch(condition->Load(builder), default_block, cases);
 
     builder.PopFrame();
 

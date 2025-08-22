@@ -22,11 +22,6 @@ bool llove::FloatType::IsFloat() const
     return true;
 }
 
-unsigned llove::FloatType::SizeBits(Builder &builder) const
-{
-    return m_Bits;
-}
-
 llvm::Type *llove::FloatType::GenIR(Builder &builder)
 {
     if (!m_IRType)

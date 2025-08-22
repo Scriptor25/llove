@@ -1,5 +1,4 @@
 #include <llove/builder.hpp>
-#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -57,12 +56,11 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
     if (value->IsReferenceable())
     {
-        auto pointer = builder.CreateStructGEP(type, value->GetPointer(), index);
+        auto pointer = builder.CreateStructGEP(type->GenIR(builder), value->GetPointer(), index);
 
         if (element->Reference)
         {
-            const auto pointer_type = builder.GetContext().GetPointer(element->Type, element->Mutable);
-            pointer = builder.CreateLoad(pointer, pointer_type);
+            pointer = builder.CreateLoad(builder.GetPointerType(), pointer);
             return Value::CreateL(element->Type, pointer, element->Mutable);
         }
 
@@ -140,22 +138,19 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
     llvm::Value *element_value;
     if (value->IsReferenceable())
     {
-        auto pointer = builder.CreateStructGEP(type, value->GetPointer(), index);
+        auto pointer = builder.CreateStructGEP(type->GenIR(builder), value->GetPointer(), index);
 
         if (element->Reference)
-        {
-            const auto pointer_type = builder.GetContext().GetPointer(element->Type, element->Mutable);
-            pointer = builder.CreateLoad(pointer, pointer_type);
-        }
+            pointer = builder.CreateLoad(builder.GetPointerType(), pointer);
 
-        element_value = builder.CreateLoad(pointer, element_type);
+        element_value = builder.CreateLoad(element_type->GenIR(builder), pointer);
     }
     else
     {
         element_value = builder.CreateExtractValue(value->Load(builder), index);
 
         if (element->Reference)
-            element_value = builder.CreateLoad(element_value, element->Type);
+            element_value = builder.CreateLoad(element_type->GenIR(builder), element_value);
     }
 
     FunctionReference reference

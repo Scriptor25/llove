@@ -1,6 +1,7 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
+#include <llove/value.hpp>
 
 llove::IfStatement::IfStatement(Location loc, ExpressionPtr condition, StatementPtr then, StatementPtr else_)
     : Statement(std::move(loc)),
@@ -13,8 +14,8 @@ llove::IfStatement::IfStatement(Location loc, ExpressionPtr condition, Statement
 void llove::IfStatement::Gen(Builder &builder) const try
 {
     const auto parent = builder.GetParent();
-    const auto then_block = builder.CreateBlock("then", parent);
-    const auto else_block = builder.CreateBlock("else", parent);
+    auto then_block = builder.CreateBlock("then", parent);
+    auto else_block = builder.CreateBlock("else", parent);
     const auto tail_block = builder.CreateBlock("tail");
 
     auto use_tail = false;
@@ -25,12 +26,12 @@ void llove::IfStatement::Gen(Builder &builder) const try
     condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
 
     builder.EmitLoc(m_Loc);
-    builder.CreateBranch(condition, then_block, else_block);
+    builder.CreateBranch(condition->Load(builder), then_block, else_block);
 
     builder.SetInsertPoint(then_block);
     m_Then->Gen(builder);
-
-    if (builder.NoTerminator())
+    then_block = builder.GetInsertBlock();
+    if (!then_block->getTerminator())
     {
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(tail_block);
@@ -40,8 +41,8 @@ void llove::IfStatement::Gen(Builder &builder) const try
     builder.SetInsertPoint(else_block);
     if (m_Else)
         m_Else->Gen(builder);
-
-    if (builder.NoTerminator())
+    else_block = builder.GetInsertBlock();
+    if (!else_block->getTerminator())
     {
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(tail_block);
@@ -56,7 +57,7 @@ void llove::IfStatement::Gen(Builder &builder) const try
     else
     {
         tail_block->deleteValue();
-        builder.ClearInsertPoint();
+        builder.ClearInsertionPoint();
     }
 }
 catch (ref_exception<ErrorStack> &cause)

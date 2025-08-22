@@ -14,7 +14,6 @@ namespace llove
             bool enable,
             llvm::Module &module,
             const std::filesystem::path &source_path,
-            const std::filesystem::path &debug_path,
             bool optimized,
             bool profiling,
             const std::string &command_line,
@@ -27,6 +26,7 @@ namespace llove
         [[nodiscard]] llvm::DIType *GetPointerType(llvm::DIType *base) const;
         [[nodiscard]] llvm::DIType *GetArrayType(llvm::DIType *base, unsigned size) const;
         [[nodiscard]] llvm::DIType *GetStructType(const std::vector<llvm::Metadata *> &fields, unsigned size) const;
+        [[nodiscard]] llvm::DIType *GetVariadicType() const;
         [[nodiscard]] llvm::DIType *GetFieldType(
             const std::string &name,
             llvm::DIType *type,

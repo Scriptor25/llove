@@ -18,7 +18,7 @@ bool llove::TemplateType::IsTemplate() const
     return true;
 }
 
-unsigned llove::TemplateType::SizeBits(Builder &builder) const
+unsigned llove::TemplateType::SizeBits(Builder &builder)
 {
     Error("template");
 }
@@ -64,7 +64,7 @@ bool llove::ClassTemplateType::IsTemplate() const
     return true;
 }
 
-unsigned llove::ClassTemplateType::SizeBits(Builder &builder) const
+unsigned llove::ClassTemplateType::SizeBits(Builder &builder)
 {
     Error("template");
 }

@@ -11,7 +11,7 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
     auto name = At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
 
     std::vector<Parameter> parameters;
-    auto vararg = ParseParameterList("(", parameters, ")");
+    auto variadic = ParseParameterList("(", parameters, ")");
 
     Field result;
     if (SkipIf(TokenType_Other, ":"))
@@ -27,7 +27,7 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
         mutable_,
         std::move(name),
         std::move(parameters),
-        vararg,
+        variadic,
         std::move(result),
         std::move(content));
 }

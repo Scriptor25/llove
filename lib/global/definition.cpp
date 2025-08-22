@@ -10,7 +10,7 @@ llove::DefinitionGlobal::DefinitionGlobal(
     const bool implicit,
     std::string name,
     std::vector<Parameter> parameters,
-    std::pair<bool, std::string> vararg,
+    std::pair<bool, std::string> variadic,
     Field result,
     StatementPtr content)
     : Global(std::move(loc)),
@@ -19,7 +19,7 @@ llove::DefinitionGlobal::DefinitionGlobal(
       m_Implicit(implicit),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
-      m_VarArg(std::move(vararg)),
+      m_Variadic(std::move(variadic)),
       m_Result(std::move(result)),
       m_Content(std::move(content))
 {
@@ -38,7 +38,7 @@ void llove::DefinitionGlobal::Gen(Builder &builder) const try
             .Expose = false,
             .Name = m_Name,
             .Parameters = m_Parameters,
-            .VarArg = m_VarArg,
+            .Variadic = m_Variadic,
             .Result = m_Result,
             .Content = m_Content.get(),
         }
@@ -76,7 +76,7 @@ std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
             .Expose = false,
             .Name = m_Name,
             .Parameters = m_Parameters,
-            .VarArg = m_VarArg,
+            .Variadic = m_Variadic,
             .Result = m_Result,
             .Content = nullptr,
         }
@@ -111,13 +111,13 @@ std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (m_VarArg.first)
+    if (m_Variadic.first)
     {
         if (!m_Parameters.empty())
             stream << ", ";
         stream << "...";
-        if (!m_VarArg.second.empty())
-            stream << m_VarArg.second;
+        if (!m_Variadic.second.empty())
+            stream << m_Variadic.second;
     }
 
     stream << "): " << m_Result;

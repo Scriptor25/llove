@@ -3,59 +3,23 @@
 #include <llove/stream.hpp>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
-#include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
-#include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
-#include <llvm/TargetParser/Host.h>
 
-void llove::Builder::Seal(const SealInfo &info)
+void llove::Builder::Seal(
+    bool print,
+    std::ostream &print_stream,
+    std::ostream &output_stream,
+    llvm::CodeGenFileType code_gen_type,
+    llvm::OptimizationLevel optimization_level)
 {
     m_DebugBuilder->EndModule();
 
     Assert(!llvm::verifyModule(m_LLVMModule, &llvm::errs()), "module has errors");
 
-    raw_pwrite_stream_adapter print_stream(*info.PrintStream);
-    raw_pwrite_stream_adapter output_stream(*info.OutputStream);
-
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllAsmPrinters();
-
-    auto target_triple = info.Triple.empty() ? llvm::sys::getDefaultTargetTriple() : info.Triple;
-    auto cpu = info.CPU.empty() ? "generic" : info.CPU;
-
-    std::string features;
-    for (auto i = info.Features.begin(); i != info.Features.end(); ++i)
-    {
-        if (i != info.Features.begin())
-            features += ',';
-        features += *i;
-    }
-
-    std::string target_error;
-    const auto target = llvm::TargetRegistry::lookupTarget(target_triple, target_error);
-    Assert(target != nullptr, "failed to get target for triple '{}': {}", target_triple, target_error);
-
-    const auto target_machine = std::unique_ptr<llvm::TargetMachine>(
-        target->createTargetMachine(
-            target_triple,
-            cpu,
-            features,
-            info.Options,
-            info.Relocation));
-    Assert(
-        target_machine != nullptr,
-        "failed to create target machine for triple '{}', cpu '{}' and features '{}'",
-        target_triple,
-        cpu,
-        features);
-
-    m_LLVMModule.setDataLayout(target_machine->createDataLayout());
-    m_LLVMModule.setTargetTriple(target_triple);
+    raw_pwrite_stream_adapter raw_print_stream(print_stream);
+    raw_pwrite_stream_adapter raw_output_stream(output_stream);
 
     llvm::LoopAnalysisManager lam;
     llvm::FunctionAnalysisManager fam;
@@ -66,26 +30,26 @@ void llove::Builder::Seal(const SealInfo &info)
 
     si.registerCallbacks(pic, &mam);
 
-    llvm::PassBuilder pb(target_machine.get());
+    llvm::PassBuilder pb(m_TargetMachine);
     pb.registerLoopAnalyses(lam);
     pb.registerFunctionAnalyses(fam);
     pb.registerCGSCCAnalyses(cgam);
     pb.registerModuleAnalyses(mam);
     pb.crossRegisterProxies(lam, fam, cgam, mam);
 
-    auto mpm = pb.buildPerModuleDefaultPipeline(info.Level);
+    auto mpm = pb.buildPerModuleDefaultPipeline(optimization_level);
     mpm.run(m_LLVMModule, mam);
 
-    if (info.Print)
-        m_LLVMModule.print(print_stream, nullptr);
+    if (print)
+        m_LLVMModule.print(raw_print_stream, nullptr);
 
     // TODO: pls tell llvm devs to update their codegen system!!!
     llvm::legacy::PassManager codegen_pass;
-    const auto emit_error = target_machine->addPassesToEmitFile(
+    const auto emit_error = m_TargetMachine->addPassesToEmitFile(
         codegen_pass,
-        output_stream,
+        raw_output_stream,
         nullptr,
-        info.Format);
+        code_gen_type);
     Assert(!emit_error, "target machine cannot emit specified codegen type");
 
     codegen_pass.run(m_LLVMModule);

@@ -22,7 +22,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool export_)
         name = Expect(TokenType_Symbol).Value;
 
     std::vector<Parameter> parameters;
-    auto vararg = ParseParameterList("(", parameters, ")");
+    auto variadic = ParseParameterList("(", parameters, ")");
 
     Field result;
     if (SkipIf(TokenType_Other, ":"))
@@ -41,7 +41,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool export_)
         implicit,
         std::move(name),
         std::move(parameters),
-        vararg,
+        variadic,
         std::move(result),
         std::move(content));
 }

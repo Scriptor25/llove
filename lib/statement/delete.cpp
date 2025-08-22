@@ -24,8 +24,8 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
     {
         if (!value->IsReferenceable())
         {
-            const auto pointer = builder.CreateAlloca(type);
-            builder.CreateStore(pointer, value);
+            const auto pointer = builder.CreateAlloca(type->GenIR(builder));
+            builder.CreateStore(value->Load(builder), pointer);
             value = Value::CreateL(type, pointer, false);
         }
 

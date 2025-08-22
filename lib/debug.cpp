@@ -8,7 +8,6 @@ llove::DebugBuilder::DebugBuilder(
     const bool enable,
     llvm::Module &module,
     const std::filesystem::path &source_path,
-    const std::filesystem::path &debug_path,
     const bool optimized,
     const bool profiling,
     const std::string &command_line,
@@ -27,7 +26,7 @@ llove::DebugBuilder::DebugBuilder(
         optimized,
         command_line,
         0u,
-        debug_path.string(),
+        {},
         emission,
         0,
         true,
@@ -69,14 +68,14 @@ llvm::DIType *llove::DebugBuilder::GetPointerType() const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createPointerType(GetVoidType(), 64);
+    return m_DIBuilder->createPointerType(GetVoidType(), 64); // TODO: target dependent
 }
 
 llvm::DIType *llove::DebugBuilder::GetPointerType(llvm::DIType *base) const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createPointerType(base, 64);
+    return m_DIBuilder->createPointerType(base, 64); // TODO: target dependent
 }
 
 llvm::DIType *llove::DebugBuilder::GetArrayType(llvm::DIType *base, const unsigned size) const
@@ -106,6 +105,16 @@ llvm::DIType *llove::DebugBuilder::GetStructType(const std::vector<llvm::Metadat
         llvm::DINode::FlagZero,
         nullptr,
         m_DIBuilder->getOrCreateArray(fields));
+}
+
+llvm::DIType *llove::DebugBuilder::GetVariadicType() const
+{
+    return GetStructType(
+        {
+            GetFieldType("count", GetIntegerType(false, 32), 32, 0),
+            GetFieldType("data", GetPointerType(), 64, 32),
+        },
+        32 + 64); // TODO: target dependent
 }
 
 llvm::DIType *llove::DebugBuilder::GetFieldType(
@@ -202,20 +211,14 @@ void llove::DebugBuilder::CreateParameter(
         value->GetType()->GenDI(builder),
         true);
 
+    const auto expression = m_DIBuilder->createExpression();
+    const auto location = llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope());
+    const auto block = builder.GetInsertBlock();
+
     if (value->IsReferenceable())
-        m_DIBuilder->insertDeclare(
-            value->GetPointer(),
-            local_variable,
-            m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
-            builder.GetInsertBlock());
+        m_DIBuilder->insertDeclare(value->GetPointer(), local_variable, expression, location, block);
     else
-        m_DIBuilder->insertDbgValueIntrinsic(
-            value->Load(builder),
-            local_variable,
-            m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
-            builder.GetInsertBlock());
+        m_DIBuilder->insertDbgValueIntrinsic(value->Load(builder), local_variable, expression, location, block);
 }
 
 void llove::DebugBuilder::CreateVariable(Builder &builder, const std::string &name, const ValuePtr &value) const
@@ -231,20 +234,14 @@ void llove::DebugBuilder::CreateVariable(Builder &builder, const std::string &na
         value->GetType()->GenDI(builder),
         true);
 
+    const auto expression = m_DIBuilder->createExpression();
+    const auto location = llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope());
+    const auto block = builder.GetInsertBlock();
+
     if (value->IsReferenceable())
-        m_DIBuilder->insertDeclare(
-            value->GetPointer(),
-            local_variable,
-            m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
-            builder.GetInsertBlock());
+        m_DIBuilder->insertDeclare(value->GetPointer(), local_variable, expression, location, block);
     else
-        m_DIBuilder->insertDbgValueIntrinsic(
-            value->Load(builder),
-            local_variable,
-            m_DIBuilder->createExpression(),
-            llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope()),
-            builder.GetInsertBlock());
+        m_DIBuilder->insertDbgValueIntrinsic(value->Load(builder), local_variable, expression, location, block);
 }
 
 void llove::DebugBuilder::EmitLoc(Builder &builder) const

@@ -49,11 +49,6 @@ bool llove::FunctionType::IsFunction() const
     return true;
 }
 
-unsigned llove::FunctionType::SizeBits(Builder &builder) const
-{
-    return 64; // TODO: target dependent
-}
-
 llvm::PointerType *llove::FunctionType::GenIR(Builder &builder)
 {
     if (m_IRType)
@@ -108,6 +103,8 @@ llvm::DISubroutineType *llove::FunctionType::GenDIFunction(Builder &builder)
     std::vector<llvm::Metadata *> parameters;
     for (auto &parameter : m_Parameters)
         parameters.emplace_back(parameter.GenDIType(builder));
+    if (m_Variadic)
+        parameters.emplace_back(builder.GetDebug().GetPointerType(builder.GetDebug().GetVariadicType()));
 
     const auto self = m_Self ? m_Self->GenDIType(builder) : nullptr;
     const auto result = m_Result.GenDIType(builder);

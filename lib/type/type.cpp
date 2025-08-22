@@ -1,3 +1,4 @@
+#include <llove/builder.hpp>
 #include <llove/type.hpp>
 
 bool llove::Type::IsTemplate() const
@@ -58,4 +59,9 @@ bool llove::Type::IsClass() const
 bool llove::Type::IsFunction() const
 {
     return false;
+}
+
+unsigned llove::Type::SizeBits(Builder &builder)
+{
+    return builder.GetDataLayout().getTypeSizeInBits(GenIR(builder));
 }

@@ -12,11 +12,6 @@ bool llove::VariadicType::IsVariadic() const
     return true;
 }
 
-unsigned llove::VariadicType::SizeBits(Builder &builder) const
-{
-    return 32 + 64; // TODO: target dependent
-}
-
 llvm::Type *llove::VariadicType::GenIR(Builder &builder)
 {
     if (!m_IRType)

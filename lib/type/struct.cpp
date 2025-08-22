@@ -46,14 +46,6 @@ bool llove::StructType::IsStruct() const
     return true;
 }
 
-unsigned llove::StructType::SizeBits(Builder &builder) const
-{
-    auto size = 0u;
-    for (auto &field : m_Fields)
-        size += field.Info.SizeBits(builder);
-    return size;
-}
-
 llvm::StructType *llove::StructType::GenIR(Builder &builder)
 {
     if (!m_IRType)
