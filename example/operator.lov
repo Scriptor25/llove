@@ -39,9 +39,9 @@ interface main(count: i32, args: i8[][]): i32 {
     let v: vec3 = { x: 3.0, y: 2.0, z: 1.0 };
     let w = u + v;
 
-    format("{f64::2} {f64::2} {f64::2}\r\n", u.x, u.y, u.z);
-    format("{f64::2} {f64::2} {f64::2}\r\n", v.x, v.y, v.z);
-    format("{f64::2} {f64::2} {f64::2}\r\n", w.x, w.y, w.z);
+    format("{f64:::2} {f64:::2} {f64:::2}\r\n", u.x, u.y, u.z);
+    format("{f64:::2} {f64:::2} {f64:::2}\r\n", v.x, v.y, v.z);
+    format("{f64:::2} {f64:::2} {f64:::2}\r\n", w.x, w.y, w.z);
 
     yield 0;
 }

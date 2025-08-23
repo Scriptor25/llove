@@ -119,10 +119,11 @@ define print_float(push: (i32, [mut]) => void, context: [mut], mut value: f64, f
     if (value == 0.0) {
         buffer[--index] = '0';
     }
+    let mut j: u8 = 0;
     for (let mut i = value as u64; i; i /= 10) {
         let rem = i % 10;
         buffer[--index] = rem + '0';
-        if (index == precision) {
+        if (++j == precision) {
             buffer[--index] = '.';
         }
     }
