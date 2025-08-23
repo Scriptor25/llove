@@ -70,8 +70,10 @@ define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, len
 
     let justify_left: u1 = flags & flag_justify_left;
 
+    let pad = length > len ? length - len : 0;
+
     if (!justify_left) {
-        foreach (_ : (0)..(length - len))
+        foreach (_ : (0)..pad)
             push(' ', context);
     }
 
@@ -79,7 +81,7 @@ define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, len
         push(c, context);
 
     if (justify_left) {
-        foreach (_ : (0)..(length - len))
+        foreach (_ : (0)..pad)
             push(' ', context);
     }
 }
