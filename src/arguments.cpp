@@ -181,6 +181,15 @@ bool cli::Arguments::array(const std::string &id, std::vector<std::string> &dst)
     return true;
 }
 
+bool cli::Arguments::set(const std::string &id, std::set<std::string> &dst) const
+{
+    if (!m_Arrays.contains(id))
+        return false;
+    auto &array = m_Arrays.at(id);
+    dst = std::set(array.begin(), array.end());
+    return true;
+}
+
 bool cli::Arguments::has_value(const std::string &id) const
 {
     return m_Values.contains(id);

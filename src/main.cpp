@@ -239,6 +239,9 @@ int main(const int argc, const char *const *argv) try
         auto optimized = arguments.has_value_and_is_not("level", "0");
         auto profiling = arguments.flag("profiling");
 
+        std::set<std::filesystem::path> includes;
+        (void) arguments.set("include", includes);
+
         auto emission = llvm::DICompileUnit::DebugEmissionKind::FullDebug;
         (void) arguments.value("debug-kind", emission);
 
@@ -252,7 +255,7 @@ int main(const int argc, const char *const *argv) try
             emission,
             input_filename,
             arguments.BuildCommandLine());
-        llove::Parser parser(context, *input_stream_ref, input_filename);
+        llove::Parser parser(context, *input_stream_ref, input_filename, includes);
 
         std::string print_filename;
         auto has_print_filename = arguments.value("print-output", print_filename);

@@ -9,11 +9,13 @@ llove::ImportGlobal::ImportGlobal(
     Location loc,
     std::string as,
     std::map<std::string, std::string> symbols,
-    std::filesystem::path filepath)
+    std::filesystem::path filepath,
+    const std::set<std::filesystem::path> &includes)
     : Global(std::move(loc)),
       m_As(std::move(as)),
       m_Symbols(std::move(symbols)),
-      m_Filepath(std::move(filepath))
+      m_Filepath(std::move(filepath)),
+      m_Includes(includes)
 {
 }
 
@@ -23,7 +25,7 @@ void llove::ImportGlobal::Gen(Builder &builder) const try
     Assert(stream.is_open(), "failed to open import file '{}'", m_Filepath.string());
 
     Context context(&builder.GetContext());
-    Parser parser(context, stream, m_Filepath);
+    Parser parser(context, stream, m_Filepath, m_Includes);
 
     std::vector<std::pair<std::string, ValuePtr>> values;
     while (parser.Ok())
@@ -71,7 +73,7 @@ std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
     Assert(stream.is_open(), "failed to open import file '{}'", m_Filepath.string());
 
     Context context(&parent);
-    Parser parser(context, stream, m_Filepath);
+    Parser parser(context, stream, m_Filepath, m_Includes);
 
     while (parser.Ok())
     {

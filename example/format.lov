@@ -56,16 +56,32 @@ define print_string(push: push_fn, context: [mut], str: string_t, from: u64, to:
         push(c, context);
 }
 
+define min(a: u64, b: u64): u64 {
+    yield a < b ? a : b;
+}
+
 #
 # length: minimum length, use padding if not long enough
 # precision: maximum length, trim if too long
 #
 define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, length: u8, precision: u8) {
     let len = strlen(str);
-    let end = str + len;
+    let end = str + (precision ? min(len, precision) : len);
+
+    let justify_left: u1 = flags & flag_justify_left;
+
+    if (!justify_left) {
+        foreach (_ : (0)..(length - len))
+            push(' ', context);
+    }
 
     foreach (c : str..end)
         push(c, context);
+
+    if (justify_left) {
+        foreach (_ : (0)..(length - len))
+            push(' ', context);
+    }
 }
 
 #
@@ -73,29 +89,60 @@ define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, len
 #
 define print_int(push: push_fn, context: [mut], mut value: u64, sign: u1, base: u8, upper: u1, flags: u8, length: u8) {
 
-    if (!value) {
-        push('0', context);
-        yield;
-    }
-
     let mut buffer: i8[256];
     let mut index: u64 = 256;
 
-    for (; value; value /= base) {
+    let mut count: u64;
+
+    let prefix: u1 = flags & flag_prefix;
+    let pad_zero: u1 = flags & flag_pad_zero;
+    let justify_left: u1 = flags & flag_justify_left; # TODO: justify left
+
+    for (; value; { value /= base; count += 1; }) {
         let rem = value % base;
-        let mut c: i8;
-        if (rem < 10) {
-            c = rem + '0';
-        } else if (upper) {
-            c = (rem - 10) + 'A';
-        } else {
-            c = (rem - 10) + 'a';
+        buffer[--index] = (rem < 10) ? (
+            rem + '0'
+        ) : (upper) ? (
+            (rem - 10) + 'A'
+        ) : (
+            (rem - 10) + 'a'
+        );
+    }
+
+    if (pad_zero) {
+        for (; count < length; ++count) {
+            buffer[--index] = '0';
         }
-        buffer[--index] = c;
+    }
+
+    if (prefix) {
+        switch (base) {
+            [2] {
+                buffer[--index] = 'b';
+                buffer[--index] = '0';
+                count += 2;
+            }
+            [8] {
+                buffer[--index] = '0';
+                count += 1;
+            }
+            [16] {
+                buffer[--index] = 'x';
+                buffer[--index] = '0';
+                count += 2;
+            }
+        }
     }
 
     if (sign) {
         buffer[--index] = '-';
+        count += 1;
+    }
+
+    if (!pad_zero) {
+        for (; count < length; ++count) {
+            buffer[--index] = ' ';
+        }
     }
 
     print_string(push, context, buffer, index, 256);
@@ -121,10 +168,12 @@ define print_float(push: push_fn, context: [mut], mut value: f64, flags: u8, len
     if (value == 0.0) {
         buffer[--index] = '0';
     }
+
     let mut j: u8 = 0;
     for (let mut i = value as u64; i; i /= 10) {
         let rem = i % 10;
         buffer[--index] = rem + '0';
+
         if (++j == precision) {
             buffer[--index] = '.';
         }

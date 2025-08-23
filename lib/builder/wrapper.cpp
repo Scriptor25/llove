@@ -12,6 +12,13 @@ void llove::Builder::SetInsertPoint(llvm::BasicBlock *block)
     m_LLVMBuilder.SetInsertPoint(block);
 }
 
+void llove::Builder::SetInsertPoint(llvm::Instruction *instruction)
+{
+    Assert(instruction != nullptr, "instruction must not be null");
+
+    m_LLVMBuilder.SetInsertPoint(instruction);
+}
+
 void llove::Builder::ClearInsertionPoint()
 {
     m_LLVMBuilder.ClearInsertionPoint();

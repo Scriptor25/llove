@@ -22,22 +22,23 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
         { "^=", 0 },
         { "<<=", 0 },
         { ">>=", 0 },
-        { "|", 1 },
-        { "^", 2 },
-        { "&", 3 },
-        { "==", 7 },
-        { "!=", 7 },
-        { "<", 8 },
-        { "<=", 8 },
-        { ">", 8 },
-        { ">=", 8 },
-        { "<<", 9 },
-        { ">>", 9 },
-        { "+", 10 },
-        { "-", 10 },
-        { "*", 11 },
-        { "/", 11 },
-        { "%", 11 },
+        { "?", 1 },
+        { "|", 2 },
+        { "^", 3 },
+        { "&", 4 },
+        { "==", 5 },
+        { "!=", 5 },
+        { "<", 6 },
+        { "<=", 6 },
+        { ">", 6 },
+        { ">=", 6 },
+        { "<<", 7 },
+        { ">>", 7 },
+        { "+", 8 },
+        { "-", 8 },
+        { "*", 9 },
+        { "/", 9 },
+        { "%", 9 },
     };
 
     auto has_precedence = [this]() -> bool
@@ -62,6 +63,18 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
             right = ParseBinaryExpression(
                 std::move(right),
                 operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));
+
+        if (token.Value == "?")
+        {
+            Expect(TokenType_Other, ":");
+            auto default_ = ParseBinaryExpression();
+            left = std::make_unique<TernaryExpression>(
+                std::move(token.Loc),
+                std::move(left),
+                std::move(right),
+                std::move(default_));
+            continue;
+        }
 
         left = std::make_unique<BinaryExpression>(
             std::move(token.Loc),

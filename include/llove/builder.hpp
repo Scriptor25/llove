@@ -121,6 +121,7 @@ namespace llove
         void SetCurrentDebugLocation(llvm::DebugLoc loc);
 
         void SetInsertPoint(llvm::BasicBlock *block);
+        void SetInsertPoint(llvm::Instruction *instruction);
         void ClearInsertionPoint();
         llvm::BasicBlock *GetInsertBlock() const;
 

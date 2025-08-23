@@ -154,7 +154,8 @@ namespace llove
             Location loc,
             std::string as,
             std::map<std::string, std::string> symbols,
-            std::filesystem::path filepath);
+            std::filesystem::path filepath,
+            const std::set<std::filesystem::path> &includes);
 
         void Gen(Builder &builder) const override;
         std::pair<std::string, ValuePtr> GenImport(
@@ -168,6 +169,7 @@ namespace llove
         std::string m_As;
         std::map<std::string, std::string> m_Symbols;
         std::filesystem::path m_Filepath;
+        const std::set<std::filesystem::path> &m_Includes;
     };
 
     class TypeGlobal final : public Global
@@ -641,6 +643,25 @@ namespace llove
 
     private:
         std::string m_Name;
+    };
+
+    class TernaryExpression final : public Expression
+    {
+    public:
+        explicit TernaryExpression(
+            Location loc,
+            ExpressionPtr condition,
+            ExpressionPtr then_,
+            ExpressionPtr else_);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        ExpressionPtr m_Condition;
+        ExpressionPtr m_Then;
+        ExpressionPtr m_Else;
     };
 
     class UnaryExpression final : public Expression

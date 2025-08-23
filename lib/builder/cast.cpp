@@ -70,39 +70,57 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
     switch (src->GetId())
     {
     case TypeId_Integer:
+    {
+        const auto src_integer = As<IntegerType>(src);
         switch (dst->GetId())
         {
         case TypeId_Integer:
-            if (As<IntegerType>(dst)->GetBits() == 1)
+        {
+            const auto dst_integer = As<IntegerType>(dst);
+            if (dst_integer->GetBits() == 1)
+            {
                 result = m_LLVMBuilder.CreateIsNotNull(llvm_value);
-            else
-                result = m_LLVMBuilder.CreateIntCast(
-                    llvm_value,
-                    llvm_type,
-                    As<IntegerType>(dst)->IsSigned());
+                break;
+            }
+            result = m_LLVMBuilder.CreateIntCast(
+                llvm_value,
+                llvm_type,
+                dst_integer->IsSigned());
             break;
+        }
         case TypeId_Float:
-            if (As<IntegerType>(src)->IsSigned())
+            if (src_integer->IsSigned())
+            {
                 result = m_LLVMBuilder.CreateSIToFP(llvm_value, llvm_type);
-            else
-                result = m_LLVMBuilder.CreateUIToFP(llvm_value, llvm_type);
+                break;
+            }
+            result = m_LLVMBuilder.CreateUIToFP(llvm_value, llvm_type);
             break;
         default:
             break;
         }
         break;
+    }
 
     case TypeId_Float:
         switch (dst->GetId())
         {
         case TypeId_Integer:
-            if (As<IntegerType>(dst)->GetBits() == 1)
+        {
+            const auto dst_integer = As<IntegerType>(dst);
+            if (dst_integer->GetBits() == 1)
+            {
                 result = m_LLVMBuilder.CreateIsNotNull(llvm_value);
-            else if (As<IntegerType>(dst)->IsSigned())
+                break;
+            }
+            if (dst_integer->IsSigned())
+            {
                 result = m_LLVMBuilder.CreateFPToSI(llvm_value, llvm_type);
-            else
-                result = m_LLVMBuilder.CreateFPToUI(llvm_value, llvm_type);
+                break;
+            }
+            result = m_LLVMBuilder.CreateFPToUI(llvm_value, llvm_type);
             break;
+        }
         case TypeId_Float:
             result = m_LLVMBuilder.CreateFPCast(llvm_value, llvm_type);
             break;
@@ -112,42 +130,57 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         break;
 
     case TypeId_Pointer:
+    {
+        const auto src_pointer = As<PointerType>(src);
         switch (dst->GetId())
         {
         case TypeId_Integer:
-            if (As<IntegerType>(dst)->GetBits() == 1)
+            if (const auto dst_integer = As<IntegerType>(dst); dst_integer->GetBits() == 1)
+            {
                 result = m_LLVMBuilder.CreateIsNotNull(llvm_value);
-            else
-                result = m_LLVMBuilder.CreatePtrToInt(llvm_value, llvm_type);
+                break;
+            }
+            result = m_LLVMBuilder.CreatePtrToInt(llvm_value, llvm_type);
             break;
         case TypeId_Pointer:
-            if (As<PointerType>(src)->IsMutable() || !As<PointerType>(dst)->IsMutable())
-                result = m_LLVMBuilder.CreatePointerCast(llvm_value, llvm_type);
+            if (const auto dst_pointer = As<PointerType>(dst); !src_pointer->IsMutable() && dst_pointer->IsMutable())
+                break;
+            result = llvm_value;
             break;
         default:
             break;
         }
         break;
+    }
 
     case TypeId_Array:
+    {
+        const auto src_array = As<ArrayType>(src);
         switch (dst->GetId())
         {
         case TypeId_Pointer:
-            if (As<ArrayType>(src)->GetBase() == As<PointerType>(dst)->GetBase() &&
-                (value->IsMutable() || !As<PointerType>(dst)->IsMutable()))
-                result = value->GetPointer();
+        {
+            const auto dst_pointer = As<PointerType>(dst);
+            if (!dst_pointer->IsOpaque() && src_array->GetBase() != dst_pointer->GetBase())
+                break;
+            if (!value->IsMutable() && dst_pointer->IsMutable())
+                break;
+            result = value->GetPointer();
             break;
+        }
         default:
             break;
         }
         break;
+    }
 
     case TypeId_Function:
         switch (dst->GetId())
         {
         case TypeId_Function:
-            if (!implicit)
-                result = llvm_value;
+            if (implicit)
+                break;
+            result = llvm_value;
             break;
         default:
             break;
@@ -219,25 +252,37 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool i
         }
 
     case TypeId_Pointer:
+    {
+        const auto src_pointer = As<PointerType>(src_type);
         switch (dst_type->GetId())
         {
         case TypeId_Integer:
             return true;
         case TypeId_Pointer:
-            return As<PointerType>(src_type)->IsMutable() || !As<PointerType>(dst_type)->IsMutable();
+        {
+            const auto dst_pointer = As<PointerType>(dst_type);
+            return src_pointer->IsMutable() || !dst_pointer->IsMutable();
+        }
         default:
             return false;
         }
+    }
 
     case TypeId_Array:
+    {
+        const auto src_array = As<ArrayType>(src_type);
         switch (dst_type->GetId())
         {
         case TypeId_Pointer:
-            return As<ArrayType>(src_type)->GetBase() == As<PointerType>(dst_type)->GetBase() &&
-                   (src.IsMutable() || !As<PointerType>(dst_type)->IsMutable());
+        {
+            const auto dst_pointer = As<PointerType>(dst_type);
+            return (dst_pointer->IsOpaque() || src_array->GetBase() == dst_pointer->GetBase()) &&
+                   (src.IsMutable() || !dst_pointer->IsMutable());
+        }
         default:
             return false;
         }
+    }
 
     case TypeId_Function:
         switch (dst_type->GetId())

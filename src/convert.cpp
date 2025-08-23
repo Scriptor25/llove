@@ -1,3 +1,4 @@
+#include <filesystem>
 #include <cli/arguments.hpp>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/Passes/OptimizationLevel.h>
@@ -8,6 +9,13 @@ template<>
 bool cli::convert_value(int &dst, const std::string &value)
 {
     dst = std::stoi(value);
+    return true;
+}
+
+template<>
+bool cli::convert_value(std::filesystem::path &dst, const std::string &value)
+{
+    dst = std::filesystem::weakly_canonical(value);
     return true;
 }
 

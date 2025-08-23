@@ -32,6 +32,7 @@ namespace cli
 
         [[nodiscard]] bool value(const std::string &id, std::string &dst) const;
         [[nodiscard]] bool array(const std::string &id, std::vector<std::string> &dst) const;
+        [[nodiscard]] bool set(const std::string &id, std::set<std::string> &dst) const;
 
         [[nodiscard]] bool has_value(const std::string &id) const;
         [[nodiscard]] bool has_value_and_is(const std::string &id, const std::string &value) const;
@@ -55,6 +56,22 @@ namespace cli
             for (auto &entry : m_Arrays.at(id))
                 if (!cli::convert_value<T>(dst.emplace_back(), entry))
                     return false;
+            return true;
+        }
+
+        template<typename T>
+        [[nodiscard]] bool set(const std::string &id, std::set<T> &dst) const
+        {
+            if (!m_Arrays.contains(id))
+                return false;
+
+            for (auto &entry : m_Arrays.at(id))
+            {
+                T value;
+                if (!cli::convert_value<T>(value, entry))
+                    return false;
+                dst.insert(value);
+            }
             return true;
         }
 

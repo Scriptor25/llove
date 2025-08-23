@@ -4,6 +4,7 @@
 #include <format>
 #include <iosfwd>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include <llove/class.hpp>
@@ -36,7 +37,11 @@ namespace llove
     class Parser final
     {
     public:
-        explicit Parser(Context &context, std::istream &stream, const std::filesystem::path &filepath);
+        explicit Parser(
+            Context &context,
+            std::istream &stream,
+            const std::filesystem::path &filepath,
+            const std::set<std::filesystem::path> &includes);
 
         [[nodiscard]] bool Ok() const;
         GlobalPtr Parse();
@@ -142,6 +147,7 @@ namespace llove
 
     private:
         Context &m_Context;
+        const std::set<std::filesystem::path> &m_Includes;
 
         std::istream &m_Stream;
         int m_Buffer;

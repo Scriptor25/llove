@@ -164,7 +164,6 @@ llove::Token llove::Parser::Next()
             case ':':
             case ',':
             case ';':
-            case '?':
             case '@':
                 loc = m_Loc;
                 raw += static_cast<char>(m_Buffer);
@@ -191,6 +190,7 @@ llove::Token llove::Parser::Next()
             case '!':
             case '~':
             case '$':
+            case '?':
                 loc = m_Loc;
                 raw += static_cast<char>(m_Buffer);
                 value += static_cast<char>(m_Buffer);

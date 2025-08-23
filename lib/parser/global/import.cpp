@@ -48,9 +48,26 @@ llove::GlobalPtr llove::Parser::ParseImportGlobal()
 
     Expect(TokenType_Other, ";");
 
-    std::filesystem::path filepath(std::move(filename));
-    if (filepath.is_relative())
-        filepath = m_Loc.Filepath.parent_path() / filepath;
+    auto basepath = std::filesystem::weakly_canonical(filename);
 
-    return std::make_unique<ImportGlobal>(std::move(loc), std::move(as), std::move(symbols), std::move(filepath));
+    std::filesystem::path filepath;
+    if (basepath.is_relative())
+    {
+        filepath = weakly_canonical(m_Loc.Filepath.parent_path() / basepath);
+        for (auto i = m_Includes.begin(); i != m_Includes.end() && !exists(filepath); ++i)
+            filepath = weakly_canonical(*i / basepath);
+    }
+    else
+    {
+        filepath = std::move(basepath);
+    }
+
+    Assert(exists(filepath), "imported file name '{}' ({}) does not exist", filename, filepath.string());
+
+    return std::make_unique<ImportGlobal>(
+        std::move(loc),
+        std::move(as),
+        std::move(symbols),
+        std::move(filepath),
+        m_Includes);
 }
