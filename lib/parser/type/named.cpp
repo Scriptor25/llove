@@ -9,8 +9,6 @@ llove::TypePtr llove::Parser::ParseNamedType()
     if (const auto type = m_Context.GetNamed(name))
         return type;
 
-    if (name == "void")
-        return m_Context.GetVoid();
     if (name == "i1")
         return m_Context.GetInteger(true, 1);
     if (name == "i8")
