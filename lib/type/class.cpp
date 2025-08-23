@@ -4,20 +4,21 @@
 #include <llove/type.hpp>
 
 llove::ClassType::ClassType(std::string name)
-    : m_Name(std::move(name)),
-      m_Opaque(true)
+    : m_Name(std::move(name))
 {
+    Assert(!m_Name.empty(), "name must not be empty");
 }
 
 llove::ClassType::ClassType(
     std::string name,
-    std::vector<ClassFieldReference> fields,
+    std::vector<ClassFieldReference> members,
     std::vector<ClassFunctionReference> functions)
     : m_Name(std::move(name)),
-      m_Opaque(false),
-      m_Fields(std::move(fields)),
+      m_Members(std::move(members)),
       m_Functions(std::move(functions))
 {
+    Assert(!name.empty(), "name must not be empty");
+    Assert(!members.empty(), "members must not be empty");
 }
 
 const std::string &llove::ClassType::GetName() const
@@ -27,35 +28,45 @@ const std::string &llove::ClassType::GetName() const
 
 bool llove::ClassType::IsOpaque() const
 {
-    return m_Opaque;
+    return m_Members.empty();
 }
 
-bool llove::ClassType::HasField(const std::string &name) const
+bool llove::ClassType::HasMember(const std::string &name) const
 {
+    Assert(!m_Members.empty(), "members must not be empty");
+
     return std::ranges::any_of(
-        m_Fields,
-        [&name](auto &field)
+        m_Members,
+        [&name](auto &member)
         {
-            return field.Name == name;
+            return member.Name == name;
         });
 }
 
-unsigned llove::ClassType::GetFieldIndex(const std::string &name) const
+unsigned llove::ClassType::GetMemberIndex(const std::string &name) const
 {
-    for (unsigned i = 0; i < m_Fields.size(); ++i)
-        if (m_Fields.at(i).Name == name)
+    Assert(!m_Members.empty(), "members must not be empty");
+
+    for (unsigned i = 0; i < m_Members.size(); ++i)
+        if (m_Members.at(i).Name == name)
             return i;
-    Error("no field with name '{}'", name);
+
+    Error("no member with name '{}'", name);
 }
 
-unsigned llove::ClassType::GetFieldCount() const
+unsigned llove::ClassType::GetMemberCount() const
 {
-    return m_Fields.size();
+    Assert(!m_Members.empty(), "members must not be empty");
+
+    return m_Members.size();
 }
 
-const llove::Field &llove::ClassType::GetField(const unsigned index) const
+const llove::Field &llove::ClassType::GetMember(const unsigned index) const
 {
-    return m_Fields.at(index).Info;
+    Assert(!m_Members.empty(), "members must not be empty");
+    Assert(index < m_Members.size(), "index out of bounds");
+
+    return m_Members.at(index).Info;
 }
 
 std::optional<llove::ClassFunctionReference> llove::ClassType::GetFunction(
@@ -124,13 +135,12 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetDestructor() c
     return std::nullopt;
 }
 
-void llove::ClassType::SetFields(std::vector<ClassFieldReference> fields)
+void llove::ClassType::SetMembers(std::vector<ClassFieldReference> members)
 {
     m_IRType = nullptr;
     m_DIType = nullptr;
 
-    m_Opaque = fields.empty();
-    m_Fields = std::move(fields);
+    m_Members = std::move(members);
 }
 
 void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> functions)
@@ -152,19 +162,19 @@ llvm::StructType *llove::ClassType::GenIR(Builder &builder)
 {
     if (!m_IRType)
     {
-        if (m_Opaque)
+        if (m_Members.empty())
         {
-            const auto type = builder.GetOrCreateNamedStructType(m_Name);
-            m_IRType = type;
-            return type;
+            m_IRType = builder.GetOrCreateNamedStructType(m_Name);
         }
+        else
+        {
+            std::vector<llvm::Type *> elements;
+            for (auto &member : m_Members)
+                elements.emplace_back(member.Info.GenIRType(builder));
 
-        std::vector<llvm::Type *> elements;
-        for (auto &field : m_Fields)
-            elements.emplace_back(field.Info.GenIRType(builder));
-
-        // TODO: packed struct
-        m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, false);
+            // TODO: packed struct
+            m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, false);
+        }
     }
 
     return llvm::dyn_cast<llvm::StructType>(m_IRType);
@@ -177,21 +187,25 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
 
     m_DIType = builder.GetDebug().GetClassType(m_Name);
 
-    if (m_Opaque)
+    if (m_Members.empty())
         return m_DIType;
 
-    std::vector<llvm::Metadata *> fields;
+    std::vector<llvm::Metadata *> members;
 
     unsigned offset = 0;
-    for (auto &field : m_Fields)
+    for (auto &member : m_Members)
     {
-        const auto size = field.Info.SizeBits(builder);
-        fields.emplace_back(
-            builder.GetDebug().GetFieldType(field.Name, field.Info.GenDIType(builder), size, offset));
+        const auto size = member.Info.SizeBits(builder);
+        members.emplace_back(
+            builder.GetDebug().GetFieldType(
+                member.Name,
+                member.Info.GenDIType(builder),
+                size,
+                offset));
         offset += size;
     }
 
-    return m_DIType = builder.GetDebug().GetClassType(m_Name, fields, offset);
+    return m_DIType = builder.GetDebug().GetClassType(m_Name, members, offset);
 }
 
 llove::TypePtr llove::ClassType::Reflect(Context &context) const

@@ -72,7 +72,6 @@ namespace llove
 
         TypePtr ParseType();
 
-        TypePtr ParseArgPointerType();
         TypePtr ParseArrayType();
         TypePtr ParseBaseType();
         TypePtr ParseClassType();

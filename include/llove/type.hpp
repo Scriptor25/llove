@@ -2,7 +2,6 @@
 
 #include <format>
 #include <map>
-#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -62,16 +61,16 @@ namespace llove
         virtual std::ostream &Print(std::ostream &stream) const = 0;
 
         template<typename S, typename D> requires std::is_base_of_v<Type, S> && std::is_base_of_v<Type, D>
-        static void Reflect(Context &context, std::shared_ptr<S> src, std::shared_ptr<D> &dst)
+        static void Reflect(Context &context, const std::shared_ptr<S> &src, std::shared_ptr<D> &dst)
         {
             if (!src)
             {
-                dst = nullptr;
+                dst.reset();
                 return;
             }
 
             auto cast = std::dynamic_pointer_cast<D>(src->Reflect(context));
-            Assert(cast != nullptr, "invalid reflection cast");
+            Assert(!!cast, "invalid reflection cast");
             dst = cast;
         }
 
@@ -109,7 +108,7 @@ namespace llove
         using Ptr = std::shared_ptr<ClassTemplateType>;
         static constexpr auto ID = TypeId_Template;
 
-        explicit ClassTemplateType(std::string name, std::vector<WeakTypePtr> arguments);
+        explicit ClassTemplateType(std::string name, std::vector<TypePtr> arguments);
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsTemplate() const override;
@@ -124,7 +123,7 @@ namespace llove
 
     private:
         std::string m_Name;
-        std::vector<WeakTypePtr> m_Arguments;
+        std::vector<TypePtr> m_Arguments;
     };
 
     class VoidType final : public Type
@@ -234,7 +233,8 @@ namespace llove
         using Ptr = std::shared_ptr<PointerType>;
         static constexpr auto ID = TypeId_Pointer;
 
-        explicit PointerType(const TypePtr &base, bool is_mutable);
+        explicit PointerType(bool is_mutable);
+        explicit PointerType(TypePtr base, bool is_mutable);
 
         [[nodiscard]] TypePtr GetBase() const;
         [[nodiscard]] bool IsMutable() const;
@@ -254,7 +254,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        WeakTypePtr m_Base;
+        TypePtr m_Base;
         bool m_IsMutable;
     };
 
@@ -283,7 +283,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        WeakTypePtr m_Base;
+        TypePtr m_Base;
         unsigned m_Count;
     };
 
@@ -323,7 +323,7 @@ namespace llove
         using Ptr = std::shared_ptr<RangeType>;
         static constexpr auto ID = TypeId_Range;
 
-        explicit RangeType(const TypePtr &entry);
+        explicit RangeType(TypePtr entry);
 
         [[nodiscard]] TypePtr GetEntry() const;
 
@@ -341,7 +341,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        WeakTypePtr m_Entry;
+        TypePtr m_Entry;
     };
 
     class ClassType final : public Type
@@ -353,16 +353,16 @@ namespace llove
         explicit ClassType(std::string name);
         explicit ClassType(
             std::string name,
-            std::vector<ClassFieldReference> fields,
+            std::vector<ClassFieldReference> members,
             std::vector<ClassFunctionReference> functions);
 
         [[nodiscard]] const std::string &GetName() const;
         [[nodiscard]] bool IsOpaque() const;
 
-        [[nodiscard]] bool HasField(const std::string &name) const;
-        [[nodiscard]] unsigned GetFieldIndex(const std::string &name) const;
-        [[nodiscard]] unsigned GetFieldCount() const;
-        [[nodiscard]] const Field &GetField(unsigned index) const;
+        [[nodiscard]] bool HasMember(const std::string &name) const;
+        [[nodiscard]] unsigned GetMemberIndex(const std::string &name) const;
+        [[nodiscard]] unsigned GetMemberCount() const;
+        [[nodiscard]] const Field &GetMember(unsigned index) const;
 
         [[nodiscard]] std::optional<ClassFunctionReference> GetFunction(
             const std::string &name,
@@ -376,7 +376,7 @@ namespace llove
         [[nodiscard]] std::vector<ClassFunctionReference> GetConstructors() const;
         [[nodiscard]] std::optional<ClassFunctionReference> GetDestructor() const;
 
-        void SetFields(std::vector<ClassFieldReference> fields);
+        void SetMembers(std::vector<ClassFieldReference> members);
         void SetFunctions(std::vector<ClassFunctionReference> functions);
 
         [[nodiscard]] TypeId GetId() const override;
@@ -394,8 +394,7 @@ namespace llove
 
     private:
         std::string m_Name;
-        bool m_Opaque;
-        std::vector<ClassFieldReference> m_Fields;
+        std::vector<ClassFieldReference> m_Members;
         std::vector<ClassFunctionReference> m_Functions;
     };
 
@@ -442,11 +441,13 @@ namespace llove
     template<typename T>
     T::Ptr As(TypePtr type)
     {
-        Assert(type != nullptr, "type must not be null");
+        Assert(!!type, "type must not be null");
         auto ptr = std::dynamic_pointer_cast<T>(type);
-        Assert(ptr != nullptr, "illegal cast from {} to {} (type {}) ", type->GetId(), T::ID, type);
+        Assert(!!ptr, "illegal cast from {} to {} (type {}) ", type->GetId(), T::ID, type);
         return ptr;
     }
+
+    unsigned Difference(const TypePtr &left, const TypePtr &right);
 }
 
 template<typename T> requires std::is_base_of_v<llove::Type, T>

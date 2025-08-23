@@ -51,65 +51,55 @@ bool llove::FunctionType::IsFunction() const
 
 llvm::PointerType *llove::FunctionType::GenIR(Builder &builder)
 {
-    if (m_IRType)
-        return llvm::dyn_cast<llvm::PointerType>(m_IRType);
+    if (!m_IRType)
+        m_IRType = builder.GetPointerType();
 
-    const auto type = builder.GetPointerType();
-    m_IRType = type;
-    return type;
+    return llvm::dyn_cast<llvm::PointerType>(m_IRType);
 }
 
 llvm::DIType *llove::FunctionType::GenDI(Builder &builder)
 {
-    if (m_DIType)
-        return m_DIType;
+    if (!m_DIType)
+        m_DIType = builder.GetDebug().GetPointerType(GenDIFunction(builder));
 
-    const auto function = GenDIFunction(builder);
-    return m_DIType = builder.GetDebug().GetPointerType(function);
+    return m_DIType;
 }
 
 llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder)
 {
-    if (m_IRFunction)
-        return m_IRFunction;
-
-    std::vector<llvm::Type *> parameters;
-
-    if (m_Self)
+    if (!m_IRFunction)
     {
-        parameters.emplace_back(m_Self->GenIRType(builder));
+        std::vector<llvm::Type *> parameters;
+        if (m_Self)
+            parameters.emplace_back(m_Self->GenIRType(builder));
+        for (auto &parameter : m_Parameters)
+            parameters.emplace_back(parameter.GenIRType(builder));
+        if (m_Variadic)
+            parameters.emplace_back(builder.GetVariadicType());
+
+        const auto result = m_Result.GenIRType(builder);
+
+        m_IRFunction = builder.GetFunctionType(result, parameters);
     }
 
-    for (auto &parameter : m_Parameters)
-    {
-        parameters.emplace_back(parameter.GenIRType(builder));
-    }
-
-    if (m_Variadic)
-    {
-        parameters.emplace_back(builder.GetVariadicType());
-    }
-
-    const auto result = m_Result.GenIRType(builder);
-
-    return m_IRFunction = builder.GetFunctionType(result, parameters);
+    return m_IRFunction;
 }
 
 llvm::DISubroutineType *llove::FunctionType::GenDIFunction(Builder &builder)
 {
-    if (m_DIFunction)
-        return m_DIFunction;
+    if (!m_DIFunction)
+    {
+        std::vector<llvm::Metadata *> parameters;
+        for (auto &parameter : m_Parameters)
+            parameters.emplace_back(parameter.GenDIType(builder));
 
-    std::vector<llvm::Metadata *> parameters;
-    for (auto &parameter : m_Parameters)
-        parameters.emplace_back(parameter.GenDIType(builder));
-    if (m_Variadic)
-        parameters.emplace_back(builder.GetDebug().GetPointerType(builder.GetDebug().GetVariadicType()));
+        const auto self = m_Self ? m_Self->GenDIType(builder) : nullptr;
+        const auto result = m_Result.GenDIType(builder);
 
-    const auto self = m_Self ? m_Self->GenDIType(builder) : nullptr;
-    const auto result = m_Result.GenDIType(builder);
+        m_DIFunction = builder.GetDebug().GetFunctionType(self, parameters, m_Variadic, result);
+    }
 
-    return m_DIFunction = builder.GetDebug().GetFunctionType(self, parameters, result);
+    return m_DIFunction;
 }
 
 llove::TypePtr llove::FunctionType::Reflect(Context &context) const

@@ -28,12 +28,12 @@ llove::TypePtr llove::Context::GetNamed(const std::string &id) const
 
 void llove::Context::SetNamed(const std::string &id, TypePtr type)
 {
-    m_Named.emplace(id, std::move(type));
+    m_Named.emplace(id, type);
 }
 
-void llove::Context::Set(const std::string &hash, TypePtr type)
+void llove::Context::Set(std::string hash, TypePtr type)
 {
-    m_Types.emplace(hash, std::move(type));
+    m_Types.emplace(hash, type);
 }
 
 llove::VoidType::Ptr llove::Context::GetVoid()
@@ -58,7 +58,7 @@ llove::FloatType::Ptr llove::Context::GetFloat(unsigned bits)
 
 llove::PointerType::Ptr llove::Context::GetPointer(const bool mutable_)
 {
-    return GetPointer(nullptr, mutable_);
+    return GetOrCreate<PointerType>(mutable_);
 }
 
 llove::PointerType::Ptr llove::Context::GetPointer(TypePtr base, bool mutable_)
@@ -100,7 +100,7 @@ llove::IntegerType::Ptr llove::Context::GetBoolean()
     return GetOrCreate<IntegerType>(false, 1);
 }
 
-llove::TypePtr llove::Context::TypeUnion(const TypePtr &left, const TypePtr &right)
+llove::TypePtr llove::Context::TypeUnion(TypePtr left, TypePtr right)
 {
     if (left == right)
         return left;
@@ -151,117 +151,13 @@ llove::TypePtr llove::Context::TypeUnion(const TypePtr &left, const TypePtr &rig
     Error("illegal type unionization of {} and {}", left, right);
 }
 
-unsigned llove::Context::Difference(const TypePtr &left, const TypePtr &right)
-{
-    if (left == right)
-        return 0u;
-
-    switch (left->GetId())
-    {
-    case TypeId_Integer:
-    {
-        const auto left_int = As<IntegerType>(left);
-        switch (right->GetId())
-        {
-        case TypeId_Integer:
-        {
-            const auto right_int = As<IntegerType>(right);
-            const auto sign_error = left_int->IsSigned() != right_int->IsSigned() ? 1u : 0u;
-            const auto bits_error = left_int->GetBits() != right_int->GetBits() ? 5u : 0u;
-            return sign_error + bits_error;
-        }
-        case TypeId_Float:
-        {
-            const auto right_flt = As<FloatType>(right);
-            const auto bits_error = left_int->GetBits() != right_flt->GetBits() ? 5u : 0u;
-            return 5u + bits_error;
-        }
-        default:
-            break;
-        }
-        break;
-    }
-    case TypeId_Float:
-    {
-        const auto left_flt = As<FloatType>(left);
-        switch (right->GetId())
-        {
-        case TypeId_Integer:
-        {
-            const auto right_int = As<IntegerType>(right);
-            const auto bits_error = left_flt->GetBits() != right_int->GetBits() ? 5u : 0u;
-            return 5u + bits_error;
-        }
-        case TypeId_Float:
-        {
-            const auto right_flt = As<FloatType>(right);
-            const auto bits_error = left_flt->GetBits() != right_flt->GetBits() ? 5u : 0u;
-            return bits_error;
-        }
-        default:
-            break;
-        }
-        break;
-    }
-    case TypeId_Pointer:
-    {
-        const auto left_ptr = As<PointerType>(left);
-        switch (right->GetId())
-        {
-        case TypeId_Integer:
-        {
-            const auto right_int = As<IntegerType>(right);
-            const auto sign_error = false != right_int->IsSigned() ? 1u : 0u;
-            const auto bits_error = 64u != right_int->GetBits() ? 5u : 0u; // TODO: target dependent
-            return 4u + sign_error + bits_error;
-        }
-        case TypeId_Pointer:
-        {
-            const auto right_ptr = As<PointerType>(right);
-            const auto opaque_error = left_ptr->IsOpaque() != right_ptr->IsOpaque() ? 2u : 0u;
-            const auto left_base = left_ptr->IsOpaque() ? nullptr : left_ptr->GetBase();
-            const auto right_base = right_ptr->IsOpaque() ? nullptr : right_ptr->GetBase();
-            const auto type_error = left_base != right_base ? 2u : 0u;
-            const auto mut_error = left_ptr->IsMutable() != right_ptr->IsMutable() ? 1u : 0u;
-            return opaque_error + type_error + mut_error;
-        }
-        default:
-            break;
-        }
-        break;
-    }
-    case TypeId_Array:
-    {
-        const auto left_arr = As<ArrayType>(left);
-        switch (right->GetId())
-        {
-        case TypeId_Pointer:
-        {
-            const auto right_ptr = As<PointerType>(right);
-            const auto opaque_error = false != right_ptr->IsOpaque() ? 2u : 0u;
-            const auto right_base = right_ptr->IsOpaque() ? nullptr : right_ptr->GetBase();
-            const auto type_error = left_arr->GetBase() != right_base ? 2u : 0u;
-            return 6u + opaque_error + type_error;
-        }
-        default:
-            break;
-        }
-        break;
-    }
-    default:
-        break;
-    }
-
-    return 10u;
-}
-
 llove::ClassTemplate &llove::Context::PushTemplate(
     std::string name,
     std::vector<std::pair<std::string, TemplateType::Ptr>> parameters)
 {
     auto &template_ = m_TemplateTypes.emplace_back();
     for (auto &[key, type] : parameters)
-        template_.emplace(key, type);
+        template_.emplace(key, std::move(type));
 
     auto &ref = m_ClassTemplates[name];
 
@@ -293,7 +189,7 @@ void llove::Context::EmplaceTemplate(
     };
 }
 
-llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const std::vector<TypePtr> &arguments)
+llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, std::vector<TypePtr> arguments)
 {
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
@@ -301,12 +197,7 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const 
     Assert(template_.Parameters.size() == arguments.size(), "wrong number of type arguments");
 
     if (!template_.Complete)
-    {
-        std::vector<WeakTypePtr> weak_arguments;
-        for (auto &argument : arguments)
-            weak_arguments.emplace_back(argument);
-        return std::make_shared<ClassTemplateType>(std::move(name), std::move(weak_arguments));
-    }
+        return std::make_shared<ClassTemplateType>(std::move(name), std::move(arguments));
 
     m_TemplateArguments.clear();
 
@@ -319,7 +210,7 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const 
         name += arguments.at(i)->Mangle();
     }
     name += '>';
-    auto class_type = GetClass(std::move(name));
+    const auto class_type = GetClass(std::move(name));
 
     if (template_.Instantiated)
         return class_type;
@@ -337,7 +228,7 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const 
     std::vector<ClassFieldReference> fields;
     for (auto &field : reflection_fields)
         fields.emplace_back(field.Info, field.Name);
-    class_type->SetFields(std::move(fields));
+    class_type->SetMembers(std::move(fields));
 
     std::vector<ClassFunctionReference> functions;
     for (const auto &function : reflection_functions)

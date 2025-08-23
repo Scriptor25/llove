@@ -1,5 +1,4 @@
 #include <llove/builder.hpp>
-#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -12,9 +11,9 @@ llove::UnaryExpression::UnaryExpression(Location loc, std::string operator_, Exp
 {
 }
 
-llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr expect) const try
+llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
-    auto operand = m_Operand->GenVal(builder, expect);
+    auto operand = m_Operand->GenVal(builder, std::move(expect));
 
     builder.EmitLoc(m_Loc);
 

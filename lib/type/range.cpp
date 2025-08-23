@@ -2,15 +2,15 @@
 #include <llove/context.hpp>
 #include <llove/type.hpp>
 
-llove::RangeType::RangeType(const TypePtr &entry)
-    : m_Entry(entry)
+llove::RangeType::RangeType(TypePtr entry)
+    : m_Entry(std::move(entry))
 {
+    Assert(m_Entry != nullptr, "entry must not be null");
 }
 
 llove::TypePtr llove::RangeType::GetEntry() const
 {
-    Assert(!m_Entry.expired(), "entry has expired");
-    return m_Entry.lock();
+    return m_Entry;
 }
 
 llove::TypeId llove::RangeType::GetId() const
@@ -25,12 +25,9 @@ bool llove::RangeType::IsRange() const
 
 llvm::StructType *llove::RangeType::GenIR(Builder &builder)
 {
-    Assert(!m_Entry.expired(), "entry has expired");
-    const auto entry = m_Entry.lock();
-
     if (!m_IRType)
     {
-        const auto entry_type = entry->GenIR(builder);
+        const auto entry_type = m_Entry->GenIR(builder);
         m_IRType = builder.GetStructType({ entry_type, entry_type }, false);
     }
 
@@ -39,13 +36,10 @@ llvm::StructType *llove::RangeType::GenIR(Builder &builder)
 
 llvm::DIType *llove::RangeType::GenDI(Builder &builder)
 {
-    Assert(!m_Entry.expired(), "entry has expired");
-    const auto entry = m_Entry.lock();
-
     if (!m_DIType)
     {
-        const auto entry_type = entry->GenDI(builder);
-        const auto entry_size = entry->SizeBits(builder);
+        const auto entry_type = m_Entry->GenDI(builder);
+        const auto entry_size = m_Entry->SizeBits(builder);
 
         const auto begin = builder.GetDebug().GetFieldType("begin", entry_type, entry_size, 0u);
         const auto end = builder.GetDebug().GetFieldType("end", entry_type, entry_size, entry_size);
@@ -58,24 +52,15 @@ llvm::DIType *llove::RangeType::GenDI(Builder &builder)
 
 llove::TypePtr llove::RangeType::Reflect(Context &context) const
 {
-    Assert(!m_Entry.expired(), "entry has expired");
-    const auto entry = m_Entry.lock();
-
-    return context.GetRange(entry->Reflect(context));
+    return context.GetRange(m_Entry->Reflect(context));
 }
 
 std::string llove::RangeType::Mangle() const
 {
-    Assert(!m_Entry.expired(), "entry has expired");
-    const auto entry = m_Entry.lock();
-
-    return 'r' + entry->Mangle();
+    return 'r' + m_Entry->Mangle();
 }
 
 std::ostream &llove::RangeType::Print(std::ostream &stream) const
 {
-    Assert(!m_Entry.expired(), "entry has expired");
-    const auto entry = m_Entry.lock();
-
-    return stream << "range<" << entry << '>';
+    return stream << "range<" << m_Entry << '>';
 }

@@ -11,12 +11,12 @@ llove::IntegerExpression::IntegerExpression(Location loc, const uint64_t value, 
 {
 }
 
-llove::ValuePtr llove::IntegerExpression::GenVal(Builder &builder, const TypePtr expect) const try
+llove::ValuePtr llove::IntegerExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     auto type = m_Type
                     ? As<IntegerType>(m_Type)
                     : expect && expect->IsInteger()
-                    ? As<IntegerType>(expect)
+                    ? As<IntegerType>(std::move(expect))
                     : builder.GetContext().GetInteger(false, 64);
 
     builder.EmitLoc(m_Loc);

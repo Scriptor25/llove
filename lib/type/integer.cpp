@@ -6,6 +6,7 @@ llove::IntegerType::IntegerType(const bool is_signed, const unsigned bits)
     : m_IsSigned(is_signed),
       m_Bits(bits)
 {
+    Assert(bits == 1 || bits == 8 || bits == 16 || bits == 32 || bits == 64, "bits must be either 1, 8, 16, 32 or 64");
 }
 
 bool llove::IntegerType::IsSigned() const
@@ -32,15 +33,16 @@ llvm::IntegerType *llove::IntegerType::GenIR(Builder &builder)
 {
     if (!m_IRType)
         m_IRType = builder.GetIntegerType(m_Bits);
+
     return llvm::dyn_cast<llvm::IntegerType>(m_IRType);
 }
 
 llvm::DIType *llove::IntegerType::GenDI(Builder &builder)
 {
-    if (m_DIType)
-        return m_DIType;
+    if (!m_DIType)
+        m_DIType = builder.GetDebug().GetIntegerType(m_IsSigned, m_Bits);
 
-    return m_DIType = builder.GetDebug().GetIntegerType(m_IsSigned, m_Bits);
+    return m_DIType;
 }
 
 llove::TypePtr llove::IntegerType::Reflect(Context &context) const

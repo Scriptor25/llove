@@ -177,18 +177,19 @@ llvm::DIType *llove::DebugBuilder::GetClassType(
 llvm::DISubroutineType *llove::DebugBuilder::GetFunctionType(
     llvm::DIType *self,
     const std::vector<llvm::Metadata *> &parameters,
+    const bool variadic,
     llvm::DIType *result) const
 {
     Assert(!m_Strip, "no debug information");
 
     std::vector<llvm::Metadata *> elements;
     elements.emplace_back(result);
-
     if (self)
         elements.emplace_back(self);
-
     for (auto &parameter : parameters)
         elements.emplace_back(parameter);
+    if (variadic)
+        elements.emplace_back(GetPointerType(GetVariadicType()));
 
     return m_DIBuilder->createSubroutineType(m_DIBuilder->getOrCreateTypeArray(elements));
 }

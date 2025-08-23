@@ -33,7 +33,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
     std::vector<ClassFieldReference> class_fields;
     for (auto &field : m_Fields)
         class_fields.emplace_back(field.Info, field.Name);
-    m_Type->SetFields(std::move(class_fields));
+    m_Type->SetMembers(std::move(class_fields));
 
     std::vector<ClassFunctionReference> class_functions;
     for (auto &function : m_Functions)
@@ -114,7 +114,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     std::vector<ClassFieldReference> class_fields;
     for (auto &field : m_Fields)
         class_fields.emplace_back(field.Info, field.Name);
-    m_Type->SetFields(std::move(class_fields));
+    m_Type->SetMembers(std::move(class_fields));
 
     std::vector<ClassFunctionReference> class_functions;
     for (auto &function : m_Functions)

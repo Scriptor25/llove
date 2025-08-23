@@ -6,6 +6,7 @@
 llove::StructType::StructType(std::vector<Parameter> fields)
     : m_Fields(std::move(fields))
 {
+    Assert(!m_Fields.empty(), "fields must not be empty");
 }
 
 bool llove::StructType::HasField(const std::string &name) const
@@ -23,6 +24,7 @@ unsigned llove::StructType::GetFieldIndex(const std::string &name) const
     for (unsigned i = 0; i < m_Fields.size(); ++i)
         if (m_Fields.at(i).Name == name)
             return i;
+
     Error("no field with name '{}'", name);
 }
 
@@ -57,30 +59,33 @@ llvm::StructType *llove::StructType::GenIR(Builder &builder)
         // TODO: packed struct
         m_IRType = builder.GetStructType(fields, false);
     }
+
     return llvm::dyn_cast<llvm::StructType>(m_IRType);
 }
 
 llvm::DIType *llove::StructType::GenDI(Builder &builder)
 {
-    if (m_DIType)
-        return m_DIType;
-
-    std::vector<llvm::Metadata *> fields;
-
-    auto offset = 0u;
-    for (auto &field : m_Fields)
+    if (!m_DIType)
     {
-        const auto field_size = field.Info.SizeBits(builder);
-        fields.emplace_back(
-            builder.GetDebug().GetFieldType(
-                field.Name,
-                field.Info.GenDIType(builder),
-                field_size,
-                offset));
-        offset += field_size;
+        std::vector<llvm::Metadata *> fields;
+
+        auto offset = 0u;
+        for (auto &field : m_Fields)
+        {
+            const auto field_size = field.Info.SizeBits(builder);
+            fields.emplace_back(
+                builder.GetDebug().GetFieldType(
+                    field.Name,
+                    field.Info.GenDIType(builder),
+                    field_size,
+                    offset));
+            offset += field_size;
+        }
+
+        m_DIType = builder.GetDebug().GetStructType(fields, offset);
     }
 
-    return m_DIType = builder.GetDebug().GetStructType(fields, offset);
+    return m_DIType;
 }
 
 llove::TypePtr llove::StructType::Reflect(Context &context) const

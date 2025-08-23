@@ -40,6 +40,7 @@ namespace llove
         [[nodiscard]] llvm::DISubroutineType *GetFunctionType(
             llvm::DIType *self,
             const std::vector<llvm::Metadata *> &parameters,
+            bool variadic,
             llvm::DIType *result) const;
 
         void CreateParameter(Builder &builder, const std::string &name, unsigned index, const ValuePtr &value) const;

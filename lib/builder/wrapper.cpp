@@ -403,7 +403,7 @@ llvm::Value *llove::Builder::CreatePCmpNE(llvm::Value *left, llvm::Value *right,
     const auto type = GetPointerSizeType();
     const auto left_int = m_LLVMBuilder.CreatePtrToInt(left, type);
     const auto right_int = m_LLVMBuilder.CreatePtrToInt(right, type);
-    return m_LLVMBuilder.CreateICmpNE(left_int, right_int);
+    return m_LLVMBuilder.CreateICmpNE(left_int, right_int, name);
 }
 
 llvm::Value *llove::Builder::CreatePtrDiff(

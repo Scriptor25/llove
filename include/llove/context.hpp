@@ -16,12 +16,12 @@ namespace llove
         Context() = default;
         explicit Context(Context *parent);
 
-        Context *GetParent() const;
+        [[nodiscard]] Context *GetParent() const;
 
         [[nodiscard]] TypePtr GetNamed(const std::string &id) const;
         void SetNamed(const std::string &id, TypePtr type);
 
-        void Set(const std::string &hash, TypePtr type);
+        void Set(std::string hash, TypePtr type);
 
         template<typename T, typename... Args> requires std::is_base_of_v<Type, T>
         std::shared_ptr<T> GetOrCreate(Args &&... args)
@@ -29,14 +29,13 @@ namespace llove
             if (m_Parent)
                 return m_Parent->GetOrCreate<T, Args...>(std::forward<Args>(args)...);
 
-            auto type = std::make_shared<T>(std::forward<Args>(args)...);
+            auto type = std::make_unique<T>(std::forward<Args>(args)...);
             auto hash = type->Mangle();
 
-            if (m_Types.contains(hash))
-                return std::dynamic_pointer_cast<T>(m_Types.at(hash));
+            if (!m_Types.contains(hash))
+                m_Types.emplace(hash, std::move(type));
 
-            m_Types.emplace(hash, type);
-            return type;
+            return std::dynamic_pointer_cast<T>(m_Types.at(hash));
         }
 
         VoidType::Ptr GetVoid();
@@ -57,17 +56,18 @@ namespace llove
 
         IntegerType::Ptr GetBoolean();
 
-        TypePtr TypeUnion(const TypePtr &left, const TypePtr &right);
-        unsigned Difference(const TypePtr &left, const TypePtr &right);
+        TypePtr TypeUnion(TypePtr left, TypePtr right);
 
         ClassTemplate &PushTemplate(
             std::string name,
             std::vector<std::pair<std::string, TemplateType::Ptr>> parameters);
         void PopTemplate();
 
-        void EmplaceTemplate(std::string name, std::vector<std::pair<std::string, TemplateType::Ptr>> parameters);
+        void EmplaceTemplate(
+            std::string name,
+            std::vector<std::pair<std::string, TemplateType::Ptr>> parameters);
 
-        TypePtr InstantiateTemplateClass(std::string name, const std::vector<TypePtr> &arguments);
+        TypePtr InstantiateTemplateClass(std::string name, std::vector<TypePtr> arguments);
         void InstantiateReflections(Builder &builder);
 
         [[nodiscard]] TypePtr TemplateArgument(const std::string &name) const;

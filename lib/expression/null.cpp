@@ -9,12 +9,12 @@ llove::NullExpression::NullExpression(Location loc, PointerType::Ptr type)
 {
 }
 
-llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, const TypePtr expect) const try
+llove::ValuePtr llove::NullExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     auto type = m_Type
                     ? m_Type
                     : expect && expect->IsPointer()
-                    ? As<PointerType>(expect)
+                    ? As<PointerType>(std::move(expect))
                     : builder.GetContext().GetPointer(false);
 
     builder.EmitLoc(m_Loc);

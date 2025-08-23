@@ -19,10 +19,13 @@ llove::LetStatement::LetStatement(
 
 void llove::LetStatement::Gen(Builder &builder) const try
 {
-    Assert(m_Info.GetType() != nullptr || m_Value != nullptr, "missing at least one of type or value");
+    Assert(m_Info.HasType() || m_Value != nullptr, "missing at least one of type or value");
 
-    auto value = m_Value ? m_Value->GenVal(builder, m_Info.GetType()) : nullptr;
-    auto type = m_Info.GetType() ? m_Info.GetType() : value->GetType();
+    auto type = m_Info.HasType() ? m_Info.GetType() : nullptr;
+    auto value = m_Value ? m_Value->GenVal(builder, type) : nullptr;
+
+    if (!type)
+        type = value->GetType();
 
     std::vector<ValuePtr> arguments;
     for (auto &argument : m_Arguments)

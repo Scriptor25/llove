@@ -6,7 +6,7 @@ llove::TypePtr llove::Parser::ParseNamedType()
     const auto token = Expect(TokenType_Symbol);
 
     const auto &name = token.Value;
-    if (auto type = m_Context.GetNamed(name))
+    if (const auto type = m_Context.GetNamed(name))
         return type;
 
     if (name == "void")

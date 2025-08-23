@@ -108,7 +108,7 @@ define print_float(push: (i32, [mut]) => void, context: [mut], mut value: f64, f
     let mut buffer: i8[256];
     let mut index: u64 = 256;
 
-    let sign = value < 0;
+    let sign = value < 0.0;
     if (sign) {
         value = -value;
     }
@@ -116,20 +116,12 @@ define print_float(push: (i32, [mut]) => void, context: [mut], mut value: f64, f
     foreach (_ : (0)..precision)
         value *= 10;
 
-    if (!value) {
+    if (value == 0.0) {
         buffer[--index] = '0';
     }
     for (let mut i = value as u64; i; i /= 10) {
         let rem = i % 10;
-        let mut c: i8;
-        if (rem < 10) {
-            c = rem + '0';
-        } else if (upper) {
-            c = (rem - 10) + 'A';
-        } else {
-            c = (rem - 10) + 'a';
-        }
-        buffer[--index] = c;
+        buffer[--index] = rem + '0';
         if (index == precision) {
             buffer[--index] = '.';
         }

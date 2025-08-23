@@ -33,7 +33,7 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
     case TypeId_Class:
     {
         const auto class_type = As<ClassType>(type);
-        if (!class_type->HasField(m_Member))
+        if (!class_type->HasMember(m_Member))
             break;
 
         Assert(
@@ -42,8 +42,8 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
             m_Member,
             class_type);
 
-        index = class_type->GetFieldIndex(m_Member);
-        element = class_type->GetField(index);
+        index = class_type->GetMemberIndex(m_Member);
+        element = class_type->GetMember(index);
         break;
     }
     default:
@@ -105,7 +105,7 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
     case TypeId_Class:
     {
         const auto class_type = As<ClassType>(type);
-        if (!class_type->HasField(m_Member))
+        if (!class_type->HasMember(m_Member))
             break;
 
         Assert(
@@ -114,8 +114,8 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
             m_Member,
             class_type);
 
-        index = class_type->GetFieldIndex(m_Member);
-        element = class_type->GetField(index);
+        index = class_type->GetMemberIndex(m_Member);
+        element = class_type->GetMember(index);
         break;
     }
     default:

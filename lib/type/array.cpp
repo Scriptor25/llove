@@ -6,12 +6,12 @@ llove::ArrayType::ArrayType(TypePtr base, const unsigned count)
     : m_Base(std::move(base)),
       m_Count(count)
 {
+    Assert(m_Base != nullptr, "base must not be null");
 }
 
 llove::TypePtr llove::ArrayType::GetBase() const
 {
-    Assert(!m_Base.expired(), "base has expired");
-    return m_Base.lock();
+    return m_Base;
 }
 
 unsigned llove::ArrayType::GetCount() const
@@ -31,46 +31,31 @@ bool llove::ArrayType::IsArray() const
 
 llvm::ArrayType *llove::ArrayType::GenIR(Builder &builder)
 {
-    Assert(!m_Base.expired(), "base has expired");
-    const auto base = m_Base.lock();
-
     if (!m_IRType)
-        m_IRType = builder.GetArrayType(base->GenIR(builder), m_Count);
+        m_IRType = builder.GetArrayType(m_Base->GenIR(builder), m_Count);
 
     return llvm::dyn_cast<llvm::ArrayType>(m_IRType);
 }
 
 llvm::DIType *llove::ArrayType::GenDI(Builder &builder)
 {
-    Assert(!m_Base.expired(), "base has expired");
-    const auto base = m_Base.lock();
-
     if (!m_DIType)
-        m_DIType = builder.GetDebug().GetArrayType(base->GenDI(builder), m_Count);
+        m_DIType = builder.GetDebug().GetArrayType(m_Base->GenDI(builder), m_Count);
 
     return m_DIType;
 }
 
 llove::TypePtr llove::ArrayType::Reflect(Context &context) const
 {
-    Assert(!m_Base.expired(), "base has expired");
-    const auto base = m_Base.lock();
-
-    return context.GetArray(base->Reflect(context), m_Count);
+    return context.GetArray(m_Base->Reflect(context), m_Count);
 }
 
 std::string llove::ArrayType::Mangle() const
 {
-    Assert(!m_Base.expired(), "base has expired");
-    const auto base = m_Base.lock();
-
-    return 'a' + std::to_string(m_Count) + '_' + base->Mangle();
+    return 'a' + std::to_string(m_Count) + '_' + m_Base->Mangle();
 }
 
 std::ostream &llove::ArrayType::Print(std::ostream &stream) const
 {
-    Assert(!m_Base.expired(), "base has expired");
-    const auto base = m_Base.lock();
-
-    return stream << base << '[' << m_Count << ']';
+    return stream << m_Base << '[' << m_Count << ']';
 }

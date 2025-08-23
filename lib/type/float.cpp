@@ -5,6 +5,7 @@
 llove::FloatType::FloatType(const unsigned bits)
     : m_Bits(bits)
 {
+    Assert(m_Bits == 16 || m_Bits == 32 || m_Bits == 64, "bits must be either 16, 32 or 64");
 }
 
 unsigned llove::FloatType::GetBits() const

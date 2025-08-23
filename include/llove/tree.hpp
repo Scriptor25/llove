@@ -610,7 +610,7 @@ namespace llove
 
     struct SwitchExpressionCase final
     {
-        bool IsDefault;
+        bool IsDefault = false;
         std::vector<ExpressionPtr> Keys;
         ExpressionPtr Value;
     };

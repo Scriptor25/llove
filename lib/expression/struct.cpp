@@ -1,5 +1,4 @@
 #include <llove/builder.hpp>
-#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -11,12 +10,12 @@ llove::StructExpression::StructExpression(Location loc, std::map<std::string, Ex
 {
 }
 
-llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr expect) const try
+llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     auto type = m_Type
                     ? As<StructType>(m_Type)
                     : expect && expect->IsStruct()
-                    ? As<StructType>(expect)
+                    ? As<StructType>(std::move(expect))
                     : nullptr;
     Assert(type != nullptr, "untyped struct expression");
 

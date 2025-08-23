@@ -3,6 +3,7 @@
 #include <format>
 #include <sstream>
 #include <string>
+#include <llove/error.hpp>
 #include <llove/forward.hpp>
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Value.h>
@@ -33,40 +34,16 @@ namespace llove
             bool strict);
 
         explicit Field() = default;
-        explicit Field(bool is_mutable, bool is_reference, const TypePtr &type);
+        explicit Field(bool is_mutable, bool is_reference, TypePtr type);
 
-        [[nodiscard]] bool IsMutable() const
-        {
-            return m_IsMutable;
-        }
+        [[nodiscard]] bool IsMutable() const;
+        [[nodiscard]] bool IsReference() const;
+        [[nodiscard]] bool HasType() const;
+        [[nodiscard]] TypePtr GetType() const;
 
-        [[nodiscard]] bool IsReference() const
-        {
-            return m_IsReference;
-        }
-
-        [[nodiscard]] TypePtr GetType() const
-        {
-            return m_Type.lock();
-        }
-
-        Field &SetIsMutable(const bool is_mutable)
-        {
-            m_IsMutable = is_mutable;
-            return *this;
-        }
-
-        Field &SetIsReference(const bool is_reference)
-        {
-            m_IsReference = is_reference;
-            return *this;
-        }
-
-        Field &SetType(const TypePtr &type)
-        {
-            m_Type = type;
-            return *this;
-        }
+        Field &SetIsMutable(bool is_mutable);
+        Field &SetIsReference(bool is_reference);
+        Field &SetType(TypePtr type);
 
         std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
@@ -84,7 +61,7 @@ namespace llove
     private:
         bool m_IsMutable = false;
         bool m_IsReference = false;
-        WeakTypePtr m_Type;
+        TypePtr m_Type;
     };
 
     std::string GetFieldHash(const std::vector<Field> &fields);

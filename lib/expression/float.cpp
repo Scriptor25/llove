@@ -10,12 +10,12 @@ llove::FloatExpression::FloatExpression(Location loc, const double_t value, Type
 {
 }
 
-llove::ValuePtr llove::FloatExpression::GenVal(Builder &builder, const TypePtr expect) const try
+llove::ValuePtr llove::FloatExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     auto type = m_Type
                     ? As<FloatType>(m_Type)
                     : expect && expect->IsFloat()
-                    ? As<FloatType>(expect)
+                    ? As<FloatType>(std::move(expect))
                     : builder.GetContext().GetFloat(64);
 
     builder.EmitLoc(m_Loc);

@@ -6,7 +6,6 @@ namespace llove
 {
     class Type;
     using TypePtr = std::shared_ptr<Type>;
-    using WeakTypePtr = std::weak_ptr<Type>;
 
     class Value;
     class LValue;
@@ -39,7 +38,7 @@ namespace llove
     std::ostream &operator<<(std::ostream &stream, const Parameter &parameter);
 
     template<typename T> requires std::is_base_of_v<Type, T>
-    std::ostream &operator<<(std::ostream &stream, const std::shared_ptr<T> &ptr)
+    std::ostream &operator<<(std::ostream &stream, std::shared_ptr<T> ptr)
     {
         return ptr->Print(stream);
     }

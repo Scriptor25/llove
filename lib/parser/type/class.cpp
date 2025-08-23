@@ -18,7 +18,7 @@ llove::TypePtr llove::Parser::ParseClassType()
         Expect(TokenType_Operator, ">");
 
         auto name = Expect(TokenType_Symbol).Value;
-        return m_Context.InstantiateTemplateClass(std::move(name), template_arguments);
+        return m_Context.InstantiateTemplateClass(std::move(name), std::move(template_arguments));
     }
 
     auto name = Expect(TokenType_Symbol).Value;

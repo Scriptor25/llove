@@ -11,21 +11,21 @@ llove::SubscriptExpression::SubscriptExpression(Location loc, ExpressionPtr valu
 {
 }
 
-llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, const TypePtr expect) const try
+llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, TypePtr) const try
 {
-    const auto value = m_Value->GenVal(builder, expect ? builder.GetContext().GetPointer(expect, false) : nullptr);
+    const auto value = m_Value->GenVal(builder, nullptr);
     const auto index = m_Index->GenVal(builder, nullptr);
 
     builder.EmitLoc(m_Loc);
 
-    switch (value->GetType()->GetId())
+    switch (auto type = value->GetType(); type->GetId())
     {
     case TypeId_Pointer:
         return builder.GetPointerElement(value, index);
     case TypeId_Array:
         return builder.GetArrayElement(value, index);
     default:
-        Error("subscript on non-pointer and non-array value of type {}", value->GetType());
+        Error("subscript on non-pointer and non-array value of type {}", type);
     }
 }
 catch (ref_exception<ErrorStack> &cause)

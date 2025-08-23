@@ -11,9 +11,13 @@ llove::ArrayExpression::ArrayExpression(Location loc, std::vector<ExpressionPtr>
 {
 }
 
-llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr expect) const try
+llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
-    auto type = m_Type ? As<ArrayType>(m_Type) : expect ? As<ArrayType>(expect) : nullptr;
+    auto type = m_Type
+                    ? As<ArrayType>(m_Type)
+                    : expect && expect->IsArray()
+                    ? As<ArrayType>(std::move(expect))
+                    : nullptr;
     Assert(type != nullptr, "untyped array expression");
 
     const auto base = type->GetBase();
