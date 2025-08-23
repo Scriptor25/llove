@@ -47,7 +47,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         auto iterator_type = builder.GetContext().GetPointer(base_type, range->IsMutable());
 
         llvm::Value *begin_pointer;
-        if (range->IsReferenceable())
+        if (range->IsReference())
         {
             begin_pointer = range->GetPointer();
         }
@@ -75,67 +75,67 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         auto &begin_fld = struct_type->GetField(begin_index);
         auto &end_fld = struct_type->GetField(end_index);
 
-        if (range->IsReferenceable())
+        if (range->IsReference())
         {
             auto begin_pointer = builder.CreateStructGEP(struct_type->GenIR(builder), range->GetPointer(), begin_index);
-            if (begin_fld.Reference)
+            if (begin_fld.IsReference())
             {
                 begin_pointer = builder.CreateLoad(builder.GetPointerType(), begin_pointer);
-                begin = Value::CreateL(begin_fld.Type, begin_pointer, begin_fld.Mutable);
+                begin = Value::CreateL(begin_fld.GetType(), begin_pointer, begin_fld.IsMutable());
             }
             else
             {
-                begin = Value::CreateL(begin_fld.Type, begin_pointer, range->IsMutable() && begin_fld.Mutable);
+                begin = Value::CreateL(begin_fld.GetType(), begin_pointer, range->IsMutable() && begin_fld.IsMutable());
             }
 
             auto end_pointer = builder.CreateStructGEP(struct_type->GenIR(builder), range->GetPointer(), end_index);
-            if (end_fld.Reference)
+            if (end_fld.IsReference())
             {
                 end_pointer = builder.CreateLoad(builder.GetPointerType(), end_pointer);
-                end = Value::CreateL(end_fld.Type, end_pointer, end_fld.Mutable);
+                end = Value::CreateL(end_fld.GetType(), end_pointer, end_fld.IsMutable());
             }
             else
             {
-                end = Value::CreateL(end_fld.Type, end_pointer, range->IsMutable() && end_fld.Mutable);
+                end = Value::CreateL(end_fld.GetType(), end_pointer, range->IsMutable() && end_fld.IsMutable());
             }
         }
         else
         {
             auto begin_value = builder.CreateExtractValue(range->Load(builder), begin_index);
-            if (begin_fld.Reference)
+            if (begin_fld.IsReference())
             {
                 begin_value = builder.CreateLoad(builder.GetPointerType(), begin_value);
-                begin = Value::CreateL(begin_fld.Type, begin_value, begin_fld.Mutable);
+                begin = Value::CreateL(begin_fld.GetType(), begin_value, begin_fld.IsMutable());
             }
             else
             {
-                begin = Value::CreateR(begin_fld.Type, begin_value);
+                begin = Value::CreateR(begin_fld.GetType(), begin_value);
             }
 
             auto end_value = builder.CreateExtractValue(range->Load(builder), end_index);
-            if (end_fld.Reference)
+            if (end_fld.IsReference())
             {
                 end_value = builder.CreateLoad(builder.GetPointerType(), end_value);
-                end = Value::CreateL(end_fld.Type, end_value, end_fld.Mutable);
+                end = Value::CreateL(end_fld.GetType(), end_value, end_fld.IsMutable());
             }
             else
             {
-                end = Value::CreateR(end_fld.Type, end_value);
+                end = Value::CreateR(end_fld.GetType(), end_value);
             }
         }
 
-        if (begin_fld.Type->IsFunction())
+        if (begin_fld.GetType()->IsFunction())
         {
-            const auto fn_type = As<FunctionType>(begin_fld.Type);
+            const auto fn_type = As<FunctionType>(begin_fld.GetType());
             Assert(!fn_type->HasVariadic(), "illegal variadic argument");
             Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
             begin = builder.CreateCall(begin);
         }
 
-        if (end_fld.Type->IsFunction())
+        if (end_fld.GetType()->IsFunction())
         {
-            const auto fn_type = As<FunctionType>(end_fld.Type);
+            const auto fn_type = As<FunctionType>(end_fld.GetType());
             Assert(!fn_type->HasVariadic(), "illegal variadic argument");
             Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
@@ -149,7 +149,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         const auto range_type = As<RangeType>(type);
         const auto iterator_type = range_type->GetEntry();
 
-        if (range->IsReferenceable())
+        if (range->IsReference())
         {
             const auto begin_pointer = builder.CreateStructGEP(range_type->GenIR(builder), range->GetPointer(), 0);
             const auto end_pointer = builder.CreateStructGEP(range_type->GenIR(builder), range->GetPointer(), 1);
@@ -231,7 +231,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
 
         if (m_Reference)
         {
-            Assert(storage->IsReferenceable(), "value is not referenceable");
+            Assert(storage->IsReference(), "value is not referenceable");
             Assert(!m_Mutable || storage->IsMutable(), "reference mutability violation");
 
             storage = Value::CreateL(storage_type, storage->GetPointer(), m_Mutable);

@@ -14,7 +14,7 @@ namespace llove
 
         [[nodiscard]] TypePtr GetType() const;
 
-        [[nodiscard]] virtual bool IsReferenceable() const = 0;
+        [[nodiscard]] virtual bool IsReference() const = 0;
         [[nodiscard]] virtual bool IsMutable() const = 0;
         virtual llvm::Value *Load(Builder &builder) const = 0;
         virtual void Store(Builder &builder, llvm::Value *value, bool volatile_ = false) const = 0;
@@ -35,7 +35,7 @@ namespace llove
     public:
         explicit RValue(TypePtr type, llvm::Value *value);
 
-        [[nodiscard]] bool IsReferenceable() const override;
+        [[nodiscard]] bool IsReference() const override;
         [[nodiscard]] bool IsMutable() const override;
         llvm::Value *Load(Builder &builder) const override;
         void Store(Builder &builder, llvm::Value *value, bool volatile_) const override;
@@ -52,7 +52,7 @@ namespace llove
     public:
         explicit LValue(TypePtr type, llvm::Value *pointer, bool mutable_);
 
-        [[nodiscard]] bool IsReferenceable() const override;
+        [[nodiscard]] bool IsReference() const override;
         [[nodiscard]] bool IsMutable() const override;
         llvm::Value *Load(Builder &builder) const override;
         void Store(Builder &builder, llvm::Value *value, bool volatile_) const override;

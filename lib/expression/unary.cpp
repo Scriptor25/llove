@@ -20,7 +20,7 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, const TypePtr e
 
     if (m_Operator == "$")
     {
-        if (!operand->IsReferenceable())
+        if (!operand->IsReference())
             return operand;
         if (!operand->GetType()->IsClass())
             return Value::CreateR(operand->GetType(), operand->Load(builder));

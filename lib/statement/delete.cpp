@@ -22,7 +22,7 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
     auto class_type = As<ClassType>(type);
     if (const auto destructor = class_type->GetDestructor())
     {
-        if (!value->IsReferenceable())
+        if (!value->IsReference())
         {
             const auto pointer = builder.CreateAlloca(type->GenIR(builder));
             builder.CreateStore(value->Load(builder), pointer);

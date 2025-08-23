@@ -17,7 +17,7 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
     if (SkipIf(TokenType_Other, ":"))
         ParseField(result, false, true);
     else
-        result.Type = m_Context.GetVoid();
+        result.SetType(m_Context.GetVoid());
 
     auto content = ParseScopeStatement();
 

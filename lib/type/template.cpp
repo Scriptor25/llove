@@ -48,7 +48,7 @@ std::ostream &llove::TemplateType::Print(std::ostream &stream) const
     return stream << m_Name;
 }
 
-llove::ClassTemplateType::ClassTemplateType(std::string name, std::vector<TypePtr> arguments)
+llove::ClassTemplateType::ClassTemplateType(std::string name, std::vector<WeakTypePtr> arguments)
     : m_Name(std::move(name)),
       m_Arguments(std::move(arguments))
 {
@@ -83,7 +83,10 @@ llove::TypePtr llove::ClassTemplateType::Reflect(Context &context) const
 {
     std::vector<TypePtr> arguments;
     for (auto &argument : m_Arguments)
-        Type::Reflect(context, argument, arguments.emplace_back());
+    {
+        Assert(!argument.expired(), "argument has expired");
+        Type::Reflect(context, argument.lock(), arguments.emplace_back());
+    }
 
     return context.InstantiateTemplateClass(m_Name, arguments);
 }
@@ -100,7 +103,9 @@ std::ostream &llove::ClassTemplateType::Print(std::ostream &stream) const
     {
         if (i != m_Arguments.begin())
             stream << ", ";
-        stream << *i;
+
+        Assert(!i->expired(), "argument has expired");
+        stream << i->lock();
     }
     return stream << "> " << m_Name;
 }

@@ -109,7 +109,7 @@ namespace llove
         using Ptr = std::shared_ptr<ClassTemplateType>;
         static constexpr auto ID = TypeId_Template;
 
-        explicit ClassTemplateType(std::string name, std::vector<TypePtr> arguments);
+        explicit ClassTemplateType(std::string name, std::vector<WeakTypePtr> arguments);
 
         [[nodiscard]] TypeId GetId() const override;
         [[nodiscard]] bool IsTemplate() const override;
@@ -124,7 +124,7 @@ namespace llove
 
     private:
         std::string m_Name;
-        std::vector<TypePtr> m_Arguments;
+        std::vector<WeakTypePtr> m_Arguments;
     };
 
     class VoidType final : public Type
@@ -234,7 +234,7 @@ namespace llove
         using Ptr = std::shared_ptr<PointerType>;
         static constexpr auto ID = TypeId_Pointer;
 
-        explicit PointerType(TypePtr base, bool mutable_);
+        explicit PointerType(const TypePtr &base, bool is_mutable);
 
         [[nodiscard]] TypePtr GetBase() const;
         [[nodiscard]] bool IsMutable() const;
@@ -254,8 +254,8 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        TypePtr m_Base;
-        bool m_Mutable;
+        WeakTypePtr m_Base;
+        bool m_IsMutable;
     };
 
     class ArrayType final : public Type
@@ -283,7 +283,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        TypePtr m_Base;
+        WeakTypePtr m_Base;
         unsigned m_Count;
     };
 
@@ -323,7 +323,7 @@ namespace llove
         using Ptr = std::shared_ptr<RangeType>;
         static constexpr auto ID = TypeId_Range;
 
-        explicit RangeType(TypePtr entry);
+        explicit RangeType(const TypePtr &entry);
 
         [[nodiscard]] TypePtr GetEntry() const;
 
@@ -341,7 +341,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        TypePtr m_Entry;
+        WeakTypePtr m_Entry;
     };
 
     class ClassType final : public Type

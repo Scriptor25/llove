@@ -5,13 +5,13 @@
 #include <string>
 #include <llove/forward.hpp>
 #include <llvm/IR/DebugInfoMetadata.h>
-#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
 namespace llove
 {
-    struct Field final
+    class Field final
     {
+    public:
         /**
          * @param builder builder instance
          * @param dst destination field
@@ -32,6 +32,42 @@ namespace llove
             const Field &src,
             bool strict);
 
+        explicit Field() = default;
+        explicit Field(bool is_mutable, bool is_reference, const TypePtr &type);
+
+        [[nodiscard]] bool IsMutable() const
+        {
+            return m_IsMutable;
+        }
+
+        [[nodiscard]] bool IsReference() const
+        {
+            return m_IsReference;
+        }
+
+        [[nodiscard]] TypePtr GetType() const
+        {
+            return m_Type.lock();
+        }
+
+        Field &SetIsMutable(const bool is_mutable)
+        {
+            m_IsMutable = is_mutable;
+            return *this;
+        }
+
+        Field &SetIsReference(const bool is_reference)
+        {
+            m_IsReference = is_reference;
+            return *this;
+        }
+
+        Field &SetType(const TypePtr &type)
+        {
+            m_Type = type;
+            return *this;
+        }
+
         std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
         llvm::Type *GenIRType(Builder &builder) const;
@@ -45,9 +81,10 @@ namespace llove
 
         void Reflect(Context &context, Field &field) const;
 
-        bool Mutable = false;
-        bool Reference = false;
-        TypePtr Type;
+    private:
+        bool m_IsMutable = false;
+        bool m_IsReference = false;
+        WeakTypePtr m_Type;
     };
 
     std::string GetFieldHash(const std::vector<Field> &fields);

@@ -57,16 +57,16 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
         {
             if (!function_self)
                 continue;
-            if (function_self->Type != self->Type)
+            if (function_self->GetType() != self->GetType())
                 continue;
-            if (function_self->Mutable && !self->Mutable)
+            if (function_self->IsMutable() && !self->IsMutable())
                 continue;
-            if (function_self->Reference != self->Reference)
+            if (function_self->IsReference() != self->IsReference())
                 continue;
-            if (!function.Expose && function_self->Type != m_Class)
+            if (!function.Expose && function_self->GetType() != m_Class)
                 continue;
         }
-        else if (function_self && !function.Expose && function_self->Type != m_Class)
+        else if (function_self && !function.Expose && function_self->GetType() != m_Class)
             continue;
 
         functions.emplace_back(function);
@@ -178,12 +178,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
     for (auto &function : functions)
     {
-        const Field function_self
-        {
-            .Mutable = function.Mutable,
-            .Reference = true,
-            .Type = class_type,
-        };
+        const Field function_self(function.Mutable, true, class_type);
 
         if (implicit && !function.Implicit)
             continue;

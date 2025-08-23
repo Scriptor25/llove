@@ -29,7 +29,7 @@ llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, const TypePtr 
         const auto index = type->GetFieldIndex(key);
         auto &field = type->GetField(index);
 
-        auto gen_val = value->GenVal(builder, field.Type);
+        auto gen_val = value->GenVal(builder, field.GetType());
         const auto val = field.GenCast(builder, std::move(gen_val));
 
         aggregate = builder.CreateInsertValue(aggregate, val, index);

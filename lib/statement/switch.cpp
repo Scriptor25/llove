@@ -35,7 +35,7 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
         for (auto &key : keys)
         {
             const auto key_value = key->GenVal(builder, condition->GetType());
-            Assert(!key_value->IsReferenceable(), "invalid non-constant case key value");
+            Assert(!key_value->IsReference(), "invalid non-constant case key value");
             Assert(key_value->GetType()->IsInteger(), "invalid non-integer case key type {}", key_value->GetType());
 
             auto key_const = llvm::dyn_cast<llvm::ConstantInt>(key_value->Load(builder));

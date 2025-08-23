@@ -47,7 +47,7 @@ void llove::Builder::PushFrame(const std::optional<Location> &loc, llvm::BasicBl
     frame.Head = head;
     frame.Tail = tail;
 
-    m_DebugBuilder->PushFrame(loc);
+    m_DebugBuilder.PushFrame(loc);
 }
 
 void llove::Builder::PopFrame()
@@ -57,7 +57,7 @@ void llove::Builder::PopFrame()
     CallDeferred({}, false);
 
     m_Stack.pop_back();
-    m_DebugBuilder->PopFrame();
+    m_DebugBuilder.PopFrame();
 }
 
 void llove::Builder::SetValue(const std::string &name, ValuePtr value)
@@ -104,7 +104,7 @@ void llove::Builder::PushDestructor(llvm::Value *self, const FunctionReference &
 
     auto action = [this, self, callee]
     {
-        auto self_value = Value::CreateL(callee.Type->GetSelf()->Type, self, true);
+        auto self_value = Value::CreateL(callee.Type->GetSelf()->GetType(), self, true);
         CreateCall(callee, {}, std::move(self_value));
     };
 

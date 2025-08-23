@@ -72,10 +72,10 @@ llove::ValuePtr llove::Builder::CreateCall(
         function.Callee,
         argument_values);
 
-    if (function_result.Reference)
-        return Value::CreateL(function_result.Type, result_value, function_result.Mutable);
+    if (function_result.IsReference())
+        return Value::CreateL(function_result.GetType(), result_value, function_result.IsMutable());
 
-    return Value::CreateR(function_result.Type, result_value);
+    return Value::CreateR(function_result.GetType(), result_value);
 }
 
 llove::ValuePtr llove::Builder::CreateCall(const ValuePtr &callee)
@@ -94,8 +94,8 @@ llove::ValuePtr llove::Builder::CreateCall(const ValuePtr &callee)
         callee->Load(*this),
         arguments);
 
-    if (function_result.Reference)
-        return Value::CreateL(function_result.Type, result_value, function_result.Mutable);
+    if (function_result.IsReference())
+        return Value::CreateL(function_result.GetType(), result_value, function_result.IsMutable());
 
-    return Value::CreateR(function_result.Type, result_value);
+    return Value::CreateR(function_result.GetType(), result_value);
 }

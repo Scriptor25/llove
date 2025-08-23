@@ -21,7 +21,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &operator
 
         if (const auto &function_self = function_type->GetSelf())
         {
-            if (!function.Expose && function_self->Type != m_Class)
+            if (!function.Expose && function_self->GetType() != m_Class)
                 continue;
             if (parameter_count != 0)
                 continue;
@@ -82,7 +82,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
         if (const auto &function_self = function_type->GetSelf())
         {
-            if (!function.Expose && function_self->Type != m_Class)
+            if (!function.Expose && function_self->GetType() != m_Class)
                 continue;
             if (parameter_count != 1)
                 continue;

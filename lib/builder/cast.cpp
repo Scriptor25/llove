@@ -1,12 +1,11 @@
 #include <llove/builder.hpp>
-#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/value.hpp>
 
 llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bool implicit)
 {
     const auto src_fld = value->AsField();
-    const auto dst_fld = Field{ .Type = dst };
+    const Field dst_fld(false, false, dst);
 
     const auto src = value->GetType();
     if (src == dst)
@@ -192,8 +191,8 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool i
         return true;
     }
 
-    const auto src_type = src.Type;
-    const auto dst_type = dst.Type;
+    const auto src_type = src.GetType();
+    const auto dst_type = dst.GetType();
 
     switch (src_type->GetId())
     {
@@ -224,7 +223,7 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool i
         {
         case TypeId_Pointer:
             return As<ArrayType>(src_type)->GetBase() == As<PointerType>(dst_type)->GetBase() &&
-                   (src.Mutable || !As<PointerType>(dst_type)->IsMutable());
+                   (src.IsMutable() || !As<PointerType>(dst_type)->IsMutable());
         default:
             return false;
         }

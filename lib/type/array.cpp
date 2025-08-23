@@ -10,7 +10,8 @@ llove::ArrayType::ArrayType(TypePtr base, const unsigned count)
 
 llove::TypePtr llove::ArrayType::GetBase() const
 {
-    return m_Base;
+    Assert(!m_Base.expired(), "base has expired");
+    return m_Base.lock();
 }
 
 unsigned llove::ArrayType::GetCount() const
@@ -30,33 +31,46 @@ bool llove::ArrayType::IsArray() const
 
 llvm::ArrayType *llove::ArrayType::GenIR(Builder &builder)
 {
+    Assert(!m_Base.expired(), "base has expired");
+    const auto base = m_Base.lock();
+
     if (!m_IRType)
-        m_IRType = builder.GetArrayType(m_Base->GenIR(builder), m_Count);
+        m_IRType = builder.GetArrayType(base->GenIR(builder), m_Count);
+
     return llvm::dyn_cast<llvm::ArrayType>(m_IRType);
 }
 
 llvm::DIType *llove::ArrayType::GenDI(Builder &builder)
 {
-    if (m_DIType)
-        return m_DIType;
+    Assert(!m_Base.expired(), "base has expired");
+    const auto base = m_Base.lock();
 
-    return m_DIType = builder.GetDebug().GetArrayType(m_Base->GenDI(builder), m_Count);
+    if (!m_DIType)
+        m_DIType = builder.GetDebug().GetArrayType(base->GenDI(builder), m_Count);
+
+    return m_DIType;
 }
 
 llove::TypePtr llove::ArrayType::Reflect(Context &context) const
 {
-    TypePtr base;
-    Type::Reflect(context, m_Base, base);
+    Assert(!m_Base.expired(), "base has expired");
+    const auto base = m_Base.lock();
 
-    return context.GetArray(std::move(base), m_Count);
+    return context.GetArray(base->Reflect(context), m_Count);
 }
 
 std::string llove::ArrayType::Mangle() const
 {
-    return 'a' + std::to_string(m_Count) + '_' + m_Base->Mangle();
+    Assert(!m_Base.expired(), "base has expired");
+    const auto base = m_Base.lock();
+
+    return 'a' + std::to_string(m_Count) + '_' + base->Mangle();
 }
 
 std::ostream &llove::ArrayType::Print(std::ostream &stream) const
 {
-    return stream << m_Base << '[' << m_Count << ']';
+    Assert(!m_Base.expired(), "base has expired");
+    const auto base = m_Base.lock();
+
+    return stream << base << '[' << m_Count << ']';
 }

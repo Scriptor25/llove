@@ -42,12 +42,11 @@ llove::Builder::Builder(
     const std::string &command_line,
     const std::string &module_id)
     : m_Context(context),
-      m_Debug(debug),
       m_LLVMBuilder(m_LLVMContext),
-      m_LLVMModule(module_id, m_LLVMContext)
+      m_LLVMModule(module_id, m_LLVMContext),
+      m_Debug(debug),
+      m_DebugBuilder(m_Debug, m_LLVMModule, source_path, optimized, profiling, command_line, emission)
 {
-    m_LLVMModule.setSourceFileName(source_path.string());
-
     auto target_triple = machine.Triple.empty() ? llvm::sys::getDefaultTargetTriple() : machine.Triple;
     auto cpu = machine.CPU.empty() ? "generic" : machine.CPU;
 
@@ -63,12 +62,14 @@ llove::Builder::Builder(
     const auto target = llvm::TargetRegistry::lookupTarget(target_triple, target_error);
     Assert(target != nullptr, "failed to get target for triple '{}': {}", target_triple, target_error);
 
-    m_TargetMachine = target->createTargetMachine(
-        target_triple,
-        cpu,
-        features,
-        machine.Options,
-        machine.Relocation);
+    m_TargetMachine = std::unique_ptr<llvm::TargetMachine>(
+        target->createTargetMachine(
+            target_triple,
+            cpu,
+            features,
+            machine.Options,
+            machine.Relocation
+        ));
     Assert(
         m_TargetMachine != nullptr,
         "failed to create target machine for triple '{}', cpu '{}' and features '{}'",
@@ -76,17 +77,9 @@ llove::Builder::Builder(
         cpu,
         features);
 
+    m_LLVMModule.setSourceFileName(source_path.string());
     m_LLVMModule.setDataLayout(m_TargetMachine->createDataLayout());
     m_LLVMModule.setTargetTriple(target_triple);
-
-    m_DebugBuilder = std::make_unique<DebugBuilder>(
-        m_Debug,
-        m_LLVMModule,
-        source_path,
-        optimized,
-        profiling,
-        command_line,
-        emission);
 
     m_Stack.emplace_back();
 }
@@ -101,14 +94,14 @@ bool llove::Builder::IsDebug() const
     return m_Debug;
 }
 
-llove::DebugBuilder &llove::Builder::GetDebug() const
+llove::DebugBuilder &llove::Builder::GetDebug()
 {
-    return *m_DebugBuilder;
+    return m_DebugBuilder;
 }
 
 void llove::Builder::EmitLoc(const Location &loc)
 {
-    m_DebugBuilder->EmitLoc(*this, loc);
+    m_DebugBuilder.EmitLoc(*this, loc);
 }
 
 llvm::LLVMContext &llove::Builder::GetLLVMContext()
@@ -171,11 +164,7 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 
     if (fn.Class)
     {
-        self = {
-            .Mutable = fn.Mutable,
-            .Reference = true,
-            .Type = fn.Class,
-        };
+        self = Field(fn.Mutable, true, fn.Class);
         callee_type = m_Context.GetFunction(std::move(type_parameters), fn.Variadic.first, fn.Result, *self);
     }
     else
@@ -200,7 +189,7 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
 
     Assert(callee->empty(), "function is already defined");
 
-    m_DebugBuilder->BeginFunction(*this, fn.Name, fn.Loc, callee_type, mangled, callee);
+    m_DebugBuilder.BeginFunction(*this, fn.Name, fn.Loc, callee_type, mangled, callee);
 
     m_Parent = callee;
     m_Class = fn.Class;
@@ -209,19 +198,19 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
     const auto entry_block = CreateBlock("entry", callee);
     m_LLVMBuilder.SetInsertPoint(entry_block);
 
-    m_DebugBuilder->EmitLoc(*this);
+    m_DebugBuilder.EmitLoc(*this);
     PushFrame();
     GenParameters(callee, fn.Parameters, fn.Variadic, self);
     fn.Content->Gen(*this);
     PopFrame();
 
-    m_DebugBuilder->EndFunction();
+    m_DebugBuilder.EndFunction();
 
     for (auto &block : *callee)
     {
         if (block.getTerminator())
             continue;
-        if (fn.Result.Type->IsVoid())
+        if (fn.Result.GetType()->IsVoid())
         {
             m_LLVMBuilder.SetInsertPoint(&block);
             m_LLVMBuilder.CreateRetVoid();
@@ -251,9 +240,9 @@ void llove::Builder::GenParameters(
         const auto argument = iterator++;
         argument->setName("self");
 
-        auto storage = Value::CreateL(self->Type, argument, self->Mutable);
+        auto storage = Value::CreateL(self->GetType(), argument, self->IsMutable());
 
-        m_DebugBuilder->CreateParameter(*this, "self", index++, storage);
+        m_DebugBuilder.CreateParameter(*this, "self", index++, storage);
         SetValue("self", std::move(storage));
     }
 
@@ -263,18 +252,18 @@ void llove::Builder::GenParameters(
         argument->setName(parameter.Name);
 
         ValuePtr storage;
-        if (parameter.Info.Reference)
+        if (parameter.Info.IsReference())
         {
-            storage = Value::CreateL(parameter.Info.Type, argument, parameter.Info.Mutable);
+            storage = Value::CreateL(parameter.Info.GetType(), argument, parameter.Info.IsMutable());
         }
-        else if (parameter.Info.Type->IsClass())
+        else if (parameter.Info.GetType()->IsClass())
         {
-            const auto pointer = CreateAlloca(parameter.Info.Type->GenIR(*this), parent);
+            const auto pointer = CreateAlloca(parameter.Info.GetType()->GenIR(*this), parent);
             m_LLVMBuilder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);
+            storage = Value::CreateL(parameter.Info.GetType(), pointer, parameter.Info.IsMutable());
 
-            auto class_type = As<ClassType>(parameter.Info.Type);
+            auto class_type = As<ClassType>(parameter.Info.GetType());
             if (const auto destructor = class_type->GetDestructor())
             {
                 const auto function = GenFunction(
@@ -289,19 +278,19 @@ void llove::Builder::GenParameters(
                 PushDestructor(pointer, function);
             }
         }
-        else if (parameter.Info.Mutable)
+        else if (parameter.Info.IsMutable())
         {
-            const auto pointer = CreateAlloca(parameter.Info.Type->GenIR(*this), parent);
+            const auto pointer = CreateAlloca(parameter.Info.GetType()->GenIR(*this), parent);
             m_LLVMBuilder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(parameter.Info.Type, pointer, parameter.Info.Mutable);
+            storage = Value::CreateL(parameter.Info.GetType(), pointer, parameter.Info.IsMutable());
         }
         else
         {
-            storage = Value::CreateR(parameter.Info.Type, argument);
+            storage = Value::CreateR(parameter.Info.GetType(), argument);
         }
 
-        m_DebugBuilder->CreateParameter(*this, parameter.Name, index++, storage);
+        m_DebugBuilder.CreateParameter(*this, parameter.Name, index++, storage);
         SetValue(parameter.Name, std::move(storage));
     }
 
@@ -315,7 +304,7 @@ void llove::Builder::GenParameters(
 
         auto storage = Value::CreateL(m_Context.GetVariadic(), pointer, true);
 
-        m_DebugBuilder->CreateParameter(*this, variadic.second, index, storage);
+        m_DebugBuilder.CreateParameter(*this, variadic.second, index, storage);
         SetValue(variadic.second, std::move(storage));
     }
 }

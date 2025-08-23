@@ -17,12 +17,7 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, const TypePtr e
     Assert(type != nullptr, "untyped array expression");
 
     const auto base = type->GetBase();
-    const Field field
-    {
-        .Mutable = false,
-        .Reference = false,
-        .Type = base,
-    };
+    const Field field(false, false, base);
 
     builder.EmitLoc(m_Loc);
 

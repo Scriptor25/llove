@@ -83,7 +83,7 @@ namespace llove
         Context &GetContext() const;
 
         bool IsDebug() const;
-        DebugBuilder &GetDebug() const;
+        DebugBuilder &GetDebug();
 
         void EmitLoc(const Location &loc);
 
@@ -315,14 +315,14 @@ namespace llove
     private:
         Context &m_Context;
 
-        bool m_Debug;
-        std::unique_ptr<DebugBuilder> m_DebugBuilder;
-
         llvm::LLVMContext m_LLVMContext;
         llvm::IRBuilder<> m_LLVMBuilder;
         llvm::Module m_LLVMModule;
 
-        llvm::TargetMachine *m_TargetMachine;
+        std::unique_ptr<llvm::TargetMachine> m_TargetMachine;
+
+        bool m_Debug;
+        DebugBuilder m_DebugBuilder;
 
         std::vector<FunctionReference> m_Functions;
 

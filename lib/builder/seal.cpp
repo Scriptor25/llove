@@ -14,7 +14,7 @@ void llove::Builder::Seal(
     llvm::CodeGenFileType code_gen_type,
     llvm::OptimizationLevel optimization_level)
 {
-    m_DebugBuilder->EndModule();
+    m_DebugBuilder.EndModule();
 
     Assert(!llvm::verifyModule(m_LLVMModule, &llvm::errs()), "module has errors");
 
@@ -30,7 +30,7 @@ void llove::Builder::Seal(
 
     si.registerCallbacks(pic, &mam);
 
-    llvm::PassBuilder pb(m_TargetMachine);
+    llvm::PassBuilder pb(m_TargetMachine.get());
     pb.registerLoopAnalyses(lam);
     pb.registerFunctionAnalyses(fam);
     pb.registerCGSCCAnalyses(cgam);

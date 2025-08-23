@@ -28,7 +28,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool export_)
     if (SkipIf(TokenType_Other, ":"))
         ParseField(result, false, true);
     else
-        result.Type = m_Context.GetVoid();
+        result.SetType(m_Context.GetVoid());
 
     StatementPtr content;
     if (!SkipIf(TokenType_Other, ";"))

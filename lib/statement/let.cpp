@@ -19,10 +19,10 @@ llove::LetStatement::LetStatement(
 
 void llove::LetStatement::Gen(Builder &builder) const try
 {
-    Assert(m_Info.Type != nullptr || m_Value != nullptr, "missing at least one of type or value");
+    Assert(m_Info.GetType() != nullptr || m_Value != nullptr, "missing at least one of type or value");
 
-    auto value = m_Value ? m_Value->GenVal(builder, m_Info.Type) : nullptr;
-    auto type = m_Info.Type ? m_Info.Type : value->GetType();
+    auto value = m_Value ? m_Value->GenVal(builder, m_Info.GetType()) : nullptr;
+    auto type = m_Info.GetType() ? m_Info.GetType() : value->GetType();
 
     std::vector<ValuePtr> arguments;
     for (auto &argument : m_Arguments)
@@ -31,13 +31,13 @@ void llove::LetStatement::Gen(Builder &builder) const try
     builder.EmitLoc(m_Loc);
 
     llvm::Value *pointer;
-    if (m_Info.Reference)
+    if (m_Info.IsReference())
     {
         Assert(arguments.empty(), "cannot construct reference");
         Assert(value != nullptr, "missing initializer value");
-        Assert(value->IsReferenceable(), "reference from rvalue");
+        Assert(value->IsReference(), "reference from rvalue");
         Assert(type == value->GetType(), "reference type mismatch");
-        Assert(!m_Info.Mutable || value->IsMutable(), "reference mutability violation");
+        Assert(!m_Info.IsMutable() || value->IsMutable(), "reference mutability violation");
 
         pointer = value->GetPointer();
     }
@@ -66,7 +66,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
                 }
                 else
                 {
-                    Assert(!value->IsReferenceable(), "illegal implicit copy");
+                    Assert(!value->IsReference(), "illegal implicit copy");
                     value = builder.CreateCast(std::move(value), type, true);
                     builder.CreateStore(value->Load(builder), pointer);
                 }
@@ -126,7 +126,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
         }
     }
 
-    auto storage = Value::CreateL(std::move(type), pointer, m_Info.Mutable);
+    auto storage = Value::CreateL(std::move(type), pointer, m_Info.IsMutable());
     builder.GetDebug().CreateVariable(builder, m_Name, storage);
     builder.SetValue(m_Name, std::move(storage));
 }

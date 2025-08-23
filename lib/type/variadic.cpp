@@ -16,6 +16,7 @@ llvm::Type *llove::VariadicType::GenIR(Builder &builder)
 {
     if (!m_IRType)
         m_IRType = builder.GetVariadicType();
+
     return m_IRType;
 }
 
@@ -23,6 +24,7 @@ llvm::DIType *llove::VariadicType::GenDI(Builder &builder)
 {
     if (!m_DIType)
         m_DIType = builder.GetDebug().GetVoidType(); // TODO: generate debug info
+
     return m_DIType;
 }
 

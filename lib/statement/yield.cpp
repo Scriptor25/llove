@@ -21,11 +21,11 @@ void llove::YieldStatement::Gen(Builder &builder) const try
     builder.EmitLoc(m_Loc);
 
     const auto result = builder.GetResult();
-    const auto value = m_Value->GenVal(builder, result.Type);
+    const auto value = m_Value->GenVal(builder, result.GetType());
     const auto result_value = result.GenCast(builder, value, true);
 
     std::set<llvm::Value *> mask;
-    if (!result.Reference && value->IsReferenceable())
+    if (!result.IsReference() && value->IsReference())
         mask.emplace(value->GetPointer());
 
     builder.EmitLoc(m_Loc);

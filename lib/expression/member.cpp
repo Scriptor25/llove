@@ -54,25 +54,25 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
     builder.EmitLoc(m_Loc);
 
-    if (value->IsReferenceable())
+    if (value->IsReference())
     {
         auto pointer = builder.CreateStructGEP(type->GenIR(builder), value->GetPointer(), index);
 
-        if (element->Reference)
+        if (element->IsReference())
         {
             pointer = builder.CreateLoad(builder.GetPointerType(), pointer);
-            return Value::CreateL(element->Type, pointer, element->Mutable);
+            return Value::CreateL(element->GetType(), pointer, element->IsMutable());
         }
 
-        return Value::CreateL(element->Type, pointer, value->IsMutable() && element->Mutable);
+        return Value::CreateL(element->GetType(), pointer, value->IsMutable() && element->IsMutable());
     }
 
     const auto element_value = builder.CreateExtractValue(value->Load(builder), index);
 
-    if (element->Reference)
-        return Value::CreateL(element->Type, element_value, element->Mutable);
+    if (element->IsReference())
+        return Value::CreateL(element->GetType(), element_value, element->IsMutable());
 
-    return Value::CreateR(element->Type, element_value);
+    return Value::CreateR(element->GetType(), element_value);
 }
 catch (ref_exception<ErrorStack> &cause)
 {
@@ -129,18 +129,18 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
         type,
         value->AsField());
 
-    const auto element_type = element->Type;
+    const auto element_type = element->GetType();
     Assert(
         element_type->IsFunction(),
         "illegal callee member field '{}' in type '{}', type '{}' is not a function type",
         element_type);
 
     llvm::Value *element_value;
-    if (value->IsReferenceable())
+    if (value->IsReference())
     {
         auto pointer = builder.CreateStructGEP(type->GenIR(builder), value->GetPointer(), index);
 
-        if (element->Reference)
+        if (element->IsReference())
             pointer = builder.CreateLoad(builder.GetPointerType(), pointer);
 
         element_value = builder.CreateLoad(element_type->GenIR(builder), pointer);
@@ -149,7 +149,7 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
     {
         element_value = builder.CreateExtractValue(value->Load(builder), index);
 
-        if (element->Reference)
+        if (element->IsReference())
             element_value = builder.CreateLoad(element_type->GenIR(builder), element_value);
     }
 

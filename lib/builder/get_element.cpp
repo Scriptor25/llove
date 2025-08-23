@@ -35,7 +35,7 @@ llove::ValuePtr llove::Builder::GetArrayElement(const ValuePtr &array, const Val
     const auto type = As<ArrayType>(array_type);
     const auto base_type = type->GetBase();
 
-    if (array->IsReferenceable())
+    if (array->IsReference())
     {
         const auto element_pointer = m_LLVMBuilder.CreateInBoundsGEP(
             type->GenIR(*this),

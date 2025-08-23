@@ -3,26 +3,26 @@
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 
-llove::PointerType::PointerType(TypePtr base, const bool mutable_)
-    : m_Base(std::move(base)),
-      m_Mutable(mutable_)
+llove::PointerType::PointerType(const TypePtr &base, const bool is_mutable)
+    : m_Base(base),
+      m_IsMutable(is_mutable)
 {
 }
 
 llove::TypePtr llove::PointerType::GetBase() const
 {
-    Assert(m_Base != nullptr, "pointer type is opaque");
-    return m_Base;
+    Assert(!m_Base.expired(), "pointer type is opaque");
+    return m_Base.lock();
 }
 
 bool llove::PointerType::IsMutable() const
 {
-    return m_Mutable;
+    return m_IsMutable;
 }
 
 bool llove::PointerType::IsOpaque() const
 {
-    return !m_Base;
+    return m_Base.expired();
 }
 
 llove::TypeId llove::PointerType::GetId() const
@@ -39,36 +39,40 @@ llvm::PointerType *llove::PointerType::GenIR(Builder &builder)
 {
     if (!m_IRType)
         m_IRType = builder.GetPointerType();
+
     return llvm::dyn_cast<llvm::PointerType>(m_IRType);
 }
 
 llvm::DIType *llove::PointerType::GenDI(Builder &builder)
 {
     if (!m_DIType)
-        m_DIType = m_Base
-                       ? builder.GetDebug().GetPointerType(m_Base->GenDI(builder))
-                       : builder.GetDebug().GetPointerType();
+        m_DIType = m_Base.expired()
+                       ? builder.GetDebug().GetPointerType()
+                       : builder.GetDebug().GetPointerType(m_Base.lock()->GenDI(builder));
+
     return m_DIType;
 }
 
 llove::TypePtr llove::PointerType::Reflect(Context &context) const
 {
-    TypePtr base;
-    Type::Reflect(context, m_Base, base);
+    if (m_Base.expired())
+        return context.GetPointer(m_IsMutable);
 
-    return context.GetPointer(std::move(base), m_Mutable);
+    return context.GetPointer(m_Base.lock()->Reflect(context), m_IsMutable);
 }
 
 std::string llove::PointerType::Mangle() const
 {
-    if (m_Base)
-        return 'p' + std::string(m_Mutable ? "m" : "i") + m_Base->Mangle();
-    return 'p' + std::string(m_Mutable ? "m" : "i") + '_';
+    if (m_Base.expired())
+        return 'p' + std::string(m_IsMutable ? "m" : "i") + '_';
+
+    return 'p' + std::string(m_IsMutable ? "m" : "i") + m_Base.lock()->Mangle();
 }
 
 std::ostream &llove::PointerType::Print(std::ostream &stream) const
 {
-    if (m_Base)
-        return stream << m_Base << '[' << (m_Mutable ? "mut" : "") << ']';
-    return stream << '[' << (m_Mutable ? "mut" : "") << ']';
+    if (m_Base.expired())
+        return stream << '[' << (m_IsMutable ? "mut" : "") << ']';
+
+    return stream << m_Base.lock() << '[' << (m_IsMutable ? "mut" : "") << ']';
 }

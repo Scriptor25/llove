@@ -301,7 +301,12 @@ llove::TypePtr llove::Context::InstantiateTemplateClass(std::string name, const 
     Assert(template_.Parameters.size() == arguments.size(), "wrong number of type arguments");
 
     if (!template_.Complete)
-        return std::make_shared<ClassTemplateType>(std::move(name), arguments);
+    {
+        std::vector<WeakTypePtr> weak_arguments;
+        for (auto &argument : arguments)
+            weak_arguments.emplace_back(argument);
+        return std::make_shared<ClassTemplateType>(std::move(name), std::move(weak_arguments));
+    }
 
     m_TemplateArguments.clear();
 

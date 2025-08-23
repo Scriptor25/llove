@@ -215,7 +215,7 @@ void llove::DebugBuilder::CreateParameter(
     const auto location = llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope());
     const auto block = builder.GetInsertBlock();
 
-    if (value->IsReferenceable())
+    if (value->IsReference())
         m_DIBuilder->insertDeclare(value->GetPointer(), local_variable, expression, location, block);
     else
         m_DIBuilder->insertDbgValueIntrinsic(value->Load(builder), local_variable, expression, location, block);
@@ -238,7 +238,7 @@ void llove::DebugBuilder::CreateVariable(Builder &builder, const std::string &na
     const auto location = llvm::DILocation::get(builder.GetLLVMContext(), 0u, 0u, GetScope());
     const auto block = builder.GetInsertBlock();
 
-    if (value->IsReferenceable())
+    if (value->IsReference())
         m_DIBuilder->insertDeclare(value->GetPointer(), local_variable, expression, location, block);
     else
         m_DIBuilder->insertDbgValueIntrinsic(value->Load(builder), local_variable, expression, location, block);

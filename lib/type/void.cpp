@@ -19,18 +19,18 @@ unsigned llove::VoidType::SizeBits(Builder &builder)
 
 llvm::Type *llove::VoidType::GenIR(Builder &builder)
 {
-    if (m_IRType)
-        return m_IRType;
+    if (!m_IRType)
+        m_IRType = builder.GetVoidType();
 
-    return m_IRType = builder.GetVoidType();
+    return m_IRType;
 }
 
 llvm::DIType *llove::VoidType::GenDI(Builder &builder)
 {
-    if (m_DIType)
-        return m_DIType;
+    if (!m_DIType)
+        m_DIType = builder.GetDebug().GetVoidType();
 
-    return m_DIType = builder.GetDebug().GetVoidType();
+    return m_DIType;
 }
 
 llove::TypePtr llove::VoidType::Reflect(Context &context) const

@@ -11,26 +11,26 @@ bool llove::Field::GetCastError(
     unsigned &error,
     const bool strict)
 {
-    if (dst.Reference)
+    if (dst.IsReference())
     {
-        if (!src.Reference)
+        if (!src.IsReference())
             return true;
-        if (dst.Type != src.Type)
+        if (dst.GetType() != src.GetType())
             return true;
-        if (dst.Mutable && !src.Mutable)
+        if (dst.IsMutable() && !src.IsMutable())
             return true;
-        if (dst.Mutable != src.Mutable)
+        if (dst.IsMutable() != src.IsMutable())
             error += 1u;
         return false;
     }
 
-    if (dst.Type->IsClass() && src.Reference)
+    if (dst.GetType()->IsClass() && src.IsReference())
         return true;
-    if (dst.Type != src.Type)
+    if (dst.GetType() != src.GetType())
     {
         if (strict || !builder.IsCastable(src, dst, true))
             return true;
-        error += builder.GetContext().Difference(src.Type, dst.Type);
+        error += builder.GetContext().Difference(src.GetType(), dst.GetType());
     }
 
     return false;
@@ -42,92 +42,98 @@ bool llove::Field::IsCastable(
     const Field &src,
     const bool strict)
 {
-    if (dst.Reference)
+    if (dst.IsReference())
     {
-        if (!src.Reference)
+        if (!src.IsReference())
             return false;
-        if (dst.Type != src.Type)
+        if (dst.GetType() != src.GetType())
             return false;
-        if (dst.Mutable && !src.Mutable)
+        if (dst.IsMutable() && !src.IsMutable())
             return false;
         return true;
     }
 
-    if (dst.Type->IsClass() && src.Reference)
+    if (dst.GetType()->IsClass() && src.IsReference())
         return false;
-    if (dst.Type != src.Type)
+    if (dst.GetType() != src.GetType())
         if (strict || !builder.IsCastable(src, dst, true))
             return false;
     return true;
+}
+
+llove::Field::Field(const bool is_mutable, const bool is_reference, const TypePtr &type)
+    : m_IsMutable(is_mutable),
+      m_IsReference(is_reference),
+      m_Type(type)
+{
 }
 
 std::ostream &llove::Field::Print(std::ostream &stream, const bool has_name, const std::string &name) const
 {
     if (has_name)
     {
-        stream << (Mutable ? "mut " : "") << (Reference ? "&" : "") << name;
-        if (Type)
-            stream << ": " << Type;
+        stream << (IsMutable() ? "mut " : "") << (IsReference() ? "&" : "") << name;
+        if (GetType())
+            stream << ": " << GetType();
         return stream;
     }
-    return stream << (Mutable ? "mut " : "") << (Reference ? "&" : "") << Type;
+    return stream << (IsMutable() ? "mut " : "") << (IsReference() ? "&" : "") << GetType();
 }
 
 llvm::Type *llove::Field::GenIRType(Builder &builder) const
 {
-    const auto type = Type->GenIR(builder);
-    return Reference ? builder.GetPointerType() : type;
+    const auto type = GetType()->GenIR(builder);
+    return IsReference() ? builder.GetPointerType() : type;
 }
 
 llvm::DIType *llove::Field::GenDIType(Builder &builder) const
 {
-    const auto type = Type->GenDI(builder);
-    return Reference ? builder.GetDebug().GetPointerType(type) : type;
+    const auto type = GetType()->GenDI(builder);
+    return IsReference() ? builder.GetDebug().GetPointerType(type) : type;
 }
 
 llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool unstable_ownership) const
 {
-    if (Reference)
+    if (IsReference())
     {
-        Assert(value->IsReferenceable(), "reference from rvalue");
-        Assert(Type == value->GetType(), "reference type mismatch");
-        Assert(!Mutable || value->IsMutable(), "reference mutability violation");
+        Assert(value->IsReference(), "reference from rvalue");
+        Assert(GetType() == value->GetType(), "reference type mismatch");
+        Assert(!IsMutable() || value->IsMutable(), "reference mutability violation");
         return value->GetPointer();
     }
 
     Assert(
-        unstable_ownership || !Type->IsClass() || !value->IsReferenceable(),
+        unstable_ownership || !GetType()->IsClass() || !value->IsReference(),
         "implicitly removing ownership from lvalue");
 
-    value = builder.CreateCast(std::move(value), Type, true);
+    value = builder.CreateCast(std::move(value), GetType(), true);
     return value->Load(builder);
 }
 
 unsigned llove::Field::SizeBits(Builder &builder) const
 {
-    if (Reference)
+    if (IsReference())
         return 64; // TODO: target dependent
-    return Type->SizeBits(builder);
+    return GetType()->SizeBits(builder);
 }
 
 std::string llove::Field::Mangle() const
 {
-    return std::string(Mutable ? "M" : "") + std::string(Reference ? "R" : "") + Type->Mangle();
+    return std::string(IsMutable() ? "M" : "") + std::string(IsReference() ? "R" : "") + GetType()->Mangle();
 }
 
 bool llove::Field::operator==(const Field &other) const
 {
-    return Reference == other.Reference
-           && Mutable == other.Mutable
-           && Type == other.Type;
+    return IsReference() == other.IsReference()
+           && IsMutable() == other.IsMutable()
+           && GetType() == other.GetType();
 }
 
 void llove::Field::Reflect(Context &context, Field &field) const
 {
-    field.Mutable = Mutable;
-    field.Reference = Reference;
-
-    Type::Reflect(context, Type, field.Type);
+    field.m_IsMutable = m_IsMutable;
+    field.m_IsReference = m_IsReference;
+    field.m_Type = GetType()->Reflect(context);
 }
 
 std::string llove::GetFieldHash(const std::vector<Field> &fields)
@@ -136,11 +142,11 @@ std::string llove::GetFieldHash(const std::vector<Field> &fields)
     hash += std::to_string(fields.size());
     for (auto &field : fields)
     {
-        if (field.Mutable)
+        if (field.IsMutable())
             hash += 'm';
-        if (field.Reference)
+        if (field.IsReference())
             hash += 'r';
-        hash += std::to_string(reinterpret_cast<uintptr_t>(field.Type.get()));
+        hash += std::to_string(reinterpret_cast<uintptr_t>(field.GetType().get()));
     }
     return hash;
 }

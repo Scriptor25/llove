@@ -6,13 +6,14 @@ namespace llove
 {
     class Type;
     using TypePtr = std::shared_ptr<Type>;
+    using WeakTypePtr = std::weak_ptr<Type>;
 
     class Value;
     class LValue;
     class RValue;
     using ValuePtr = std::shared_ptr<Value>;
 
-    struct Field;
+    class Field;
     struct Parameter;
 
     struct ClassFieldReference;

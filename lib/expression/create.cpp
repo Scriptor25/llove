@@ -21,12 +21,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     const auto class_type = As<ClassType>(m_Type);
     auto destination = m_Destination ? m_Destination->GenVal(builder, m_Type) : nullptr;
 
-    const Field self
-    {
-        .Mutable = true,
-        .Reference = true,
-        .Type = m_Type,
-    };
+    const Field self(true, true, m_Type);
 
     const auto constructors = class_type->GetConstructors();
 
@@ -51,7 +46,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     if (destination)
     {
         Assert(destination->GetType() == m_Type, "destination type mismatch");
-        Assert(destination->IsReferenceable(), "destination is rvalue");
+        Assert(destination->IsReference(), "destination is rvalue");
         Assert(destination->IsMutable(), "destination mutability violation");
         pointer = destination->GetPointer();
     }

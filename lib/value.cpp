@@ -24,11 +24,7 @@ llove::TypePtr llove::Value::GetType() const
 
 llove::Field llove::Value::AsField() const
 {
-    return {
-        .Mutable = IsMutable(),
-        .Reference = IsReferenceable(),
-        .Type = GetType(),
-    };
+    return Field(IsMutable(), IsReference(), GetType());
 }
 
 llove::Value::Value(TypePtr type)
@@ -42,7 +38,7 @@ llove::RValue::RValue(TypePtr type, llvm::Value *value)
 {
 }
 
-bool llove::RValue::IsReferenceable() const
+bool llove::RValue::IsReference() const
 {
     return false;
 }
@@ -84,7 +80,7 @@ llove::LValue::LValue(TypePtr type, llvm::Value *pointer, const bool mutable_)
 {
 }
 
-bool llove::LValue::IsReferenceable() const
+bool llove::LValue::IsReference() const
 {
     return true;
 }
