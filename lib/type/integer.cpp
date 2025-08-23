@@ -2,15 +2,15 @@
 #include <llove/context.hpp>
 #include <llove/type.hpp>
 
-llove::IntegerType::IntegerType(const bool sign, const unsigned bits)
-    : m_Sign(sign),
+llove::IntegerType::IntegerType(const bool is_signed, const unsigned bits)
+    : m_IsSigned(is_signed),
       m_Bits(bits)
 {
 }
 
 bool llove::IntegerType::IsSigned() const
 {
-    return m_Sign;
+    return m_IsSigned;
 }
 
 unsigned llove::IntegerType::GetBits() const
@@ -40,20 +40,20 @@ llvm::DIType *llove::IntegerType::GenDI(Builder &builder)
     if (m_DIType)
         return m_DIType;
 
-    return m_DIType = builder.GetDebug().GetIntegerType(m_Sign, m_Bits);
+    return m_DIType = builder.GetDebug().GetIntegerType(m_IsSigned, m_Bits);
 }
 
 llove::TypePtr llove::IntegerType::Reflect(Context &context) const
 {
-    return context.GetInteger(m_Sign, m_Bits);
+    return context.GetInteger(m_IsSigned, m_Bits);
 }
 
 std::string llove::IntegerType::Mangle() const
 {
-    return (m_Sign ? 'i' : 'u') + std::to_string(m_Bits) + '_';
+    return (m_IsSigned ? 'i' : 'u') + std::to_string(m_Bits) + '_';
 }
 
 std::ostream &llove::IntegerType::Print(std::ostream &stream) const
 {
-    return stream << (m_Sign ? 'i' : 'u') << m_Bits;
+    return stream << (m_IsSigned ? 'i' : 'u') << m_Bits;
 }

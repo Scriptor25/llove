@@ -61,7 +61,7 @@ llove::ValuePtr llove::SwitchExpression::GenVal(Builder &builder, TypePtr expect
         {
             builder.SetInsertPoint(case_block);
             auto value = content->GenVal(builder, type);
-            value = builder.CreateCast(std::move(value), type, false);
+            value = builder.CreateCast(std::move(value), type, true);
             nodes.emplace(builder.GetInsertBlock(), value->Load(builder));
             builder.CreateBranch(tail_block);
         }

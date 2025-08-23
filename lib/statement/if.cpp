@@ -22,8 +22,8 @@ void llove::IfStatement::Gen(Builder &builder) const try
 
     builder.EmitLoc(m_Loc);
 
-    auto condition = m_Condition->GenVal(builder, builder.GetContext().GetInteger(false, 1));
-    condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
+    auto condition = m_Condition->GenVal(builder, builder.GetContext().GetBoolean());
+    condition = builder.CreateCast(std::move(condition), builder.GetContext().GetBoolean(), false);
 
     builder.EmitLoc(m_Loc);
     builder.CreateBranch(condition->Load(builder), then_block, else_block);

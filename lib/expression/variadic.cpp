@@ -29,7 +29,7 @@ llove::ValuePtr llove::VariadicExpression::GenVal(Builder &builder, TypePtr expe
     const auto empty_block = builder.CreateBlock("empty", builder.GetParent());
     const auto end_block = builder.CreateBlock("end", builder.GetParent());
 
-    const auto condition = builder.CreateNotNull(count);
+    const auto condition = builder.CreateIsNotNull(count);
     builder.CreateBranch(condition, get_block, empty_block);
 
     builder.SetInsertPoint(get_block);

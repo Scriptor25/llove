@@ -25,8 +25,8 @@ void llove::WhileStatement::Gen(Builder &builder) const
 
     builder.SetInsertPoint(head_block);
 
-    auto condition = m_Condition->GenVal(builder, builder.GetContext().GetInteger(false, 1));
-    condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
+    auto condition = m_Condition->GenVal(builder, builder.GetContext().GetBoolean());
+    condition = builder.CreateCast(std::move(condition), builder.GetContext().GetBoolean(), false);
 
     builder.EmitLoc(m_Loc);
     builder.CreateBranch(condition->Load(builder), loop_block, tail_block);

@@ -178,7 +178,7 @@ namespace llove
         using Ptr = std::shared_ptr<IntegerType>;
         static constexpr auto ID = TypeId_Integer;
 
-        explicit IntegerType(bool sign, unsigned bits);
+        explicit IntegerType(bool is_signed, unsigned bits);
 
         [[nodiscard]] bool IsSigned() const;
         [[nodiscard]] unsigned GetBits() const;
@@ -190,14 +190,14 @@ namespace llove
         TypePtr Reflect(Context &context) const override;
 
         /**
-         * @return <sign?i:u><bits>_
+         * @return <signed?i:u><bits>_
          */
         [[nodiscard]] std::string Mangle() const override;
 
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        bool m_Sign;
+        bool m_IsSigned;
         unsigned m_Bits;
     };
 

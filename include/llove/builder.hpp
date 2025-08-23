@@ -116,6 +116,8 @@ namespace llove
             bool packed);
         llvm::StructType *GetVariadicType();
 
+#pragma region WRAPPER
+
         void SetCurrentDebugLocation(llvm::DebugLoc loc);
 
         void SetInsertPoint(llvm::BasicBlock *block);
@@ -185,13 +187,35 @@ namespace llove
         llvm::Value *CreateFDiv(llvm::Value *left, llvm::Value *right, const std::string &name = {});
         llvm::Value *CreateFRem(llvm::Value *left, llvm::Value *right, const std::string &name = {});
 
+        llvm::Value *CreateNeg(llvm::Value *value, const std::string &name = {});
+        llvm::Value *CreateFNeg(llvm::Value *value, const std::string &name = {});
+        llvm::Value *CreateNot(llvm::Value *value, const std::string &name = {});
+
+        llvm::Value *CreateCmpEQ(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateCmpNE(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateCmpLT(bool is_signed, llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateCmpLE(bool is_signed, llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateCmpGT(bool is_signed, llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateCmpGE(bool is_signed, llvm::Value *left, llvm::Value *right, const std::string &name = {});
+
+        llvm::Value *CreateFCmpEQ(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateFCmpNE(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateFCmpLT(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateFCmpLE(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateFCmpGT(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateFCmpGE(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+
+        llvm::Value *CreatePCmpEQ(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreatePCmpNE(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+
         llvm::Value *CreatePtrDiff(
             llvm::Type *element_type,
             llvm::Value *left,
             llvm::Value *right,
             const std::string &name = {});
 
-        llvm::Value *CreateNotNull(llvm::Value *value);
+        llvm::Value *CreateIsNotNull(llvm::Value *value, const std::string &name = {});
+        llvm::Value *CreateIsNull(llvm::Value *value, const std::string &name = {});
 
         llvm::BranchInst *CreateBranch(llvm::BasicBlock *block);
         llvm::BranchInst *CreateBranch(
@@ -212,34 +236,13 @@ namespace llove
 
         llvm::Constant *CreateGlobalString(const std::string &value, const std::string &name = {});
 
+#pragma endregion
+
         ValuePtr CreateCall(const FunctionReference &function, std::vector<ValuePtr> arguments, ValuePtr self);
         ValuePtr CreateCall(const ValuePtr &callee);
 
         ValuePtr GetPointerElement(const ValuePtr &pointer, const ValuePtr &index);
         ValuePtr GetArrayElement(const ValuePtr &array, const ValuePtr &index);
-
-        ValuePtr CreateCmpEQ(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateCmpNE(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateCmpLT(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateCmpGT(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateCmpLE(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateCmpGE(const ValuePtr &left, const ValuePtr &right);
-
-        ValuePtr CreateFCmpEQ(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateFCmpNE(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateFCmpLT(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateFCmpGT(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateFCmpLE(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreateFCmpGE(const ValuePtr &left, const ValuePtr &right);
-
-        ValuePtr CreatePCmpEQ(const ValuePtr &left, const ValuePtr &right);
-        ValuePtr CreatePCmpNE(const ValuePtr &left, const ValuePtr &right);
-
-        ValuePtr CreateNeg(const ValuePtr &operand);
-        ValuePtr CreateFNeg(const ValuePtr &operand);
-
-        ValuePtr CreateNot(const ValuePtr &operand);
-        ValuePtr CreateInv(const ValuePtr &operand);
 
         llvm::Function *GetParent() const;
         Field GetResult() const;

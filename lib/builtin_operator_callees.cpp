@@ -6,45 +6,58 @@
 
 static llove::ValuePtr operator_neg(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
 {
-    switch (operand->GetType()->GetId())
+    const auto type = operand->GetType();
+
+    llvm::Value *result;
+    switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateNeg(operand);
-    case llove::TypeId_Float:
-        return builder.CreateFNeg(operand);
-    default:
+        result = builder.CreateNeg(operand->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFNeg(operand->Load(builder));
+        break;
+    default:
+        llove::Error("operator '-{}' not implemented", operand->AsField());
     }
 
-    llove::Error("operator '-{}' not implemented", operand->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_not(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
 {
-    switch (operand->GetType()->GetId())
+    const auto type = operand->GetType();
+
+    llvm::Value *result;
+    switch (type->GetId())
     {
     case llove::TypeId_Integer:
     case llove::TypeId_Float:
     case llove::TypeId_Pointer:
-        return builder.CreateNot(operand);
-    default:
+        result = builder.CreateIsNull(operand->Load(builder));
         break;
+    default:
+        llove::Error("operator '!{}' not implemented", operand->AsField());
     }
 
-    llove::Error("operator '!{}' not implemented", operand->AsField());
+    return llove::Value::CreateR(builder.GetContext().GetBoolean(), result);
 }
 
 static llove::ValuePtr operator_inv(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
 {
-    switch (operand->GetType()->GetId())
+    const auto type = operand->GetType();
+
+    llvm::Value *result;
+    switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateInv(operand);
-    default:
+        result = builder.CreateNot(operand->Load(builder));
         break;
+    default:
+        llove::Error("operator '~{}' not implemented", operand->AsField());
     }
 
-    llove::Error("operator '~{}' not implemented", operand->AsField());
+    return llove::Value::CreateR(type, result);
 }
 
 static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr operand, const bool suffix)
@@ -205,13 +218,13 @@ static llove::ValuePtr operator_sub(llove::Builder &builder, llove::ValuePtr lef
 
     if (left_type->IsPointer() && right_type->IsInteger())
     {
-        const auto offset = builder.CreateNeg(right);
+        const auto offset = builder.CreateNeg(right->Load(builder));
         const auto base_type = llove::As<llove::PointerType>(left_type)->GetBase();
 
         const auto pointer = builder.CreateGEP(
             base_type->GenIR(builder),
             left->Load(builder),
-            offset->Load(builder));
+            offset);
 
         return llove::Value::CreateR(left_type, pointer);
     }
@@ -399,19 +412,23 @@ static llove::ValuePtr operator_eq(llove::Builder &builder, llove::ValuePtr left
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateCmpEQ(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFCmpEQ(left, right);
-    case llove::TypeId_Pointer:
-        return builder.CreatePCmpEQ(left, right);
-    default:
+        result = builder.CreateCmpEQ(left->Load(builder), right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFCmpEQ(left->Load(builder), right->Load(builder));
+        break;
+    case llove::TypeId_Pointer:
+        result = builder.CreatePCmpEQ(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} == {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} == {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(builder.GetContext().GetBoolean(), result);
 }
 
 static llove::ValuePtr operator_ne(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -423,19 +440,23 @@ static llove::ValuePtr operator_ne(llove::Builder &builder, llove::ValuePtr left
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateCmpNE(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFCmpNE(left, right);
-    case llove::TypeId_Pointer:
-        return builder.CreatePCmpNE(left, right);
-    default:
+        result = builder.CreateCmpNE(left->Load(builder), right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFCmpNE(left->Load(builder), right->Load(builder));
+        break;
+    case llove::TypeId_Pointer:
+        result = builder.CreatePCmpNE(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} != {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} != {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(builder.GetContext().GetBoolean(), result);
 }
 
 static llove::ValuePtr operator_lt(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -447,39 +468,23 @@ static llove::ValuePtr operator_lt(llove::Builder &builder, llove::ValuePtr left
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateCmpLT(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFCmpLT(left, right);
-    default:
+        result = builder.CreateCmpLT(
+            llove::As<llove::IntegerType>(type)->IsSigned(),
+            left->Load(builder),
+            right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFCmpLT(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} < {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} < {}' not implemented", left->AsField(), right->AsField());
-}
-
-static llove::ValuePtr operator_gt(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
-{
-    const auto left_type = left->GetType();
-    const auto right_type = right->GetType();
-
-    const auto type = builder.GetContext().TypeUnion(left_type, right_type);
-    left = builder.CreateCast(std::move(left), type, true);
-    right = builder.CreateCast(std::move(right), type, true);
-
-    switch (type->GetId())
-    {
-    case llove::TypeId_Integer:
-        return builder.CreateCmpGT(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFCmpGT(left, right);
-    default:
-        break;
-    }
-
-    llove::Error("operator '{} > {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(builder.GetContext().GetBoolean(), result);
 }
 
 static llove::ValuePtr operator_le(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -491,17 +496,51 @@ static llove::ValuePtr operator_le(llove::Builder &builder, llove::ValuePtr left
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateCmpLE(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFCmpLE(left, right);
-    default:
+        result = builder.CreateCmpLE(
+            llove::As<llove::IntegerType>(type)->IsSigned(),
+            left->Load(builder),
+            right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFCmpLE(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} <= {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} <= {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(builder.GetContext().GetBoolean(), result);
+}
+
+static llove::ValuePtr operator_gt(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
+{
+    const auto left_type = left->GetType();
+    const auto right_type = right->GetType();
+
+    const auto type = builder.GetContext().TypeUnion(left_type, right_type);
+    left = builder.CreateCast(std::move(left), type, true);
+    right = builder.CreateCast(std::move(right), type, true);
+
+    llvm::Value *result;
+    switch (type->GetId())
+    {
+    case llove::TypeId_Integer:
+        result = builder.CreateCmpGT(
+            llove::As<llove::IntegerType>(type)->IsSigned(),
+            left->Load(builder),
+            right->Load(builder));
+        break;
+    case llove::TypeId_Float:
+        result = builder.CreateFCmpGT(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} > {}' not implemented", left->AsField(), right->AsField());
+    }
+
+    return llove::Value::CreateR(builder.GetContext().GetBoolean(), result);
 }
 
 static llove::ValuePtr operator_ge(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -513,17 +552,23 @@ static llove::ValuePtr operator_ge(llove::Builder &builder, llove::ValuePtr left
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
+    llvm::Value *result;
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-        return builder.CreateCmpGE(left, right);
-    case llove::TypeId_Float:
-        return builder.CreateFCmpGE(left, right);
-    default:
+        result = builder.CreateCmpGE(
+            llove::As<llove::IntegerType>(type)->IsSigned(),
+            left->Load(builder),
+            right->Load(builder));
         break;
+    case llove::TypeId_Float:
+        result = builder.CreateFCmpGE(left->Load(builder), right->Load(builder));
+        break;
+    default:
+        llove::Error("operator '{} >= {}' not implemented", left->AsField(), right->AsField());
     }
 
-    llove::Error("operator '{} >= {}' not implemented", left->AsField(), right->AsField());
+    return llove::Value::CreateR(builder.GetContext().GetBoolean(), result);
 }
 
 const std::map<std::string_view, llove::BIOperator<1>::CalleeType> llove::BIUnOperatorCallees
@@ -556,7 +601,7 @@ const std::map<std::string_view, llove::BIOperator<2>::CalleeType> llove::BIBiOp
     { "==", operator_eq },
     { "!=", operator_ne },
     { "<", operator_lt },
-    { ">", operator_gt },
     { "<=", operator_le },
+    { ">", operator_gt },
     { ">=", operator_ge },
 };

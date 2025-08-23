@@ -41,7 +41,7 @@ namespace llove
 
         VoidType::Ptr GetVoid();
         VariadicType::Ptr GetVariadic();
-        IntegerType::Ptr GetInteger(bool sign, unsigned bits);
+        IntegerType::Ptr GetInteger(bool is_signed, unsigned bits);
         FloatType::Ptr GetFloat(unsigned bits);
         PointerType::Ptr GetPointer(bool mutable_);
         PointerType::Ptr GetPointer(TypePtr base, bool mutable_);
@@ -54,6 +54,8 @@ namespace llove
             bool variadic,
             Field result,
             std::optional<Field> self = std::nullopt);
+
+        IntegerType::Ptr GetBoolean();
 
         TypePtr TypeUnion(const TypePtr &left, const TypePtr &right);
         unsigned Difference(const TypePtr &left, const TypePtr &right);

@@ -8,15 +8,45 @@ interface strlen(str: string_t): u64;
 interface fputc(c: i32, stream: stream_t): i32;
 interface putchar(c: i32): i32;
 
-export define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t) {
-    let beg = str;
-    let end = str + strlen(str);
+#
+# format: {type[(:|:flags)[(:|:length)[:precision]]]}
+#
+# type:
+#  - 'dN' / 'iN': N-bit signed int dec
+#  - 'uN': N-bit unsigned int dec
+#  - 'oN': N-bit unsigned int oct
+#  - 'xN': N-bit unsigned int hex lowercase
+#  - 'XN': N-bit unsigned int hex uppercase
+#  - 'fN': N-bit float dec
+#  - 'p':  pointer
+#  - 's':  string
+#  - 'c':  character
+#  - 'b':  bool
+#
+# flags:
+#  - '#': prefix
+#  - '0': pad with zeros
+#  - '-': justify left
+#
+# length: <0 - 255>
+#
+# precision: <0 - 255>
+#
 
-    foreach (c : beg..end)
-        push(c, context);
-}
+const state_none      = 0:u8;
+const state_type      = 1:u8;
+const state_bits      = 2:u8;
+const state_flags     = 3:u8;
+const state_length    = 4:u8;
+const state_precision = 5:u8;
+const state_exit      = 6:u8;
 
-export define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t, from: u64, to: u64) {
+const flag_none         = 0:u8;
+const flag_prefix       = 1:u8; # prepend numeric prefix (hex: '0x', oct: '0')
+const flag_pad_zero     = 2:u8; # pad with zeros instead of spaces
+const flag_justify_left = 4:u8; # append padding instead of prepend
+
+define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t, from: u64, to: u64) {
     let beg = str + from;
     let end = str + to;
 
@@ -24,15 +54,30 @@ export define print_string(push: (i32, [mut]) => void, context: [mut], str: stri
         push(c, context);
 }
 
-export define print_int(push: (i32, [mut]) => void, context: [mut], mut value: u64, sign: u1, base: u8, upper: u1) {
+#
+# length: minimum length, use padding if not long enough
+# precision: maximum length, trim if too long
+#
+define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t, flags: u8, length: u8, precision: u8) {
+    let len = strlen(str);
+    let end = str + len;
+
+    foreach (c : str..end)
+        push(c, context);
+}
+
+#
+# length: minimum length, use padding if not long enough
+#
+define print_int(push: (i32, [mut]) => void, context: [mut], mut value: u64, sign: u1, base: u8, upper: u1, flags: u8, length: u8) {
 
     if (!value) {
         push('0', context);
         yield;
     }
 
-    let mut buffer: i8[32];
-    let mut index: u64 = 32;
+    let mut buffer: i8[256];
+    let mut index: u64 = 256;
 
     for (; value; value /= base) {
         let rem = value % base;
@@ -51,30 +96,51 @@ export define print_int(push: (i32, [mut]) => void, context: [mut], mut value: u
         buffer[--index] = '-';
     }
 
-    print_string(push, context, buffer, index, 32);
+    print_string(push, context, buffer, index, 256);
 }
 
 #
-# format: {type[:flags]}
+# length: minimum length, use padding if not long enough
+# precision: number of digits after the floating point
 #
-# type:
-#  - dN / iN: N-bit signed int dec
-#  - uN: N-bit unsigned int dec
-#  - oN: N-bit unsigned int oct
-#  - xN: N-bit unsigned int hex lowercase
-#  - XN: N-bit unsigned int hex uppercase
-#  - fN: N-bit float dec
-#  - p:  pointer
-#  - s:  string
-#  - c:  character
-#  - b:  bool
-#
+define print_float(push: (i32, [mut]) => void, context: [mut], mut value: f64, flags: u8, length: u8, precision: u8) {
 
-const state_none = 0:u8;
-const state_type = 1:u8;
-const state_bits = 2:u8;
-const state_flag = 3:u8;
-const state_exit = 4:u8;
+    let mut buffer: i8[256];
+    let mut index: u64 = 256;
+
+    let sign = value < 0;
+    if (sign) {
+        value = -value;
+    }
+
+    foreach (_ : (0)..precision)
+        value *= 10;
+
+    if (!value) {
+        buffer[--index] = '0';
+    }
+    for (let mut i = value as u64; i; i /= 10) {
+        let rem = i % 10;
+        let mut c: i8;
+        if (rem < 10) {
+            c = rem + '0';
+        } else if (upper) {
+            c = (rem - 10) + 'A';
+        } else {
+            c = (rem - 10) + 'a';
+        }
+        buffer[--index] = c;
+        if (index == precision) {
+            buffer[--index] = '.';
+        }
+    }
+
+    if (sign) {
+        buffer[--index] = '-';
+    }
+
+    print_string(push, context, buffer, index, 256);
+}
 
 export define format(push: (i32, [mut]) => void, context: [mut], format: string_t, ...args) {
     let beg = format;
@@ -84,6 +150,9 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
 
     let mut type: i8;
     let mut bits: u8;
+    let mut flags: u8;
+    let mut length: u8;
+    let mut precision: u8;
 
     for (let mut i = beg; i != end; ) {
         switch (state) {
@@ -106,7 +175,8 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                         type = *(i++);
                         if (*i == ':') {
                             i++;
-                            state = state_flag;
+                            flags = flag_none;
+                            state = state_flags;
                         } else {
                             state = state_exit;
                         }
@@ -121,7 +191,8 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                 let c = *i;
                 if (c == ':') {
                     i++;
-                    state = state_flag;
+                    flags = flag_none;
+                    state = state_flags;
                 } else if ('0' <= c & c <= '9') {
                     bits = bits * 10 + (c - '0');
                     i++;
@@ -129,8 +200,52 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                     state = state_exit;
                 }
             }
-            [state_flag] {
-                # TODO: parse flags
+            [state_flags] {
+                switch (*i) {
+                    [':'] {
+                        i++;
+                        length = 0;
+                        state = state_length;
+                    }
+                    ['#'] {
+                        i++;
+                        flags |= flag_prefix;
+                    }
+                    ['0'] {
+                        i++;
+                        flags |= flag_pad_zero;
+                    }
+                    ['-'] {
+                        i++;
+                        flags |= flag_justify_left;
+                    }
+                    [default] {
+                        state = state_exit;
+                    }
+                }
+            }
+            [state_length] {
+                let c = *i;
+                if (c == ':') {
+                    i++;
+                    precision = 0;
+                    state = state_precision;
+                    break;
+                }
+                if ('0' <= c & c <= '9') {
+                    length = length * 10 + (c - '0');
+                    i++;
+                    break;
+                }
+                state = state_exit;
+            }
+            [state_precision] {
+                let c = *i;
+                if ('0' <= c & c <= '9') {
+                    precision = precision * 10 + (c - '0');
+                    i++;
+                    break;
+                }
                 state = state_exit;
             }
             [state_exit] {
@@ -157,7 +272,7 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                             value = arg;
                             sign = 0;
                         }
-                        print_int(push, context, value, sign, 10, 0);
+                        print_int(push, context, value, sign, 10, 0, flags, length);
                     }
                     ['u'] {
                         let arg = switch (bits) {
@@ -168,7 +283,7 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                             [64] -> args{u64};
                             [default] -> 0:u64;
                         };
-                        print_int(push, context, arg, 0, 10, 0);
+                        print_int(push, context, arg, 0, 10, 0, flags, length);
                     }
                     ['o'] {
                         let arg = switch (bits) {
@@ -179,7 +294,7 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                             [64] -> args{u64};
                             [default] -> 0:u64;
                         };
-                        print_int(push, context, arg, 0, 8, 0);
+                        print_int(push, context, arg, 0, 8, 0, flags, length);
                     }
                     ['x'] {
                         let arg = switch (bits) {
@@ -190,7 +305,7 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                             [64] -> args{u64};
                             [default] -> 0:u64;
                         };
-                        print_int(push, context, arg, 0, 16, 0);
+                        print_int(push, context, arg, 0, 16, 0, flags, length);
                     }
                     ['X'] {
                         let arg = switch (bits) {
@@ -201,24 +316,24 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                             [64] -> args{u64};
                             [default] -> 0:u64;
                         };
-                        print_int(push, context, arg, 0, 16, 1);
+                        print_int(push, context, arg, 0, 16, 1, flags, length);
                     }
                     ['f'] {
-                        # TODO: print float dec
                         let arg = switch (bits) {
                             [16] -> args{f16};
                             [32] -> args{f32};
                             [64] -> args{f64};
                             [default] -> 0.0:f64;
                         };
+                        print_float(push, context, arg, flags, length, precision);
                     }
                     ['p'] {
                         let arg = args{[]};
-                        print_int(push, context, arg, 0, 16, 0);
+                        print_int(push, context, arg, 0, 16, 0, flags, length);
                     }
                     ['s'] {
                         let arg = args{i8[]};
-                        print_string(push, context, arg);
+                        print_string(push, context, arg, flags, length, precision);
                     }
                     ['c'] {
                         let arg = args{i8};
@@ -226,7 +341,7 @@ export define format(push: (i32, [mut]) => void, context: [mut], format: string_
                     }
                     ['b'] {
                         let arg = args{u1};
-                        print_string(push, context, switch (arg) { [default, 0] -> "false"; [1] -> "true"; });
+                        print_string(push, context, switch (arg) { [0] -> "false"; [default] -> "true"; }, flags, length, precision);
                     }
                     [0] {
                         push(*(i++), context);

@@ -46,9 +46,9 @@ llove::VariadicType::Ptr llove::Context::GetVariadic()
     return GetOrCreate<VariadicType>();
 }
 
-llove::IntegerType::Ptr llove::Context::GetInteger(bool sign, unsigned bits)
+llove::IntegerType::Ptr llove::Context::GetInteger(bool is_signed, unsigned bits)
 {
-    return GetOrCreate<IntegerType>(sign, bits);
+    return GetOrCreate<IntegerType>(is_signed, bits);
 }
 
 llove::FloatType::Ptr llove::Context::GetFloat(unsigned bits)
@@ -93,6 +93,11 @@ llove::FunctionType::Ptr llove::Context::GetFunction(
     std::optional<Field> self)
 {
     return GetOrCreate<FunctionType>(std::move(parameters), variadic, std::move(result), std::move(self));
+}
+
+llove::IntegerType::Ptr llove::Context::GetBoolean()
+{
+    return GetOrCreate<IntegerType>(false, 1);
 }
 
 llove::TypePtr llove::Context::TypeUnion(const TypePtr &left, const TypePtr &right)

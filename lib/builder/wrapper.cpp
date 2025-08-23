@@ -249,6 +249,163 @@ llvm::Value *llove::Builder::CreateFRem(llvm::Value *left, llvm::Value *right, c
     return m_LLVMBuilder.CreateFRem(left, right, name);
 }
 
+llvm::Value *llove::Builder::CreateNeg(llvm::Value *value, const std::string &name)
+{
+    Assert(value != nullptr, "operand must not be null");
+
+    return m_LLVMBuilder.CreateNeg(value, name);
+}
+
+llvm::Value *llove::Builder::CreateFNeg(llvm::Value *value, const std::string &name)
+{
+    Assert(value != nullptr, "operand must not be null");
+
+    return m_LLVMBuilder.CreateFNeg(value, name);
+}
+
+llvm::Value *llove::Builder::CreateNot(llvm::Value *value, const std::string &name)
+{
+    Assert(value != nullptr, "operand must not be null");
+
+    return m_LLVMBuilder.CreateNot(value, name);
+}
+
+llvm::Value *llove::Builder::CreateCmpEQ(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateICmpEQ(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateCmpNE(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateICmpNE(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateCmpLT(
+    const bool is_signed,
+    llvm::Value *left,
+    llvm::Value *right,
+    const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    if (is_signed)
+        return m_LLVMBuilder.CreateICmpSLT(left, right, name);
+    return m_LLVMBuilder.CreateICmpULT(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateCmpLE(
+    const bool is_signed,
+    llvm::Value *left,
+    llvm::Value *right,
+    const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    if (is_signed)
+        return m_LLVMBuilder.CreateICmpSLE(left, right, name);
+    return m_LLVMBuilder.CreateICmpULE(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateCmpGT(
+    const bool is_signed,
+    llvm::Value *left,
+    llvm::Value *right,
+    const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    if (is_signed)
+        return m_LLVMBuilder.CreateICmpSGT(left, right, name);
+    return m_LLVMBuilder.CreateICmpUGT(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateCmpGE(
+    const bool is_signed,
+    llvm::Value *left,
+    llvm::Value *right,
+    const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    if (is_signed)
+        return m_LLVMBuilder.CreateICmpSGE(left, right, name);
+    return m_LLVMBuilder.CreateICmpUGE(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateFCmpEQ(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateFCmpOEQ(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateFCmpNE(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateFCmpONE(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateFCmpLT(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateFCmpOLT(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateFCmpLE(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateFCmpOLE(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateFCmpGT(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateFCmpOGT(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateFCmpGE(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateFCmpOGE(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreatePCmpEQ(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    const auto type = GetPointerSizeType();
+    const auto left_int = m_LLVMBuilder.CreatePtrToInt(left, type);
+    const auto right_int = m_LLVMBuilder.CreatePtrToInt(right, type);
+    return m_LLVMBuilder.CreateICmpEQ(left_int, right_int, name);
+}
+
+llvm::Value *llove::Builder::CreatePCmpNE(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    const auto type = GetPointerSizeType();
+    const auto left_int = m_LLVMBuilder.CreatePtrToInt(left, type);
+    const auto right_int = m_LLVMBuilder.CreatePtrToInt(right, type);
+    return m_LLVMBuilder.CreateICmpNE(left_int, right_int);
+}
+
 llvm::Value *llove::Builder::CreatePtrDiff(
     llvm::Type *element_type,
     llvm::Value *left,
@@ -262,11 +419,18 @@ llvm::Value *llove::Builder::CreatePtrDiff(
     return m_LLVMBuilder.CreatePtrDiff(element_type, left, right, name);
 }
 
-llvm::Value *llove::Builder::CreateNotNull(llvm::Value *value)
+llvm::Value *llove::Builder::CreateIsNotNull(llvm::Value *value, const std::string &name)
 {
     Assert(value != nullptr, "value must not be null");
 
-    return m_LLVMBuilder.CreateIsNotNull(value);
+    return m_LLVMBuilder.CreateIsNotNull(value, name);
+}
+
+llvm::Value *llove::Builder::CreateIsNull(llvm::Value *value, const std::string &name)
+{
+    Assert(value != nullptr, "value must not be null");
+
+    return m_LLVMBuilder.CreateIsNull(value, name);
 }
 
 llvm::BranchInst *llove::Builder::CreateBranch(llvm::BasicBlock *block)

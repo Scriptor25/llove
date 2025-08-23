@@ -1,6 +1,7 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
+#include <llove/value.hpp>
 
 llove::ForStatement::ForStatement(
     Location loc,
@@ -37,8 +38,8 @@ void llove::ForStatement::Gen(Builder &builder) const try
     builder.SetInsertPoint(head_block);
     if (m_Condition)
     {
-        auto condition = m_Condition->GenVal(builder, builder.GetContext().GetInteger(false, 1));
-        condition = builder.CreateCast(std::move(condition), builder.GetContext().GetInteger(false, 1), false);
+        auto condition = m_Condition->GenVal(builder, builder.GetContext().GetBoolean());
+        condition = builder.CreateCast(std::move(condition), builder.GetContext().GetBoolean(), false);
 
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(condition->Load(builder), loop_block, tail_block);
