@@ -32,7 +32,6 @@ static llove::ValuePtr operator_not(llove::Builder &builder, const llove::ValueP
     switch (type->GetId())
     {
     case llove::TypeId_Integer:
-    case llove::TypeId_Float:
     case llove::TypeId_Pointer:
         result = builder.CreateIsNull(operand->Load(builder));
         break;
