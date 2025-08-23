@@ -12,7 +12,6 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         return value;
 
     std::optional<FunctionReference> callee;
-
     for (auto &function : m_Functions)
     {
         const auto &function_type = function.Type;
@@ -143,6 +142,18 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         }
         break;
 
+    case TypeId_Function:
+        switch (dst->GetId())
+        {
+        case TypeId_Function:
+            if (!implicit)
+                result = llvm_value;
+            break;
+        default:
+            break;
+        }
+        break;
+
     default:
         break;
     }
@@ -224,6 +235,15 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool i
         case TypeId_Pointer:
             return As<ArrayType>(src_type)->GetBase() == As<PointerType>(dst_type)->GetBase() &&
                    (src.IsMutable() || !As<PointerType>(dst_type)->IsMutable());
+        default:
+            return false;
+        }
+
+    case TypeId_Function:
+        switch (dst_type->GetId())
+        {
+        case TypeId_Function:
+            return !implicit;
         default:
             return false;
         }

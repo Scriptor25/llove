@@ -4,6 +4,8 @@ export type string_t = i8[];
 export type buffer_t = i8[mut];
 export type stream_t = stream[mut];
 
+type push_fn = (i32, [mut]);
+
 interface strlen(str: string_t): u64;
 interface fputc(c: i32, stream: stream_t): i32;
 interface putchar(c: i32): i32;
@@ -46,7 +48,7 @@ const flag_prefix       = 1:u8; # prepend numeric prefix (hex: '0x', oct: '0')
 const flag_pad_zero     = 2:u8; # pad with zeros instead of spaces
 const flag_justify_left = 4:u8; # append padding instead of prepend
 
-define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t, from: u64, to: u64) {
+define print_string(push: push_fn, context: [mut], str: string_t, from: u64, to: u64) {
     let beg = str + from;
     let end = str + to;
 
@@ -58,7 +60,7 @@ define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t, f
 # length: minimum length, use padding if not long enough
 # precision: maximum length, trim if too long
 #
-define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t, flags: u8, length: u8, precision: u8) {
+define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, length: u8, precision: u8) {
     let len = strlen(str);
     let end = str + len;
 
@@ -69,7 +71,7 @@ define print_string(push: (i32, [mut]) => void, context: [mut], str: string_t, f
 #
 # length: minimum length, use padding if not long enough
 #
-define print_int(push: (i32, [mut]) => void, context: [mut], mut value: u64, sign: u1, base: u8, upper: u1, flags: u8, length: u8) {
+define print_int(push: push_fn, context: [mut], mut value: u64, sign: u1, base: u8, upper: u1, flags: u8, length: u8) {
 
     if (!value) {
         push('0', context);
@@ -103,7 +105,7 @@ define print_int(push: (i32, [mut]) => void, context: [mut], mut value: u64, sig
 # length: minimum length, use padding if not long enough
 # precision: number of digits after the floating point
 #
-define print_float(push: (i32, [mut]) => void, context: [mut], mut value: f64, flags: u8, length: u8, precision: u8) {
+define print_float(push: push_fn, context: [mut], mut value: f64, flags: u8, length: u8, precision: u8) {
 
     let mut buffer: i8[256];
     let mut index: u64 = 256;
@@ -135,7 +137,7 @@ define print_float(push: (i32, [mut]) => void, context: [mut], mut value: f64, f
     print_string(push, context, buffer, index, 256);
 }
 
-export define format(push: (i32, [mut]) => void, context: [mut], format: string_t, ...args) {
+export define format(push: push_fn, context: [mut], format: string_t, ...args) {
     let beg = format;
     let end = format + strlen(format);
 

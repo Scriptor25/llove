@@ -43,13 +43,7 @@ catch (ref_exception<ErrorStack> &cause)
 llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const try
 {
     const auto value = GenVal(builder, nullptr);
-
-    const auto pointer_type = As<PointerType>(value->GetType());
-    const auto is_function_pointer = pointer_type
-                                     && !pointer_type->IsOpaque()
-                                     && pointer_type->GetBase()->IsFunction();
-
-    Assert(is_function_pointer, "not a function pointer");
+    auto type = As<FunctionType>(value->GetType());
 
     return {
         .Candidates = {
@@ -57,7 +51,7 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const try
             {
                 .Expose = false,
                 .Name = {},
-                .Type = As<FunctionType>(pointer_type->GetBase()),
+                .Type = std::move(type),
                 .Callee = value->Load(builder),
             }
         }
