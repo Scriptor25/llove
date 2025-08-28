@@ -16,7 +16,7 @@ llove::ValuePtr llove::SizeofExpression::GenVal(Builder &builder, const TypePtr 
                                ? As<IntegerType>(expect)
                                : builder.GetContext().GetInteger(false, 64);
 
-    const auto bytes = size / 8 + (size % 8 != 0);
+    const auto bytes = (size >> 3) + ((size & 7) != 0);
 
     builder.EmitLoc(m_Loc);
 

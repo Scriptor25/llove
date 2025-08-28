@@ -109,6 +109,8 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     if (m_IsOpaque)
         return {};
 
+    m_ClassType->SetBaseType(m_BaseType);
+
     std::vector<ClassMemberReference> class_members;
     for (auto &member : m_Members)
         class_members.emplace_back(member.Info, member.Name);

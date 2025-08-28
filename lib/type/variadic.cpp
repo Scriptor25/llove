@@ -23,7 +23,7 @@ llvm::Type *llove::VariadicType::GenIR(Builder &builder)
 llvm::DIType *llove::VariadicType::GenDI(Builder &builder)
 {
     if (!m_DIType)
-        m_DIType = builder.GetDebug().GetVoidType(); // TODO: generate debug info
+        m_DIType = builder.GetDebug().GetVariadicType();
 
     return m_DIType;
 }

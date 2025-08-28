@@ -90,18 +90,18 @@ interface main(): i32 {
     let width: u32 = 200;
     let height: u32 = 100;
 
-    stream.format("P6 {u32} {u32} 255 ", width, height);
+    stream.format("P6 {} {} 255 ", width, height);
 
     foreach (j : (0)..height) foreach (i : (0)..width) {
         let r: f64 = i / (width  - 1.0);
         let g: f64 = j / (height - 1.0);
         let b: f64 = 0.2;
 
-        let ir: u8 = ((r * 255.999) as u32) & 0xff;
-        let ig: u8 = ((g * 255.999) as u32) & 0xff;
-        let ib: u8 = ((b * 255.999) as u32) & 0xff;
+        let ir: i8 = ((r * 255.999) as u32) & 0xff;
+        let ig: i8 = ((g * 255.999) as u32) & 0xff;
+        let ib: i8 = ((b * 255.999) as u32) & 0xff;
 
-        stream.format("{c}{c}{c}", ir, ig, ib);
+        stream.format("{}{}{}", ir, ig, ib);
     }
 
     yield 0;

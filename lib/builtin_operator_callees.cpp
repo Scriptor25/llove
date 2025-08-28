@@ -212,7 +212,7 @@ static llove::ValuePtr operator_deref(llove::Builder &builder, const llove::Valu
         const auto typeinfo_pointer = builder.CreateGEP(bytes_type, data, 1);
         const auto typeinfo = builder.CreateLoad(typeinfo_type, typeinfo_pointer);
 
-        const auto data_pointer = builder.CreateGEP(typeinfo_type, data, 1);
+        const auto data_pointer = builder.CreateGEP(typeinfo_type, typeinfo_pointer, 1);
 
         auto result_type = builder.GetContext().GetStruct(
             {

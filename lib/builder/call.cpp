@@ -56,7 +56,7 @@ llove::ValuePtr llove::Builder::CreateCall(
 
                 const auto value = argument->Load(*this);
                 const auto bits = argument->GetType()->SizeBits(*this);
-                const auto bytes = bits / 8 + (bits % 8 != 0);
+                const auto bytes = (bits >> 3) + ((bits & 7) != 0);
 
                 values.emplace_back(GetI32(bytes));
                 values.emplace_back(typeinfo_pointer);

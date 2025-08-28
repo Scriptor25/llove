@@ -132,17 +132,17 @@ define print(&s: string) {
 }
 
 define hello(&name: string) {
-    print("Hello, " + name + "!\r\n");
+    print("Hello, " + name + "!\n");
 }
 
 define hello(name: string) {
-    print("Hello, " + name + "!\r\n");
+    print("Hello, " + name + "!\n");
 }
 
 define test(a: u1, b: u1): string {
-    let mut x: string = "<empty>\r\n";
-    let s: string = "Hello there!\r\n";
-    let mut m: string = "ABC, 123.\r\n";
+    let mut x: string = "<empty>\n";
+    let s: string = "Hello there!\n";
+    let mut m: string = "ABC, 123.\n";
 
     if (a) {
         x = $m;

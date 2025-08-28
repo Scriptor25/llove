@@ -71,10 +71,10 @@ void llove::Parser::RemoveEscape(std::string &raw, std::string &value)
 
         raw += static_cast<char>(m_Buffer);
         Get();
-        buffer = (ctoi(m_Buffer) & 0b1111) << 4;
+        buffer = (ctoi(m_Buffer) & 15) << 4;
         raw += static_cast<char>(m_Buffer);
         Get();
-        buffer |= ctoi(m_Buffer) & 0b1111;
+        buffer |= ctoi(m_Buffer) & 15;
         raw += static_cast<char>(m_Buffer);
 
         value += static_cast<char>(buffer);

@@ -25,7 +25,7 @@ interface main(count: i32, args: i8[][]): i32 {
 
     let n = atoi(args[1]);
     let f = fib(n);
-    format("fib({}) = {}\r\n", n, f);
+    format("fib({}) = {}\n", n, f);
 
     yield 0;
 }

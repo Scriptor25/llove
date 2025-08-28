@@ -1,4 +1,4 @@
-import { parse } from "typeinfo.lov";
+import * from "typeinfo.lov";
 
 export class stream;
 
@@ -6,7 +6,7 @@ export type string_t = i8[];
 export type buffer_t = i8[mut];
 export type stream_t = stream[mut];
 
-type push_fn = (i32, [mut]);
+type push_fn = (i8, [mut]);
 
 interface strlen(str: string_t): u64;
 interface fputc(c: i32, stream: stream_t): i32;
@@ -23,7 +23,7 @@ interface free(block: []);
 #  - 'b': base 2
 #  - 'o': base 8
 #  - 'x': base 16
-#  - 'p': raw pointer
+#  - 'r': raw
 #
 # length: <0 - 255>
 #
@@ -37,7 +37,7 @@ const flag_justify_left =  4:u8; # append padding instead of prepend
 const flag_base_2       =  8:u8; # print base 2 integer
 const flag_base_8       = 16:u8; # print base 8 integer
 const flag_base_16      = 32:u8; # print base 16 integer
-const flag_raw_pointer  = 64:u8; # print raw pointer, even if string
+const flag_raw          = 64:u8; # print raw value, even if string or character
 
 define print_string(push: push_fn, context: [mut], str: string_t, from: u64, to: u64) {
     let beg = str + from;
@@ -196,7 +196,7 @@ export define format(push: push_fn, context: [mut], format: string_t, ...args) {
     let mut length: u8;
     let mut precision: u8;
 
-    for (let mut i = beg; i != end; ) {
+    for (let mut i = beg; (i != end) | (state != state_none); ) {
         switch (state) {
             [state_none] {
                 if (*i == '{') {
@@ -242,9 +242,9 @@ export define format(push: push_fn, context: [mut], format: string_t, ...args) {
                         i++;
                         flags |= flag_base_16;
                     }
-                    ['p'] {
+                    ['r'] {
                         i++;
-                        flags |= flag_raw_pointer;
+                        flags |= flag_raw;
                     }
                     ['}'] {
                         i++;
@@ -288,17 +288,94 @@ export define format(push: push_fn, context: [mut], format: string_t, ...args) {
             [state_exit] {
                 let arg = *args++;
 
-                push('{', context);
-                print_int(push, context, arg.size, 10, 0, 0, flag_none, 0);
-                push(',', context);
-                print_int(push, context, (arg.type as u32[])[0], 10, 0, 0, flag_none, 0);
-                push(',', context);
-                print_int(push, context, arg.data, 16, 0, 0, flag_prefix | flag_pad_zero, 16);
-                push('}', context);
+                let base =
+                    (flags & flag_base_2)
+                        ? 2:u8
+                        : (flags & flag_base_8)
+                            ? 8:u8
+                            : (flags & flag_base_16)
+                                ? 16:u8
+                                : 10:u8;
+
+                let is_raw: u1 = flags & flag_raw;
 
                 let type = parse(arg.type);
 
-                delete *type;
+                switch ((*type).id()) {
+                    [typeid_integer] {
+                        let cast_type = type as integer_type[mut];
+                        let is_signed = (*cast_type).is_signed();
+                        let bits = (*cast_type).bits();
+
+                        if ((!is_raw) & is_signed & (bits == 8)) {
+                            let value = *(arg.data as i8[]);
+                            push(value, context);
+                            delete *cast_type;
+                            break;
+                        }
+
+                        if (is_signed) {
+                            let mut value = switch (bits) {
+                                [1] -> *(arg.data as i1[]);
+                                [8] -> *(arg.data as i8[]);
+                                [16] -> *(arg.data as i16[]);
+                                [32] -> *(arg.data as i32[]);
+                                [64] -> *(arg.data as i64[]);
+                                [default] -> 0:i64;
+                            };
+                            let mut sign: u1 = 0;
+                            if (value < 0) {
+                                value = -value;
+                                sign = 1;
+                            }
+                            print_int(push, context, value, base, sign, 0, flags, length);
+                        } else {
+                            let value = switch (bits) {
+                                [1] -> *(arg.data as u1[]);
+                                [8] -> *(arg.data as u8[]);
+                                [16] -> *(arg.data as u16[]);
+                                [32] -> *(arg.data as u32[]);
+                                [64] -> *(arg.data as u64[]);
+                                [default] -> 0:u64;
+                            };
+                            print_int(push, context, value, base, 0, 0, flags, length);
+                        }
+                        delete *cast_type;
+                    }
+                    [typeid_pointer] {
+                        let cast_type = type as pointer_type[mut];
+                        let is_mutable = (*cast_type).is_mutable();
+                        let is_opaque = (*cast_type).is_opaque();
+                        let base_type = (*cast_type).base();
+
+                        if ((!is_raw) & (!is_opaque) & ((*base_type).id() == typeid_integer)) {
+                            let base_cast_type = base_type as integer_type[];
+                            let is_signed = (*base_cast_type).is_signed();
+                            let bits = (*base_cast_type).bits();
+                            if (is_signed & (bits == 8)) {
+                                print_string(push, context, *(arg.data as i8[][]), flags, length, precision);
+                                delete *cast_type;
+                                break;
+                            }
+                        }
+
+                        let value: u64 = *(arg.data as [][]);
+                        print_int(push, context, value, 16, 0, 0, flags, length);
+
+                        delete *cast_type;
+                    }
+                    [default] {
+                        push('{', context);
+                        print_int(push, context, arg.size, 10, 0, 0, flag_none, 0);
+                        push(',', context);
+                        print_int(push, context, (arg.type as u32[])[0], 10, 0, 0, flag_none, 0);
+                        push(',', context);
+                        print_int(push, context, arg.data, 16, 0, 0, flag_prefix | flag_pad_zero, 16);
+                        push('}', context);
+                        delete *type;
+                    }
+                }
+
                 free(type);
 
                 state = state_none;
@@ -313,7 +390,7 @@ type buffer_context_t = {
     mut index: u64,
 };
 
-define push_buffer(c: i32, ptr: [mut]) {
+define push_buffer(c: i8, ptr: [mut]) {
     let mut &context = *(ptr as buffer_context_t[mut]);
     if (context.index < context.count)
         context.buffer[context.index++] = c;
@@ -328,7 +405,7 @@ export define format(buffer: buffer_t, count: u64, format: string_t, ...args) {
     format(push_buffer, &context, format, args);
 }
 
-define push_stream(c: i32, ptr: [mut]) {
+define push_stream(c: i8, ptr: [mut]) {
     let stream = ptr as stream_t;
     fputc(c, stream);
 }
@@ -337,7 +414,7 @@ export define format(stream: stream_t, format: string_t, ...args) {
     format(push_stream, stream, format, args);
 }
 
-define push_stdout(c: i32, ptr: [mut]) {
+define push_stdout(c: i8, ptr: [mut]) {
     putchar(c);
 }
 

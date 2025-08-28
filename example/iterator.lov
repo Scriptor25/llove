@@ -8,7 +8,7 @@ type iterable_struct_t = {
 };
 
 define begin_str(): i8[] {
-    yield "Hello!\r\n";
+    yield "Hello!\n";
 }
 
 define end_str(): i8[] {
@@ -19,7 +19,7 @@ define end_str(): i8[] {
 
 class iterable_class_t {
     expose mut create() {
-        self.str = "Hello!\r\n";
+        self.str = "Hello!\n";
     }
 
     expose begin(): i8[] {

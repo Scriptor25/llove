@@ -28,7 +28,7 @@ export class type {
     let mut id: u32;
 }
 
-export type type_ptr = type[];
+export type type_ptr = type[mut];
 
 export class void_type : type {
 
@@ -38,7 +38,6 @@ export class void_type : type {
 
     expose override mut $(): void_type {
         let mut t: void_type;
-        t.id = self.id;
         yield t;
     }
 }
@@ -51,7 +50,6 @@ export class variadic_type : type {
 
     expose override mut $(): variadic_type {
         let mut t: variadic_type;
-        t.id = self.id;
         yield t;
     }
 }
@@ -66,7 +64,6 @@ export class integer_type : type {
 
     expose override mut $(): integer_type {
         let mut t: integer_type(self.is_signed, self.bits);
-        t.id = self.id;
         self.is_signed = 0;
         self.bits = 0;
         yield t;
@@ -93,7 +90,6 @@ export class float_type : type {
 
     expose override mut $(): float_type {
         let mut t: float_type(self.bits);
-        t.id = self.id;
         yield t;
     }
 
@@ -122,7 +118,6 @@ export class pointer_type : type {
 
     expose override mut $(): pointer_type {
         let mut t: pointer_type(self.is_mutable, self.is_opaque, self.base);
-        t.id = self.id;
         self.is_mutable = 0;
         self.is_opaque = 0;
         self.base = null;
@@ -163,7 +158,6 @@ export class array_type : type {
 
     expose override mut $(): array_type {
         let mut t: array_type(self.count, self.base);
-        t.id = self.id;
         self.count = 0;
         self.base = null;
         yield t;
@@ -202,7 +196,6 @@ export class struct_type : type {
 
     expose override mut $(): struct_type {
         let mut t: struct_type(self.count, self.fields);
-        t.id = self.id;
         self.count = 0;
         self.fields = null;
         yield t;
@@ -244,7 +237,6 @@ export class range_type : type {
 
     expose override mut $(): range_type {
         let mut t: range_type(self.entry);
-        t.id = self.id;
         self.entry = null;
         yield t;
     }

@@ -32,8 +32,6 @@ catch (ref_exception<ErrorStack> &cause)
 
 llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
 {
-    // TODO: if symbol with name exists, add to candidates
-
     std::vector<FunctionReference> candidates;
 
     TypePtr symbol_type;
