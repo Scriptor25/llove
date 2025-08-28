@@ -33,6 +33,12 @@ llove::TypePtr llove::VariadicType::Reflect(Context &context) const
     return context.GetVariadic();
 }
 
+bool llove::VariadicType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    dst.emplace_back(builder.GetI32(ID));
+    return true;
+}
+
 std::string llove::VariadicType::Mangle() const
 {
     return "z";

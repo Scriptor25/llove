@@ -23,7 +23,8 @@ namespace llove
 
         bool Register = true;
         bool Export = false;
-
+        bool Virtual = false;
+        bool Override = false;
         bool Interface = false;
         bool Implicit = false;
 
@@ -117,6 +118,14 @@ namespace llove
         llvm::StructType *GetVariadicType();
 
 #pragma region WRAPPER
+
+        llvm::ConstantInt *GetI1(bool value);
+        llvm::ConstantInt *GetI8(uint8_t value);
+        llvm::ConstantInt *GetI16(uint16_t value);
+        llvm::ConstantInt *GetI32(uint32_t value);
+        llvm::ConstantInt *GetI64(uint64_t value);
+
+        llvm::Constant *GetStr(const std::string &value, const std::string &name = {});
 
         void SetCurrentDebugLocation(llvm::DebugLoc loc);
 
@@ -229,13 +238,18 @@ namespace llove
             const std::map<llvm::ConstantInt *, llvm::BasicBlock *> &cases);
         llvm::PHINode *CreatePHI(llvm::Type *type, const std::map<llvm::BasicBlock *, llvm::Value *> &operands);
 
+        llvm::CallInst *CreateCall(
+            llvm::FunctionType *type,
+            llvm::Value *callee,
+            const std::vector<llvm::Value *> &arguments,
+            const std::string &name = {});
+        llvm::CallInst *CreateMemcpy(llvm::Value *dst, llvm::Value *src, llvm::Value *count);
+
         llvm::ReturnInst *CreateRetVoid();
         llvm::ReturnInst *CreateRet(llvm::Value *value);
 
         llvm::BasicBlock *CreateBlock(const std::string &name = {});
         llvm::BasicBlock *CreateBlock(const std::string &name, llvm::Function *parent);
-
-        llvm::Constant *CreateGlobalString(const std::string &value, const std::string &name = {});
 
 #pragma endregion
 
@@ -331,5 +345,7 @@ namespace llove
         ClassType::Ptr m_Class;
         Field m_Result;
         std::vector<Frame> m_Stack;
+
+        std::map<std::string, llvm::Constant *> m_Strings;
     };
 }

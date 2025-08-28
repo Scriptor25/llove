@@ -50,6 +50,14 @@ llove::TypePtr llove::IntegerType::Reflect(Context &context) const
     return context.GetInteger(m_IsSigned, m_Bits);
 }
 
+bool llove::IntegerType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    dst.emplace_back(builder.GetI32(ID));
+    dst.emplace_back(builder.GetI1(m_IsSigned));
+    dst.emplace_back(builder.GetI32(m_Bits));
+    return true;
+}
+
 std::string llove::IntegerType::Mangle() const
 {
     return (m_IsSigned ? 'i' : 'u') + std::to_string(m_Bits) + '_';

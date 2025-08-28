@@ -17,7 +17,7 @@ llove::ValuePtr llove::StringExpression::GenVal(Builder &builder, TypePtr expect
 
     auto &value = string_cache[m_Value];
     if (!value)
-        value = builder.CreateGlobalString(m_Value);
+        value = builder.GetStr(m_Value);
 
     return Value::CreateR(builder.GetContext().GetPointer(builder.GetContext().GetInteger(true, 8), false), value);
 }

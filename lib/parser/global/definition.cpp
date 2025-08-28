@@ -3,12 +3,12 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool export_)
+llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool is_export)
 {
     auto loc = m_Token.Loc;
     auto interface = SkipIf(TokenType_Symbol, "interface") || (Expect(TokenType_Symbol, "define"), false);
 
-    if (!export_ && !interface && SkipIf(TokenType_Other, ":"))
+    if (!is_export && !interface && SkipIf(TokenType_Other, ":"))
         return ParseClassDefinitionGlobal(std::move(loc));
 
     auto implicit = !interface && SkipIf(TokenType_Symbol, "implicit");
@@ -21,8 +21,14 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool export_)
     else
         name = Expect(TokenType_Symbol).Value;
 
+    if (!interface && At(TokenType_Operator, "<"))
+    {
+        ParseDefinitionTemplate(is_export, std::move(loc), implicit, std::move(name));
+        return nullptr;
+    }
+
     std::vector<Parameter> parameters;
-    auto variadic = ParseParameterList("(", parameters, ")");
+    auto variadic = ParseParameterList(parameters);
 
     Field result;
     if (SkipIf(TokenType_Other, ":"))
@@ -36,7 +42,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool export_)
 
     return std::make_unique<DefinitionGlobal>(
         std::move(loc),
-        export_,
+        is_export,
         interface,
         implicit,
         std::move(name),

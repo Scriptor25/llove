@@ -120,6 +120,11 @@ llove::TypePtr llove::FunctionType::Reflect(Context &context) const
     return context.GetFunction(std::move(parameters), m_Variadic, std::move(result), std::move(self));
 }
 
+bool llove::FunctionType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    return false;
+}
+
 std::string llove::FunctionType::Mangle() const
 {
     std::string parameters;

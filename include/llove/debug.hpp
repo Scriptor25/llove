@@ -25,7 +25,7 @@ namespace llove
         [[nodiscard]] llvm::DIType *GetPointerType() const;
         [[nodiscard]] llvm::DIType *GetPointerType(llvm::DIType *base) const;
         [[nodiscard]] llvm::DIType *GetArrayType(llvm::DIType *base, unsigned size) const;
-        [[nodiscard]] llvm::DIType *GetStructType(const std::vector<llvm::Metadata *> &fields, unsigned size) const;
+        [[nodiscard]] llvm::DIType *GetStructType(const std::vector<llvm::Metadata *> &elements, unsigned size) const;
         [[nodiscard]] llvm::DIType *GetVariadicType() const;
         [[nodiscard]] llvm::DIType *GetFieldType(
             const std::string &name,
@@ -35,7 +35,8 @@ namespace llove
         [[nodiscard]] llvm::DIType *GetClassType(const std::string &name) const;
         [[nodiscard]] llvm::DIType *GetClassType(
             const std::string &name,
-            const std::vector<llvm::Metadata *> &fields,
+            llvm::DIType *base,
+            const std::vector<llvm::Metadata *> &elements,
             unsigned size) const;
         [[nodiscard]] llvm::DISubroutineType *GetFunctionType(
             llvm::DIType *self,

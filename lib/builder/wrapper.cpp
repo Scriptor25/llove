@@ -1,5 +1,37 @@
 #include <llove/builder.hpp>
 
+llvm::ConstantInt *llove::Builder::GetI1(const bool value)
+{
+    return m_LLVMBuilder.getInt1(value);
+}
+
+llvm::ConstantInt *llove::Builder::GetI8(const uint8_t value)
+{
+    return m_LLVMBuilder.getInt8(value);
+}
+
+llvm::ConstantInt *llove::Builder::GetI16(const uint16_t value)
+{
+    return m_LLVMBuilder.getInt16(value);
+}
+
+llvm::ConstantInt *llove::Builder::GetI32(const uint32_t value)
+{
+    return m_LLVMBuilder.getInt32(value);
+}
+
+llvm::ConstantInt *llove::Builder::GetI64(const uint64_t value)
+{
+    return m_LLVMBuilder.getInt64(value);
+}
+
+llvm::Constant *llove::Builder::GetStr(const std::string &value, const std::string &name)
+{
+    if (m_Strings.contains(value))
+        return m_Strings.at(value);
+    return m_Strings[value] = m_LLVMBuilder.CreateGlobalStringPtr(value, name, 0, &m_LLVMModule);
+}
+
 void llove::Builder::SetCurrentDebugLocation(llvm::DebugLoc loc)
 {
     m_LLVMBuilder.SetCurrentDebugLocation(std::move(loc));
@@ -483,6 +515,38 @@ llvm::PHINode *llove::Builder::CreatePHI(llvm::Type *type, const std::map<llvm::
     return instruction;
 }
 
+llvm::CallInst *llove::Builder::CreateCall(
+    llvm::FunctionType *type,
+    llvm::Value *callee,
+    const std::vector<llvm::Value *> &arguments,
+    const std::string &name)
+{
+    Assert(type != nullptr, "type must not be null");
+    Assert(callee != nullptr, "callee must not be null");
+
+    return m_LLVMBuilder.CreateCall(type, callee, arguments, name);
+}
+
+llvm::CallInst *llove::Builder::CreateMemcpy(llvm::Value *dst, llvm::Value *src, llvm::Value *count)
+{
+    Assert(dst != nullptr, "dst must not be null");
+    Assert(src != nullptr, "src must not be null");
+    Assert(count != nullptr, "count must not be null");;
+
+    return m_LLVMBuilder.CreateIntrinsic(
+        llvm::Intrinsic::memcpy,
+        {
+            dst->getType(),
+            src->getType(),
+            count->getType(),
+        },
+        {
+            dst,
+            src,
+            count,
+        });
+}
+
 llvm::ReturnInst *llove::Builder::CreateRetVoid()
 {
     return m_LLVMBuilder.CreateRetVoid();
@@ -505,9 +569,4 @@ llvm::BasicBlock *llove::Builder::CreateBlock(const std::string &name, llvm::Fun
     Assert(parent != nullptr, "parent must not be null");
 
     return llvm::BasicBlock::Create(m_LLVMContext, name, parent);
-}
-
-llvm::Constant *llove::Builder::CreateGlobalString(const std::string &value, const std::string &name)
-{
-    return m_LLVMBuilder.CreateGlobalStringPtr(value, name, 0, &m_LLVMModule);
 }

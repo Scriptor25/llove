@@ -9,7 +9,7 @@
 
 namespace llove
 {
-    struct ClassFieldReference final
+    struct ClassMemberReference final
     {
         std::ostream &Print(std::ostream &stream) const;
 
@@ -22,18 +22,20 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const;
 
         bool Expose = false;
+        bool Virtual = false;
+        bool Override = false;
         bool Implicit = false;
-        bool Mutable = false;
+        bool IsMutable = false;
 
         std::string Name;
         std::vector<Field> Parameters;
-        bool Variadic = false;
+        bool IsVariadic = false;
         Field Result;
     };
 
-    struct ClassField final
+    struct ClassMember final
     {
-        void Reflect(Context &context, ClassField &field) const;
+        void Reflect(Context &context, ClassMember &field) const;
         std::ostream &Print(std::ostream &stream) const;
 
         Field Info;
@@ -49,6 +51,8 @@ namespace llove
 
         Location Loc;
         bool Expose = false;
+        bool Virtual = false;
+        bool Override = false;
         bool Implicit = false;
         bool Mutable = false;
         std::string Name;
@@ -58,7 +62,7 @@ namespace llove
         StatementPtr Content;
     };
 
-    std::ostream &operator<<(std::ostream &stream, const ClassField &field);
+    std::ostream &operator<<(std::ostream &stream, const ClassMember &field);
     std::ostream &operator<<(std::ostream &stream, const ClassFunction &function);
 }
 

@@ -55,6 +55,12 @@ llove::TypePtr llove::RangeType::Reflect(Context &context) const
     return context.GetRange(m_Entry->Reflect(context));
 }
 
+bool llove::RangeType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    dst.emplace_back(builder.GetI32(ID));
+    return m_Entry->TypeInfo(builder, dst);
+}
+
 std::string llove::RangeType::Mangle() const
 {
     return 'r' + m_Entry->Mangle();

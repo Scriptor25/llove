@@ -16,11 +16,6 @@ bool llove::Type::IsVariadic() const
     return false;
 }
 
-bool llove::Type::IsArgPointer() const
-{
-    return false;
-}
-
 bool llove::Type::IsInteger() const
 {
     return false;

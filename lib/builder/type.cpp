@@ -26,12 +26,14 @@ llvm::Type *llove::Builder::GetFloatType(const unsigned bits)
     case 64:
         return llvm::Type::getDoubleTy(m_LLVMContext);
     default:
-        return nullptr;
+        Error("bits must be either 16, 32 or 64");
     }
 }
 
 llvm::ArrayType *llove::Builder::GetArrayType(llvm::Type *base, const unsigned size)
 {
+    Assert(base != nullptr, "base must not be null");
+
     (void) m_LLVMContext;
     return llvm::ArrayType::get(base, size);
 }
@@ -45,22 +47,30 @@ llvm::FunctionType *llove::Builder::GetFunctionType(
     llvm::Type *result,
     const std::vector<llvm::Type *> &parameters)
 {
+    Assert(result != nullptr, "result must not be null");
+
     (void) m_LLVMContext;
     return llvm::FunctionType::get(result, parameters, false);
 }
 
 llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> &fields, const bool packed)
 {
+    Assert(!fields.empty(), "fields must not be empty");
+
     return llvm::StructType::get(m_LLVMContext, fields, packed);
 }
 
 llvm::StructType *llove::Builder::GetNamedStructType(const std::string &name)
 {
+    Assert(!name.empty(), "name must not be empty");
+
     return llvm::StructType::getTypeByName(m_LLVMContext, name);
 }
 
 llvm::StructType *llove::Builder::GetOrCreateNamedStructType(const std::string &name)
 {
+    Assert(!name.empty(), "name must not be empty");
+
     if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, name))
         return type;
 
@@ -72,6 +82,9 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
     const std::vector<llvm::Type *> &fields,
     const bool packed)
 {
+    Assert(!name.empty(), "name must not be empty");
+    Assert(!fields.empty(), "fields must not be empty");
+
     if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, name))
     {
         type->setBody(fields, packed);

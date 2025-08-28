@@ -35,6 +35,22 @@ static llove::ValuePtr operator_not(llove::Builder &builder, const llove::ValueP
     case llove::TypeId_Pointer:
         result = builder.CreateIsNull(operand->Load(builder));
         break;
+    case llove::TypeId_Variadic:
+    {
+        llvm::Value *count;
+        if (operand->IsReference())
+        {
+            const auto operand_pointer = operand->GetPointer();
+            const auto count_pointer = builder.CreateStructGEP(type->GenIR(builder), operand_pointer, 0);
+            count = builder.CreateLoad(builder.GetIntegerType(32), count_pointer);
+        }
+        else
+        {
+            count = builder.CreateExtractValue(operand->Load(builder), 0);
+        }
+        result = builder.CreateIsNull(count);
+        break;
+    }
     default:
         llove::Error("operator '!{}' not implemented", operand->AsField());
     }
@@ -85,6 +101,31 @@ static llove::ValuePtr operator_inc(llove::Builder &builder, llove::ValuePtr ope
         const auto base_type = llove::As<llove::PointerType>(type)->GetBase();
         const auto offset = llvm::ConstantInt::get(builder.GetPointerSizeType(), 1u, false);
         result = builder.CreateGEP(base_type->GenIR(builder), operand->Load(builder), offset);
+        break;
+    }
+    case llove::TypeId_Variadic:
+    {
+        const auto operand_type = type->GenIR(builder);
+
+        const auto operand_pointer = operand->GetPointer();
+        const auto count_pointer = builder.CreateStructGEP(operand_type, operand_pointer, 0);
+        const auto data_pointer = builder.CreateStructGEP(operand_type, operand_pointer, 1);
+
+        const auto count = builder.CreateLoad(builder.GetIntegerType(32), count_pointer);
+        const auto data = builder.CreateLoad(builder.GetPointerType(), data_pointer);
+
+        const auto bytes_type = builder.GetIntegerType(32);
+        const auto bytes = builder.CreateLoad(bytes_type, data);
+
+        // offset = <sizeof bytes> + <sizeof pointer> + <sizeof data>
+        const auto offset = builder.CreateAdd(builder.GetI32(4 + builder.GetDataLayout().getPointerSize()), bytes);
+
+        const auto result_count = builder.CreateSub(count, llvm::ConstantInt::get(count->getType(), 1));
+        const auto result_data = builder.CreateGEP(builder.GetIntegerType(8), data, offset);
+
+        result = llvm::ConstantStruct::getNullValue(operand_type);
+        result = builder.CreateInsertValue(result, result_count, 0);
+        result = builder.CreateInsertValue(result, result_data, 1);
         break;
     }
     default:
@@ -141,9 +182,55 @@ static llove::ValuePtr operator_dec(llove::Builder &builder, llove::ValuePtr ope
 
 static llove::ValuePtr operator_deref(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)
 {
-    llove::Assert(operand->GetType()->IsPointer(), "illegal dereference of non-pointer value");
-    const auto type = llove::As<llove::PointerType>(operand->GetType());
-    return llove::Value::CreateL(type->GetBase(), operand->Load(builder), type->IsMutable());
+    auto type = operand->GetType();
+
+    switch (type->GetId())
+    {
+    case llove::TypeId_Pointer:
+    {
+        const auto pointer_type = llove::As<llove::PointerType>(type);
+        return llove::Value::CreateL(pointer_type->GetBase(), operand->Load(builder), pointer_type->IsMutable());
+    }
+    case llove::TypeId_Variadic:
+    {
+        llvm::Value *data;
+        if (operand->IsReference())
+        {
+            const auto pointer = operand->GetPointer();
+            const auto data_pointer = builder.CreateGEP(type->GenIR(builder), pointer, 1);
+            data = builder.CreateLoad(builder.GetPointerType(), data_pointer);
+        }
+        else
+        {
+            data = builder.CreateExtractValue(operand->Load(builder), 1);
+        }
+
+        const auto bytes_type = builder.GetIntegerType(32);
+        const auto bytes = builder.CreateLoad(bytes_type, data);
+
+        const auto typeinfo_type = builder.GetPointerType();
+        const auto typeinfo_pointer = builder.CreateGEP(bytes_type, data, 1);
+        const auto typeinfo = builder.CreateLoad(typeinfo_type, typeinfo_pointer);
+
+        const auto data_pointer = builder.CreateGEP(typeinfo_type, data, 1);
+
+        auto result_type = builder.GetContext().GetStruct(
+            {
+                { .Info = llove::Field(builder.GetContext().GetInteger(false, 32)), .Name = "size" },
+                { .Info = llove::Field(builder.GetContext().GetPointer(false)), .Name = "type" },
+                { .Info = llove::Field(builder.GetContext().GetPointer(false)), .Name = "data" },
+            });
+
+        llvm::Value *result_value = llvm::Constant::getNullValue(result_type->GenIR(builder));
+        result_value = builder.CreateInsertValue(result_value, bytes, 0);
+        result_value = builder.CreateInsertValue(result_value, typeinfo, 1);
+        result_value = builder.CreateInsertValue(result_value, data_pointer, 2);
+
+        return llove::Value::CreateR(std::move(result_type), result_value);
+    }
+    default:
+        llove::Error("operator '*{}' not implemented", operand->AsField());
+    }
 }
 
 static llove::ValuePtr operator_ref(llove::Builder &builder, const llove::ValuePtr &operand, bool /*suffix*/)

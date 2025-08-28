@@ -30,7 +30,7 @@ llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, TypePtr expect)
         return (*operator_)(builder, std::move(operand));
 
     Error(
-        "undefined unary operator {}{}{}",
+        "operator '{}{}{}' not implemented",
         m_Suffix ? std::string{} : m_Operator,
         operand->AsField(),
         m_Suffix ? m_Operator : std::string{});

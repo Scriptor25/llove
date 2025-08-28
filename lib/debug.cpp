@@ -91,7 +91,9 @@ llvm::DIType *llove::DebugBuilder::GetArrayType(llvm::DIType *base, const unsign
         m_DIBuilder->getOrCreateArray({ subrange }));
 }
 
-llvm::DIType *llove::DebugBuilder::GetStructType(const std::vector<llvm::Metadata *> &fields, const unsigned size) const
+llvm::DIType *llove::DebugBuilder::GetStructType(
+    const std::vector<llvm::Metadata *> &elements,
+    const unsigned size) const
 {
     Assert(!m_Strip, "no debug information");
 
@@ -104,7 +106,7 @@ llvm::DIType *llove::DebugBuilder::GetStructType(const std::vector<llvm::Metadat
         0u,
         llvm::DINode::FlagZero,
         nullptr,
-        m_DIBuilder->getOrCreateArray(fields));
+        m_DIBuilder->getOrCreateArray(elements));
 }
 
 llvm::DIType *llove::DebugBuilder::GetVariadicType() const
@@ -156,7 +158,8 @@ llvm::DIType *llove::DebugBuilder::GetClassType(const std::string &name) const
 
 llvm::DIType *llove::DebugBuilder::GetClassType(
     const std::string &name,
-    const std::vector<llvm::Metadata *> &fields,
+    llvm::DIType *base,
+    const std::vector<llvm::Metadata *> &elements,
     const unsigned size) const
 {
     Assert(!m_Strip, "no debug information");
@@ -170,8 +173,8 @@ llvm::DIType *llove::DebugBuilder::GetClassType(
         0u,
         0u,
         llvm::DINode::FlagZero,
-        nullptr,
-        m_DIBuilder->getOrCreateArray(fields));
+        base,
+        m_DIBuilder->getOrCreateArray(elements));
 }
 
 llvm::DISubroutineType *llove::DebugBuilder::GetFunctionType(

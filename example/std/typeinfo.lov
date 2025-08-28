@@ -1,0 +1,327 @@
+export const typeid_void: u32     = 'v';
+export const typeid_variadic: u32 = 'l';
+export const typeid_integer: u32  = 'i';
+export const typeid_float: u32    = 'f';
+export const typeid_pointer: u32  = 'p';
+export const typeid_array: u32    = 'a';
+export const typeid_struct: u32   = 's';
+export const typeid_range: u32    = 'r';
+
+interface malloc(count: u64): [mut];
+interface free(block: []);
+
+define new<T>(mut val: T): T[mut] {
+    let p: T[mut] = malloc(sizeof T);
+    *p = $val;
+    yield p;
+}
+
+export class type {
+
+    expose virtual mut delete() {
+    }
+
+    expose virtual mut $(): type {
+        let mut t: type;
+        t.id = self.id;
+        yield t;
+    }
+
+    expose id(): u32 {
+        yield self.id;
+    }
+
+    let mut id: u32;
+}
+
+export type type_ptr = type[];
+
+export class void_type : type {
+
+    expose mut create() {
+        self.id = typeid_void;
+    }
+
+    expose override mut $(): void_type {
+        let mut t: void_type;
+        t.id = self.id;
+        yield t;
+    }
+}
+
+export class variadic_type : type {
+
+    expose mut create() {
+        self.id = typeid_variadic;
+    }
+
+    expose override mut $(): variadic_type {
+        let mut t: variadic_type;
+        t.id = self.id;
+        yield t;
+    }
+}
+
+export class integer_type : type {
+
+    expose mut create(is_signed: u1, bits: u32) {
+        self.id = typeid_integer;
+        self.is_signed = is_signed;
+        self.bits = bits;
+    }
+
+    expose override mut $(): integer_type {
+        let mut t: integer_type(self.is_signed, self.bits);
+        t.id = self.id;
+        self.is_signed = 0;
+        self.bits = 0;
+        yield t;
+    }
+
+    expose is_signed(): u1 {
+        yield self.is_signed;
+    }
+
+    expose bits(): u32 {
+        yield self.bits;
+    }
+
+    let mut is_signed: u1;
+    let mut bits: u32;
+}
+
+export class float_type : type {
+
+    expose mut create(bits: u32) {
+        self.id = typeid_float;
+        self.bits = bits;
+    }
+
+    expose override mut $(): float_type {
+        let mut t: float_type(self.bits);
+        t.id = self.id;
+        yield t;
+    }
+
+    expose bits(): u32 {
+        yield self.bits;
+    }
+
+    let mut bits: u32;
+}
+
+export class pointer_type : type {
+
+    expose mut create(is_mutable: u1, is_opaque: u1, base: type_ptr) {
+        self.id = typeid_pointer;
+        self.is_mutable = is_mutable;
+        self.is_opaque = is_opaque;
+        self.base = base;
+    }
+
+    expose override mut delete() {
+        if (self.base) {
+            free(self.base);
+            self.base = null;
+        }
+    }
+
+    expose override mut $(): pointer_type {
+        let mut t: pointer_type(self.is_mutable, self.is_opaque, self.base);
+        t.id = self.id;
+        self.is_mutable = 0;
+        self.is_opaque = 0;
+        self.base = null;
+        yield t;
+    }
+
+    expose is_mutable(): u1 {
+        yield self.is_mutable;
+    }
+
+    expose is_opaque(): u1 {
+        yield self.is_opaque;
+    }
+
+    expose base(): type_ptr {
+        yield self.base;
+    }
+
+    let mut is_mutable: u1;
+    let mut is_opaque: u1;
+    let mut base: type_ptr;
+}
+
+export class array_type : type {
+
+    expose mut create(count: u32, base: type_ptr) {
+        self.id = typeid_array;
+        self.count = count;
+        self.base = base;
+    }
+
+    expose mut delete() {
+        if (self.base) {
+            free(self.base);
+            self.base = null;
+        }
+    }
+
+    expose override mut $(): array_type {
+        let mut t: array_type(self.count, self.base);
+        t.id = self.id;
+        self.count = 0;
+        self.base = null;
+        yield t;
+    }
+
+    expose count(): u32 {
+        yield self.count;
+    }
+
+    expose base(): type_ptr {
+        yield self.base;
+    }
+
+    let mut count: u32;
+    let mut base: type_ptr;
+}
+
+export class struct_type : type {
+
+    expose mut create(count: u32, fields: type_ptr[mut]) {
+        self.id = typeid_struct;
+        self.count = count;
+        self.fields = fields;
+    }
+
+    expose mut delete() {
+        if (self.fields) {
+            foreach (field : self) {
+                free(field);
+            }
+            free(self.fields);
+            self.count = 0;
+            self.fields = null;
+        }
+    }
+
+    expose override mut $(): struct_type {
+        let mut t: struct_type(self.count, self.fields);
+        t.id = self.id;
+        self.count = 0;
+        self.fields = null;
+        yield t;
+    }
+
+    expose mut begin(): type_ptr[mut] {
+        yield self.fields;
+    }
+
+    expose mut end(): type_ptr[mut] {
+        yield self.fields + self.count;
+    }
+
+    expose begin(): type_ptr[] {
+        yield self.fields;
+    }
+
+    expose end(): type_ptr[] {
+        yield self.fields + self.count;
+    }
+
+    let mut count: u32;
+    let mut fields: type_ptr[mut];
+}
+
+export class range_type : type {
+
+    expose mut create(entry: type_ptr) {
+        self.id = typeid_range;
+        self.entry = entry;
+    }
+
+    expose override mut delete() {
+        if (self.entry) {
+            free(self.entry);
+            self.entry = null;
+        }
+    }
+
+    expose override mut $(): range_type {
+        let mut t: range_type(self.entry);
+        t.id = self.id;
+        self.entry = null;
+        yield t;
+    }
+
+    expose entry(): type_ptr {
+        yield self.entry;
+    }
+
+    let mut entry: type_ptr;
+}
+
+export define parse(mut typeinfo: u8[]): type_ptr {
+
+    let id = *(typeinfo as u32[]);
+    typeinfo += sizeof u32;
+
+    switch (id) {
+        [typeid_void] {
+            yield <void_type> new(create void_type);
+        }
+        [typeid_variadic] {
+            yield <variadic_type> new(create variadic_type);
+        }
+        [typeid_integer] {
+            let is_signed = *(typeinfo as u1[]);
+            typeinfo += sizeof u1;
+            let bits = *(typeinfo as u32[]);
+            typeinfo += sizeof u32;
+
+            yield <integer_type> new(create integer_type(is_signed, bits));
+        }
+        [typeid_float] {
+            let bits = *(typeinfo as u32[]);
+            typeinfo += sizeof u32;
+
+            yield <float_type> new(create float_type(bits));
+        }
+        [typeid_pointer] {
+            let is_mutable = *(typeinfo as u1[]);
+            typeinfo += sizeof u1;
+            let is_opaque = *(typeinfo as u1[]);
+            typeinfo += sizeof u1;
+
+            let base = is_opaque ? null:mut:type : parse(typeinfo);
+
+            yield <pointer_type> new(create pointer_type(is_mutable, is_opaque, base));
+        }
+        [typeid_array] {
+            let count = *(typeinfo as u32[]);
+            typeinfo += sizeof u32;
+            let base = parse(typeinfo);
+
+            yield <array_type> new(create array_type(count, base));
+        }
+        [typeid_struct] {
+            let count = *(typeinfo as u32[]);
+            typeinfo += sizeof u32;
+
+            let fields: type_ptr[mut] = malloc(count * sizeof type_ptr);
+            for (let mut i: u32; i < count; ++i)
+                fields[i] = parse(typeinfo);
+
+            yield <struct_type> new(create struct_type(count, fields));
+        }
+        [typeid_range] {
+            let entry = parse(typeinfo);
+
+            yield <range_type> new(create range_type(entry));
+        }
+        [default] {
+            yield null:mut:type;
+        }
+    }
+}

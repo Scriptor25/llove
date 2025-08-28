@@ -37,33 +37,53 @@ llove::ValuePtr llove::Builder::CreateCall(
         }
         else
         {
-            const auto type = GetVariadicType();
-
-            std::vector<llvm::Type *> elements;
-            for (auto j = i; j < arguments.size(); ++j)
+            std::vector<llvm::Value *> values;
+            for (; i < arguments.size(); ++i)
             {
-                const auto argument_type = arguments.at(j)->GetType();
-                elements.emplace_back(argument_type->GenIR(*this));
+                const auto &argument = arguments.at(i);
+                const auto argument_type = argument->GetType();
+
+                std::vector<llvm::Constant *> typeinfo_values;
+                argument_type->TypeInfo(*this, typeinfo_values);
+
+                const auto typeinfo_type = llvm::ConstantStruct::getTypeForElements(
+                    m_LLVMContext,
+                    typeinfo_values,
+                    true);
+                const auto typeinfo_value = llvm::ConstantStruct::get(typeinfo_type, typeinfo_values);
+                const auto typeinfo_pointer = CreateAlloca(typeinfo_type);
+                CreateStore(typeinfo_value, typeinfo_pointer);
+
+                const auto value = argument->Load(*this);
+                const auto bits = argument->GetType()->SizeBits(*this);
+                const auto bytes = bits / 8 + (bits % 8 != 0);
+
+                values.emplace_back(GetI32(bytes));
+                values.emplace_back(typeinfo_pointer);
+                values.emplace_back(value);
             }
 
-            const auto count_type = type->getElementType(0);
-            const auto count_value = llvm::ConstantInt::get(count_type, count, false);
+            const auto variadic_type = GetVariadicType();
+            const auto count_type = variadic_type->getElementType(0);
+            const auto count_value = llvm::ConstantInt::get(count_type, count);
 
-            const auto elements_type = llvm::StructType::get(m_LLVMContext, elements, true);
-            const auto elements_pointer = CreateAlloca(elements_type);
+            std::vector<llvm::Type *> types;
+            for (const auto value : values)
+                types.emplace_back(value->getType());
 
-            for (auto j = 0; i < arguments.size(); ++i, ++j)
-            {
-                const auto value = arguments.at(i)->Load(*this);
-                const auto pointer = m_LLVMBuilder.CreateStructGEP(elements_type, elements_pointer, j);
-                m_LLVMBuilder.CreateStore(value, pointer);
-            }
+            const auto data_type = llvm::StructType::get(m_LLVMContext, types, true);
+            const auto data_pointer = CreateAlloca(data_type);
 
-            llvm::Value *aggregate = llvm::Constant::getNullValue(type);
-            aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, count_value, 0);
-            aggregate = m_LLVMBuilder.CreateInsertValue(aggregate, elements_pointer, 1);
+            llvm::Value *data_value = llvm::Constant::getNullValue(data_type);
+            for (unsigned j = 0; j < values.size(); ++j)
+                data_value = CreateInsertValue(data_value, values.at(j), j);
+            CreateStore(data_value, data_pointer);
 
-            argument_values.emplace_back(aggregate);
+            llvm::Value *variadic_value = llvm::Constant::getNullValue(variadic_type);
+            variadic_value = m_LLVMBuilder.CreateInsertValue(variadic_value, count_value, 0);
+            variadic_value = m_LLVMBuilder.CreateInsertValue(variadic_value, data_pointer, 1);
+
+            argument_values.emplace_back(variadic_value);
         }
     }
 
@@ -85,9 +105,7 @@ llove::ValuePtr llove::Builder::CreateCall(const ValuePtr &callee)
 
     std::vector<llvm::Value *> arguments;
     if (function_type->HasVariadic())
-    {
         arguments.emplace_back(llvm::Constant::getNullValue(GetVariadicType()));
-    }
 
     const auto result_value = m_LLVMBuilder.CreateCall(
         function_type->GenFunction(*this),

@@ -33,7 +33,8 @@ namespace llove
             const Field &src,
             bool strict);
 
-        explicit Field() = default;
+        Field() = default;
+        explicit Field(TypePtr type);
         explicit Field(bool is_mutable, bool is_reference, TypePtr type);
 
         [[nodiscard]] bool IsMutable() const;
@@ -53,6 +54,8 @@ namespace llove
 
         [[nodiscard]] unsigned SizeBits(Builder &builder) const;
         [[nodiscard]] std::string Mangle() const;
+
+        bool TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const;
 
         bool operator==(const Field &other) const;
 

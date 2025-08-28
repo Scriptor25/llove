@@ -44,7 +44,8 @@ namespace llove
             Location loc,
             bool export_,
             ClassType::Ptr type,
-            std::vector<ClassField> fields,
+            ClassType::Ptr base_type,
+            std::vector<ClassMember> members,
             std::vector<ClassFunction> functions);
 
         void Gen(Builder &builder) const override;
@@ -57,9 +58,10 @@ namespace llove
 
     private:
         bool m_Export;
-        ClassType::Ptr m_Type;
         bool m_Opaque;
-        std::vector<ClassField> m_Fields;
+        ClassType::Ptr m_Type;
+        ClassType::Ptr m_BaseType;
+        std::vector<ClassMember> m_Members;
         std::vector<ClassFunction> m_Functions;
     };
 
@@ -643,6 +645,25 @@ namespace llove
 
     private:
         std::string m_Name;
+    };
+
+    class TemplateCallExpression final : public Expression
+    {
+    public:
+        explicit TemplateCallExpression(
+            Location loc,
+            std::vector<TypePtr> type_arguments,
+            std::string callee,
+            std::vector<ExpressionPtr> arguments);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::vector<TypePtr> m_TypeArguments;
+        std::string m_Callee;
+        std::vector<ExpressionPtr> m_Arguments;
     };
 
     class TernaryExpression final : public Expression

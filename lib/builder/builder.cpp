@@ -216,6 +216,7 @@ llove::FunctionReference llove::Builder::GenFunction(const FunctionInfo &fn)
             m_LLVMBuilder.CreateRetVoid();
             continue;
         }
+        block.print(llvm::errs());
         Error("not all paths yield");
     }
 
@@ -269,7 +270,7 @@ void llove::Builder::GenParameters(
                 const auto function = GenFunction(
                     {
                         .Class = std::move(class_type),
-                        .Mutable = destructor->Mutable,
+                        .Mutable = destructor->IsMutable,
                         .Expose = destructor->Expose,
                         .Name = destructor->Name,
                         .Result = destructor->Result,

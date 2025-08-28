@@ -12,6 +12,10 @@ llove::VariadicExpression::VariadicExpression(Location loc, ExpressionPtr list, 
 
 llove::ValuePtr llove::VariadicExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
+    // !list   => <empty:i1>
+    // *list   => struct { type: <typeinfo:ptr>, data: <pointer:ptr> }
+    // ++list  => variadic { count: <count:i32> - 1, data: <pointer:ptr> + <offset from typeinfo> }
+
     const auto list = m_List->GenVal(builder, builder.GetContext().GetVariadic());
     const auto type = m_Type->GenIR(builder);
 
@@ -52,7 +56,12 @@ llove::ValuePtr llove::VariadicExpression::GenVal(Builder &builder, TypePtr expe
 
     builder.SetInsertPoint(end_block);
 
-    const auto value = builder.CreatePHI(type, { { get_block, get_value }, { empty_block, empty_value } });
+    const auto value = builder.CreatePHI(
+        type,
+        {
+            { get_block, get_value },
+            { empty_block, empty_value },
+        });
 
     return Value::CreateR(m_Type, value);
 }

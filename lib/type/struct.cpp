@@ -56,7 +56,6 @@ llvm::StructType *llove::StructType::GenIR(Builder &builder)
         for (auto &field : m_Fields)
             fields.emplace_back(field.Info.GenIRType(builder));
 
-        // TODO: packed struct
         m_IRType = builder.GetStructType(fields, false);
     }
 
@@ -67,22 +66,25 @@ llvm::DIType *llove::StructType::GenDI(Builder &builder)
 {
     if (!m_DIType)
     {
-        std::vector<llvm::Metadata *> fields;
+        const auto layout = builder.GetDataLayout().getStructLayout(GenIR(builder));
 
-        auto offset = 0u;
-        for (auto &field : m_Fields)
+        std::vector<llvm::Metadata *> elements;
+
+        for (unsigned i = 0; i < m_Fields.size(); ++i)
         {
-            const auto field_size = field.Info.SizeBits(builder);
-            fields.emplace_back(
+            auto &field = m_Fields.at(i);
+            const auto size = field.Info.SizeBits(builder);
+            const auto offset = layout->getElementOffsetInBits(i);
+
+            elements.emplace_back(
                 builder.GetDebug().GetFieldType(
                     field.Name,
                     field.Info.GenDIType(builder),
-                    field_size,
+                    size,
                     offset));
-            offset += field_size;
         }
 
-        m_DIType = builder.GetDebug().GetStructType(fields, offset);
+        m_DIType = builder.GetDebug().GetStructType(elements, layout->getSizeInBits());
     }
 
     return m_DIType;
@@ -98,6 +100,16 @@ llove::TypePtr llove::StructType::Reflect(Context &context) const
     }
 
     return context.GetStruct(std::move(fields));
+}
+
+bool llove::StructType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    dst.emplace_back(builder.GetI32(ID));
+    dst.emplace_back(builder.GetI32(m_Fields.size()));
+    for (auto &field : m_Fields)
+        if (!field.TypeInfo(builder, dst))
+            return false;
+    return true;
 }
 
 std::string llove::StructType::Mangle() const

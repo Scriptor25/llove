@@ -50,6 +50,13 @@ llove::TypePtr llove::ArrayType::Reflect(Context &context) const
     return context.GetArray(m_Base->Reflect(context), m_Count);
 }
 
+bool llove::ArrayType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    dst.emplace_back(builder.GetI32(ID));
+    dst.emplace_back(builder.GetI32(m_Count));
+    return m_Base->TypeInfo(builder, dst);
+}
+
 std::string llove::ArrayType::Mangle() const
 {
     return 'a' + std::to_string(m_Count) + '_' + m_Base->Mangle();

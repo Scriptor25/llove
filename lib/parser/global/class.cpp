@@ -2,32 +2,36 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseClassGlobal(const bool export_)
+llove::GlobalPtr llove::Parser::ParseClassGlobal(const bool is_export)
 {
     auto loc = Expect(TokenType_Symbol, "class").Loc;
+    auto name = Expect(TokenType_Symbol).Value;
 
     if (At(TokenType_Operator, "<"))
     {
-        ParseClassTemplate();
+        ParseClassTemplate(is_export, std::move(name));
         return nullptr;
     }
 
-    auto name = Expect(TokenType_Symbol).Value;
     auto type = m_Context.GetClass(std::move(name));
     m_Context.SetNamed(type->GetName(), type);
 
     if (SkipIf(TokenType_Other, ";"))
-        return std::make_unique<ClassGlobal>(std::move(loc), export_, std::move(type));
+        return std::make_unique<ClassGlobal>(std::move(loc), is_export, std::move(type));
 
-    std::vector<ClassField> fields;
+    std::vector<ClassMember> members;
     std::vector<ClassFunction> functions;
+
+    ClassType::Ptr base_type;
+    if (SkipIf(TokenType_Other, ":"))
+        base_type = As<ClassType>(ParseType());
 
     Expect(TokenType_Other, "{");
     while (!At(TokenType_Other, "}"))
     {
         if (At(TokenType_Symbol, "let"))
         {
-            ParseClassField(fields.emplace_back());
+            ParseClassMember(members.emplace_back());
             continue;
         }
 
@@ -35,5 +39,11 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal(const bool export_)
     }
     Expect(TokenType_Other, "}");
 
-    return std::make_unique<ClassGlobal>(std::move(loc), export_, std::move(type), std::move(fields), std::move(functions));
+    return std::make_unique<ClassGlobal>(
+        std::move(loc),
+        is_export,
+        std::move(type),
+        std::move(base_type),
+        std::move(members),
+        std::move(functions));
 }

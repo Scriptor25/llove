@@ -1,0 +1,346 @@
+import { parse } from "typeinfo.lov";
+
+export class stream;
+
+export type string_t = i8[];
+export type buffer_t = i8[mut];
+export type stream_t = stream[mut];
+
+type push_fn = (i32, [mut]);
+
+interface strlen(str: string_t): u64;
+interface fputc(c: i32, stream: stream_t): i32;
+interface putchar(c: i32): i32;
+interface free(block: [mut]);
+
+#
+# format: {[flags[(:|:length)[:precision]]]}
+#
+# flags:
+#  - '#': prefix
+#  - '0': pad with zeros
+#  - '-': justify left
+#  - 'b': base 2
+#  - 'o': base 8
+#  - 'x': base 16
+#  - 'p': raw pointer
+#
+# length: <0 - 255>
+#
+# precision: <0 - 255>
+#
+
+const flag_none         =  0:u8;
+const flag_prefix       =  1:u8; # prepend numeric prefix (hex: '0x', oct: '0')
+const flag_pad_zero     =  2:u8; # pad with zeros instead of spaces
+const flag_justify_left =  4:u8; # append padding instead of prepend
+const flag_base_2       =  8:u8; # print base 2 integer
+const flag_base_8       = 16:u8; # print base 8 integer
+const flag_base_16      = 32:u8; # print base 16 integer
+const flag_raw_pointer  = 64:u8; # print raw pointer, even if string
+
+define print_string(push: push_fn, context: [mut], str: string_t, from: u64, to: u64) {
+    let beg = str + from;
+    let end = str + to;
+
+    foreach (c : beg..end)
+        push(c, context);
+}
+
+define min(a: u64, b: u64): u64 {
+    yield a < b ? a : b;
+}
+
+#
+# length: minimum length, use padding if not long enough
+# precision: maximum length, trim if too long
+#
+define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, length: u8, precision: u8) {
+    let len = strlen(str);
+    let end = str + (precision ? min(len, precision) : len);
+
+    let justify_left: u1 = flags & flag_justify_left;
+
+    let pad = length > len ? length - len : 0;
+
+    if (!justify_left) {
+        foreach (_ : (0)..pad)
+            push(' ', context);
+    }
+
+    foreach (c : str..end)
+        push(c, context);
+
+    if (justify_left) {
+        foreach (_ : (0)..pad)
+            push(' ', context);
+    }
+}
+
+#
+# length: minimum length, use padding if not long enough
+#
+define print_int(push: push_fn, context: [mut], mut value: u64, base: u8, sign: u1, upper: u1, flags: u8, length: u8) {
+
+    let mut buffer: i8[256];
+    let mut index: u64 = 256;
+
+    let mut count: u64;
+
+    let prefix: u1 = flags & flag_prefix;
+    let pad_zero: u1 = flags & flag_pad_zero;
+    let justify_left: u1 = flags & flag_justify_left; # TODO: justify left
+
+    for (; value; { value /= base; count += 1; }) {
+        let rem = value % base;
+        buffer[--index] = (rem < 10) ? (
+            rem + '0'
+        ) : (upper) ? (
+            (rem - 10) + 'A'
+        ) : (
+            (rem - 10) + 'a'
+        );
+    }
+
+    if (pad_zero) {
+        for (; count < length; ++count) {
+            buffer[--index] = '0';
+        }
+    }
+
+    if (prefix) {
+        switch (base) {
+            [2] {
+                buffer[--index] = 'b';
+                buffer[--index] = '0';
+                count += 2;
+            }
+            [8] {
+                buffer[--index] = '0';
+                count += 1;
+            }
+            [16] {
+                buffer[--index] = 'x';
+                buffer[--index] = '0';
+                count += 2;
+            }
+        }
+    }
+
+    if (sign) {
+        buffer[--index] = '-';
+        count += 1;
+    }
+
+    if (!pad_zero) {
+        for (; count < length; ++count) {
+            buffer[--index] = ' ';
+        }
+    }
+
+    print_string(push, context, buffer, index, 256);
+}
+
+#
+# length: minimum length, use padding if not long enough
+# precision: number of digits after the floating point
+#
+define print_float(push: push_fn, context: [mut], mut value: f64, flags: u8, length: u8, precision: u8) {
+
+    let mut buffer: i8[256];
+    let mut index: u64 = 256;
+
+    let sign = value < 0.0;
+    if (sign) {
+        value = -value;
+    }
+
+    foreach (_ : (0)..precision)
+        value *= 10;
+
+    if (value == 0.0) {
+        buffer[--index] = '0';
+    }
+
+    let mut j: u8 = 0;
+    for (let mut i = value as u64; i; i /= 10) {
+        let rem = i % 10;
+        buffer[--index] = rem + '0';
+
+        if (++j == precision) {
+            buffer[--index] = '.';
+        }
+    }
+
+    if (sign) {
+        buffer[--index] = '-';
+    }
+
+    print_string(push, context, buffer, index, 256);
+}
+
+const state_none      = 0:u8;
+const state_flags     = 1:u8;
+const state_length    = 2:u8;
+const state_precision = 3:u8;
+const state_exit      = 4:u8;
+
+export define format(push: push_fn, context: [mut], format: string_t, ...args) {
+
+    let beg = format;
+    let end = format + strlen(format);
+
+    let mut state = state_none;
+
+    let mut flags: u8;
+    let mut length: u8;
+    let mut precision: u8;
+
+    for (let mut i = beg; i != end; ) {
+        switch (state) {
+            [state_none] {
+                if (*i == '{') {
+                    ++i;
+                    if (*i == '{') {
+                        push(*i++, context);
+                        break;
+                    }
+                    state = state_flags;
+                    flags = 0;
+                    break;
+                }
+                push(*i++, context);
+            }
+            [state_flags] {
+                switch (*i) {
+                    [':'] {
+                        i++;
+                        state = state_length;
+                        length = 0;
+                    }
+                    ['#'] {
+                        i++;
+                        flags |= flag_prefix;
+                    }
+                    ['0'] {
+                        i++;
+                        flags |= flag_pad_zero;
+                    }
+                    ['-'] {
+                        i++;
+                        flags |= flag_justify_left;
+                    }
+                    ['b'] {
+                        i++;
+                        flags |= flag_base_2;
+                    }
+                    ['o'] {
+                        i++;
+                        flags |= flag_base_8;
+                    }
+                    ['x'] {
+                        i++;
+                        flags |= flag_base_16;
+                    }
+                    ['p'] {
+                        i++;
+                        flags |= flag_raw_pointer;
+                    }
+                    ['}'] {
+                        i++;
+                        state = state_exit;
+                    }
+                    [default] {
+                        state = state_exit;
+                    }
+                }
+            }
+            [state_length] {
+                let c = *i;
+                if (c == ':') {
+                    i++;
+                    precision = 0;
+                    state = state_precision;
+                    break;
+                }
+                if ('0' <= c & c <= '9') {
+                    length = length * 10 + (c - '0');
+                    i++;
+                    break;
+                }
+                if (c == '}') {
+                    i++;
+                }
+                state = state_exit;
+            }
+            [state_precision] {
+                let c = *i;
+                if ('0' <= c & c <= '9') {
+                    precision = precision * 10 + (c - '0');
+                    i++;
+                    break;
+                }
+                if (c == '}') {
+                    i++;
+                }
+                state = state_exit;
+            }
+            [state_exit] {
+                let arg = *args++;
+
+                push('{', context);
+                print_int(push, context, arg.size, 10, 0, 0, flag_none, 0);
+                push(',', context);
+                print_int(push, context, (arg.type as u32[])[0], 10, 0, 0, flag_none, 0);
+                push(',', context);
+                print_int(push, context, arg.data, 16, 0, 0, flag_prefix | flag_pad_zero, 16);
+                push('}', context);
+
+                let type = parse(arg.type);
+
+                delete *type;
+                free(type);
+
+                state = state_none;
+            }
+        }
+    }
+}
+
+type buffer_context_t = {
+    buffer: buffer_t,
+    count: u64,
+    mut index: u64,
+};
+
+define push_buffer(c: i32, ptr: [mut]) {
+    let mut &context = *(ptr as buffer_context_t[mut]);
+    if (context.index < context.count)
+        context.buffer[context.index++] = c;
+}
+
+export define format(buffer: buffer_t, count: u64, format: string_t, ...args) {
+    let mut context: buffer_context_t = {
+        buffer: buffer,
+        count: count,
+        index: 0,
+    };
+    format(push_buffer, &context, format, args);
+}
+
+define push_stream(c: i32, ptr: [mut]) {
+    let stream = ptr as stream_t;
+    fputc(c, stream);
+}
+
+export define format(stream: stream_t, format: string_t, ...args) {
+    format(push_stream, stream, format, args);
+}
+
+define push_stdout(c: i32, ptr: [mut]) {
+    putchar(c);
+}
+
+export define format(format: string_t, ...args) {
+    format(push_stdout, null:mut, format, args);
+}

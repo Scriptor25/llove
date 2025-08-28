@@ -15,7 +15,11 @@ bool llove::Field::GetCastError(
         if (!src.m_IsReference)
             return true;
         if (dst.m_Type != src.m_Type)
-            return true;
+        {
+            if (!(src.m_Type->IsClass() && As<ClassType>(src.m_Type)->InheritsFrom(dst.m_Type)))
+                return true;
+            error += 1u;
+        }
         if (dst.m_IsMutable && !src.m_IsMutable)
             return true;
         if (dst.m_IsMutable != src.m_IsMutable)
@@ -45,7 +49,7 @@ bool llove::Field::IsCastable(
     {
         if (!src.m_IsReference)
             return false;
-        if (dst.m_Type != src.m_Type)
+        if (dst.m_Type != src.m_Type && !(src.m_Type->IsClass() && As<ClassType>(src.m_Type)->InheritsFrom(dst.m_Type)))
             return false;
         if (dst.m_IsMutable && !src.m_IsMutable)
             return false;
@@ -58,6 +62,11 @@ bool llove::Field::IsCastable(
         if (strict || !builder.IsCastable(src, dst, true))
             return false;
     return true;
+}
+
+llove::Field::Field(TypePtr type)
+    : m_Type(std::move(type))
+{
 }
 
 llove::Field::Field(const bool is_mutable, const bool is_reference, TypePtr type)
@@ -134,9 +143,13 @@ llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool 
 {
     if (m_IsReference)
     {
+        const auto type = value->GetType();
+
         Assert(value->IsReference(), "reference from rvalue");
-        Assert(m_Type == value->GetType(), "reference type mismatch");
-        Assert(!m_IsMutable || value->IsMutable(), "reference mutability violation");
+        Assert(
+            type == m_Type || (type->IsClass() && As<ClassType>(type)->InheritsFrom(m_Type)),
+            "reference type mismatch");
+        Assert(value->IsMutable() || !m_IsMutable, "reference mutability violation");
         return value->GetPointer();
     }
 
@@ -151,13 +164,19 @@ llvm::Value *llove::Field::GenCast(Builder &builder, ValuePtr value, const bool 
 unsigned llove::Field::SizeBits(Builder &builder) const
 {
     if (m_IsReference)
-        return 64; // TODO: target dependent
+        return builder.GetDataLayout().getPointerSizeInBits();
     return m_Type->SizeBits(builder);
 }
 
 std::string llove::Field::Mangle() const
 {
     return std::string(m_IsMutable ? "M" : "") + std::string(m_IsReference ? "R" : "") + m_Type->Mangle();
+}
+
+bool llove::Field::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    // reference gets discarded
+    return m_Type->TypeInfo(builder, dst);
 }
 
 bool llove::Field::operator==(const Field &other) const

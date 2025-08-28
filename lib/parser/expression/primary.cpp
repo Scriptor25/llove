@@ -29,6 +29,9 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Other, "{"))
         return ParseStructExpression();
 
+    if (At(TokenType_Operator, "<"))
+        return ParseTemplateCallExpression();
+
     if (At(TokenType_Symbol, "null"))
         return ParseNullExpression();
 

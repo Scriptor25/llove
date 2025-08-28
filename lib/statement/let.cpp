@@ -102,10 +102,10 @@ void llove::LetStatement::Gen(Builder &builder) const try
                 const auto function = builder.GenFunction(
                     {
                         .Class = class_type,
-                        .Mutable = destructor->Mutable,
+                        .Mutable = destructor->IsMutable,
                         .Expose = destructor->Expose,
                         .Name = destructor->Name,
-                        .Variadic = { destructor->Variadic, {} },
+                        .Variadic = { destructor->IsVariadic, {} },
                         .Result = destructor->Result,
                     });
 

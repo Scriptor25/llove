@@ -178,7 +178,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
     for (auto &function : functions)
     {
-        const Field function_self(function.Mutable, true, class_type);
+        const Field function_self(function.IsMutable, true, class_type);
 
         if (implicit && !function.Implicit)
             continue;
@@ -193,7 +193,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         if (parameter_count > argument_count)
             continue;
-        if (!function.Variadic && parameter_count < argument_count)
+        if (!function.IsVariadic && parameter_count < argument_count)
             continue;
 
         if (parameter_count != argument_count)
@@ -231,11 +231,11 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
             {
                 .Implicit = candidate.Implicit,
                 .Class = class_type,
-                .Mutable = candidate.Mutable,
+                .Mutable = candidate.IsMutable,
                 .Expose = candidate.Expose,
                 .Name = candidate.Name,
                 .Parameters = std::move(parameters),
-                .Variadic = { candidate.Variadic, {} },
+                .Variadic = { candidate.IsVariadic, {} },
                 .Result = candidate.Result,
             });
     }

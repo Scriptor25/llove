@@ -10,6 +10,7 @@
 #include <llove/class.hpp>
 #include <llove/forward.hpp>
 #include <llove/location.hpp>
+#include <llove/type.hpp>
 
 namespace llove
 {
@@ -89,23 +90,22 @@ namespace llove
         std::string ParseField(Field &field, bool require_name, bool require_type);
 
         void ParseParameter(Parameter &parameter);
-        std::pair<bool, std::string> ParseParameterList(
-            const std::string &begin,
-            std::vector<Parameter> &parameters,
-            const std::string &end);
+        std::pair<bool, std::string> ParseParameterList(std::vector<Parameter> &parameters);
+        void ParseTemplateParameterList(std::vector<std::pair<std::string, TemplateType::Ptr>> &parameters);
 
         GlobalPtr ParseGlobal();
         GlobalPtr ParseClassDefinitionGlobal(Location loc);
-        GlobalPtr ParseClassGlobal(bool export_);
+        GlobalPtr ParseClassGlobal(bool is_export);
         GlobalPtr ParseConstGlobal(bool export_);
-        GlobalPtr ParseDefinitionGlobal(bool export_);
+        GlobalPtr ParseDefinitionGlobal(bool is_export);
         GlobalPtr ParseImportGlobal();
         GlobalPtr ParseTypeGlobal(bool export_);
 
-        void ParseClassField(ClassField &field);
+        void ParseClassMember(ClassMember &member);
         void ParseClassFunction(ClassFunction &function, bool require_content);
 
-        void ParseClassTemplate();
+        void ParseClassTemplate(bool is_export, std::string name);
+        void ParseDefinitionTemplate(bool is_export, Location loc, bool implicit, std::string name);
 
         StatementPtr ParseStatement(bool inline_);
         StatementPtr ParseBreakStatement(bool inline_);
@@ -141,6 +141,7 @@ namespace llove
         ExpressionPtr ParseSubscriptExpression(ExpressionPtr value);
         ExpressionPtr ParseSwitchExpression();
         ExpressionPtr ParseSymbolExpression();
+        ExpressionPtr ParseTemplateCallExpression();
         ExpressionPtr ParseUnaryExpression();
         ExpressionPtr ParseUnaryExpression(ExpressionPtr operand);
         ExpressionPtr ParseVariadicExpression(ExpressionPtr list);

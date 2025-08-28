@@ -1,7 +1,7 @@
 #include <llove/class.hpp>
 #include <llove/tree.hpp>
 
-std::ostream &llove::ClassFieldReference::Print(std::ostream &stream) const
+std::ostream &llove::ClassMemberReference::Print(std::ostream &stream) const
 {
     return Info.Print(stream << "let ", true, Name);
 }
@@ -11,7 +11,7 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
     stream
             << (Expose ? "expose " : "")
             << (Implicit ? "implicit " : "")
-            << (Mutable ? "mut " : "")
+            << (IsMutable ? "mut " : "")
             << Name
             << '(';
     for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
@@ -20,7 +20,7 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (Variadic)
+    if (IsVariadic)
     {
         if (!Parameters.empty())
             stream << ", ";
@@ -29,7 +29,7 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
     return stream << "): " << Result;
 }
 
-void llove::ClassField::Reflect(Context &context, ClassField &field) const
+void llove::ClassMember::Reflect(Context &context, ClassMember &field) const
 {
     field.Name = Name;
 
@@ -43,7 +43,7 @@ void llove::ClassField::Reflect(Context &context, ClassField &field) const
         Arguments.at(i)->Reflect(context, field.Arguments.at(i));
 }
 
-std::ostream &llove::ClassField::Print(std::ostream &stream) const
+std::ostream &llove::ClassMember::Print(std::ostream &stream) const
 {
     Info.Print(stream << "let ", true, Name);
     if (Value)
@@ -66,6 +66,8 @@ void llove::ClassFunction::Reflect(Context &context, ClassFunction &function) co
 {
     function.Loc = Loc;
     function.Expose = Expose;
+    function.Virtual = Virtual;
+    function.Override = Override;
     function.Implicit = Implicit;
     function.Mutable = Mutable;
     function.Name = Name;
@@ -88,6 +90,8 @@ std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
 {
     stream
             << (Expose ? "expose " : "")
+            << (Virtual ? "virtual " : "")
+            << (Override ? "override " : "")
             << (Implicit ? "implicit " : "")
             << (Mutable ? "mut " : "")
             << Name
@@ -112,7 +116,7 @@ std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
     return stream << ' ' << Content;
 }
 
-std::ostream &llove::operator<<(std::ostream &stream, const ClassField &field)
+std::ostream &llove::operator<<(std::ostream &stream, const ClassMember &field)
 {
     return field.Print(stream);
 }

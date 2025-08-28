@@ -29,11 +29,9 @@ void llove::ImportGlobal::Gen(Builder &builder) const try
 
     std::vector<std::pair<std::string, ValuePtr>> values;
     while (parser.Ok())
-    {
-        auto ptr = parser.Parse();
-        if (auto [name, value] = ptr->GenImport(context, builder, m_As, m_Symbols); value)
-            values.emplace_back(std::move(name), std::move(value));
-    }
+        if (auto ptr = parser.Parse())
+            if (auto [name, value] = ptr->GenImport(context, builder, m_As, m_Symbols); value)
+                values.emplace_back(std::move(name), std::move(value));
 
     stream.close();
 

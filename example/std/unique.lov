@@ -1,0 +1,65 @@
+export interface malloc(count: u64): [mut];
+export interface free(block: [mut]);
+
+export class unique<T> {
+
+    expose mut create() {
+        self.ptr = null;
+    }
+
+    expose mut create(ptr: T[mut]) {
+        self.ptr = ptr;
+    }
+
+    expose mut create(mut val: T) {
+        self.ptr = malloc(sizeof T);
+        *self.ptr = $val;
+    }
+
+    expose mut create(&val: T) {
+        self.ptr = malloc(sizeof T);
+        *self.ptr = val;
+    }
+
+    expose mut delete() {
+        if (self.ptr) {
+            delete *self.ptr;
+            free(self.ptr);
+            self.ptr = null;
+        }
+    }
+
+    expose mut $(): class<T> unique {
+        let mut u: class<T> unique(self.ptr);
+        self.ptr = null;
+        yield u;
+    }
+
+    expose cast(): u1 {
+        yield self.ptr != null;
+    }
+
+    expose !(): u1 {
+        yield self.ptr == null;
+    }
+
+    expose *(): mut &T {
+        yield *self.ptr;
+    }
+
+    expose get(): T[mut] {
+        yield self.ptr;
+    }
+
+    expose mut release(): T[mut] {
+        let ptr = self.ptr;
+        self.ptr = null;
+        yield ptr;
+    }
+
+    let mut ptr: T[mut];
+}
+
+export define implicit cast<T, U>(mut t: class<T> unique): class<U> unique {
+    yield create class<U> unique(t.release());
+}

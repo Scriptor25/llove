@@ -32,7 +32,7 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
         const auto function = builder.GenFunction(
             {
                 .Class = std::move(class_type),
-                .Mutable = destructor->Mutable,
+                .Mutable = destructor->IsMutable,
                 .Expose = destructor->Expose,
                 .Name = destructor->Name,
                 .Result = destructor->Result,

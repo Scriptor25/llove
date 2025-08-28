@@ -39,6 +39,11 @@ llove::TypePtr llove::TemplateType::Reflect(Context &context) const
     return context.TemplateArgument(m_Name);
 }
 
+bool llove::TemplateType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    Error("template");
+}
+
 std::string llove::TemplateType::Mangle() const
 {
     return 't' + std::to_string(m_Name.size()) + '_' + m_Name;
@@ -49,52 +54,70 @@ std::ostream &llove::TemplateType::Print(std::ostream &stream) const
     return stream << m_Name;
 }
 
-llove::ClassTemplateType::ClassTemplateType(std::string name, std::vector<TypePtr> arguments)
+llove::TemplateClassType::TemplateClassType(std::string name, std::vector<TypePtr> arguments)
     : m_Name(std::move(name)),
       m_Arguments(std::move(arguments))
 {
 }
 
-llove::TypeId llove::ClassTemplateType::GetId() const
+bool llove::TemplateClassType::IsInstantiated() const
+{
+    return m_IsInstantiated;
+}
+
+void llove::TemplateClassType::Instantiate()
+{
+    m_IsInstantiated = true;
+}
+
+llove::TypeId llove::TemplateClassType::GetId() const
 {
     return TypeId_Template;
 }
 
-bool llove::ClassTemplateType::IsTemplate() const
+bool llove::TemplateClassType::IsTemplate() const
 {
     return true;
 }
 
-unsigned llove::ClassTemplateType::SizeBits(Builder &builder)
+unsigned llove::TemplateClassType::SizeBits(Builder &builder)
 {
     Error("template");
 }
 
-llvm::Type *llove::ClassTemplateType::GenIR(Builder &builder)
+llvm::Type *llove::TemplateClassType::GenIR(Builder &builder)
 {
     Error("template");
 }
 
-llvm::DIType *llove::ClassTemplateType::GenDI(Builder &builder)
+llvm::DIType *llove::TemplateClassType::GenDI(Builder &builder)
 {
     Error("template");
 }
 
-llove::TypePtr llove::ClassTemplateType::Reflect(Context &context) const
+llove::TypePtr llove::TemplateClassType::Reflect(Context &context) const
 {
     std::vector<TypePtr> arguments;
     for (auto &argument : m_Arguments)
         Type::Reflect(context, argument, arguments.emplace_back());
 
-    return context.InstantiateTemplateClass(m_Name, std::move(arguments));
+    return context.InstantiateClass(m_Name, std::move(arguments), false);
 }
 
-std::string llove::ClassTemplateType::Mangle() const
+bool llove::TemplateClassType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
 {
-    return 't' + std::to_string(m_Name.size()) + '_' + m_Name + std::to_string(m_Arguments.size()) + '_';
+    Error("template");
 }
 
-std::ostream &llove::ClassTemplateType::Print(std::ostream &stream) const
+std::string llove::TemplateClassType::Mangle() const
+{
+    auto result = 't' + std::to_string(m_Name.size()) + '_' + m_Name + std::to_string(m_Arguments.size()) + '_';
+    for (auto &argument : m_Arguments)
+        result += argument->Mangle();
+    return result;
+}
+
+std::ostream &llove::TemplateClassType::Print(std::ostream &stream) const
 {
     stream << "class<";
     for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)

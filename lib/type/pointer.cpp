@@ -68,6 +68,16 @@ llove::TypePtr llove::PointerType::Reflect(Context &context) const
     return context.GetPointer(m_IsMutable);
 }
 
+bool llove::PointerType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    dst.emplace_back(builder.GetI32(ID));
+    dst.emplace_back(builder.GetI1(m_IsMutable));
+    dst.emplace_back(builder.GetI1(!m_Base));
+    if (!m_Base)
+        return true;
+    return m_Base->TypeInfo(builder, dst);
+}
+
 std::string llove::PointerType::Mangle() const
 {
     if (m_Base)

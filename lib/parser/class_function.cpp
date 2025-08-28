@@ -6,11 +6,13 @@ void llove::Parser::ParseClassFunction(ClassFunction &function, const bool requi
 {
     function.Loc = m_Token.Loc;
     function.Expose = SkipIf(TokenType_Symbol, "expose");
+    function.Virtual = SkipIf(TokenType_Symbol, "virtual");
+    function.Override = SkipIf(TokenType_Symbol, "override");
     function.Implicit = SkipIf(TokenType_Symbol, "implicit");
     function.Mutable = SkipIf(TokenType_Symbol, "mut");
     function.Name = At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
 
-    function.Variadic = ParseParameterList("(", function.Parameters, ")");
+    function.Variadic = ParseParameterList(function.Parameters);
 
     if (SkipIf(TokenType_Other, ":"))
         ParseField(function.Result, false, true);

@@ -68,7 +68,7 @@ class test {
     let mut data_ptr: i32[mut];
 }
 
-class<T> unique {
+class unique<T> {
 
     expose mut create() {
         format("unique:create()\r\n");

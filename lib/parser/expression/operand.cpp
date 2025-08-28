@@ -37,11 +37,11 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             continue;
         }
 
-        if (At(TokenType_Other, "{"))
-        {
-            expression = ParseVariadicExpression(std::move(expression));
-            continue;
-        }
+        // if (At(TokenType_Other, "{"))
+        // {
+        //     expression = ParseVariadicExpression(std::move(expression));
+        //     continue;
+        // }
 
         if (At(TokenType_Symbol, "as"))
         {

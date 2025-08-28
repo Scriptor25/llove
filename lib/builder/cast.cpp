@@ -202,14 +202,14 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool i
 
     for (auto &function : m_Functions)
     {
-        const auto &function_type = function.Type;
-        const auto &function_result = function_type->GetResult();
-
         if (function.Name != "cast")
             continue;
 
         if (implicit && !function.Implicit)
             continue;
+
+        const auto &function_type = function.Type;
+        const auto &function_result = function_type->GetResult();
 
         if (function_type->HasVariadic())
             continue;

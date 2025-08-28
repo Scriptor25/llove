@@ -38,6 +38,12 @@ llove::TypePtr llove::VoidType::Reflect(Context &context) const
     return context.GetVoid();
 }
 
+bool llove::VoidType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+{
+    dst.emplace_back(builder.GetI32(ID));
+    return true;
+}
+
 std::string llove::VoidType::Mangle() const
 {
     return "v";
