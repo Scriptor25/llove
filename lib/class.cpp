@@ -6,29 +6,6 @@ std::ostream &llove::ClassMemberReference::Print(std::ostream &stream) const
     return Info.Print(stream << "let ", true, Name);
 }
 
-std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
-{
-    stream
-            << (Expose ? "expose " : "")
-            << (Implicit ? "implicit " : "")
-            << (IsMutable ? "mut " : "")
-            << Name
-            << '(';
-    for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
-    {
-        if (i != Parameters.begin())
-            stream << ", ";
-        stream << *i;
-    }
-    if (IsVariadic)
-    {
-        if (!Parameters.empty())
-            stream << ", ";
-        stream << "...";
-    }
-    return stream << "): " << Result;
-}
-
 void llove::ClassMember::Reflect(Context &context, ClassMember &field) const
 {
     field.Name = Name;
@@ -62,14 +39,37 @@ std::ostream &llove::ClassMember::Print(std::ostream &stream) const
     return stream << ';';
 }
 
+std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
+{
+    stream
+            << (IsExposed ? "expose " : "")
+            << (IsImplicit ? "implicit " : "")
+            << (IsMutable ? "mut " : "")
+            << Name
+            << '(';
+    for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
+    {
+        if (i != Parameters.begin())
+            stream << ", ";
+        stream << *i;
+    }
+    if (HasVariadic)
+    {
+        if (!Parameters.empty())
+            stream << ", ";
+        stream << "...";
+    }
+    return stream << "): " << Result;
+}
+
 void llove::ClassFunction::Reflect(Context &context, ClassFunction &function) const
 {
     function.Loc = Loc;
-    function.Expose = Expose;
-    function.Virtual = Virtual;
-    function.Override = Override;
-    function.Implicit = Implicit;
-    function.Mutable = Mutable;
+    function.IsExposed = IsExposed;
+    function.IsVirtual = IsVirtual;
+    function.IsOverride = IsOverride;
+    function.IsImplicit = IsImplicit;
+    function.IsMutable = IsMutable;
     function.Name = Name;
     function.Variadic = Variadic;
 
@@ -89,11 +89,11 @@ void llove::ClassFunction::Reflect(Context &context, ClassFunction &function) co
 std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
 {
     stream
-            << (Expose ? "expose " : "")
-            << (Virtual ? "virtual " : "")
-            << (Override ? "override " : "")
-            << (Implicit ? "implicit " : "")
-            << (Mutable ? "mut " : "")
+            << (IsExposed ? "expose " : "")
+            << (IsVirtual ? "virtual " : "")
+            << (IsOverride ? "override " : "")
+            << (IsImplicit ? "implicit " : "")
+            << (IsMutable ? "mut " : "")
             << Name
             << '(';
     for (auto i = Parameters.begin(); i != Parameters.end(); ++i)

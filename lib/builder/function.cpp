@@ -1,5 +1,6 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
+#include <llove/tree.hpp>
 
 llvm::Function *llove::Builder::GetOrCreateFunction(
     const std::string &name,
@@ -29,8 +30,8 @@ llove::FunctionReference &llove::Builder::PushFunction(
         if (function.Type != type)
             continue;
         Assert(
-            expose == function.Expose
-            && implicit == function.Implicit
+            expose == function.IsExposed
+            && implicit == function.IsImplicit
             && callee == function.Callee,
             "function prototype mismatch");
         return function;
@@ -39,9 +40,9 @@ llove::FunctionReference &llove::Builder::PushFunction(
     return m_Functions.emplace_back(expose, implicit, std::move(name), std::move(type), callee);
 }
 
-std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
+std::vector<llove::FunctionReference> llove::Builder::FindFunctions(
     const std::string &name,
-    const std::optional<Field> &self) const
+    const std::optional<Field> &self)
 {
     std::vector<FunctionReference> functions;
 
@@ -50,64 +51,57 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
         if (function.Name != name)
             continue;
 
-        auto &function_type = function.Type;
-        const auto function_self = function_type->GetSelf();
+        const auto &function_type = function.Type;
+        const auto &function_self = function_type->GetSelf();
 
         if (self)
         {
             if (!function_self)
                 continue;
-            if (function_self->GetType() != self->GetType())
+            if (!Field::IsCastable(*this, *function_self, *self, false))
                 continue;
-            if (function_self->IsMutable() && !self->IsMutable())
-                continue;
-            if (function_self->IsReference() != self->IsReference())
-                continue;
-            if (!function.Expose && function_self->GetType() != m_Class)
+            if (!function.IsExposed
+                && function_self->GetType() != m_Class
+                && !m_Class->InheritsFrom(function_self->GetType()))
                 continue;
         }
-        else if (function_self && !function.Expose && function_self->GetType() != m_Class)
+        else if (function_self && !function.IsExposed && function_self->GetType() != m_Class)
             continue;
 
         functions.emplace_back(function);
     }
 
-    return functions;
-}
-
-bool llove::Builder::HasFunction(
-    const std::vector<FunctionReference> &functions,
-    const std::vector<Field> &arguments,
-    const std::optional<Field> &self) const
-{
-    for (const auto &function : functions)
+    if (self && self->HasType() && self->GetType()->IsClass())
     {
-        const auto &function_type = function.Type;
-        const auto &function_self = function_type->GetSelf();
-        const auto parameter_count = function_type->GetParameterCount();
+        const auto class_type = As<ClassType>(self->GetType());
+        for (auto class_functions = class_type->GetFunctions(class_type, name);
+             auto &[parent, function] : class_functions)
+        {
+            if (!function.IsExposed && parent != m_Class && !m_Class->InheritsFrom(parent))
+                continue;
 
-        if (function_self.has_value() != self.has_value())
-            continue;
+            std::vector<Parameter> parameters;
+            for (auto &parameter : function.Parameters)
+                parameters.emplace_back(parameter);
 
-        if (function_self && self && !Field::IsCastable(*this, *function_self, *self, true))
-            continue;
-
-        if (parameter_count > arguments.size())
-            continue;
-        if (!function_type->HasVariadic() && parameter_count < arguments.size())
-            continue;
-
-        unsigned i;
-        for (i = 0; i < parameter_count; ++i)
-            if (!Field::IsCastable(*this, function_type->GetParameter(i), arguments.at(i), false))
-                break;
-        if (i < parameter_count)
-            continue;
-
-        return true;
+            auto reference = GenFunction(
+                {
+                    .IsExposed = function.IsExposed,
+                    .IsVirtual = function.IsVirtual,
+                    .IsOverride = function.IsOverride,
+                    .IsImplicit = function.IsImplicit,
+                    .IsMutable = function.IsMutable,
+                    .Class = parent,
+                    .Name = function.Name,
+                    .Parameters = std::move(parameters),
+                    .Variadic = { function.HasVariadic, {} },
+                    .Result = function.Result,
+                });
+            functions.emplace_back(std::move(reference));
+        }
     }
 
-    return false;
+    return functions;
 }
 
 std::optional<llove::FunctionReference> llove::Builder::FindFunction(
@@ -167,20 +161,19 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 }
 
 std::optional<llove::FunctionReference> llove::Builder::FindFunction(
-    const std::vector<ClassFunctionReference> &functions,
+    const ClassType::VecRef<ClassFunctionReference> &functions,
     const std::vector<Field> &arguments,
-    const ClassType::Ptr &class_type,
     const Field &self,
     const bool implicit)
 {
     auto lowest_error = ~0u;
-    std::vector<ClassFunctionReference> candidates;
+    ClassType::VecRef<ClassFunctionReference> candidates;
 
-    for (auto &function : functions)
+    for (auto &[parent, function] : functions)
     {
-        const Field function_self(function.IsMutable, true, class_type);
+        const Field function_self(function.IsMutable, true, parent);
 
-        if (implicit && !function.Implicit)
+        if (implicit && !function.IsImplicit)
             continue;
 
         auto error = 0u;
@@ -193,7 +186,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         if (parameter_count > argument_count)
             continue;
-        if (!function.IsVariadic && parameter_count < argument_count)
+        if (!function.HasVariadic && parameter_count < argument_count)
             continue;
 
         if (parameter_count != argument_count)
@@ -213,7 +206,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
             candidates.clear();
 
         lowest_error = error;
-        candidates.emplace_back(function);
+        candidates.emplace_back(parent, function);
     }
 
     if (candidates.empty())
@@ -221,7 +214,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
     if (candidates.size() == 1)
     {
-        auto &candidate = candidates.front();
+        auto &[parent, candidate] = candidates.front();
 
         std::vector<Parameter> parameters;
         for (auto &parameter : candidate.Parameters)
@@ -229,13 +222,15 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         return GenFunction(
             {
-                .Implicit = candidate.Implicit,
-                .Class = class_type,
-                .Mutable = candidate.IsMutable,
-                .Expose = candidate.Expose,
+                .IsExposed = candidate.IsExposed,
+                .IsVirtual = candidate.IsVirtual,
+                .IsOverride = candidate.IsOverride,
+                .IsImplicit = candidate.IsImplicit,
+                .IsMutable = candidate.IsMutable,
+                .Class = parent,
                 .Name = candidate.Name,
                 .Parameters = std::move(parameters),
-                .Variadic = { candidate.IsVariadic, {} },
+                .Variadic = { candidate.HasVariadic, {} },
                 .Result = candidate.Result,
             });
     }

@@ -19,9 +19,11 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
     if (!type->IsClass())
         return;
 
-    auto class_type = As<ClassType>(type);
-    if (const auto destructor = class_type->GetDestructor())
+    const auto class_type = As<ClassType>(type);
+    if (const auto destructor = class_type->GetDestructor(class_type))
     {
+        auto &[parent, function] = *destructor;
+
         if (!value->IsReference())
         {
             const auto pointer = builder.CreateAlloca(type->GenIR(builder));
@@ -29,17 +31,19 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
             value = Value::CreateL(type, pointer, false);
         }
 
-        const auto function = builder.GenFunction(
+        const auto reference = builder.GenFunction(
             {
-                .Class = std::move(class_type),
-                .Mutable = destructor->IsMutable,
-                .Expose = destructor->Expose,
-                .Name = destructor->Name,
-                .Result = destructor->Result,
+                .IsExposed = function.IsExposed,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsMutable = function.IsMutable,
+                .Class = parent,
+                .Name = function.Name,
+                .Result = function.Result,
             });
 
         builder.EmitLoc(m_Loc);
-        builder.CreateCall(function, {}, std::move(value));
+        builder.CreateCall(reference, {}, std::move(value));
     }
 }
 catch (ref_exception<ErrorStack> &cause)

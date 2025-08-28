@@ -10,11 +10,35 @@ namespace llove
     {
         std::ostream &Print(std::ostream &stream) const;
 
-        bool Expose = false;
-        bool Implicit = false;
+        bool IsExposed = false;
+        bool IsImplicit = false;
+
         std::string Name;
         FunctionType::Ptr Type;
         llvm::Value *Callee = nullptr;
+    };
+
+    struct Function final
+    {
+        Location Loc;
+
+        bool IsExport = false;
+
+        bool IsExposed = false;
+        bool IsVirtual = false;
+        bool IsOverride = false;
+        bool IsInterface = false;
+        bool IsImplicit = false;
+        bool IsMutable = false;
+
+        ClassType::Ptr Class;
+
+        std::string Name;
+        std::vector<Parameter> Parameters;
+        std::pair<bool, std::string> Variadic;
+        Field Result;
+
+        StatementPtr Content;
     };
 }
 

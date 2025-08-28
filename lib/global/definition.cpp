@@ -5,18 +5,18 @@
 
 llove::DefinitionGlobal::DefinitionGlobal(
     Location loc,
-    const bool export_,
-    const bool interface,
-    const bool implicit,
+    const bool is_export,
+    const bool is_interface,
+    const bool is_implicit,
     std::string name,
     std::vector<Parameter> parameters,
     std::pair<bool, std::string> variadic,
     Field result,
     StatementPtr content)
     : Global(std::move(loc)),
-      m_Export(export_),
-      m_Interface(interface),
-      m_Implicit(implicit),
+      m_IsExport(is_export),
+      m_IsInterface(is_interface),
+      m_IsImplicit(is_implicit),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
       m_Variadic(std::move(variadic)),
@@ -27,22 +27,23 @@ llove::DefinitionGlobal::DefinitionGlobal(
 
 void llove::DefinitionGlobal::Gen(Builder &builder) const try
 {
+    StatementPtr content;
+    if (m_Content)
+        m_Content->Reflect(builder.GetContext(), content);
+
     builder.GenFunction(
         {
             .Loc = m_Loc,
-            .Export = m_Export,
-            .Interface = m_Interface,
-            .Implicit = m_Implicit,
-            .Class = nullptr,
-            .Mutable = false,
-            .Expose = false,
+            .IsExport = m_IsExport,
+            .IsInterface = m_IsInterface,
+            .IsImplicit = m_IsImplicit,
             .Name = m_Name,
             .Parameters = m_Parameters,
             .Variadic = m_Variadic,
             .Result = m_Result,
-            .Content = m_Content.get(),
-        }
-    );
+            .Content = std::move(content),
+        },
+        true);
 }
 catch (ref_exception<ErrorStack> &cause)
 {
@@ -55,34 +56,29 @@ std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
 {
-    if (!m_Export)
+    if (!m_IsExport)
         return {};
 
     if (as.empty() && !symbols.empty() && !symbols.contains(m_Name))
         return {};
 
-    const auto register_ = (as.empty() && symbols.empty())
-                           || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
+    const auto register_function = (as.empty() && symbols.empty())
+                                   || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
 
     const auto function = builder.GenFunction(
         {
             .Loc = m_Loc,
-            .Register = register_,
-            .Export = true,
-            .Interface = m_Interface,
-            .Implicit = m_Implicit,
-            .Class = nullptr,
-            .Mutable = false,
-            .Expose = false,
+            .IsExport = true,
+            .IsInterface = m_IsInterface,
+            .IsImplicit = m_IsImplicit,
             .Name = m_Name,
             .Parameters = m_Parameters,
             .Variadic = m_Variadic,
             .Result = m_Result,
-            .Content = nullptr,
-        }
-    );
+        },
+        register_function);
 
-    if (register_)
+    if (register_function)
         return {};
 
     auto value = Value::CreateR(function.Type, function.Callee);
@@ -99,9 +95,9 @@ std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
 std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
 {
     stream
-            << (m_Export ? "export " : "")
-            << (m_Interface ? "interface " : "define ")
-            << (m_Implicit ? "implicit " : "")
+            << (m_IsExport ? "export " : "")
+            << (m_IsInterface ? "interface " : "define ")
+            << (m_IsImplicit ? "implicit " : "")
             << m_Name
             << '(';
 

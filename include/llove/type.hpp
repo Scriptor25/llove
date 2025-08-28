@@ -311,12 +311,16 @@ namespace llove
         using Ptr = std::shared_ptr<ClassType>;
         static constexpr auto ID = TypeId_Class;
 
+        template<typename T>
+        using Ref = std::pair<Ptr, T>;
+
+        template<typename T>
+        using OptRef = std::optional<std::pair<Ptr, T>>;
+
+        template<typename T>
+        using VecRef = std::vector<std::pair<Ptr, T>>;
+
         explicit ClassType(std::string name);
-        explicit ClassType(
-            std::string name,
-            Ptr base_type,
-            std::vector<ClassMemberReference> members,
-            std::vector<ClassFunctionReference> functions);
 
         [[nodiscard]] const std::string &GetName() const;
         [[nodiscard]] bool IsOpaque() const;
@@ -328,7 +332,8 @@ namespace llove
         [[nodiscard]] unsigned GetMemberCount() const;
         [[nodiscard]] const Field &GetMember(unsigned index) const;
 
-        [[nodiscard]] std::optional<ClassFunctionReference> GetFunction(
+        [[nodiscard]] OptRef<ClassFunctionReference> GetFunction(
+            const Ptr &self,
             const std::string &name,
             bool is_mutable,
             const std::vector<Field> &parameters,
@@ -336,9 +341,9 @@ namespace llove
             const Field &result) const;
 
         [[nodiscard]] bool HasFunction(const std::string &name) const;
-        [[nodiscard]] std::vector<ClassFunctionReference> GetFunctions(const std::string &name) const;
-        [[nodiscard]] std::vector<ClassFunctionReference> GetConstructors() const;
-        [[nodiscard]] std::optional<ClassFunctionReference> GetDestructor() const;
+        [[nodiscard]] std::vector<Ref<ClassFunctionReference>> GetFunctions(const ClassType::Ptr &self, const std::string &name) const;
+        [[nodiscard]] std::vector<Ref<ClassFunctionReference>> GetConstructors(const Ptr &self) const;
+        [[nodiscard]] OptRef<ClassFunctionReference> GetDestructor(const Ptr &self) const;
 
         void SetBaseType(Ptr base_type);
         void SetMembers(std::vector<ClassMemberReference> members);

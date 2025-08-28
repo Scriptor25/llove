@@ -39,11 +39,11 @@ namespace llove
     class ClassGlobal final : public Global
     {
     public:
-        explicit ClassGlobal(Location loc, bool export_, ClassType::Ptr type);
+        explicit ClassGlobal(Location loc, bool is_export, ClassType::Ptr class_type);
         explicit ClassGlobal(
             Location loc,
-            bool export_,
-            ClassType::Ptr type,
+            bool is_export,
+            ClassType::Ptr class_type,
             ClassType::Ptr base_type,
             std::vector<ClassMember> members,
             std::vector<ClassFunction> functions);
@@ -57,9 +57,9 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        bool m_Export;
-        bool m_Opaque;
-        ClassType::Ptr m_Type;
+        bool m_IsExport;
+        bool m_IsOpaque;
+        ClassType::Ptr m_ClassType;
         ClassType::Ptr m_BaseType;
         std::vector<ClassMember> m_Members;
         std::vector<ClassFunction> m_Functions;
@@ -71,7 +71,7 @@ namespace llove
         explicit ClassDefinitionGlobal(
             Location loc,
             ClassType::Ptr class_type,
-            bool mutable_,
+            bool is_mutable,
             std::string name,
             std::vector<Parameter> parameters,
             std::pair<bool, std::string> variadic,
@@ -88,7 +88,7 @@ namespace llove
 
     private:
         ClassType::Ptr m_ClassType;
-        bool m_Mutable;
+        bool m_IsMutable;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
         std::pair<bool, std::string> m_Variadic;
@@ -121,9 +121,9 @@ namespace llove
     public:
         explicit DefinitionGlobal(
             Location loc,
-            bool export_,
-            bool interface,
-            bool implicit,
+            bool is_export,
+            bool is_interface,
+            bool is_implicit,
             std::string name,
             std::vector<Parameter> parameters,
             std::pair<bool, std::string> variadic,
@@ -139,9 +139,9 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        bool m_Export;
-        bool m_Interface;
-        bool m_Implicit;
+        bool m_IsExport;
+        bool m_IsInterface;
+        bool m_IsImplicit;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
         std::pair<bool, std::string> m_Variadic;

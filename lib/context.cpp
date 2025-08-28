@@ -347,63 +347,23 @@ llove::TypePtr llove::Context::InstantiateClass(
         for (auto &parameter : function.Parameters)
             parameters.emplace_back(parameter.Info);
         functions.emplace_back(
-            function.Expose,
-            function.Virtual,
-            function.Override,
-            function.Implicit,
-            function.Mutable,
-            function.Name,
-            parameters,
-            function.Variadic.first,
-            function.Result);
+            ClassFunctionReference{
+                .IsExposed = function.IsExposed,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsImplicit = function.IsImplicit,
+                .IsMutable = function.IsMutable,
+                .Name = function.Name,
+                .Parameters = std::move(parameters),
+                .HasVariadic = function.Variadic.first,
+                .Result = function.Result,
+            });
     }
     class_type->SetFunctions(std::move(functions));
 
-    m_Reflections[class_type] = std::move(reflection_functions);
+    m_ClassReflections.emplace_back(class_type, std::move(reflection_functions));
 
     return class_type;
-}
-
-void llove::Context::InstantiateClassReflections(Builder &builder)
-{
-    for (auto &[class_type, functions] : m_Reflections)
-    {
-        for (const auto &function : functions)
-            builder.GenFunction(
-                {
-                    .Loc = function.Loc,
-                    .Interface = false,
-                    .Implicit = function.Implicit,
-                    .Class = class_type,
-                    .Mutable = function.Mutable,
-                    .Expose = function.Expose,
-                    .Name = function.Name,
-                    .Parameters = function.Parameters,
-                    .Variadic = function.Variadic,
-                    .Result = function.Result,
-                    .Content = nullptr,
-                }
-            );
-
-        for (const auto &function : functions)
-            builder.GenFunction(
-                {
-                    .Loc = function.Loc,
-                    .Interface = false,
-                    .Implicit = function.Implicit,
-                    .Class = class_type,
-                    .Mutable = function.Mutable,
-                    .Expose = function.Expose,
-                    .Name = function.Name,
-                    .Parameters = function.Parameters,
-                    .Variadic = function.Variadic,
-                    .Result = function.Result,
-                    .Content = function.Content.get(),
-                }
-            );
-    }
-
-    m_Reflections.clear();
 }
 
 llove::FunctionReference &llove::Context::InstantiateDefinition(
@@ -423,17 +383,21 @@ llove::FunctionReference &llove::Context::InstantiateDefinition(
         "template is not imported, cannot be accessed from child context");
     Assert(definition_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
 
-    m_TemplateArguments.clear();
-
     name = definition_template.Name + '<';
     for (unsigned i = 0; i < type_arguments.size(); ++i)
     {
         if (i)
             name += ", ";
-        m_TemplateArguments.emplace(definition_template.TypeParameters.at(i).first, type_arguments.at(i));
         name += type_arguments.at(i)->Mangle();
     }
     name += '>';
+
+    if (m_DefinitionInstances.contains(name))
+        return m_DefinitionInstances.at(name);
+
+    m_TemplateArguments.clear();
+    for (unsigned i = 0; i < type_arguments.size(); ++i)
+        m_TemplateArguments.emplace(definition_template.TypeParameters.at(i).first, type_arguments.at(i));
 
     std::vector<Parameter> parameters;
     for (auto &parameter : definition_template.Parameters)
@@ -446,53 +410,56 @@ llove::FunctionReference &llove::Context::InstantiateDefinition(
     Field result;
     definition_template.Result.Reflect(*this, result);
 
-    StatementPtr content;
-    definition_template.Content->Reflect(*this, content);
-
-    if (m_DefinitionInstances.contains(name))
-        return m_DefinitionInstances.at(name);
-
-    auto &ref = m_DefinitionInstances[name];
-
-    auto function = builder.GenFunction(
-        {
+    m_DefinitionReflections.emplace_back(
+        Function{
             .Loc = definition_template.Loc,
-            .Register = false,
-            .Export = false,
-            .Virtual = false,
-            .Override = false,
-            .Interface = false,
-            .Implicit = definition_template.IsImplicit,
-            .Class = nullptr,
-            .Mutable = false,
-            .Expose = false,
+            .IsImplicit = definition_template.IsImplicit,
             .Name = definition_template.Name,
             .Parameters = parameters,
             .Variadic = definition_template.Variadic,
             .Result = result,
-            .Content = nullptr,
+            .Content = definition_template.Content->Reflect(*this),
         });
-    ref = std::move(function);
 
-    function = builder.GenFunction(
-        {
-            .Loc = definition_template.Loc,
-            .Register = false,
-            .Export = false,
-            .Virtual = false,
-            .Override = false,
-            .Interface = false,
-            .Implicit = definition_template.IsImplicit,
-            .Class = nullptr,
-            .Mutable = false,
-            .Expose = false,
-            .Name = definition_template.Name,
-            .Parameters = parameters,
-            .Variadic = definition_template.Variadic,
-            .Result = result,
-            .Content = content.get(),
-        });
-    return ref = std::move(function);
+    return m_DefinitionInstances[name] = builder.GenFunction(
+               {
+                   .Loc = definition_template.Loc,
+                   .IsImplicit = definition_template.IsImplicit,
+                   .Name = definition_template.Name,
+                   .Parameters = parameters,
+                   .Variadic = definition_template.Variadic,
+                   .Result = result,
+               },
+               true);
+}
+
+void llove::Context::InstantiateReflections(Builder &builder)
+{
+    for (auto &[class_type, functions] : m_ClassReflections)
+    {
+        for (auto &function : functions)
+            builder.GenFunction(
+                {
+                    .Loc = std::move(function.Loc),
+                    .IsExposed = function.IsExposed,
+                    .IsVirtual = function.IsVirtual,
+                    .IsOverride = function.IsOverride,
+                    .IsImplicit = function.IsImplicit,
+                    .IsMutable = function.IsMutable,
+                    .Class = class_type,
+                    .Name = std::move(function.Name),
+                    .Parameters = std::move(function.Parameters),
+                    .Variadic = std::move(function.Variadic),
+                    .Result = std::move(function.Result),
+                    .Content = std::move(function.Content),
+                });
+    }
+
+    for (const auto &function : m_DefinitionReflections)
+        builder.GenFunction(function, true);
+
+    m_ClassReflections.clear();
+    m_DefinitionReflections.clear();
 }
 
 llove::TypePtr llove::Context::TemplateArgument(const std::string &name) const

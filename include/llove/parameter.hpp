@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include <llove/field.hpp>
 #include <llove/forward.hpp>
+#include <llvm/IR/Constant.h>
 
 namespace llove
 {

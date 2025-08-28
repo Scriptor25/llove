@@ -36,7 +36,7 @@ std::ostream &llove::BIOperator<2>::Print(std::ostream &stream) const
     return stream << "builtin";
 }
 
-llove::UDOperator<1>::UDOperator(const FunctionReference &reference)
+llove::UDOperator<1>::UDOperator(FunctionReference reference)
     : m_Reference(std::move(reference))
 {
 }
@@ -59,7 +59,7 @@ std::ostream &llove::UDOperator<1>::Print(std::ostream &stream) const
     return m_Reference.Print(stream);
 }
 
-llove::UDOperator<2>::UDOperator(const FunctionReference &reference)
+llove::UDOperator<2>::UDOperator(FunctionReference reference)
     : m_Reference(std::move(reference))
 {
 }

@@ -1,4 +1,4 @@
-import { string_t, stream_t, format } from "format.lov";
+import { string_t, stream_t, format } from "std/format.lov";
 
 interface fopen(filename: string_t, mode: string_t): stream_t;
 interface fclose(stream: stream_t): i32;

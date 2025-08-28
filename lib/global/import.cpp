@@ -74,10 +74,8 @@ std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
     Parser parser(context, stream, m_Filepath, m_Includes);
 
     while (parser.Ok())
-    {
-        auto ptr = parser.Parse();
-        (void) ptr->GenImport(context, builder, m_As, m_Symbols);
-    }
+        if (auto ptr = parser.Parse())
+            (void) ptr->GenImport(context, builder, m_As, m_Symbols);
 
     stream.close();
 

@@ -16,7 +16,11 @@ void llove::Builder::Seal(
 {
     m_DebugBuilder.EndModule();
 
-    Assert(!llvm::verifyModule(m_LLVMModule, &llvm::errs()), "module has errors");
+    if (llvm::verifyModule(m_LLVMModule, &llvm::errs()))
+    {
+        m_LLVMModule.print(llvm::errs(), nullptr);
+        Error("module has errors");
+    }
 
     raw_pwrite_stream_adapter raw_print_stream(print_stream);
     raw_pwrite_stream_adapter raw_output_stream(output_stream);

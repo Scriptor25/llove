@@ -73,26 +73,26 @@ namespace llove
     class UDOperator<1> final : public Operator<1>
     {
     public:
-        explicit UDOperator(const FunctionReference &reference);
+        explicit UDOperator(FunctionReference reference);
 
         ValuePtr operator()(Builder &builder, ValuePtr operand) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        const FunctionReference &m_Reference;
+        FunctionReference m_Reference;
     };
 
     template<>
     class UDOperator<2> final : public Operator<2>
     {
     public:
-        explicit UDOperator(const FunctionReference &reference);
+        explicit UDOperator(FunctionReference reference);
 
         ValuePtr operator()(Builder &builder, ValuePtr left, ValuePtr right) const override;
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        const FunctionReference &m_Reference;
+        FunctionReference m_Reference;
     };
 
     extern const std::map<std::string_view, BIOperator<1>::CalleeType> BIUnOperatorCallees;

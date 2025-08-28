@@ -53,14 +53,13 @@ void llove::LetStatement::Gen(Builder &builder) const try
             const auto self = Value::CreateL(type, pointer, true);
 
             const auto class_type = As<ClassType>(type);
-            const auto constructors = class_type->GetConstructors();
+            const auto constructors = class_type->GetConstructors(class_type);
 
             if (value)
             {
                 const auto candidate = builder.FindFunction(
                     constructors,
                     { value->AsField() },
-                    class_type,
                     self->AsField(),
                     true);
                 if (candidate.has_value())
@@ -89,7 +88,6 @@ void llove::LetStatement::Gen(Builder &builder) const try
                 const auto candidate = builder.FindFunction(
                     constructors,
                     argument_fields,
-                    class_type,
                     self->AsField(),
                     false);
                 Assert(candidate.has_value(), "no suitable candidate");
@@ -97,20 +95,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
                 builder.CreateCall(*candidate, std::move(arguments), self);
             }
 
-            if (auto destructor = class_type->GetDestructor())
-            {
-                const auto function = builder.GenFunction(
-                    {
-                        .Class = class_type,
-                        .Mutable = destructor->IsMutable,
-                        .Expose = destructor->Expose,
-                        .Name = destructor->Name,
-                        .Variadic = { destructor->IsVariadic, {} },
-                        .Result = destructor->Result,
-                    });
-
-                builder.PushDestructor(pointer, function);
-            }
+            builder.PushDestructor(pointer, class_type);
         }
         else
         {

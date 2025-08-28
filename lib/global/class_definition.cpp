@@ -6,7 +6,7 @@
 llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     Location loc,
     ClassType::Ptr class_type,
-    const bool mutable_,
+    const bool is_mutable,
     std::string name,
     std::vector<Parameter> parameters,
     std::pair<bool, std::string> variadic,
@@ -14,7 +14,7 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     StatementPtr content)
     : Global(std::move(loc)),
       m_ClassType(std::move(class_type)),
-      m_Mutable(mutable_),
+      m_IsMutable(is_mutable),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
       m_Variadic(std::move(variadic)),
@@ -28,24 +28,32 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
     std::vector<Field> parameters;
     for (auto &parameter : m_Parameters)
         parameters.emplace_back(parameter.Info);
-    const auto class_function = m_ClassType->GetFunction(m_Name, m_Mutable, parameters, m_Variadic.first, m_Result);
 
-    Assert(class_function.has_value(), "class function prototype mismatch");
+    const auto reference = m_ClassType->GetFunction(
+        m_ClassType,
+        m_Name,
+        m_IsMutable,
+        parameters,
+        m_Variadic.first,
+        m_Result);
+    Assert(reference.has_value(), "class function prototype mismatch");
 
+    auto &[parent, function] = *reference;
     builder.GenFunction(
         {
             .Loc = m_Loc,
-            .Implicit = class_function->Implicit,
-            .Class = m_ClassType,
-            .Mutable = m_Mutable,
-            .Expose = class_function->Expose,
-            .Name = m_Name,
+            .IsExposed = function.IsExposed,
+            .IsVirtual = function.IsVirtual,
+            .IsOverride = function.IsOverride,
+            .IsImplicit = function.IsImplicit,
+            .IsMutable = function.IsMutable,
+            .Class = parent,
+            .Name = function.Name,
             .Parameters = m_Parameters,
             .Variadic = m_Variadic,
-            .Result = m_Result,
-            .Content = m_Content.get(),
-        }
-    );
+            .Result = function.Result,
+            .Content = m_Content->Reflect(builder.GetContext()),
+        });
 }
 catch (ref_exception<ErrorStack> &cause)
 {
@@ -67,7 +75,7 @@ std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const
             << "define:"
             << m_ClassType->GetName()
             << ' '
-            << (m_Mutable ? "mut " : "")
+            << (m_IsMutable ? "mut " : "")
             << m_Name
             << '(';
 

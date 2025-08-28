@@ -23,7 +23,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
 
     const Field self(true, true, m_Type);
 
-    const auto constructors = class_type->GetConstructors();
+    const auto constructors = class_type->GetConstructors(class_type);
 
     std::vector<Field> argument_fields;
     std::vector<ValuePtr> arguments;
@@ -34,12 +34,7 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
         arguments.emplace_back(std::move(argument_value));
     }
 
-    const auto candidate = builder.FindFunction(
-        constructors,
-        argument_fields,
-        class_type,
-        self,
-        false);
+    const auto candidate = builder.FindFunction(constructors, argument_fields, self, false);
     Assert(candidate.has_value(), "no suitable candidate");
 
     llvm::Value *pointer;

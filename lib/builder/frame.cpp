@@ -1,6 +1,7 @@
 #include <ranges>
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
+#include <llove/tree.hpp>
 #include <llove/value.hpp>
 
 llvm::Function *llove::Builder::GetParent() const
@@ -98,17 +99,37 @@ void llove::Builder::DeferAction(llvm::Value *key, std::function<void()> action)
     m_Stack.back().Deferred.emplace_back(key, action);
 }
 
-void llove::Builder::PushDestructor(llvm::Value *self, const FunctionReference &callee)
+void llove::Builder::PushDestructor(llvm::Value *self, FunctionReference reference)
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    auto action = [this, self, callee]
+    auto action = [this, self, reference]
     {
-        auto self_value = Value::CreateL(callee.Type->GetSelf()->GetType(), self, true);
-        CreateCall(callee, {}, std::move(self_value));
+        auto self_value = Value::CreateL(reference.Type->GetSelf()->GetType(), self, true);
+        CreateCall(reference, {}, std::move(self_value));
     };
 
     DeferAction(self, action);
+}
+
+void llove::Builder::PushDestructor(llvm::Value *self, const ClassType::Ptr &class_type)
+{
+    if (const auto destructor = class_type->GetDestructor(class_type))
+    {
+        auto &[parent, function] = *destructor;
+        const auto reference = GenFunction(
+            {
+                .IsExposed = function.IsExposed,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsMutable = function.IsMutable,
+                .Class = parent,
+                .Name = function.Name,
+                .Result = function.Result,
+            });
+
+        PushDestructor(self, reference);
+    }
 }
 
 void llove::Builder::CallDeferred(const std::set<llvm::Value *> &mask, const bool propagate)

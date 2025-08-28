@@ -70,6 +70,7 @@ llvm::AllocaInst *llove::Builder::CreateAlloca(
     Assert(type != nullptr, "type must not be null");
 
     const auto block = m_LLVMBuilder.GetInsertBlock();
+    Assert(parent != nullptr || block != nullptr, "parent must not be null");
     m_LLVMBuilder.SetInsertPointPastAllocas(parent ? parent : block->getParent());
     const auto pointer = m_LLVMBuilder.CreateAlloca(type, array_size, name);
     m_LLVMBuilder.SetInsertPoint(block);

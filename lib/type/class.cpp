@@ -9,20 +9,6 @@ llove::ClassType::ClassType(std::string name)
     Assert(!m_Name.empty(), "name must not be empty");
 }
 
-llove::ClassType::ClassType(
-    std::string name,
-    Ptr base_type,
-    std::vector<ClassMemberReference> members,
-    std::vector<ClassFunctionReference> functions)
-    : m_Name(std::move(name)),
-      m_BaseType(std::move(base_type)),
-      m_Members(std::move(members)),
-      m_Functions(std::move(functions))
-{
-    Assert(!m_Name.empty(), "name must not be empty");
-    Assert(m_BaseType != nullptr || !m_Members.empty(), "members must not be empty");
-}
-
 const std::string &llove::ClassType::GetName() const
 {
     return m_Name;
@@ -87,7 +73,8 @@ const llove::Field &llove::ClassType::GetMember(unsigned index) const
     return m_Members.at(index).Info;
 }
 
-std::optional<llove::ClassFunctionReference> llove::ClassType::GetFunction(
+llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFunction(
+    const Ptr &self,
     const std::string &name,
     const bool is_mutable,
     const std::vector<Field> &parameters,
@@ -100,23 +87,26 @@ std::optional<llove::ClassFunctionReference> llove::ClassType::GetFunction(
             continue;
         if (function.IsMutable != is_mutable)
             continue;
-        if (function.IsVariadic != is_variadic)
+        if (function.HasVariadic != is_variadic)
             continue;
         if (function.Parameters.size() != parameters.size())
             continue;
         if (function.Result != result)
             continue;
+
         unsigned i;
         for (i = 0; i < function.Parameters.size(); ++i)
             if (function.Parameters.at(i) != parameters.at(i))
                 break;
         if (i < function.Parameters.size())
             continue;
-        return function;
+
+        return { { self, function } };
     }
 
     if (m_BaseType)
-        return m_BaseType->GetFunction(name, is_mutable, parameters, is_variadic, result);
+        if (auto ref = m_BaseType->GetFunction(m_BaseType, name, is_mutable, parameters, is_variadic, result))
+            return ref;
 
     return std::nullopt;
 }
@@ -131,37 +121,40 @@ bool llove::ClassType::HasFunction(const std::string &name) const
                }) || (m_BaseType && m_BaseType->HasFunction(name));
 }
 
-std::vector<llove::ClassFunctionReference> llove::ClassType::GetFunctions(const std::string &name) const
+llove::ClassType::VecRef<llove::ClassFunctionReference> llove::ClassType::GetFunctions(
+    const Ptr &self,
+    const std::string &name) const
 {
-    std::vector<ClassFunctionReference> functions;
+    VecRef<ClassFunctionReference> functions;
     for (auto &function : m_Functions)
         if (function.Name == name)
-            functions.push_back(function);
+            functions.emplace_back(self, function);
 
     if (m_BaseType)
-        for (auto &function : m_BaseType->GetFunctions(name))
-            functions.emplace_back(std::move(function));
+        for (auto &ref : m_BaseType->GetFunctions(m_BaseType, name))
+            functions.emplace_back(std::move(ref));
 
     return functions;
 }
 
-std::vector<llove::ClassFunctionReference> llove::ClassType::GetConstructors() const
+llove::ClassType::VecRef<llove::ClassFunctionReference> llove::ClassType::GetConstructors(const Ptr &self) const
 {
-    std::vector<ClassFunctionReference> constructors;
+    VecRef<ClassFunctionReference> constructors;
     for (auto &function : m_Functions)
         if (function.Name == "create")
-            constructors.emplace_back(function);
+            constructors.emplace_back(self, function);
     return constructors;
 }
 
-std::optional<llove::ClassFunctionReference> llove::ClassType::GetDestructor() const
+llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetDestructor(const Ptr &self) const
 {
     for (auto &function : m_Functions)
         if (function.Name == "delete")
-            return function;
+            return { { self, function } };
 
     if (m_BaseType)
-        return m_BaseType->GetDestructor();
+        if (auto ref = m_BaseType->GetDestructor(m_BaseType))
+            return ref;
 
     return std::nullopt;
 }

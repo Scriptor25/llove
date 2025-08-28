@@ -2,9 +2,9 @@
 
 std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
 {
-    if (Expose)
+    if (IsExposed)
         stream << "expose ";
-    if (Implicit)
+    if (IsImplicit)
         stream << "implicit ";
 
     if (const auto self = Type->GetSelf())

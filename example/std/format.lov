@@ -11,7 +11,7 @@ type push_fn = (i32, [mut]);
 interface strlen(str: string_t): u64;
 interface fputc(c: i32, stream: stream_t): i32;
 interface putchar(c: i32): i32;
-interface free(block: [mut]);
+interface free(block: []);
 
 #
 # format: {[flags[(:|:length)[:precision]]]}

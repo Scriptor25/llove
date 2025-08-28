@@ -2,25 +2,25 @@
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
 
-llove::ClassGlobal::ClassGlobal(Location loc, const bool export_, ClassType::Ptr type)
+llove::ClassGlobal::ClassGlobal(Location loc, const bool is_export, ClassType::Ptr class_type)
     : Global(std::move(loc)),
-      m_Export(export_),
-      m_Opaque(true),
-      m_Type(std::move(type))
+      m_IsExport(is_export),
+      m_IsOpaque(true),
+      m_ClassType(std::move(class_type))
 {
 }
 
 llove::ClassGlobal::ClassGlobal(
     Location loc,
-    const bool export_,
-    ClassType::Ptr type,
+    const bool is_export,
+    ClassType::Ptr class_type,
     ClassType::Ptr base_type,
     std::vector<ClassMember> members,
     std::vector<ClassFunction> functions)
     : Global(std::move(loc)),
-      m_Export(export_),
-      m_Opaque(false),
-      m_Type(std::move(type)),
+      m_IsExport(is_export),
+      m_IsOpaque(false),
+      m_ClassType(std::move(class_type)),
       m_BaseType(std::move(base_type)),
       m_Members(std::move(members)),
       m_Functions(std::move(functions))
@@ -29,15 +29,15 @@ llove::ClassGlobal::ClassGlobal(
 
 void llove::ClassGlobal::Gen(Builder &builder) const try
 {
-    if (m_Opaque)
+    if (m_IsOpaque)
         return;
 
-    m_Type->SetBaseType(m_BaseType);
+    m_ClassType->SetBaseType(m_BaseType);
 
     std::vector<ClassMemberReference> class_members;
     for (auto &member : m_Members)
         class_members.emplace_back(member.Info, member.Name);
-    m_Type->SetMembers(std::move(class_members));
+    m_ClassType->SetMembers(std::move(class_members));
 
     std::vector<ClassFunctionReference> class_functions;
     for (auto &function : m_Functions)
@@ -46,59 +46,43 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
         for (auto &parameter : function.Parameters)
             parameters.emplace_back(parameter.Info);
         class_functions.emplace_back(
-            function.Expose,
-            function.Virtual,
-            function.Override,
-            function.Implicit,
-            function.Mutable,
-            function.Name,
-            parameters,
-            function.Variadic.first,
-            function.Result);
+            ClassFunctionReference{
+                .IsExposed = function.IsExposed,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsImplicit = function.IsImplicit,
+                .IsMutable = function.IsMutable,
+                .Name = function.Name,
+                .Parameters = std::move(parameters),
+                .HasVariadic = function.Variadic.first,
+                .Result = function.Result,
+            });
     }
-    m_Type->SetFunctions(std::move(class_functions));
+    m_ClassType->SetFunctions(std::move(class_functions));
 
     for (auto &function : m_Functions)
+    {
+        StatementPtr content;
+        if (function.Content)
+            function.Content->Reflect(builder.GetContext(), content);
+
         builder.GenFunction(
             {
                 .Loc = function.Loc,
-                .Register = true,
-                .Export = m_Export,
-                .Virtual = function.Virtual,
-                .Override = function.Override,
-                .Interface = false,
-                .Implicit = function.Implicit,
-                .Class = m_Type,
-                .Mutable = function.Mutable,
-                .Expose = function.Expose,
+                .IsExport = m_IsExport,
+                .IsExposed = function.IsExposed,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsImplicit = function.IsImplicit,
+                .IsMutable = function.IsMutable,
+                .Class = m_ClassType,
                 .Name = function.Name,
                 .Parameters = function.Parameters,
                 .Variadic = function.Variadic,
                 .Result = function.Result,
-                .Content = nullptr,
-            }
-        );
-
-    for (auto &function : m_Functions)
-        builder.GenFunction(
-            {
-                .Loc = function.Loc,
-                .Register = true,
-                .Export = m_Export,
-                .Virtual = function.Virtual,
-                .Override = function.Override,
-                .Interface = false,
-                .Implicit = function.Implicit,
-                .Class = m_Type,
-                .Mutable = function.Mutable,
-                .Expose = function.Expose,
-                .Name = function.Name,
-                .Parameters = function.Parameters,
-                .Variadic = function.Variadic,
-                .Result = function.Result,
-                .Content = function.Content.get(),
-            }
-        );
+                .Content = std::move(content),
+            });
+    }
 }
 catch (ref_exception<ErrorStack> &cause)
 {
@@ -111,24 +95,24 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     const std::string &as,
     const std::map<std::string, std::string> &symbols) const
 {
-    if (!m_Export)
+    if (!m_IsExport)
         return {};
 
-    auto &name = m_Type->GetName();
+    auto &name = m_ClassType->GetName();
 
     if (!(as.empty() && symbols.empty() || symbols.contains(name)))
         return {};
 
-    context.GetParent()->Set(m_Type->Mangle(), m_Type);
-    context.GetParent()->SetNamed(symbols.contains(name) ? symbols.at(name) : name, m_Type);
+    context.GetParent()->Set(m_ClassType->Mangle(), m_ClassType);
+    context.GetParent()->SetNamed(symbols.contains(name) ? symbols.at(name) : name, m_ClassType);
 
-    if (m_Opaque)
+    if (m_IsOpaque)
         return {};
 
     std::vector<ClassMemberReference> class_members;
     for (auto &member : m_Members)
         class_members.emplace_back(member.Info, member.Name);
-    m_Type->SetMembers(std::move(class_members));
+    m_ClassType->SetMembers(std::move(class_members));
 
     std::vector<ClassFunctionReference> class_functions;
     for (auto &function : m_Functions)
@@ -137,46 +121,44 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
         for (auto &parameter : function.Parameters)
             parameters.emplace_back(parameter.Info);
         class_functions.emplace_back(
-            function.Expose,
-            function.Virtual,
-            function.Override,
-            function.Implicit,
-            function.Mutable,
-            function.Name,
-            parameters,
-            function.Variadic.first,
-            function.Result);
+            ClassFunctionReference{
+                .IsExposed = function.IsExposed,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsImplicit = function.IsImplicit,
+                .IsMutable = function.IsMutable,
+                .Name = function.Name,
+                .Parameters = std::move(parameters),
+                .HasVariadic = function.Variadic.first,
+                .Result = function.Result,
+            });
     }
-    m_Type->SetFunctions(std::move(class_functions));
+    m_ClassType->SetFunctions(std::move(class_functions));
 
     for (auto &function : m_Functions)
         builder.GenFunction(
             {
                 .Loc = function.Loc,
-                .Register = true,
-                .Export = m_Export,
-                .Virtual = function.Virtual,
-                .Override = function.Override,
-                .Interface = false,
-                .Implicit = function.Implicit,
-                .Class = m_Type,
-                .Mutable = function.Mutable,
-                .Expose = function.Expose,
+                .IsExport = m_IsExport,
+                .IsExposed = function.IsExposed,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsImplicit = function.IsImplicit,
+                .IsMutable = function.IsMutable,
+                .Class = m_ClassType,
                 .Name = function.Name,
                 .Parameters = function.Parameters,
                 .Variadic = function.Variadic,
                 .Result = function.Result,
-                .Content = nullptr,
-            }
-        );
+            });
 
     return {};
 }
 
 std::ostream &llove::ClassGlobal::Print(std::ostream &stream) const
 {
-    stream << "class " << m_Type->GetName();
-    if (m_Opaque)
+    stream << "class " << m_ClassType->GetName();
+    if (m_IsOpaque)
         return stream << ";";
 
     if (m_BaseType)

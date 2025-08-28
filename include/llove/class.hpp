@@ -17,22 +17,6 @@ namespace llove
         std::string Name;
     };
 
-    struct ClassFunctionReference final
-    {
-        std::ostream &Print(std::ostream &stream) const;
-
-        bool Expose = false;
-        bool Virtual = false;
-        bool Override = false;
-        bool Implicit = false;
-        bool IsMutable = false;
-
-        std::string Name;
-        std::vector<Field> Parameters;
-        bool IsVariadic = false;
-        Field Result;
-    };
-
     struct ClassMember final
     {
         void Reflect(Context &context, ClassMember &field) const;
@@ -44,21 +28,40 @@ namespace llove
         std::vector<ExpressionPtr> Arguments;
     };
 
+    struct ClassFunctionReference final
+    {
+        std::ostream &Print(std::ostream &stream) const;
+
+        bool IsExposed = false;
+        bool IsVirtual = false;
+        bool IsOverride = false;
+        bool IsImplicit = false;
+        bool IsMutable = false;
+
+        std::string Name;
+        std::vector<Field> Parameters;
+        bool HasVariadic = false;
+        Field Result;
+    };
+
     struct ClassFunction final
     {
         void Reflect(Context &context, ClassFunction &function) const;
         std::ostream &Print(std::ostream &stream) const;
 
         Location Loc;
-        bool Expose = false;
-        bool Virtual = false;
-        bool Override = false;
-        bool Implicit = false;
-        bool Mutable = false;
+
+        bool IsExposed = false;
+        bool IsVirtual = false;
+        bool IsOverride = false;
+        bool IsImplicit = false;
+        bool IsMutable = false;
+
         std::string Name;
         std::vector<Parameter> Parameters;
         std::pair<bool, std::string> Variadic;
         Field Result;
+
         StatementPtr Content;
     };
 

@@ -16,24 +16,9 @@ void llove::Expression::Gen(Builder &builder) const try
     if (value->IsReference() || !type->IsClass())
         return;
 
-    const auto class_type = As<ClassType>(type);
-    if (const auto destructor = class_type->GetDestructor())
-    {
-        const auto pointer = builder.CreateAlloca(class_type->GenIR(builder));
-        builder.CreateStore(value->Load(builder), pointer);
-
-        const auto function = builder.GenFunction(
-            {
-                .Class = class_type,
-                .Mutable = destructor->IsMutable,
-                .Expose = destructor->Expose,
-                .Name = destructor->Name,
-                .Variadic = { destructor->IsVariadic, {} },
-                .Result = destructor->Result,
-            });
-
-        builder.PushDestructor(pointer, function);
-    }
+    const auto pointer = builder.CreateAlloca(type->GenIR(builder));
+    builder.CreateStore(value->Load(builder), pointer);
+    builder.PushDestructor(pointer, As<ClassType>(type));
 }
 catch (ref_exception<ErrorStack> &cause)
 {
@@ -49,7 +34,7 @@ llove::CalleeInfo llove::Expression::GenCallee(Builder &builder) const try
         .Candidates = {
             FunctionReference
             {
-                .Expose = false,
+                .IsExposed = false,
                 .Name = {},
                 .Type = std::move(type),
                 .Callee = value->Load(builder),

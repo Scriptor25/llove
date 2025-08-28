@@ -10,30 +10,30 @@ bool llove::Field::GetCastError(
     unsigned &error,
     const bool strict)
 {
-    if (dst.m_IsReference)
+    if (dst.IsReference())
     {
-        if (!src.m_IsReference)
+        if (!src.IsReference())
             return true;
-        if (dst.m_Type != src.m_Type)
+        if (dst.GetType() != src.GetType())
         {
-            if (!(src.m_Type->IsClass() && As<ClassType>(src.m_Type)->InheritsFrom(dst.m_Type)))
+            if (!(src.GetType()->IsClass() && As<ClassType>(src.GetType())->InheritsFrom(dst.GetType())))
                 return true;
             error += 1u;
         }
-        if (dst.m_IsMutable && !src.m_IsMutable)
+        if (dst.IsMutable() && !src.IsMutable())
             return true;
-        if (dst.m_IsMutable != src.m_IsMutable)
+        if (dst.IsMutable() != src.IsMutable())
             error += 1u;
         return false;
     }
 
-    if (dst.m_Type->IsClass() && src.m_IsReference)
+    if (dst.GetType()->IsClass() && src.IsReference())
         return true;
-    if (dst.m_Type != src.m_Type)
+    if (dst.GetType() != src.GetType())
     {
         if (strict || !builder.IsCastable(src, dst, true))
             return true;
-        error += Difference(src.m_Type, dst.m_Type);
+        error += Difference(src.GetType(), dst.GetType());
     }
 
     return false;
@@ -45,20 +45,21 @@ bool llove::Field::IsCastable(
     const Field &src,
     const bool strict)
 {
-    if (dst.m_IsReference)
+    if (dst.IsReference())
     {
-        if (!src.m_IsReference)
+        if (!src.IsReference())
             return false;
-        if (dst.m_Type != src.m_Type && !(src.m_Type->IsClass() && As<ClassType>(src.m_Type)->InheritsFrom(dst.m_Type)))
-            return false;
-        if (dst.m_IsMutable && !src.m_IsMutable)
+        if (dst.GetType() != src.GetType())
+            if (!(src.GetType()->IsClass() && As<ClassType>(src.GetType())->InheritsFrom(dst.GetType())))
+                return false;
+        if (dst.IsMutable() && !src.IsMutable())
             return false;
         return true;
     }
 
-    if (dst.m_Type->IsClass() && src.m_IsReference)
+    if (dst.GetType()->IsClass() && src.IsReference())
         return false;
-    if (dst.m_Type != src.m_Type)
+    if (dst.GetType() != src.GetType())
         if (strict || !builder.IsCastable(src, dst, true))
             return false;
     return true;

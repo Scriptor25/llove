@@ -80,13 +80,14 @@ namespace llove
         void PopDefinitionTemplate();
 
         TypePtr InstantiateClass(std::string name, std::vector<TypePtr> type_arguments, bool is_imported);
-        void InstantiateClassReflections(Builder &builder);
 
         FunctionReference &InstantiateDefinition(
             Builder &builder,
             std::string name,
             std::vector<TypePtr> type_arguments,
             bool is_imported);
+
+        void InstantiateReflections(Builder &builder);
 
         [[nodiscard]] TypePtr TemplateArgument(const std::string &name) const;
 
@@ -106,6 +107,7 @@ namespace llove
 
         std::map<std::string, TypePtr> m_TemplateArguments;
 
-        std::map<ClassType::Ptr, std::vector<ClassFunction>> m_Reflections;
+        std::vector<std::pair<ClassType::Ptr, std::vector<ClassFunction>>> m_ClassReflections;
+        std::vector<Function> m_DefinitionReflections;
     };
 }

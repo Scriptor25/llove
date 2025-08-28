@@ -172,15 +172,13 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         const auto class_type = As<ClassType>(type);
 
         auto begin_function = builder.FindFunction(
-            class_type->GetFunctions("begin"),
+            class_type->GetFunctions(class_type, "begin"),
             {},
-            class_type,
             range->AsField(),
             false);
         auto end_function = builder.FindFunction(
-            class_type->GetFunctions("end"),
+            class_type->GetFunctions(class_type, "end"),
             {},
-            class_type,
             range->AsField(),
             false);
 

@@ -84,7 +84,7 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
     auto value = m_Value->GenVal(builder, nullptr);
     auto type = value->GetType();
 
-    if (auto candidates = builder.GetFunctions(m_Member, value->AsField()); !candidates.empty())
+    if (auto candidates = builder.FindFunctions(m_Member, value->AsField()); !candidates.empty())
         return { .Candidates = std::move(candidates), .Self = std::move(value) };
 
     auto index = ~0u;
@@ -155,8 +155,8 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
 
     FunctionReference reference
     {
-        .Expose = true,
-        .Implicit = false,
+        .IsExposed = true,
+        .IsImplicit = false,
         .Name = m_Member,
         .Type = As<FunctionType>(element_type),
         .Callee = element_value,

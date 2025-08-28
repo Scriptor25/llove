@@ -3,13 +3,13 @@
 #include <llove/value.hpp>
 
 llove::ValuePtr llove::Builder::CreateCall(
-    const FunctionReference &function,
+    const FunctionReference &reference,
     std::vector<ValuePtr> arguments,
     ValuePtr self)
 {
-    auto &function_type = function.Type;
-    auto &function_self = function_type->GetSelf();
-    auto &function_result = function_type->GetResult();
+    const auto &function_type = reference.Type;
+    const auto &function_self = function_type->GetSelf();
+    const auto &function_result = function_type->GetResult();
 
     Assert(!self == !function_self, "illegal function call, function self does not match self");
 
@@ -89,7 +89,7 @@ llove::ValuePtr llove::Builder::CreateCall(
 
     const auto result_value = m_LLVMBuilder.CreateCall(
         function_type->GenFunction(*this),
-        function.Callee,
+        reference.Callee,
         argument_values);
 
     if (function_result.IsReference())

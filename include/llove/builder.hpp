@@ -17,29 +17,6 @@
 
 namespace llove
 {
-    struct FunctionInfo final
-    {
-        Location Loc;
-
-        bool Register = true;
-        bool Export = false;
-        bool Virtual = false;
-        bool Override = false;
-        bool Interface = false;
-        bool Implicit = false;
-
-        ClassType::Ptr Class;
-        bool Mutable = false;
-        bool Expose = false;
-
-        std::string Name;
-        std::vector<Parameter> Parameters;
-        std::pair<bool, std::string> Variadic;
-        Field Result;
-
-        Statement *Content = nullptr;
-    };
-
     struct Frame final
     {
         llvm::BasicBlock *Head = nullptr;
@@ -92,14 +69,7 @@ namespace llove
 
         const llvm::DataLayout &GetDataLayout() const;
 
-        static std::string Mangle(
-            bool interface,
-            const ClassType::Ptr &class_type,
-            bool mutable_,
-            const std::string &name,
-            const std::vector<Parameter> &parameters,
-            bool variadic,
-            const Field &result);
+        static std::string Mangle(const Function &function);
 
         llvm::Type *GetVoidType();
         llvm::IntegerType *GetIntegerType(unsigned bits);
@@ -253,7 +223,7 @@ namespace llove
 
 #pragma endregion
 
-        ValuePtr CreateCall(const FunctionReference &function, std::vector<ValuePtr> arguments, ValuePtr self);
+        ValuePtr CreateCall(const FunctionReference &reference, std::vector<ValuePtr> arguments, ValuePtr self);
         ValuePtr CreateCall(const ValuePtr &callee);
 
         ValuePtr GetPointerElement(const ValuePtr &pointer, const ValuePtr &index);
@@ -274,27 +244,22 @@ namespace llove
             std::string name,
             FunctionType::Ptr type,
             llvm::Function *callee);
-        [[nodiscard]] std::vector<FunctionReference> GetFunctions(
-            const std::string &name,
-            const std::optional<Field> &self = std::nullopt) const;
 
-        bool HasFunction(
-            const std::vector<FunctionReference> &functions,
-            const std::vector<Field> &arguments,
-            const std::optional<Field> &self = std::nullopt) const;
+        std::vector<FunctionReference> FindFunctions(
+            const std::string &name,
+            const std::optional<Field> &self = std::nullopt);
         std::optional<FunctionReference> FindFunction(
             const std::vector<FunctionReference> &functions,
             const std::vector<Field> &arguments,
             const std::optional<Field> &self = std::nullopt) const;
         std::optional<FunctionReference> FindFunction(
-            const std::vector<ClassFunctionReference> &functions,
+            const ClassType::VecRef<ClassFunctionReference> &functions,
             const std::vector<Field> &arguments,
-            const ClassType::Ptr &class_type,
             const Field &self,
             bool implicit);
 
-        Operator<1>::Ptr FindOperator(const std::string &operator_, const Field &operand, bool suffix);
-        Operator<2>::Ptr FindOperator(const std::string &operator_, const Field &left, const Field &right);
+        Operator<1>::Ptr FindOperator(const std::string &name, const Field &operand, bool suffix);
+        Operator<2>::Ptr FindOperator(const std::string &name, const Field &left, const Field &right);
 
         void PushFrame(
             const std::optional<Location> &loc = std::nullopt,
@@ -307,13 +272,14 @@ namespace llove
         ValuePtr GetValue(const std::string &name) const;
 
         void DeferAction(llvm::Value *key, std::function<void()> action);
-        void PushDestructor(llvm::Value *self, const FunctionReference &callee);
+        void PushDestructor(llvm::Value *self, FunctionReference reference);
+        void PushDestructor(llvm::Value *self, const ClassType::Ptr &class_type);
         void CallDeferred(const std::set<llvm::Value *> &mask, bool propagate);
 
         ValuePtr CreateCast(ValuePtr value, TypePtr dst, bool implicit);
         bool IsCastable(const Field &src, const Field &dst, bool implicit) const;
 
-        FunctionReference GenFunction(const FunctionInfo &fn);
+        FunctionReference GenFunction(const Function &function, bool register_function = false);
         void GenParameters(
             llvm::Function *parent,
             const std::vector<Parameter> &parameters,
