@@ -469,10 +469,7 @@ static llove::ValuePtr operator_or(llove::Builder &builder, llove::ValuePtr left
 
 static llove::ValuePtr operator_xor(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
 {
-    const auto left_type = left->GetType();
-    const auto right_type = right->GetType();
-
-    const auto type = builder.GetContext().TypeUnion(left_type, right_type);
+    auto type = builder.GetContext().TypeUnion(left->GetType(), right->GetType());
     left = builder.CreateCast(std::move(left), type, true);
     right = builder.CreateCast(std::move(right), type, true);
 
@@ -486,7 +483,29 @@ static llove::ValuePtr operator_xor(llove::Builder &builder, llove::ValuePtr lef
         llove::Error("operator '{} ^ {}' not implemented", left->AsField(), right->AsField());
     }
 
-    return llove::Value::CreateR(type, result);
+    return llove::Value::CreateR(std::move(type), result);
+}
+
+static llove::ValuePtr operator_logical_and(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
+{
+    auto type = builder.GetContext().GetBoolean();
+    left = builder.CreateCast(std::move(left), type, true);
+    right = builder.CreateCast(std::move(right), type, true);
+
+    const auto result = builder.CreateLogicalAnd(left->Load(builder), right->Load(builder));
+
+    return llove::Value::CreateR(std::move(type), result);
+}
+
+static llove::ValuePtr operator_logical_or(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
+{
+    auto type = builder.GetContext().GetBoolean();
+    left = builder.CreateCast(std::move(left), type, true);
+    right = builder.CreateCast(std::move(right), type, true);
+
+    const auto result = builder.CreateLogicalOr(left->Load(builder), right->Load(builder));
+
+    return llove::Value::CreateR(std::move(type), result);
 }
 
 static llove::ValuePtr operator_eq(llove::Builder &builder, llove::ValuePtr left, llove::ValuePtr right)
@@ -684,8 +703,12 @@ const std::map<std::string_view, llove::BIOperator<2>::CalleeType> llove::BIBiOp
     { "|", operator_or },
     { "^", operator_xor },
 
+    { "&&", operator_logical_and },
+    { "||", operator_logical_or },
+
     { "==", operator_eq },
     { "!=", operator_ne },
+
     { "<", operator_lt },
     { "<=", operator_le },
     { ">", operator_gt },

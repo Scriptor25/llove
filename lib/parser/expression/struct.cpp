@@ -12,7 +12,7 @@ llove::ExpressionPtr llove::Parser::ParseStructExpression()
         auto name = Expect(TokenType_Symbol).Value;
         Assert(!values.contains(name), "struct expression already has field '{}'", name);
 
-        values[name] = SkipIf(TokenType_Other, ":")
+        values[name] = SkipIf(TokenType_Operator, ":")
                            ? ParseExpression()
                            : std::make_unique<SymbolExpression>(std::move(token.Loc), name);
 
@@ -22,7 +22,7 @@ llove::ExpressionPtr llove::Parser::ParseStructExpression()
     Expect(TokenType_Other, "}");
 
     TypePtr type;
-    if (SkipIf(TokenType_Other, ":"))
+    if (SkipIf(TokenType_Operator, ":"))
         type = ParseType();
 
     return std::make_unique<StructExpression>(std::move(token.Loc), std::move(values), std::move(type));

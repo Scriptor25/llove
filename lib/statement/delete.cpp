@@ -33,6 +33,7 @@ void llove::DeleteStatement::Gen(Builder &builder) const try
 
         const auto reference = builder.GenFunction(
             {
+                .IsExport = function.IsExport,
                 .IsExposed = function.IsExposed,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,

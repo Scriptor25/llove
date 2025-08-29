@@ -38,6 +38,7 @@ namespace llove
         std::pair<bool, std::string> Variadic;
         Field Result;
 
+        std::vector<Initializer> Initializers;
         StatementPtr Content;
     };
 }

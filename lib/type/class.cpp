@@ -21,51 +21,62 @@ bool llove::ClassType::IsOpaque() const
 
 bool llove::ClassType::InheritsFrom(const TypePtr &type) const
 {
-    return m_BaseType && (m_BaseType == type || m_BaseType->InheritsFrom(type));
+    return m_ParentClass && (m_ParentClass == type || m_ParentClass->InheritsFrom(type));
+}
+
+bool llove::ClassType::HasParentClass() const
+{
+    return m_ParentClass != nullptr;
+}
+
+llove::ClassType::Ptr llove::ClassType::GetParentClass() const
+{
+    Assert(m_ParentClass != nullptr, "parent class must not be null");
+    return m_ParentClass;
 }
 
 bool llove::ClassType::HasMember(const std::string &name) const
 {
-    Assert(m_BaseType != nullptr || !m_Members.empty(), "members must not be empty");
+    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
     return std::ranges::any_of(
                m_Members,
                [&name](auto &member)
                {
                    return member.Name == name;
-               }) || (m_BaseType && m_BaseType->HasMember(name));
+               }) || (m_ParentClass && m_ParentClass->HasMember(name));
 }
 
 unsigned llove::ClassType::GetMemberIndex(const std::string &name) const
 {
-    Assert(m_BaseType != nullptr || !m_Members.empty(), "members must not be empty");
+    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
     for (unsigned i = 0; i < m_Members.size(); ++i)
         if (m_Members.at(i).Name == name)
-            return i + (m_BaseType ? m_BaseType->GetMemberCount() : 0);
+            return i + (m_ParentClass ? m_ParentClass->GetMemberCount() : 0);
 
-    if (m_BaseType)
-        return m_BaseType->GetMemberIndex(name);
+    if (m_ParentClass)
+        return m_ParentClass->GetMemberIndex(name);
 
     Error("no member with name '{}'", name);
 }
 
 unsigned llove::ClassType::GetMemberCount() const
 {
-    Assert(m_BaseType != nullptr || !m_Members.empty(), "members must not be empty");
+    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
-    return m_Members.size() + (m_BaseType ? m_BaseType->GetMemberCount() : 0);
+    return m_Members.size() + (m_ParentClass ? m_ParentClass->GetMemberCount() : 0);
 }
 
-const llove::Field &llove::ClassType::GetMember(unsigned index) const
+llove::Field llove::ClassType::GetMember(unsigned index) const
 {
-    Assert(m_BaseType != nullptr || !m_Members.empty(), "members must not be empty");
+    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
-    if (m_BaseType)
+    if (m_ParentClass)
     {
-        if (index < m_BaseType->GetMemberCount())
-            return m_BaseType->GetMember(index);
-        index -= m_BaseType->GetMemberCount();
+        if (index < m_ParentClass->GetMemberCount())
+            return m_ParentClass->GetMember(index);
+        index -= m_ParentClass->GetMemberCount();
     }
 
     Assert(index < m_Members.size(), "index out of bounds");
@@ -73,12 +84,25 @@ const llove::Field &llove::ClassType::GetMember(unsigned index) const
     return m_Members.at(index).Info;
 }
 
+void llove::ClassType::ForEachMember(const std::function<void(unsigned, const ClassMemberReference &)> &callback) const
+{
+    auto offset = 0u;
+    if (m_ParentClass)
+    {
+        m_ParentClass->ForEachMember(callback);
+        offset = m_ParentClass->GetMemberCount();
+    }
+
+    for (unsigned i = 0; i < m_Members.size(); ++i)
+        callback(i + offset, m_Members.at(i));
+}
+
 llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFunction(
     const Ptr &self,
     const std::string &name,
     const bool is_mutable,
     const std::vector<Field> &parameters,
-    const bool is_variadic,
+    const bool has_variadic,
     const Field &result) const
 {
     for (auto &function : m_Functions)
@@ -87,7 +111,7 @@ llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFun
             continue;
         if (function.IsMutable != is_mutable)
             continue;
-        if (function.HasVariadic != is_variadic)
+        if (function.HasVariadic != has_variadic)
             continue;
         if (function.Parameters.size() != parameters.size())
             continue;
@@ -104,8 +128,8 @@ llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFun
         return { { self, function } };
     }
 
-    if (m_BaseType)
-        if (auto ref = m_BaseType->GetFunction(m_BaseType, name, is_mutable, parameters, is_variadic, result))
+    if (m_ParentClass)
+        if (auto ref = m_ParentClass->GetFunction(m_ParentClass, name, is_mutable, parameters, has_variadic, result))
             return ref;
 
     return std::nullopt;
@@ -118,7 +142,7 @@ bool llove::ClassType::HasFunction(const std::string &name) const
                [&name](auto &function)
                {
                    return function.Name == name;
-               }) || (m_BaseType && m_BaseType->HasFunction(name));
+               }) || (m_ParentClass && m_ParentClass->HasFunction(name));
 }
 
 llove::ClassType::VecRef<llove::ClassFunctionReference> llove::ClassType::GetFunctions(
@@ -130,8 +154,8 @@ llove::ClassType::VecRef<llove::ClassFunctionReference> llove::ClassType::GetFun
         if (function.Name == name)
             functions.emplace_back(self, function);
 
-    if (m_BaseType)
-        for (auto &ref : m_BaseType->GetFunctions(m_BaseType, name))
+    if (m_ParentClass)
+        for (auto &ref : m_ParentClass->GetFunctions(m_ParentClass, name))
             functions.emplace_back(std::move(ref));
 
     return functions;
@@ -152,24 +176,24 @@ llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetDes
         if (function.Name == "delete")
             return { { self, function } };
 
-    if (m_BaseType)
-        if (auto ref = m_BaseType->GetDestructor(m_BaseType))
+    if (m_ParentClass)
+        if (auto ref = m_ParentClass->GetDestructor(m_ParentClass))
             return ref;
 
     return std::nullopt;
 }
 
-void llove::ClassType::SetBaseType(Ptr base_type)
+void llove::ClassType::SetParentClass(Ptr parent_class_type)
 {
     m_IRType = nullptr;
     m_DIType = nullptr;
 
-    m_BaseType = std::move(base_type);
+    m_ParentClass = std::move(parent_class_type);
 }
 
 void llove::ClassType::SetMembers(std::vector<ClassMemberReference> members)
 {
-    Assert(m_BaseType != nullptr || !members.empty(), "members must not be empty");
+    Assert(m_ParentClass != nullptr || !members.empty(), "members must not be empty");
 
     m_IRType = nullptr;
     m_DIType = nullptr;
@@ -197,13 +221,13 @@ bool llove::ClassType::IsClass() const
 
 std::vector<llvm::Type *> llove::ClassType::GenIRElements(Builder &builder) const
 {
-    Assert(m_BaseType != nullptr || !m_Members.empty(), "members must not be empty");
+    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
     std::vector<llvm::Type *> elements;
 
-    if (m_BaseType)
+    if (m_ParentClass)
     {
-        auto base_elements = m_BaseType->GenIRElements(builder);
+        auto base_elements = m_ParentClass->GenIRElements(builder);
         elements.insert(elements.end(), base_elements.begin(), base_elements.end());
     }
 
@@ -215,16 +239,16 @@ std::vector<llvm::Type *> llove::ClassType::GenIRElements(Builder &builder) cons
 
 std::pair<std::vector<llvm::Metadata *>, unsigned> llove::ClassType::GenDIElements(Builder &builder)
 {
-    Assert(m_BaseType != nullptr || !m_Members.empty(), "members must not be empty");
+    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
     std::vector<llvm::Metadata *> elements;
     auto base_offset = 0u;
 
     const auto layout = builder.GetDataLayout().getStructLayout(GenIR(builder));
 
-    if (m_BaseType)
+    if (m_ParentClass)
     {
-        auto [base_elements, base_size] = m_BaseType->GenDIElements(builder);
+        auto [base_elements, base_size] = m_ParentClass->GenDIElements(builder);
         elements.insert(elements.end(), base_elements.begin(), base_elements.end());
         base_offset = base_size;
     }
@@ -250,7 +274,7 @@ llvm::StructType *llove::ClassType::GenIR(Builder &builder)
 {
     if (!m_IRType)
     {
-        if (!m_BaseType && m_Members.empty())
+        if (!m_ParentClass && m_Members.empty())
         {
             m_IRType = builder.GetOrCreateNamedStructType(m_Name);
         }
@@ -271,10 +295,10 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
 
     m_DIType = builder.GetDebug().GetClassType(m_Name);
 
-    if (!m_BaseType && m_Members.empty())
+    if (!m_ParentClass && m_Members.empty())
         return m_DIType;
 
-    const auto base = m_BaseType ? m_BaseType->GenDI(builder) : nullptr;
+    const auto base = m_ParentClass ? m_ParentClass->GenDI(builder) : nullptr;
     auto [elements, size] = GenDIElements(builder);
 
     return m_DIType = builder.GetDebug().GetClassType(m_Name, base, elements, size);

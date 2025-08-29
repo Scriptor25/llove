@@ -11,6 +11,7 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     std::vector<Parameter> parameters,
     std::pair<bool, std::string> variadic,
     Field result,
+    std::vector<Initializer> initializers,
     StatementPtr content)
     : Global(std::move(loc)),
       m_ClassType(std::move(class_type)),
@@ -19,6 +20,7 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
       m_Parameters(std::move(parameters)),
       m_Variadic(std::move(variadic)),
       m_Result(std::move(result)),
+      m_Initializers(std::move(initializers)),
       m_Content(std::move(content))
 {
 }
@@ -38,10 +40,19 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
         m_Result);
     Assert(reference.has_value(), "class function prototype mismatch");
 
+    std::vector<Initializer> initializers;
+    for (auto &initializer : m_Initializers)
+        initializer.Reflect(builder.GetContext(), initializers.emplace_back());
+
+    StatementPtr content;
+    if (m_Content)
+        m_Content->Reflect(builder.GetContext(), content);
+
     auto &[parent, function] = *reference;
     builder.GenFunction(
         {
             .Loc = m_Loc,
+            .IsExport = function.IsExport,
             .IsExposed = function.IsExposed,
             .IsVirtual = function.IsVirtual,
             .IsOverride = function.IsOverride,
@@ -52,7 +63,8 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
             .Parameters = m_Parameters,
             .Variadic = m_Variadic,
             .Result = function.Result,
-            .Content = m_Content->Reflect(builder.GetContext()),
+            .Initializers = std::move(initializers),
+            .Content = std::move(content),
         });
 }
 catch (ref_exception<ErrorStack> &cause)

@@ -116,9 +116,11 @@ llove::Token llove::Parser::Next()
         { "*", { '=' } },
         { "/", { '=' } },
         { "%", { '=' } },
-        { "&", { '=' } },
-        { "|", { '=' } },
+        { "&", { '=', '&' } },
+        { "|", { '=', '|' } },
         { "^", { '=' } },
+        { "&&", { '=' } },
+        { "||", { '=' } },
         { "=", { '=', '>' } },
         { "<", { '=', '<' } },
         { ">", { '=', '>' } },
@@ -126,6 +128,7 @@ llove::Token llove::Parser::Next()
         { "~", { '=' } },
         { ".", { '.' } },
         { "..", { '.' } },
+        { ":", { ':' } },
     };
 
     enum
@@ -161,7 +164,6 @@ llove::Token llove::Parser::Next()
             case '}':
             case '[':
             case ']':
-            case ':':
             case ',':
             case ';':
             case '@':
@@ -176,6 +178,7 @@ llove::Token llove::Parser::Next()
                     .Value = std::move(value),
                 };
             case '.':
+            case ':':
             case '+':
             case '-':
             case '*':

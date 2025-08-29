@@ -14,7 +14,7 @@ llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect
     if (builder.HasValue(m_Name))
         return builder.GetValue(m_Name);
 
-    const auto functions = builder.FindFunctions(m_Name);
+    const auto functions = builder.GetFunctions(m_Name);
     if (functions.empty())
         Error("undefined symbol '{}'", m_Name);
     if (functions.size() > 1)
@@ -55,7 +55,7 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
         }
     }
 
-    auto functions = builder.FindFunctions(m_Name);
+    auto functions = builder.GetFunctions(m_Name);
     candidates.insert(candidates.end(), functions.begin(), functions.end());
 
     Assert(!candidates.empty() || !symbol_type, "illegal callee symbol '{}', type '{}' is not a function type", m_Name, symbol_type);

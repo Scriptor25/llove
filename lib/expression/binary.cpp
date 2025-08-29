@@ -25,6 +25,8 @@ llove::ValuePtr llove::BinaryExpression::GenVal(Builder &builder, TypePtr expect
         { "^=", "^" },
         { "<<=", "<<" },
         { ">>=", ">>" },
+        { "&&=", "&&" },
+        { "||=", "||" },
     };
 
     auto left = m_Left->GenVal(builder, nullptr);

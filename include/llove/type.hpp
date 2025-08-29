@@ -326,26 +326,30 @@ namespace llove
         [[nodiscard]] bool IsOpaque() const;
 
         [[nodiscard]] bool InheritsFrom(const TypePtr &type) const;
+        [[nodiscard]] bool HasParentClass() const;
+        [[nodiscard]] Ptr GetParentClass() const;
 
         [[nodiscard]] bool HasMember(const std::string &name) const;
         [[nodiscard]] unsigned GetMemberIndex(const std::string &name) const;
         [[nodiscard]] unsigned GetMemberCount() const;
-        [[nodiscard]] const Field &GetMember(unsigned index) const;
+        [[nodiscard]] Field GetMember(unsigned index) const;
+
+        void ForEachMember(const std::function<void(unsigned, const ClassMemberReference &)> &callback) const;
 
         [[nodiscard]] OptRef<ClassFunctionReference> GetFunction(
             const Ptr &self,
             const std::string &name,
             bool is_mutable,
             const std::vector<Field> &parameters,
-            bool is_variadic,
+            bool has_variadic,
             const Field &result) const;
 
         [[nodiscard]] bool HasFunction(const std::string &name) const;
-        [[nodiscard]] std::vector<Ref<ClassFunctionReference>> GetFunctions(const ClassType::Ptr &self, const std::string &name) const;
-        [[nodiscard]] std::vector<Ref<ClassFunctionReference>> GetConstructors(const Ptr &self) const;
+        [[nodiscard]] VecRef<ClassFunctionReference> GetFunctions(const Ptr &self, const std::string &name) const;
+        [[nodiscard]] VecRef<ClassFunctionReference> GetConstructors(const Ptr &self) const;
         [[nodiscard]] OptRef<ClassFunctionReference> GetDestructor(const Ptr &self) const;
 
-        void SetBaseType(Ptr base_type);
+        void SetParentClass(Ptr parent_class_type);
         void SetMembers(std::vector<ClassMemberReference> members);
         void SetFunctions(std::vector<ClassFunctionReference> functions);
 
@@ -367,7 +371,7 @@ namespace llove
 
     private:
         std::string m_Name;
-        Ptr m_BaseType;
+        Ptr m_ParentClass;
         std::vector<ClassMemberReference> m_Members;
         std::vector<ClassFunctionReference> m_Functions;
     };

@@ -8,7 +8,7 @@ llove::GlobalPtr llove::Parser::ParseConstGlobal(const bool export_)
     auto name = Expect(TokenType_Symbol).Value;
 
     TypePtr type;
-    if (SkipIf(TokenType_Other, ":"))
+    if (SkipIf(TokenType_Operator, ":"))
         type = ParseType();
 
     Expect(TokenType_Operator, "=");

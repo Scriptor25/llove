@@ -32,6 +32,7 @@ namespace llove
     {
         std::ostream &Print(std::ostream &stream) const;
 
+        bool IsExport = false;
         bool IsExposed = false;
         bool IsVirtual = false;
         bool IsOverride = false;
@@ -42,6 +43,15 @@ namespace llove
         std::vector<Field> Parameters;
         bool HasVariadic = false;
         Field Result;
+    };
+
+    struct Initializer final
+    {
+        void Reflect(Context &context, Initializer &initializer) const;
+
+        std::string Name;
+        ExpressionPtr Value;
+        std::vector<ExpressionPtr> Arguments;
     };
 
     struct ClassFunction final
@@ -61,6 +71,8 @@ namespace llove
         std::vector<Parameter> Parameters;
         std::pair<bool, std::string> Variadic;
         Field Result;
+
+        std::vector<Initializer> Initializers;
 
         StatementPtr Content;
     };

@@ -119,6 +119,7 @@ void llove::Builder::PushDestructor(llvm::Value *self, const ClassType::Ptr &cla
         auto &[parent, function] = *destructor;
         const auto reference = GenFunction(
             {
+                .IsExport = function.IsExport,
                 .IsExposed = function.IsExposed,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,

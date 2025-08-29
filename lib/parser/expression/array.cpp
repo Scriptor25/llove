@@ -17,7 +17,7 @@ llove::ExpressionPtr llove::Parser::ParseArrayExpression()
     Expect(TokenType_Other, "]");
 
     ArrayType::Ptr type;
-    if (SkipIf(TokenType_Other, ":"))
+    if (SkipIf(TokenType_Operator, ":"))
         type = m_Context.GetArray(ParseType(), values.size());
 
     return std::make_unique<ArrayExpression>(std::move(token.Loc), std::move(values), std::move(type));

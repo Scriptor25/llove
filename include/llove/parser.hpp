@@ -88,10 +88,64 @@ namespace llove
         TypePtr ParseStructType();
 
         std::string ParseField(Field &field, bool require_name, bool require_type);
-
         void ParseParameter(Parameter &parameter);
-        std::pair<bool, std::string> ParseParameterList(std::vector<Parameter> &parameters);
-        void ParseTemplateParameterList(std::vector<std::pair<std::string, TemplateType::Ptr>> &parameters);
+        void ParseInitializer(Initializer &initializer);
+
+        Location ParseParameterList(std::vector<Parameter> &parameters, std::pair<bool, std::string> &variadic);
+        Location ParseTemplateParameterList(std::vector<std::pair<std::string, TemplateType::Ptr>> &parameters);
+        Location ParseArgumentList(std::vector<ExpressionPtr> &arguments);
+
+        template<typename T>
+        Location ParseList(
+            std::vector<T> &list,
+            const std::function<void(T &element)> &parse_element,
+            const TokenType beg_type,
+            const std::string &beg_value,
+            const TokenType end_type,
+            const std::string &end_value)
+        {
+            auto token = Expect(beg_type, beg_value);
+            while (!At(end_type, end_value))
+            {
+                parse_element(list.emplace_back());
+
+                if (!At(end_type, end_value))
+                    Expect(TokenType_Other, ",");
+            }
+            Expect(end_type, end_value);
+            return std::move(token.Loc);
+        }
+
+        template<typename T, typename E>
+        Location ParseList(
+            std::vector<T> &list,
+            E &ellipsis,
+            const std::function<void(T &element)> &parse_element,
+            const std::function<void(E &ellipsis)> &parse_ellipsis,
+            const TokenType beg_type,
+            const std::string &beg_value,
+            const TokenType end_type,
+            const std::string &end_value,
+            const TokenType ellipsis_type,
+            const std::string &ellipsis_value)
+        {
+            auto token = Expect(beg_type, beg_value);
+            while (!At(end_type, end_value))
+            {
+                if (SkipIf(ellipsis_type, ellipsis_value))
+                {
+                    parse_ellipsis(ellipsis);
+                    break;
+                }
+
+                parse_element(list.emplace_back());
+
+                if (!At(end_type, end_value))
+                    Expect(TokenType_Other, ",");
+            }
+            Expect(end_type, end_value);
+            return std::move(token.Loc);
+        }
 
         GlobalPtr ParseGlobal();
         GlobalPtr ParseClassDefinitionGlobal(Location loc);
@@ -144,7 +198,6 @@ namespace llove
         ExpressionPtr ParseTemplateCallExpression();
         ExpressionPtr ParseUnaryExpression();
         ExpressionPtr ParseUnaryExpression(ExpressionPtr operand);
-        ExpressionPtr ParseVariadicExpression(ExpressionPtr list);
 
     private:
         Context &m_Context;

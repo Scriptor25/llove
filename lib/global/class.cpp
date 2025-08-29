@@ -32,7 +32,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
     if (m_IsOpaque)
         return;
 
-    m_ClassType->SetBaseType(m_BaseType);
+    m_ClassType->SetParentClass(m_BaseType);
 
     std::vector<ClassMemberReference> class_members;
     for (auto &member : m_Members)
@@ -47,6 +47,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
             parameters.emplace_back(parameter.Info);
         class_functions.emplace_back(
             ClassFunctionReference{
+                .IsExport = m_IsExport,
                 .IsExposed = function.IsExposed,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,
@@ -62,6 +63,10 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
 
     for (auto &function : m_Functions)
     {
+        std::vector<Initializer> initializers;
+        for (auto &initializer : function.Initializers)
+            initializer.Reflect(builder.GetContext(), initializers.emplace_back());
+
         StatementPtr content;
         if (function.Content)
             function.Content->Reflect(builder.GetContext(), content);
@@ -80,6 +85,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
                 .Parameters = function.Parameters,
                 .Variadic = function.Variadic,
                 .Result = function.Result,
+                .Initializers = std::move(initializers),
                 .Content = std::move(content),
             });
     }
@@ -109,7 +115,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     if (m_IsOpaque)
         return {};
 
-    m_ClassType->SetBaseType(m_BaseType);
+    m_ClassType->SetParentClass(m_BaseType);
 
     std::vector<ClassMemberReference> class_members;
     for (auto &member : m_Members)
@@ -124,6 +130,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
             parameters.emplace_back(parameter.Info);
         class_functions.emplace_back(
             ClassFunctionReference{
+                .IsExport = m_IsExport,
                 .IsExposed = function.IsExposed,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,
@@ -136,23 +143,6 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
             });
     }
     m_ClassType->SetFunctions(std::move(class_functions));
-
-    for (auto &function : m_Functions)
-        builder.GenFunction(
-            {
-                .Loc = function.Loc,
-                .IsExport = m_IsExport,
-                .IsExposed = function.IsExposed,
-                .IsVirtual = function.IsVirtual,
-                .IsOverride = function.IsOverride,
-                .IsImplicit = function.IsImplicit,
-                .IsMutable = function.IsMutable,
-                .Class = m_ClassType,
-                .Name = function.Name,
-                .Parameters = function.Parameters,
-                .Variadic = function.Variadic,
-                .Result = function.Result,
-            });
 
     return {};
 }

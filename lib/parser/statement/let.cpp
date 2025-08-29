@@ -12,7 +12,7 @@ llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
     ExpressionPtr value;
     std::vector<ExpressionPtr> arguments;
 
-    if (SkipIf(TokenType_Operator, "="))
+    if (SkipIf(TokenType_Operator, "=") || (!info.HasType() && (Expect(TokenType_Operator, "="), true)))
     {
         value = ParseExpression();
     }

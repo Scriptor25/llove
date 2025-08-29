@@ -44,7 +44,7 @@ llove::ValuePtr llove::Builder::CreateCall(
                 const auto argument_type = argument->GetType();
 
                 std::vector<llvm::Constant *> typeinfo_values;
-                argument_type->TypeInfo(*this, typeinfo_values);
+                Assert(argument_type->TypeInfo(*this, typeinfo_values), "invalid typeinfo for {}", argument_type);
 
                 const auto typeinfo_type = llvm::ConstantStruct::getTypeForElements(
                     m_LLVMContext,

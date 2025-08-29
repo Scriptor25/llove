@@ -19,30 +19,27 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     Assert(m_Type->IsClass(), "cannot construct non-class value");
 
     const auto class_type = As<ClassType>(m_Type);
-    auto destination = m_Destination ? m_Destination->GenVal(builder, m_Type) : nullptr;
-
     const Field self(true, true, m_Type);
 
-    const auto constructors = class_type->GetConstructors(class_type);
-
     std::vector<Field> argument_fields;
-    std::vector<ValuePtr> arguments;
+    std::vector<ValuePtr> argument_values;
     for (auto &argument : m_Arguments)
     {
         auto argument_value = argument->GenVal(builder, nullptr);
         argument_fields.emplace_back(argument_value->AsField());
-        arguments.emplace_back(std::move(argument_value));
+        argument_values.emplace_back(std::move(argument_value));
     }
 
-    const auto candidate = builder.FindFunction(constructors, argument_fields, self, false);
-    Assert(candidate.has_value(), "no suitable candidate");
-
     llvm::Value *pointer;
-    if (destination)
+    ValuePtr destination;
+    if (m_Destination)
     {
+        destination = m_Destination->GenVal(builder, m_Type);
+
         Assert(destination->GetType() == m_Type, "destination type mismatch");
         Assert(destination->IsReference(), "destination is rvalue");
         Assert(destination->IsMutable(), "destination mutability violation");
+
         pointer = destination->GetPointer();
     }
     else
@@ -50,9 +47,12 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
         pointer = builder.CreateAlloca(m_Type->GenIR(builder));
     }
 
-    builder.EmitLoc(m_Loc);
+    const auto constructors = class_type->GetConstructors(class_type);
+    const auto candidate = builder.FindFunction(constructors, argument_fields, self, false);
+    Assert(candidate.has_value(), "no suitable candidate");
 
-    builder.CreateCall(*candidate, std::move(arguments), Value::CreateL(class_type, pointer, true));
+    builder.EmitLoc(m_Loc);
+    builder.CreateCall(*candidate, std::move(argument_values), Value::CreateL(class_type, pointer, true));
 
     if (destination)
         return destination;

@@ -44,6 +44,12 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Symbol, "switch"))
         return ParseSwitchExpression();
 
+    if (At(TokenType_Symbol, "false", "true"))
+    {
+        auto token = Skip();
+        return std::make_unique<IntegerExpression>(std::move(token.Loc), token.Value == "true", m_Context.GetBoolean());
+    }
+
     if (At(TokenType_Symbol))
         return ParseSymbolExpression();
 

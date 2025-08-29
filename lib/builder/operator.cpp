@@ -81,6 +81,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &name, co
 
             auto reference = GenFunction(
                 {
+                    .IsExport = function.IsExport,
                     .IsExposed = function.IsExposed,
                     .IsVirtual = function.IsVirtual,
                     .IsOverride = function.IsOverride,
@@ -202,6 +203,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
             auto reference = GenFunction(
                 {
+                    .IsExport = function.IsExport,
                     .IsExposed = function.IsExposed,
                     .IsVirtual = function.IsVirtual,
                     .IsOverride = function.IsOverride,

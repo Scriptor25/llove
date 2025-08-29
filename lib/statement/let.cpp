@@ -5,12 +5,12 @@
 
 llove::LetStatement::LetStatement(
     Location loc,
-    Field info,
+    Field field,
     std::string name,
     ExpressionPtr value,
     std::vector<ExpressionPtr> arguments)
     : Statement(std::move(loc)),
-      m_Info(std::move(info)),
+      m_Field(std::move(field)),
       m_Name(std::move(name)),
       m_Value(std::move(value)),
       m_Arguments(std::move(arguments))
@@ -19,28 +19,42 @@ llove::LetStatement::LetStatement(
 
 void llove::LetStatement::Gen(Builder &builder) const try
 {
-    Assert(m_Info.HasType() || m_Value != nullptr, "missing at least one of type or value");
+    ValuePtr value;
+    TypePtr type;
 
-    auto type = m_Info.HasType() ? m_Info.GetType() : nullptr;
-    auto value = m_Value ? m_Value->GenVal(builder, type) : nullptr;
-
-    if (!type)
+    if (m_Field.HasType())
+    {
+        type = m_Field.GetType();
+        if (m_Value)
+        {
+            value = m_Value->GenVal(builder, type);
+        }
+    }
+    else
+    {
+        value = m_Value->GenVal(builder, nullptr);
         type = value->GetType();
+    }
 
-    std::vector<ValuePtr> arguments;
+    std::vector<Field> argument_fields;
+    std::vector<ValuePtr> argument_values;
     for (auto &argument : m_Arguments)
-        arguments.emplace_back(argument->GenVal(builder, nullptr));
+    {
+        auto argument_value = argument->GenVal(builder, nullptr);
+        argument_fields.emplace_back(argument_value->AsField());
+        argument_values.emplace_back(std::move(argument_value));
+    }
 
     builder.EmitLoc(m_Loc);
 
     llvm::Value *pointer;
-    if (m_Info.IsReference())
+    if (m_Field.IsReference())
     {
-        Assert(arguments.empty(), "cannot construct reference");
+        Assert(m_Arguments.empty(), "cannot construct reference");
         Assert(value != nullptr, "missing initializer value");
         Assert(value->IsReference(), "reference from rvalue");
         Assert(type == value->GetType(), "reference type mismatch");
-        Assert(!m_Info.IsMutable() || value->IsMutable(), "reference mutability violation");
+        Assert(!m_Field.IsMutable() || value->IsMutable(), "reference mutability violation");
 
         pointer = value->GetPointer();
     }
@@ -57,12 +71,11 @@ void llove::LetStatement::Gen(Builder &builder) const try
 
             if (value)
             {
-                const auto candidate = builder.FindFunction(
+                if (const auto candidate = builder.FindFunction(
                     constructors,
                     { value->AsField() },
                     self->AsField(),
-                    true);
-                if (candidate.has_value())
+                    true))
                 {
                     builder.CreateCall(*candidate, { std::move(value) }, self);
                 }
@@ -75,16 +88,12 @@ void llove::LetStatement::Gen(Builder &builder) const try
             }
             else if (constructors.empty())
             {
-                Assert(arguments.empty(), "illegal arguments for implicit default constructor");
+                Assert(argument_values.empty(), "illegal arguments for implicit default constructor");
 
                 builder.CreateStore(llvm::Constant::getNullValue(type->GenIR(builder)), pointer);
             }
             else
             {
-                std::vector<Field> argument_fields;
-                for (const auto &argument : arguments)
-                    argument_fields.emplace_back(argument->AsField());
-
                 const auto candidate = builder.FindFunction(
                     constructors,
                     argument_fields,
@@ -92,7 +101,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
                     false);
                 Assert(candidate.has_value(), "no suitable candidate");
 
-                builder.CreateCall(*candidate, std::move(arguments), self);
+                builder.CreateCall(*candidate, std::move(argument_values), self);
             }
 
             builder.PushDestructor(pointer, class_type);
@@ -101,7 +110,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
         {
             if (!value)
             {
-                Assert(arguments.empty(), "cannot construct non-class value");
+                Assert(argument_values.empty(), "cannot construct non-class value");
 
                 value = Value::CreateR(type, llvm::Constant::getNullValue(type->GenIR(builder)));
             }
@@ -114,7 +123,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
         }
     }
 
-    auto storage = Value::CreateL(std::move(type), pointer, m_Info.IsMutable());
+    auto storage = Value::CreateL(std::move(type), pointer, m_Field.IsMutable());
     builder.GetDebug().CreateVariable(builder, m_Name, storage);
     builder.SetValue(m_Name, std::move(storage));
 }
@@ -125,11 +134,11 @@ catch (ref_exception<ErrorStack> &cause)
 
 llove::StatementPtr llove::LetStatement::Reflect(Context &context) const try
 {
-    Field info;
+    Field field;
     ExpressionPtr value;
     std::vector<ExpressionPtr> arguments;
 
-    m_Info.Reflect(context, info);
+    m_Field.Reflect(context, field);
 
     if (m_Value)
         m_Value->Reflect(context, value);
@@ -137,7 +146,7 @@ llove::StatementPtr llove::LetStatement::Reflect(Context &context) const try
     for (auto &argument : m_Arguments)
         argument->Reflect(context, arguments.emplace_back());
 
-    return std::make_unique<LetStatement>(m_Loc, std::move(info), m_Name, std::move(value), std::move(arguments));
+    return std::make_unique<LetStatement>(m_Loc, std::move(field), m_Name, std::move(value), std::move(arguments));
 }
 catch (ref_exception<ErrorStack> &cause)
 {
@@ -146,7 +155,7 @@ catch (ref_exception<ErrorStack> &cause)
 
 std::ostream &llove::LetStatement::Print(std::ostream &stream) const
 {
-    m_Info.Print(stream << "let ", true, m_Name);
+    m_Field.Print(stream << "let ", true, m_Name);
 
     if (m_Value)
         return stream << " = " << m_Value << ';';

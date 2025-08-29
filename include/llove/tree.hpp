@@ -76,6 +76,7 @@ namespace llove
             std::vector<Parameter> parameters,
             std::pair<bool, std::string> variadic,
             Field result,
+            std::vector<Initializer> initializers,
             StatementPtr content);
 
         void Gen(Builder &builder) const override;
@@ -93,6 +94,7 @@ namespace llove
         std::vector<Parameter> m_Parameters;
         std::pair<bool, std::string> m_Variadic;
         Field m_Result;
+        std::vector<Initializer> m_Initializers;
         StatementPtr m_Content;
     };
 
@@ -315,7 +317,7 @@ namespace llove
     public:
         explicit LetStatement(
             Location loc,
-            Field info,
+            Field field,
             std::string name,
             ExpressionPtr value,
             std::vector<ExpressionPtr> arguments);
@@ -325,7 +327,7 @@ namespace llove
         std::ostream &Print(std::ostream &stream) const override;
 
     private:
-        Field m_Info;
+        Field m_Field;
         std::string m_Name;
         ExpressionPtr m_Value;
         std::vector<ExpressionPtr> m_Arguments;
@@ -519,7 +521,7 @@ namespace llove
     class MemberExpression final : public Expression
     {
     public:
-        explicit MemberExpression(Location loc, ExpressionPtr value, std::string member);
+        explicit MemberExpression(Location loc, ExpressionPtr value, std::string member, bool dereference);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         CalleeInfo GenCallee(Builder &builder) const override;
@@ -529,6 +531,7 @@ namespace llove
     private:
         ExpressionPtr m_Value;
         std::string m_Member;
+        bool m_Dereference;
     };
 
     class NullExpression final : public Expression
@@ -698,20 +701,6 @@ namespace llove
         std::string m_Operator;
         ExpressionPtr m_Operand;
         bool m_Suffix;
-    };
-
-    class VariadicExpression final : public Expression
-    {
-    public:
-        explicit VariadicExpression(Location loc, ExpressionPtr list, TypePtr type);
-
-        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
-        StatementPtr Reflect(Context &context) const override;
-        std::ostream &Print(std::ostream &stream) const override;
-
-    private:
-        ExpressionPtr m_List;
-        TypePtr m_Type;
     };
 
     extern unsigned PrintDepth;

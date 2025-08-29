@@ -18,55 +18,49 @@ define new<T>(mut val: T): T[mut] {
 
 export class type {
 
-    expose virtual mut delete() {
-    }
+    expose mut create(id: u32);
 
-    expose id(): u32 {
-        yield self.id;
-    }
+    expose virtual mut delete();
+    expose virtual mut $(): type;
 
-    let mut id: u32;
+    expose id(): u32;
+
+    let id: u32;
 }
 
 export type type_ptr = type[mut];
 
 export class void_type : type {
 
-    expose mut create() {
-        self.id = typeid_void;
+    expose mut create() [ create(typeid_void) ] {
     }
 
     expose override mut $(): void_type {
-        let mut t: void_type;
-        yield t;
+        yield self;
     }
 }
 
 export class variadic_type : type {
 
-    expose mut create() {
-        self.id = typeid_variadic;
+    expose mut create() [ create(typeid_variadic) ] {
     }
 
     expose override mut $(): variadic_type {
-        let mut t: variadic_type;
-        yield t;
+        yield self;
     }
 }
 
 export class integer_type : type {
 
-    expose mut create(is_signed: u1, bits: u32) {
-        self.id = typeid_integer;
-        self.is_signed = is_signed;
-        self.bits = bits;
+    expose mut create(is_signed: u1, bits: u32) [
+        create(typeid_integer),
+        is_signed,
+        bits,
+    ] {
     }
 
     expose override mut $(): integer_type {
-        let mut t: integer_type(self.is_signed, self.bits);
-        self.is_signed = 0;
-        self.bits = 0;
-        yield t;
+        yield self;
     }
 
     expose is_signed(): u1 {
@@ -77,36 +71,37 @@ export class integer_type : type {
         yield self.bits;
     }
 
-    let mut is_signed: u1;
-    let mut bits: u32;
+    let is_signed: u1;
+    let bits: u32;
 }
 
 export class float_type : type {
 
-    expose mut create(bits: u32) {
-        self.id = typeid_float;
-        self.bits = bits;
+    expose mut create(bits: u32) [
+        create(typeid_float),
+        bits,
+    ] {
     }
 
     expose override mut $(): float_type {
-        let mut t: float_type(self.bits);
-        yield t;
+        yield self;
     }
 
     expose bits(): u32 {
         yield self.bits;
     }
 
-    let mut bits: u32;
+    let bits: u32;
 }
 
 export class pointer_type : type {
 
-    expose mut create(is_mutable: u1, is_opaque: u1, base: type_ptr) {
-        self.id = typeid_pointer;
-        self.is_mutable = is_mutable;
-        self.is_opaque = is_opaque;
-        self.base = base;
+    expose mut create(is_mutable: u1, is_opaque: u1, base: type_ptr) [
+        create(typeid_pointer),
+        is_mutable,
+        is_opaque,
+        base,
+    ] {
     }
 
     expose override mut delete() {
@@ -118,8 +113,6 @@ export class pointer_type : type {
 
     expose override mut $(): pointer_type {
         let mut t: pointer_type(self.is_mutable, self.is_opaque, self.base);
-        self.is_mutable = 0;
-        self.is_opaque = 0;
         self.base = null;
         yield t;
     }
@@ -136,20 +129,21 @@ export class pointer_type : type {
         yield self.base;
     }
 
-    let mut is_mutable: u1;
-    let mut is_opaque: u1;
+    let is_mutable: u1;
+    let is_opaque: u1;
     let mut base: type_ptr;
 }
 
 export class array_type : type {
 
-    expose mut create(count: u32, base: type_ptr) {
-        self.id = typeid_array;
-        self.count = count;
-        self.base = base;
+    expose mut create(count: u32, base: type_ptr) [
+        create(typeid_array),
+        count,
+        base,
+    ] {
     }
 
-    expose mut delete() {
+    expose override mut delete() {
         if (self.base) {
             free(self.base);
             self.base = null;
@@ -158,7 +152,6 @@ export class array_type : type {
 
     expose override mut $(): array_type {
         let mut t: array_type(self.count, self.base);
-        self.count = 0;
         self.base = null;
         yield t;
     }
@@ -171,24 +164,27 @@ export class array_type : type {
         yield self.base;
     }
 
-    let mut count: u32;
+    let count: u32;
     let mut base: type_ptr;
 }
 
 export class struct_type : type {
 
-    expose mut create(count: u32, fields: type_ptr[mut]) {
-        self.id = typeid_struct;
-        self.count = count;
-        self.fields = fields;
+    expose mut create(count: u32, fields: type_ptr[mut]) [
+        create(typeid_struct),
+        count,
+        fields,
+    ] {
     }
 
-    expose mut delete() {
+    expose override mut delete() {
         if (self.fields) {
             foreach (field : self) {
                 free(field);
             }
+
             free(self.fields);
+
             self.count = 0;
             self.fields = null;
         }
@@ -223,9 +219,10 @@ export class struct_type : type {
 
 export class range_type : type {
 
-    expose mut create(entry: type_ptr) {
-        self.id = typeid_range;
-        self.entry = entry;
+    expose mut create(entry: type_ptr) [
+        create(typeid_range),
+        entry,
+    ] {
     }
 
     expose override mut delete() {
@@ -310,4 +307,60 @@ export define parse(mut typeinfo: u8[]): type_ptr {
             yield null:mut:type;
         }
     }
+}
+
+define:type mut create(id: u32) [ id ] {
+}
+
+define:type mut delete() {
+    switch (self.id) {
+        [typeid_pointer] {
+            ((&self) as pointer_type[mut])::delete();
+        }
+        [typeid_array] {
+            ((&self) as array_type[mut])::delete();
+        }
+        [typeid_struct] {
+            ((&self) as struct_type[mut])::delete();
+        }
+        [typeid_range] {
+            ((&self) as range_type[mut])::delete();
+        }
+    }
+}
+
+define:type mut $(): type {
+    switch (self.id) {
+        [typeid_void] {
+            yield $*((&self) as void_type[mut]);
+        }
+        [typeid_variadic] {
+            yield $*((&self) as variadic_type[mut]);
+        }
+        [typeid_integer] {
+            yield $*((&self) as integer_type[mut]);
+        }
+        [typeid_float] {
+            yield $*((&self) as float_type[mut]);
+        }
+        [typeid_pointer] {
+            yield $*((&self) as pointer_type[mut]);
+        }
+        [typeid_array] {
+            yield $*((&self) as array_type[mut]);
+        }
+        [typeid_struct] {
+            yield $*((&self) as struct_type[mut]);
+        }
+        [typeid_range] {
+            yield $*((&self) as range_type[mut]);
+        }
+        [default] {
+            yield self;
+        }
+    }
+}
+
+define:type id(): u32 {
+    yield self.id;
 }

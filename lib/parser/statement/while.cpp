@@ -1,4 +1,5 @@
 #include <llove/parser.hpp>
+#include <llove/tree.hpp>
 
 llove::StatementPtr llove::Parser::ParseWhileStatement(const bool inline_)
 {

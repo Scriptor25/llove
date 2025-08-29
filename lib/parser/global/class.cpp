@@ -23,7 +23,7 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal(const bool is_export)
     std::vector<ClassFunction> functions;
 
     ClassType::Ptr base_type;
-    if (SkipIf(TokenType_Other, ":"))
+    if (SkipIf(TokenType_Operator, ":"))
         base_type = As<ClassType>(ParseType());
 
     Expect(TokenType_Other, "{");

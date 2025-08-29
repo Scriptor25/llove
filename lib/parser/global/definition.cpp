@@ -8,7 +8,7 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool is_export)
     auto loc = m_Token.Loc;
     auto interface = SkipIf(TokenType_Symbol, "interface") || (Expect(TokenType_Symbol, "define"), false);
 
-    if (!is_export && !interface && SkipIf(TokenType_Other, ":"))
+    if (!is_export && !interface && SkipIf(TokenType_Operator, ":"))
         return ParseClassDefinitionGlobal(std::move(loc));
 
     auto implicit = !interface && SkipIf(TokenType_Symbol, "implicit");
@@ -28,10 +28,11 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool is_export)
     }
 
     std::vector<Parameter> parameters;
-    auto variadic = ParseParameterList(parameters);
+    std::pair<bool, std::string> variadic;
+    ParseParameterList(parameters, variadic);
 
     Field result;
-    if (SkipIf(TokenType_Other, ":"))
+    if (SkipIf(TokenType_Operator, ":"))
         ParseField(result, false, true);
     else
         result.SetType(m_Context.GetVoid());

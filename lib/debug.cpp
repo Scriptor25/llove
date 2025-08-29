@@ -53,7 +53,7 @@ llvm::DIType *llove::DebugBuilder::GetIntegerType(const bool sign, const unsigne
 
     return m_DIBuilder->createBasicType(
         (sign ? 'i' : 'u') + std::to_string(bits),
-        bits,
+        ((bits >> 3) + ((bits & 7) != 0)) << 3,
         sign ? llvm::dwarf::DW_ATE_signed : llvm::dwarf::DW_ATE_unsigned);
 }
 
@@ -61,7 +61,10 @@ llvm::DIType *llove::DebugBuilder::GetFloatType(const unsigned bits) const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createBasicType('f' + std::to_string(bits), bits, llvm::dwarf::DW_ATE_float);
+    return m_DIBuilder->createBasicType(
+        'f' + std::to_string(bits),
+        ((bits >> 3) + ((bits & 7) != 0)) << 3,
+        llvm::dwarf::DW_ATE_float);
 }
 
 llvm::DIType *llove::DebugBuilder::GetPointerType() const

@@ -40,7 +40,7 @@ llove::FunctionReference &llove::Builder::PushFunction(
     return m_Functions.emplace_back(expose, implicit, std::move(name), std::move(type), callee);
 }
 
-std::vector<llove::FunctionReference> llove::Builder::FindFunctions(
+std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
     const std::string &name,
     const std::optional<Field> &self)
 {
@@ -86,6 +86,7 @@ std::vector<llove::FunctionReference> llove::Builder::FindFunctions(
 
             auto reference = GenFunction(
                 {
+                    .IsExport = function.IsExport,
                     .IsExposed = function.IsExposed,
                     .IsVirtual = function.IsVirtual,
                     .IsOverride = function.IsOverride,
@@ -222,6 +223,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         return GenFunction(
             {
+                .IsExport = candidate.IsExport,
                 .IsExposed = candidate.IsExposed,
                 .IsVirtual = candidate.IsVirtual,
                 .IsOverride = candidate.IsOverride,

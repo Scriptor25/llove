@@ -8,18 +8,18 @@ class test {
     expose mut create() {
         format("test:create()\n");
         self.data_ptr = null;
-        format("=> self={{ data_ptr: {} }\n", self.data_ptr);
+        format("=> self={{ data_ptr: {rx0#:16} }\n", self.data_ptr);
     }
 
     expose mut create(data: i32) {
         format("test:create(i32)\n");
         self.data_ptr = malloc(sizeof i32);
         *self.data_ptr = data;
-        format("=> self={{ data_ptr: {} }\n", self.data_ptr);
+        format("=> self={{ data_ptr: {rx0#:16} }\n", self.data_ptr);
     }
 
     expose mut =(data: i32): mut &test {
-        format("test{{ data_ptr: {} }:=(i32)\n", self.data_ptr);
+        format("test{{ data_ptr: {rx0#:16} }:=(i32)\n", self.data_ptr);
         *self.data_ptr = data;
         yield self;
     }
@@ -28,15 +28,15 @@ class test {
         format("test:create(test)\n");
         self.data_ptr = other.data_ptr;
         other.data_ptr = null;
-        format("=> self={{ data_ptr: {} }, other={{ data_ptr: {} }\n", self.data_ptr, other.data_ptr);
+        format("=> self={{ data_ptr: {rx0#:16} }, other={{ data_ptr: {rx0#:16} }\n", self.data_ptr, other.data_ptr);
     }
 
     expose mut =(mut other: test): mut &test {
-        format("test{{ data_ptr: {} }:=(test)\n", self.data_ptr);
+        format("test{{ data_ptr: {rx0#:16} }:=(test)\n", self.data_ptr);
         let data_ptr = self.data_ptr;
         self.data_ptr = other.data_ptr;
         other.data_ptr = data_ptr;
-        format("=> self={{ data_ptr: {} }, other={{ data_ptr: {} }\n", self.data_ptr, other.data_ptr);
+        format("=> self={{ data_ptr: {rx0#:16} }, other={{ data_ptr: {rx0#:16} }\n", self.data_ptr, other.data_ptr);
         yield self;
     }
 
@@ -50,7 +50,7 @@ class test {
     }
 
     expose mut delete() {
-        format("test{{ data_ptr: {} }:delete()\n", self.data_ptr);
+        format("test{{ data_ptr: {rx0#:16} }:delete()\n", self.data_ptr);
         if (self.data_ptr) {
             free(self.data_ptr);
         }
@@ -93,7 +93,7 @@ class unique<T> {
     }
 
     expose mut =(mut other: class<T> unique): mut &class<T> unique {
-        format("unique{{ ptr: {} }:=(unique)\n", self.ptr);
+        format("unique{{ ptr: {rx0#:16} }:=(unique)\n", self.ptr as []);
         let ptr = self.ptr;
         self.ptr = other.ptr;
         other.ptr = ptr;
@@ -110,7 +110,7 @@ class unique<T> {
     }
 
     expose mut delete() {
-        format("unique{{ ptr: {} }:delete()\n", self.ptr);
+        format("unique{{ ptr: {rx0#:16} }:delete()\n", self.ptr as []);
         if (self.ptr) {
             delete *self.ptr;
             free(self.ptr);
@@ -141,11 +141,11 @@ interface main(): i32 {
 
     let u: class<test> unique(create test(0));
 
-    format("{} ({})\n", (*u).data(), (*u).get());
+    format("{} ({rx0#:16})\n", (*u).data(), (*u).get());
 
     *u = create test(123);
 
-    format("{} ({})\n", (*u).data(), (*u).get());
+    format("{} ({rx0#:16})\n", (*u).data(), (*u).get());
 
     yield 0;
 }

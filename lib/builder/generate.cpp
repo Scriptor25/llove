@@ -80,7 +80,142 @@ llove::FunctionReference llove::Builder::GenFunction(const Function &function, c
 
     m_DebugBuilder.EmitLoc(*this);
     PushFrame();
-    GenParameters(callee, function.Parameters, function.Variadic, self);
+
+    if (auto self_pointer = GenParameters(callee, function.Parameters, function.Variadic, self);
+        self_pointer && function.Name == "create")
+    {
+        EmitLoc(function.Loc);
+
+        auto self_class_type = function.Class;
+        auto self_llvm_type = self_class_type->GenIR(*this);
+
+        self_class_type->ForEachMember(
+            [this, self_llvm_type, self_pointer](auto index, auto &member)
+            {
+                auto type = member.Info.GenIRType(*this);
+                auto value = llvm::Constant::getNullValue(type);
+                auto pointer = CreateStructGEP(self_llvm_type, self_pointer, index);
+
+                CreateStore(value, pointer);
+            });
+
+        // TODO: set virtual pointers
+
+        for (auto &initializer : function.Initializers)
+        {
+            std::vector<Field> argument_fields;
+            std::vector<ValuePtr> argument_values;
+            for (auto &argument : initializer.Arguments)
+            {
+                auto argument_value = argument->GenVal(
+                    *this,
+                    initializer.Arguments.size() == 1 ? self_class_type : nullptr);
+                argument_fields.emplace_back(argument_value->AsField());
+                argument_values.emplace_back(std::move(argument_value));
+            }
+
+            if (initializer.Name == "create")
+            {
+                Assert(self_class_type->HasParentClass(), "parent initialization from orphan class");
+                auto parent_class = self_class_type->GetParentClass();
+
+                auto constructors = parent_class->GetConstructors(parent_class);
+                auto candidate = FindFunction(constructors, argument_fields, *self, false);
+                Assert(candidate.has_value(), "no suitable candidate");
+
+                CreateCall(
+                    *candidate,
+                    std::move(argument_values),
+                    Value::CreateL(self->GetType(), self_pointer, self->IsMutable()));
+                continue;
+            }
+
+            auto index = self_class_type->GetMemberIndex(initializer.Name);
+            auto member = self_class_type->GetMember(index);
+            auto member_pointer = CreateStructGEP(self_llvm_type, self_pointer, index);
+
+            ValuePtr value;
+            if (initializer.Value)
+                value = initializer.Value->GenVal(*this, member.GetType());
+
+            if (member.IsReference())
+            {
+                Assert(initializer.Arguments.empty(), "cannot construct reference");
+                Assert(value != nullptr, "missing initializer value");
+                Assert(value->IsReference(), "reference from rvalue");
+                Assert(
+                    value->GetType() == member.GetType()
+                    || (value->GetType()->IsClass()
+                        && As<ClassType>(value->GetType())->InheritsFrom(member.GetType())),
+                    "reference type mismatch");
+                Assert(!member.IsMutable() || value->IsMutable(), "reference mutability violation");
+
+                CreateStore(value->GetPointer(), member_pointer);
+            }
+            else
+            {
+                if (member.GetType()->IsClass())
+                {
+                    const auto member_self = Value::CreateL(member.GetType(), member_pointer, true);
+
+                    const auto member_class_type = As<ClassType>(member.GetType());
+                    const auto constructors = member_class_type->GetConstructors(member_class_type);
+
+                    if (value)
+                    {
+                        if (const auto candidate = FindFunction(
+                            constructors,
+                            { value->AsField() },
+                            member_self->AsField(),
+                            true))
+                        {
+                            CreateCall(*candidate, { std::move(value) }, member_self);
+                        }
+                        else
+                        {
+                            Assert(!value->IsReference(), "illegal implicit copy");
+
+                            value = CreateCast(std::move(value), member.GetType(), true);
+                            CreateStore(value->Load(*this), member_pointer);
+                        }
+                    }
+                    else if (constructors.empty())
+                    {
+                        Assert(argument_values.empty(), "illegal arguments for implicit default constructor");
+
+                        CreateStore(llvm::Constant::getNullValue(member.GenIRType(*this)), member_pointer);
+                    }
+                    else
+                    {
+                        const auto candidate = FindFunction(
+                            constructors,
+                            argument_fields,
+                            member_self->AsField(),
+                            false);
+                        Assert(candidate.has_value(), "no suitable candidate");
+
+                        CreateCall(*candidate, std::move(argument_values), member_self);
+                    }
+                }
+                else
+                {
+                    if (!value)
+                    {
+                        Assert(argument_values.empty(), "cannot construct non-class value");
+
+                        value = Value::CreateR(member.GetType(), llvm::Constant::getNullValue(member.GenIRType(*this)));
+                    }
+                    else if (member.GetType())
+                    {
+                        value = CreateCast(std::move(value), member.GetType(), true);
+                    }
+
+                    CreateStore(value->Load(*this), member_pointer);
+                }
+            }
+        }
+    }
+
     function.Content->Gen(*this);
     PopFrame();
 
@@ -111,7 +246,7 @@ llove::FunctionReference llove::Builder::GenFunction(const Function &function, c
     Error("function has errors");
 }
 
-void llove::Builder::GenParameters(
+llvm::Value *llove::Builder::GenParameters(
     llvm::Function *parent,
     const std::vector<Parameter> &parameters,
     const std::pair<bool, std::string> &variadic,
@@ -120,10 +255,12 @@ void llove::Builder::GenParameters(
     auto iterator = parent->arg_begin();
     auto index = 1u;
 
+    llvm::Value *self_pointer = nullptr;
     if (self)
     {
         const auto argument = iterator++;
         argument->setName("self");
+        self_pointer = argument;
 
         auto storage = Value::CreateL(self->GetType(), argument, self->IsMutable());
 
@@ -179,4 +316,6 @@ void llove::Builder::GenParameters(
         m_DebugBuilder.CreateParameter(*this, variadic.second, index, storage);
         SetValue(variadic.second, std::move(storage));
     }
+
+    return self_pointer;
 }

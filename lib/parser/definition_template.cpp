@@ -16,9 +16,9 @@ void llove::Parser::ParseDefinitionTemplate(const bool is_export, Location loc, 
         std::move(template_parameters),
         false);
 
-    definition_template.Variadic = ParseParameterList(definition_template.Parameters);
+    ParseParameterList(definition_template.Parameters, definition_template.Variadic);
 
-    if (SkipIf(TokenType_Other, ":"))
+    if (SkipIf(TokenType_Operator, ":"))
         ParseField(definition_template.Result, false, true);
     else
         definition_template.Result.SetType(m_Context.GetVoid());

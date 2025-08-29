@@ -13,7 +13,7 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             continue;
         }
 
-        if (At(TokenType_Operator, "."))
+        if (At(TokenType_Operator, ".", "::"))
         {
             expression = ParseMemberExpression(std::move(expression));
             continue;
@@ -36,12 +36,6 @@ llove::ExpressionPtr llove::Parser::ParseOperandExpression()
             expression = ParseUnaryExpression(std::move(expression));
             continue;
         }
-
-        // if (At(TokenType_Other, "{"))
-        // {
-        //     expression = ParseVariadicExpression(std::move(expression));
-        //     continue;
-        // }
 
         if (At(TokenType_Symbol, "as"))
         {

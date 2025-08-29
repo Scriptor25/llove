@@ -20,8 +20,10 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
 
     auto use_tail = false;
 
-    const auto block = builder.GetInsertBlock();
     const auto condition = m_Condition->GenVal(builder, nullptr);
+    const auto block = builder.GetInsertBlock();
+
+    const auto condition_type = condition->GetType();
 
     builder.EmitLoc(m_Loc);
     builder.PushFrame(m_Loc, nullptr, tail_block);
@@ -34,11 +36,12 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
 
         for (auto &key : keys)
         {
-            const auto key_value = key->GenVal(builder, condition->GetType());
-            Assert(!key_value->IsReference(), "invalid non-constant case key value");
-            Assert(key_value->GetType()->IsInteger(), "invalid non-integer case key type {}", key_value->GetType());
+            auto key_value = key->GenVal(builder, condition_type);
+            key_value = builder.CreateCast(key_value, condition_type, true);
 
             auto key_const = llvm::dyn_cast<llvm::ConstantInt>(key_value->Load(builder));
+            Assert(key_const != nullptr, "invalid non-constant or non-integer case key value");
+
             cases.emplace(key_const, case_block);
         }
 

@@ -19,15 +19,7 @@ llove::ExpressionPtr llove::Parser::ParseTemplateCallExpression()
 
     auto callee = Expect(TokenType_Symbol).Value;
 
-    Expect(TokenType_Other, "(");
-    while (!At(TokenType_Other, ")"))
-    {
-        arguments.emplace_back(ParseExpression());
-
-        if (!At(TokenType_Other, ")"))
-            Expect(TokenType_Other, ",");
-    }
-    Expect(TokenType_Other, ")");
+    ParseArgumentList(arguments);
 
     return std::make_unique<TemplateCallExpression>(
         std::move(token.Loc),

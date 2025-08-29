@@ -1,4 +1,5 @@
 #include <llove/function.hpp>
+#include <llove/tree.hpp>
 
 std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
 {
@@ -26,4 +27,13 @@ std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
     }
 
     return stream << "): " << Type->GetResult();
+}
+
+void llove::Initializer::Reflect(Context &context, Initializer &initializer) const
+{
+    initializer.Name = Name;
+    if (Value)
+        Value->Reflect(context, initializer.Value);
+    for (auto &argument : Arguments)
+        argument->Reflect(context, initializer.Arguments.emplace_back());
 }

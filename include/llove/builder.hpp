@@ -161,6 +161,9 @@ namespace llove
         llvm::Value *CreateOr(llvm::Value *left, llvm::Value *right, const std::string &name = {});
         llvm::Value *CreateXor(llvm::Value *left, llvm::Value *right, const std::string &name = {});
 
+        llvm::Value *CreateLogicalAnd(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+        llvm::Value *CreateLogicalOr(llvm::Value *left, llvm::Value *right, const std::string &name = {});
+
         llvm::Value *CreateFAdd(llvm::Value *left, llvm::Value *right, const std::string &name = {});
         llvm::Value *CreateFSub(llvm::Value *left, llvm::Value *right, const std::string &name = {});
         llvm::Value *CreateFMul(llvm::Value *left, llvm::Value *right, const std::string &name = {});
@@ -245,7 +248,7 @@ namespace llove
             FunctionType::Ptr type,
             llvm::Function *callee);
 
-        std::vector<FunctionReference> FindFunctions(
+        std::vector<FunctionReference> GetFunctions(
             const std::string &name,
             const std::optional<Field> &self = std::nullopt);
         std::optional<FunctionReference> FindFunction(
@@ -280,7 +283,7 @@ namespace llove
         bool IsCastable(const Field &src, const Field &dst, bool implicit) const;
 
         FunctionReference GenFunction(const Function &function, bool register_function = false);
-        void GenParameters(
+        llvm::Value *GenParameters(
             llvm::Function *parent,
             const std::vector<Parameter> &parameters,
             const std::pair<bool, std::string> &variadic,

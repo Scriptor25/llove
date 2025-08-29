@@ -26,7 +26,7 @@ llove::GlobalPtr llove::Parser::ParseImportGlobal()
                 }
 
                 auto name = Expect(TokenType_Symbol).Value;
-                if (SkipIf(TokenType_Other, ":"))
+                if (SkipIf(TokenType_Operator, ":"))
                 {
                     auto remap = Expect(TokenType_Symbol).Value;
                     symbols[name] = std::move(remap);

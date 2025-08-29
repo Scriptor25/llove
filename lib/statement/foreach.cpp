@@ -182,8 +182,8 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             range->AsField(),
             false);
 
-        Assert(begin_function.has_value(), "class is missing function 'begin'");
-        Assert(end_function.has_value(), "class is missing function 'end'");
+        Assert(begin_function.has_value(), "no suitable candidate");
+        Assert(end_function.has_value(), "no suitable candidate");
 
         begin = builder.CreateCall(*begin_function, {}, range);
         end = builder.CreateCall(*end_function, {}, range);
@@ -220,7 +220,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         else
         {
             const auto operator_ = builder.FindOperator("*", iterator->AsField(), false);
-            Assert(operator_ != nullptr, "operator '*' not implemented for {}", iterator->AsField());
+            Assert(operator_ != nullptr, "operator '*{}' not implemented", iterator->AsField());
 
             storage = (*operator_)(builder, iterator);
         }
@@ -254,7 +254,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         const auto operator_ = builder.FindOperator("!=", iterator->AsField(), end->AsField());
         Assert(
             operator_ != nullptr,
-            "operator '!=' not implemented for {} and {}",
+            "operator '{} != {}' not implemented",
             iterator->AsField(),
             end->AsField());
 
@@ -269,7 +269,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
     builder.EmitLoc(m_Loc);
     {
         const auto operator_ = builder.FindOperator("++", iterator->AsField(), false);
-        Assert(operator_ != nullptr, "operator '++' not implemented for {}", iterator->AsField());
+        Assert(operator_ != nullptr, "operator '++{}' not implemented", iterator->AsField());
 
         (void) (*operator_)(builder, iterator);
     }

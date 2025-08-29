@@ -348,6 +348,7 @@ llove::TypePtr llove::Context::InstantiateClass(
             parameters.emplace_back(parameter.Info);
         functions.emplace_back(
             ClassFunctionReference{
+                .IsExport = false,
                 .IsExposed = function.IsExposed,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,
@@ -410,6 +411,10 @@ llove::FunctionReference &llove::Context::InstantiateDefinition(
     Field result;
     definition_template.Result.Reflect(*this, result);
 
+    StatementPtr content;
+    if (definition_template.Content)
+        definition_template.Content->Reflect(*this, content);
+
     m_DefinitionReflections.emplace_back(
         Function{
             .Loc = definition_template.Loc,
@@ -418,7 +423,7 @@ llove::FunctionReference &llove::Context::InstantiateDefinition(
             .Parameters = parameters,
             .Variadic = definition_template.Variadic,
             .Result = result,
-            .Content = definition_template.Content->Reflect(*this),
+            .Content = std::move(content),
         });
 
     return m_DefinitionInstances[name] = builder.GenFunction(
@@ -451,6 +456,7 @@ void llove::Context::InstantiateReflections(Builder &builder)
                     .Parameters = std::move(function.Parameters),
                     .Variadic = std::move(function.Variadic),
                     .Result = std::move(function.Result),
+                    .Initializers = std::move(function.Initializers),
                     .Content = std::move(function.Content),
                 });
     }

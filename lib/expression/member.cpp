@@ -3,16 +3,25 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::MemberExpression::MemberExpression(Location loc, ExpressionPtr value, std::string member)
+llove::MemberExpression::MemberExpression(Location loc, ExpressionPtr value, std::string member, const bool dereference)
     : Expression(std::move(loc)),
       m_Value(std::move(value)),
-      m_Member(std::move(member))
+      m_Member(std::move(member)),
+      m_Dereference(dereference)
 {
 }
 
 llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
-    const auto value = m_Value->GenVal(builder, nullptr);
+    auto value = m_Value->GenVal(builder, nullptr);
+
+    if (m_Dereference)
+    {
+        const auto operator_ = builder.FindOperator("*", value->AsField(), false);
+        Assert(operator_ != nullptr, "operator '*{}' not implemented", value->AsField());
+        value = (*operator_)(builder, std::move(value));
+    }
+
     const auto type = value->GetType();
 
     auto index = ~0u;
@@ -82,9 +91,17 @@ catch (ref_exception<ErrorStack> &cause)
 llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
 {
     auto value = m_Value->GenVal(builder, nullptr);
+
+    if (m_Dereference)
+    {
+        const auto operator_ = builder.FindOperator("*", value->AsField(), false);
+        Assert(operator_ != nullptr, "operator '*{}' not implemented", value->AsField());
+        value = (*operator_)(builder, std::move(value));
+    }
+
     auto type = value->GetType();
 
-    if (auto candidates = builder.FindFunctions(m_Member, value->AsField()); !candidates.empty())
+    if (auto candidates = builder.GetFunctions(m_Member, value->AsField()); !candidates.empty())
         return { .Candidates = std::move(candidates), .Self = std::move(value) };
 
     auto index = ~0u;
@@ -175,7 +192,7 @@ llove::StatementPtr llove::MemberExpression::Reflect(Context &context) const try
     if (m_Value)
         m_Value->Reflect(context, value);
 
-    return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member);
+    return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member, m_Dereference);
 }
 catch (ref_exception<ErrorStack> &cause)
 {
@@ -184,5 +201,5 @@ catch (ref_exception<ErrorStack> &cause)
 
 std::ostream &llove::MemberExpression::Print(std::ostream &stream) const
 {
-    return stream << m_Value << '.' << m_Member;
+    return stream << m_Value << (m_Dereference ? "::" : ".") << m_Member;
 }

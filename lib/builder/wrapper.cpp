@@ -249,6 +249,22 @@ llvm::Value *llove::Builder::CreateXor(llvm::Value *left, llvm::Value *right, co
     return m_LLVMBuilder.CreateXor(left, right, name);
 }
 
+llvm::Value *llove::Builder::CreateLogicalAnd(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateLogicalAnd(left, right, name);
+}
+
+llvm::Value *llove::Builder::CreateLogicalOr(llvm::Value *left, llvm::Value *right, const std::string &name)
+{
+    Assert(left != nullptr, "left must not be null");
+    Assert(right != nullptr, "right must not be null");
+
+    return m_LLVMBuilder.CreateLogicalOr(left, right, name);
+}
+
 llvm::Value *llove::Builder::CreateFAdd(llvm::Value *left, llvm::Value *right, const std::string &name)
 {
     Assert(left != nullptr, "left must not be null");

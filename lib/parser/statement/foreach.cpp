@@ -10,7 +10,7 @@ llove::StatementPtr llove::Parser::ParseForEachStatement(const bool inline_)
     auto reference = SkipIf(TokenType_Operator, "&");
     auto name = Expect(TokenType_Symbol).Value;
 
-    Expect(TokenType_Other, ":");
+    Expect(TokenType_Operator, ":");
 
     auto range = ParseExpression();
 
