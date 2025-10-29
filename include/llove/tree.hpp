@@ -3,6 +3,7 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 #include <llove/class.hpp>

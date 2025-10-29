@@ -149,15 +149,6 @@ option-disable-integrated-as:
   pattern: "--option-disable-integrated-as"
   type: flag
   description: ""
-option-compress-debug-sections:
-  pattern: "--option-compress-debug-sections"
-  type: value
-  filter: [ "none", "zlib", "zstd" ]
-  description: ""
-option-relax-elf-relocations:
-  pattern: "--option-relax-elf-relocations"
-  type: flag
-  description: ""
 option-function-sections:
   pattern: "--option-function-sections"
   type: flag

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <format>
+#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -101,14 +102,16 @@ namespace llove
         throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, std::move(message));
     }
 
+    [[noreturn]] inline void AssertFail(std::string &&message)
+    {
+        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, message);
+    }
+
     template<typename... Args>
     void Assert(const bool condition, std::string_view format, Args &&... args)
     {
-        if (condition)
-            return;
-
-        auto message = std::vformat(std::move(format), std::make_format_args(args...));
-        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, std::move(message));
+        if (!condition)
+            AssertFail(std::vformat(std::move(format), std::make_format_args(args...)));
     }
 
     template<typename... Args>

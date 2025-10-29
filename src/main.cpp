@@ -59,27 +59,32 @@ static void print_help(const std::map<std::string, cli::OptionTemplate> &templat
 
     table << "PATTERN" << "FILTER" << "DESCRIPTION";
 
-    for (auto &template_ : templates | std::views::values)
+    for (auto &[
+             template_pattern,
+             template_type,
+             template_filter,
+             template_description
+         ] : templates | std::views::values)
     {
         std::string pattern_str;
-        for (auto p = template_.Pattern.begin(); p != template_.Pattern.end(); ++p)
+        for (auto p = template_pattern.begin(); p != template_pattern.end(); ++p)
         {
-            if (p != template_.Pattern.begin())
+            if (p != template_pattern.begin())
                 pattern_str += ", ";
             pattern_str += *p;
         }
         table << pattern_str;
 
         std::string filter_str;
-        if (template_.Type != cli::OptionTemplateType_Flag)
+        if (template_type != cli::OptionTemplateType_Flag)
         {
-            template_.Filter->Stringify(filter_str);
-            if (template_.Type == cli::OptionTemplateType_Array)
+            template_filter->Stringify(filter_str);
+            if (template_type == cli::OptionTemplateType_Array)
                 filter_str += ",...";
         }
         table << filter_str;
 
-        table << template_.Description;
+        table << template_description;
     }
 }
 
@@ -161,8 +166,6 @@ int main(const int argc, const char *const *argv) try
         (void) arguments.value("option-swift-async-frame-pointer", machine.Options.SwiftAsyncFramePointer);
         machine.Options.UseInitArray = arguments.flag("option-use-init-array");
         machine.Options.DisableIntegratedAS = arguments.flag("option-disable-integrated-as");
-        (void) arguments.value("option-compress-debug-sections", machine.Options.CompressDebugSections);
-        machine.Options.RelaxELFRelocations = arguments.flag("option-relax-elf-relocations");
         machine.Options.FunctionSections = arguments.flag("option-function-sections");
         machine.Options.DataSections = arguments.flag("option-data-sections");
         machine.Options.IgnoreXCOFFVisibility = arguments.flag("option-ignore-xcoff-visibility");
@@ -319,7 +322,6 @@ int main(const int argc, const char *const *argv) try
         builder.Seal(print_llvm, *print_stream_ref, *output_stream_ref, code_gen_type, optimization_level);
     }
 
-    llvm::llvm_shutdown();
     return 0;
 }
 catch (const llove::ref_exception<llove::ErrorStack> &cause)

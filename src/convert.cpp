@@ -151,7 +151,6 @@ bool cli::convert_value(llvm::BasicBlockSection &dst, const std::string &value)
     {
         { "all", llvm::BasicBlockSection::All },
         { "list", llvm::BasicBlockSection::List },
-        { "labels", llvm::BasicBlockSection::Labels },
         { "preset", llvm::BasicBlockSection::Preset },
         { "none", llvm::BasicBlockSection::None },
     };

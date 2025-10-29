@@ -44,7 +44,8 @@ llove::Builder::Builder(
       m_Debug(debug),
       m_DebugBuilder(m_Debug, m_LLVMModule, source_path, optimized, profiling, command_line, emission)
 {
-    auto target_triple = machine.Triple.empty() ? llvm::sys::getDefaultTargetTriple() : machine.Triple;
+    auto target_triple_string = machine.Triple.empty() ? llvm::sys::getDefaultTargetTriple() : machine.Triple;
+    const llvm::Triple target_triple(target_triple_string);
     auto cpu = machine.CPU.empty() ? "generic" : machine.CPU;
 
     std::string features;
@@ -57,7 +58,7 @@ llove::Builder::Builder(
 
     std::string target_error;
     const auto target = llvm::TargetRegistry::lookupTarget(target_triple, target_error);
-    Assert(target != nullptr, "failed to get target for triple '{}': {}", target_triple, target_error);
+    Assert(target != nullptr, "failed to get target for triple '{}': {}", target_triple.getTriple(), target_error);
 
     m_TargetMachine = std::unique_ptr<llvm::TargetMachine>(
         target->createTargetMachine(
@@ -70,7 +71,7 @@ llove::Builder::Builder(
     Assert(
         m_TargetMachine != nullptr,
         "failed to create target machine for triple '{}', cpu '{}' and features '{}'",
-        target_triple,
+        target_triple.getTriple(),
         cpu,
         features);
 

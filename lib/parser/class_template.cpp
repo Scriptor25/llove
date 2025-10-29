@@ -1,6 +1,7 @@
 #include <llove/context.hpp>
 #include <llove/parser.hpp>
 #include <llove/template.hpp>
+#include <llove/tree.hpp>
 
 void llove::Parser::ParseClassTemplate(const bool is_export, std::string name)
 {

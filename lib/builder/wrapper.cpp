@@ -29,7 +29,7 @@ llvm::Constant *llove::Builder::GetStr(const std::string &value, const std::stri
 {
     if (m_Strings.contains(value))
         return m_Strings.at(value);
-    return m_Strings[value] = m_LLVMBuilder.CreateGlobalStringPtr(value, name, 0, &m_LLVMModule);
+    return m_Strings[value] = m_LLVMBuilder.CreateGlobalString(value, name, 0, &m_LLVMModule);
 }
 
 void llove::Builder::SetCurrentDebugLocation(llvm::DebugLoc loc)
@@ -548,7 +548,7 @@ llvm::CallInst *llove::Builder::CreateMemcpy(llvm::Value *dst, llvm::Value *src,
 {
     Assert(dst != nullptr, "dst must not be null");
     Assert(src != nullptr, "src must not be null");
-    Assert(count != nullptr, "count must not be null");;
+    Assert(count != nullptr, "count must not be null");
 
     return m_LLVMBuilder.CreateIntrinsic(
         llvm::Intrinsic::memcpy,
