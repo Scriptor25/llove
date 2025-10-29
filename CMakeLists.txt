@@ -128,3 +128,19 @@ set_source_files_properties(
 )
 
 install(TARGETS libllove llove)
+
+if (NOT MSVC)
+    if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+        add_custom_command(TARGET llove POST_BUILD
+                COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:llove> $<TARGET_FILE:llove>.dbg
+                COMMAND ${CMAKE_OBJCOPY} --strip-debug $<TARGET_FILE:llove>
+                COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink=$<TARGET_FILE:llove>.dbg $<TARGET_FILE:llove>
+                COMMENT "Separating debug information from executable"
+        )
+        install(FILES $<TARGET_FILE:llove>.dbg DESTINATION bin)
+    endif ()
+else ()
+    if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+        install(FILES ${CMAKE_BINARY_DIR}/llove.ilk ${CMAKE_BINARY_DIR}/llove.pdb DESTINATION bin)
+    endif ()
+endif ()
