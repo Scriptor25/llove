@@ -3,18 +3,16 @@
 #include <llove/tree.hpp>
 #include <llove/type.hpp>
 
-void llove::Parser::ParseDefinitionTemplate(const bool is_export, Location loc, const bool implicit, std::string name)
+void llove::Parser::ParseDefinitionTemplate(
+    const bool is_export,
+    Location loc,
+    const bool implicit,
+    std::string name)
 {
     std::vector<std::pair<std::string, TemplateType::Ptr>> template_parameters;
     ParseTemplateParameterList(template_parameters);
 
-    auto &definition_template = m_Context.PushDefinitionTemplate(
-        is_export,
-        implicit,
-        std::move(loc),
-        std::move(name),
-        std::move(template_parameters),
-        false);
+    auto& definition_template = m_Context.PushDefinitionTemplate(is_export, implicit, std::move(loc), std::move(name), std::move(template_parameters), false);
 
     ParseParameterList(definition_template.Parameters, definition_template.Variadic);
 

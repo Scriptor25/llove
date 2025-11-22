@@ -1,7 +1,7 @@
-#include <utility>
 #include <llove/builder.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
+#include <utility>
 
 llove::DefinitionGlobal::DefinitionGlobal(
     Location loc,
@@ -10,7 +10,9 @@ llove::DefinitionGlobal::DefinitionGlobal(
     const bool is_implicit,
     std::string name,
     std::vector<Parameter> parameters,
-    std::pair<bool, std::string> variadic,
+    std::pair<
+        bool,
+        std::string> variadic,
     Field result,
     StatementPtr content)
     : Global(std::move(loc)),
@@ -25,7 +27,8 @@ llove::DefinitionGlobal::DefinitionGlobal(
 {
 }
 
-void llove::DefinitionGlobal::Gen(Builder &builder) const try
+void llove::DefinitionGlobal::Gen(Builder& builder) const
+try
 {
     StatementPtr content;
     if (m_Content)
@@ -45,16 +48,21 @@ void llove::DefinitionGlobal::Gen(Builder &builder) const try
         },
         true);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
-    Context &context,
-    Builder &builder,
-    const std::string &as,
-    const std::map<std::string, std::string> &symbols) const
+std::pair<
+    std::string,
+    llove::ValuePtr>
+llove::DefinitionGlobal::GenImport(
+    Context& context,
+    Builder& builder,
+    const std::string& as,
+    const std::map<
+        std::string,
+        std::string>& symbols) const
 {
     if (!m_IsExport)
         return {};
@@ -63,7 +71,7 @@ std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
         return {};
 
     const auto register_function = (as.empty() && symbols.empty())
-                                   || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
+                                || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
 
     const auto function = builder.GenFunction(
         {
@@ -92,14 +100,9 @@ std::pair<std::string, llove::ValuePtr> llove::DefinitionGlobal::GenImport(
     return { m_Name, std::move(value) };
 }
 
-std::ostream &llove::DefinitionGlobal::Print(std::ostream &stream) const
+std::ostream& llove::DefinitionGlobal::Print(std::ostream& stream) const
 {
-    stream
-            << (m_IsExport ? "export " : "")
-            << (m_IsInterface ? "interface " : "define ")
-            << (m_IsImplicit ? "implicit " : "")
-            << m_Name
-            << '(';
+    stream << (m_IsExport ? "export " : "") << (m_IsInterface ? "interface " : "define ") << (m_IsImplicit ? "implicit " : "") << m_Name << '(';
 
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)
     {

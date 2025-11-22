@@ -34,16 +34,31 @@ namespace llove
     using StatementPtr = std::unique_ptr<Statement>;
     using ExpressionPtr = std::unique_ptr<Expression>;
 
-    std::ostream &operator<<(std::ostream &stream, const Field &field);
-    std::ostream &operator<<(std::ostream &stream, const Parameter &parameter);
+    std::ostream& operator<<(
+        std::ostream& stream,
+        const Field& field);
+    std::ostream& operator<<(
+        std::ostream& stream,
+        const Parameter& parameter);
 
-    template<typename T> requires std::is_base_of_v<Type, T>
-    std::ostream &operator<<(std::ostream &stream, std::shared_ptr<T> ptr)
+    template<typename T>
+    requires std::is_base_of_v<
+        Type,
+        T>
+    std::ostream& operator<<(
+        std::ostream& stream,
+        std::shared_ptr<T> ptr)
     {
         return ptr->Print(stream);
     }
 
-    std::ostream &operator<<(std::ostream &stream, const GlobalPtr &ptr);
-    std::ostream &operator<<(std::ostream &stream, const StatementPtr &ptr);
-    std::ostream &operator<<(std::ostream &stream, const ExpressionPtr &ptr);
+    std::ostream& operator<<(
+        std::ostream& stream,
+        const GlobalPtr& ptr);
+    std::ostream& operator<<(
+        std::ostream& stream,
+        const StatementPtr& ptr);
+    std::ostream& operator<<(
+        std::ostream& stream,
+        const ExpressionPtr& ptr);
 }

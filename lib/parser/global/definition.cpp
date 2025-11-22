@@ -41,14 +41,5 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool is_export)
     if (!SkipIf(TokenType_Other, ";"))
         content = ParseScopeStatement();
 
-    return std::make_unique<DefinitionGlobal>(
-        std::move(loc),
-        is_export,
-        interface,
-        implicit,
-        std::move(name),
-        std::move(parameters),
-        variadic,
-        std::move(result),
-        std::move(content));
+    return std::make_unique<DefinitionGlobal>(std::move(loc), is_export, interface, implicit, std::move(name), std::move(parameters), variadic, std::move(result), std::move(content));
 }

@@ -1,6 +1,7 @@
-/.idea
-/.vscode
-/build*
+.idea/
+.vscode/
+build*/
+.cache/
 
 *.o
 *.a

@@ -17,7 +17,8 @@ llove::ForStatement::ForStatement(
 {
 }
 
-void llove::ForStatement::Gen(Builder &builder) const try
+void llove::ForStatement::Gen(Builder& builder) const
+try
 {
     const auto parent = builder.GetParent();
     const auto head_block = builder.CreateBlock("head", parent);
@@ -39,7 +40,10 @@ void llove::ForStatement::Gen(Builder &builder) const try
     if (m_Condition)
     {
         auto condition = m_Condition->GenVal(builder, builder.GetContext().GetBoolean());
-        condition = builder.CreateCast(std::move(condition), builder.GetContext().GetBoolean(), false);
+        condition = builder.CreateCast(
+            std::move(condition),
+            builder.GetContext().GetBoolean(),
+            false);
 
         builder.EmitLoc(m_Loc);
         builder.CreateBranch(condition->Load(builder), loop_block, tail_block);
@@ -77,12 +81,13 @@ void llove::ForStatement::Gen(Builder &builder) const try
 
     builder.PopFrame();
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ForStatement::Reflect(Context &context) const try
+llove::StatementPtr llove::ForStatement::Reflect(Context& context) const
+try
 {
     StatementPtr prefix, suffix, content;
     ExpressionPtr condition;
@@ -96,19 +101,14 @@ llove::StatementPtr llove::ForStatement::Reflect(Context &context) const try
     if (m_Content)
         m_Content->Reflect(context, content);
 
-    return std::make_unique<ForStatement>(
-        m_Loc,
-        std::move(prefix),
-        std::move(suffix),
-        std::move(condition),
-        std::move(content));
+    return std::make_unique<ForStatement>(m_Loc, std::move(prefix), std::move(suffix), std::move(condition), std::move(content));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::ForStatement::Print(std::ostream &stream) const
+std::ostream& llove::ForStatement::Print(std::ostream& stream) const
 {
     stream << "for (";
     if (m_Prefix)

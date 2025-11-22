@@ -5,7 +5,7 @@ llove::Statement::Statement(Location loc)
 {
 }
 
-const llove::Location &llove::Statement::Loc() const
+const llove::Location& llove::Statement::Loc() const
 {
     return m_Loc;
 }

@@ -2,7 +2,9 @@
 #include <llove/context.hpp>
 #include <llove/type.hpp>
 
-llove::ArrayType::ArrayType(TypePtr base, const unsigned count)
+llove::ArrayType::ArrayType(
+    TypePtr base,
+    const unsigned count)
     : m_Base(std::move(base)),
       m_Count(count)
 {
@@ -29,7 +31,7 @@ bool llove::ArrayType::IsArray() const
     return true;
 }
 
-llvm::ArrayType *llove::ArrayType::GenIR(Builder &builder)
+llvm::ArrayType* llove::ArrayType::GenIR(Builder& builder)
 {
     if (!m_IRType)
         m_IRType = builder.GetArrayType(m_Base->GenIR(builder), m_Count);
@@ -37,7 +39,7 @@ llvm::ArrayType *llove::ArrayType::GenIR(Builder &builder)
     return llvm::dyn_cast<llvm::ArrayType>(m_IRType);
 }
 
-llvm::DIType *llove::ArrayType::GenDI(Builder &builder)
+llvm::DIType* llove::ArrayType::GenDI(Builder& builder)
 {
     if (!m_DIType)
         m_DIType = builder.GetDebug().GetArrayType(m_Base->GenDI(builder), m_Count);
@@ -45,12 +47,14 @@ llvm::DIType *llove::ArrayType::GenDI(Builder &builder)
     return m_DIType;
 }
 
-llove::TypePtr llove::ArrayType::Reflect(Context &context) const
+llove::TypePtr llove::ArrayType::Reflect(Context& context) const
 {
     return context.GetArray(m_Base->Reflect(context), m_Count);
 }
 
-bool llove::ArrayType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+bool llove::ArrayType::TypeInfo(
+    Builder& builder,
+    std::vector<llvm::Constant*>& dst) const
 {
     dst.emplace_back(builder.GetI32(ID));
     dst.emplace_back(builder.GetI32(m_Count));
@@ -62,7 +66,7 @@ std::string llove::ArrayType::Mangle() const
     return 'a' + std::to_string(m_Count) + '_' + m_Base->Mangle();
 }
 
-std::ostream &llove::ArrayType::Print(std::ostream &stream) const
+std::ostream& llove::ArrayType::Print(std::ostream& stream) const
 {
     return stream << m_Base << '[' << m_Count << ']';
 }

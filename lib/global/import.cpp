@@ -8,9 +8,11 @@
 llove::ImportGlobal::ImportGlobal(
     Location loc,
     std::string as,
-    std::map<std::string, std::string> symbols,
+    std::map<
+        std::string,
+        std::string> symbols,
     std::filesystem::path filepath,
-    const std::set<std::filesystem::path> &includes)
+    const std::set<std::filesystem::path>& includes)
     : Global(std::move(loc)),
       m_As(std::move(as)),
       m_Symbols(std::move(symbols)),
@@ -19,7 +21,8 @@ llove::ImportGlobal::ImportGlobal(
 {
 }
 
-void llove::ImportGlobal::Gen(Builder &builder) const try
+void llove::ImportGlobal::Gen(Builder& builder) const
+try
 {
     std::ifstream stream(m_Filepath);
     Assert(stream.is_open(), "failed to open import file '{}'", m_Filepath.string());
@@ -39,31 +42,37 @@ void llove::ImportGlobal::Gen(Builder &builder) const try
         return;
 
     std::vector<Parameter> fields;
-    for (auto &[name, value] : values)
+    for (auto& [name, value] : values)
         fields.emplace_back(value->AsField(), name);
     auto type = builder.GetContext().GetStruct(std::move(fields));
 
-    llvm::Value *aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
+    llvm::Value* aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
 
     for (unsigned i = 0; i < values.size(); ++i)
     {
-        auto &[name, value] = values.at(i);
+        auto& [name, value] = values.at(i);
         aggregate = builder.CreateInsertValue(aggregate, value->Load(builder), i);
     }
 
     auto value = Value::CreateR(type, aggregate);
     builder.SetValue(m_As, std::move(value));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
-    Context &parent,
-    Builder &builder,
-    const std::string &as,
-    const std::map<std::string, std::string> &symbols) const try
+std::pair<
+    std::string,
+    llove::ValuePtr>
+llove::ImportGlobal::GenImport(
+    Context& parent,
+    Builder& builder,
+    const std::string& as,
+    const std::map<
+        std::string,
+        std::string>& symbols) const
+try
 {
     // TODO: check recursion
 
@@ -81,15 +90,16 @@ std::pair<std::string, llove::ValuePtr> llove::ImportGlobal::GenImport(
 
     return {};
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::ImportGlobal::Print(std::ostream &stream) const
+std::ostream& llove::ImportGlobal::Print(std::ostream& stream) const
 {
     if (m_Symbols.empty())
-        return stream << "import " << (m_As.empty() ? "*" : m_As) << " from \"" << m_Filepath.string() << "\";";
+        return stream << "import " << (m_As.empty() ? "*" : m_As) << " from \""
+                      << m_Filepath.string() << "\";";
 
     stream << "import { ";
     for (auto i = m_Symbols.begin(); i != m_Symbols.end(); ++i)

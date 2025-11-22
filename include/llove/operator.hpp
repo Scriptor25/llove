@@ -1,9 +1,10 @@
 #pragma once
 
 #include <functional>
-#include <map>
 #include <llove/forward.hpp>
+#include <llove/function.hpp>
 #include <llove/type.hpp>
+#include <map>
 
 namespace llove
 {
@@ -23,8 +24,10 @@ namespace llove
         using Ptr = std::unique_ptr<Operator>;
 
         virtual ~Operator() = default;
-        virtual ValuePtr operator()(Builder &builder, ValuePtr operand) const = 0;
-        virtual std::ostream &Print(std::ostream &stream) const = 0;
+        virtual ValuePtr operator()(
+            Builder& builder,
+            ValuePtr operand) const = 0;
+        virtual std::ostream& Print(std::ostream& stream) const = 0;
     };
 
     template<>
@@ -34,20 +37,27 @@ namespace llove
         using Ptr = std::unique_ptr<Operator>;
 
         virtual ~Operator() = default;
-        virtual ValuePtr operator()(Builder &builder, ValuePtr left, ValuePtr right) const = 0;
-        virtual std::ostream &Print(std::ostream &stream) const = 0;
+        virtual ValuePtr operator()(
+            Builder& builder,
+            ValuePtr left,
+            ValuePtr right) const = 0;
+        virtual std::ostream& Print(std::ostream& stream) const = 0;
     };
 
     template<>
     class BIOperator<1> final : public Operator<1>
     {
     public:
-        using CalleeType = std::function<ValuePtr(Builder &builder, ValuePtr operand, bool suffix)>;
+        using CalleeType = std::function<ValuePtr(Builder& builder, ValuePtr operand, bool suffix)>;
 
-        explicit BIOperator(CalleeType callee, bool suffix);
+        explicit BIOperator(
+            CalleeType callee,
+            bool suffix);
 
-        ValuePtr operator()(Builder &builder, ValuePtr operand) const override;
-        std::ostream &Print(std::ostream &stream) const override;
+        ValuePtr operator()(
+            Builder& builder,
+            ValuePtr operand) const override;
+        std::ostream& Print(std::ostream& stream) const override;
 
     private:
         CalleeType m_Callee;
@@ -58,12 +68,15 @@ namespace llove
     class BIOperator<2> final : public Operator<2>
     {
     public:
-        using CalleeType = std::function<ValuePtr(Builder &builder, ValuePtr left, ValuePtr right)>;
+        using CalleeType = std::function<ValuePtr(Builder& builder, ValuePtr left, ValuePtr right)>;
 
         explicit BIOperator(CalleeType callee);
 
-        ValuePtr operator()(Builder &builder, ValuePtr left, ValuePtr right) const override;
-        std::ostream &Print(std::ostream &stream) const override;
+        ValuePtr operator()(
+            Builder& builder,
+            ValuePtr left,
+            ValuePtr right) const override;
+        std::ostream& Print(std::ostream& stream) const override;
 
     private:
         CalleeType m_Callee;
@@ -75,8 +88,10 @@ namespace llove
     public:
         explicit UDOperator(FunctionReference reference);
 
-        ValuePtr operator()(Builder &builder, ValuePtr operand) const override;
-        std::ostream &Print(std::ostream &stream) const override;
+        ValuePtr operator()(
+            Builder& builder,
+            ValuePtr operand) const override;
+        std::ostream& Print(std::ostream& stream) const override;
 
     private:
         FunctionReference m_Reference;
@@ -88,8 +103,11 @@ namespace llove
     public:
         explicit UDOperator(FunctionReference reference);
 
-        ValuePtr operator()(Builder &builder, ValuePtr left, ValuePtr right) const override;
-        std::ostream &Print(std::ostream &stream) const override;
+        ValuePtr operator()(
+            Builder& builder,
+            ValuePtr left,
+            ValuePtr right) const override;
+        std::ostream& Print(std::ostream& stream) const override;
 
     private:
         FunctionReference m_Reference;
@@ -99,11 +117,14 @@ namespace llove
     extern const std::map<std::string_view, BIOperator<2>::CalleeType> BIBiOperatorCallees;
 }
 
-template<typename T> requires std::is_base_of_v<llove::Operator<1>, T>
+template<typename T>
+requires std::is_base_of_v<llove::Operator<1>, T>
 struct std::formatter<std::unique_ptr<T>> : std::formatter<std::string_view>
 {
     template<typename FormatContext>
-    auto format(const std::unique_ptr<T> &operator_, FormatContext &ctx) const
+    auto format(
+        const std::unique_ptr<T>& operator_,
+        FormatContext& ctx) const
     {
         std::stringstream stream;
         operator_->Print(stream);
@@ -111,11 +132,14 @@ struct std::formatter<std::unique_ptr<T>> : std::formatter<std::string_view>
     }
 };
 
-template<typename T> requires std::is_base_of_v<llove::Operator<2>, T>
+template<typename T>
+requires std::is_base_of_v<llove::Operator<2>, T>
 struct std::formatter<std::unique_ptr<T>> : std::formatter<std::string_view>
 {
     template<typename FormatContext>
-    auto format(const std::unique_ptr<T> &operator_, FormatContext &ctx) const
+    auto format(
+        const std::unique_ptr<T>& operator_,
+        FormatContext& ctx) const
     {
         std::stringstream stream;
         operator_->Print(stream);

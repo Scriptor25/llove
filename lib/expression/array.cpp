@@ -4,20 +4,24 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::ArrayExpression::ArrayExpression(Location loc, std::vector<ExpressionPtr> values, ArrayType::Ptr type)
+llove::ArrayExpression::ArrayExpression(
+    Location loc,
+    std::vector<ExpressionPtr> values,
+    ArrayType::Ptr type)
     : Expression(std::move(loc)),
       m_Values(std::move(values)),
       m_Type(std::move(type))
 {
 }
 
-llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, TypePtr expect) const try
+llove::ValuePtr llove::ArrayExpression::GenVal(
+    Builder& builder,
+    TypePtr expect) const
+try
 {
-    auto type = m_Type
-                    ? As<ArrayType>(m_Type)
-                    : expect && expect->IsArray()
-                    ? As<ArrayType>(std::move(expect))
-                    : nullptr;
+    auto type = m_Type                      ? As<ArrayType>(m_Type)
+              : expect && expect->IsArray() ? As<ArrayType>(std::move(expect))
+                                            : nullptr;
     Assert(type != nullptr, "untyped array expression");
 
     const auto base = type->GetBase();
@@ -25,7 +29,7 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, TypePtr expect)
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value *aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
+    llvm::Value* aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
 
     for (unsigned index = 0; index < m_Values.size(); ++index)
     {
@@ -37,15 +41,16 @@ llove::ValuePtr llove::ArrayExpression::GenVal(Builder &builder, TypePtr expect)
 
     return Value::CreateR(std::move(type), aggregate);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ArrayExpression::Reflect(Context &context) const try
+llove::StatementPtr llove::ArrayExpression::Reflect(Context& context) const
+try
 {
     std::vector<ExpressionPtr> values;
-    for (auto &value : m_Values)
+    for (auto& value : m_Values)
         value->Reflect(context, values.emplace_back());
 
     ArrayType::Ptr type;
@@ -53,12 +58,12 @@ llove::StatementPtr llove::ArrayExpression::Reflect(Context &context) const try
 
     return std::make_unique<ArrayExpression>(m_Loc, std::move(values), std::move(type));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::ArrayExpression::Print(std::ostream &stream) const
+std::ostream& llove::ArrayExpression::Print(std::ostream& stream) const
 {
     stream << "[ ";
     for (auto i = m_Values.begin(); i != m_Values.end(); ++i)

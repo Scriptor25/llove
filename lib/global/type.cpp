@@ -2,7 +2,11 @@
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
 
-llove::TypeGlobal::TypeGlobal(Location loc, const bool export_, std::string name, TypePtr type)
+llove::TypeGlobal::TypeGlobal(
+    Location loc,
+    const bool export_,
+    std::string name,
+    TypePtr type)
     : Global(std::move(loc)),
       m_Export(export_),
       m_Name(std::move(name)),
@@ -10,16 +14,21 @@ llove::TypeGlobal::TypeGlobal(Location loc, const bool export_, std::string name
 {
 }
 
-void llove::TypeGlobal::Gen(Builder &builder) const
+void llove::TypeGlobal::Gen(Builder& builder) const
 {
     builder.GetContext().SetNamed(m_Name, m_Type);
 }
 
-std::pair<std::string, llove::ValuePtr> llove::TypeGlobal::GenImport(
-    Context &context,
-    Builder &builder,
-    const std::string &as,
-    const std::map<std::string, std::string> &symbols) const
+std::pair<
+    std::string,
+    llove::ValuePtr>
+llove::TypeGlobal::GenImport(
+    Context& context,
+    Builder& builder,
+    const std::string& as,
+    const std::map<
+        std::string,
+        std::string>& symbols) const
 {
     context.SetNamed(m_Name, m_Type);
 
@@ -32,7 +41,7 @@ std::pair<std::string, llove::ValuePtr> llove::TypeGlobal::GenImport(
     return {};
 }
 
-std::ostream &llove::TypeGlobal::Print(std::ostream &stream) const
+std::ostream& llove::TypeGlobal::Print(std::ostream& stream) const
 {
     return stream << (m_Export ? "export " : "") << "type " << m_Name << " = " << m_Type << ';';
 }

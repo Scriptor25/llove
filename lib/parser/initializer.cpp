@@ -1,7 +1,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-void llove::Parser::ParseInitializer(Initializer &initializer)
+void llove::Parser::ParseInitializer(Initializer& initializer)
 {
     auto token = Expect(TokenType_Symbol);
     initializer.Name = std::move(token.Value);
@@ -24,5 +24,7 @@ void llove::Parser::ParseInitializer(Initializer &initializer)
         return;
     }
 
-    initializer.Value = std::make_unique<SymbolExpression>(std::move(token.Loc), initializer.Name);
+    initializer.Value = std::make_unique<SymbolExpression>(
+        std::move(token.Loc),
+        initializer.Name);
 }

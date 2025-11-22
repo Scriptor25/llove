@@ -1,7 +1,9 @@
 #include <llove/builder.hpp>
 #include <llove/value.hpp>
 
-llove::ValuePtr llove::Builder::GetPointerElement(const ValuePtr &pointer, const ValuePtr &index)
+llove::ValuePtr llove::Builder::GetPointerElement(
+    const ValuePtr& pointer,
+    const ValuePtr& index)
 {
     Assert(pointer != nullptr, "pointer must not be null");
     Assert(index != nullptr, "index must not be null");
@@ -21,7 +23,9 @@ llove::ValuePtr llove::Builder::GetPointerElement(const ValuePtr &pointer, const
     return Value::CreateL(base_type, value, type->IsMutable());
 }
 
-llove::ValuePtr llove::Builder::GetArrayElement(const ValuePtr &array, const ValuePtr &index)
+llove::ValuePtr llove::Builder::GetArrayElement(
+    const ValuePtr& array,
+    const ValuePtr& index)
 {
     Assert(array != nullptr, "array must not be null");
     Assert(index != nullptr, "index must not be null");
@@ -49,7 +53,9 @@ llove::ValuePtr llove::Builder::GetArrayElement(const ValuePtr &array, const Val
 
     if (const auto const_index_value = llvm::dyn_cast<llvm::ConstantInt>(index->Load(*this)))
     {
-        const auto element = m_LLVMBuilder.CreateExtractValue(array->Load(*this), const_index_value->getLimitedValue());
+        const auto element = m_LLVMBuilder.CreateExtractValue(
+            array->Load(*this),
+            const_index_value->getLimitedValue());
         return Value::CreateR(base_type, element);
     }
 

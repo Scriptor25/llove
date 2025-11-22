@@ -1,7 +1,8 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseGlobal() try
+llove::GlobalPtr llove::Parser::ParseGlobal()
+try
 {
     if (At(TokenType_Symbol, "import"))
         return ParseImportGlobal();
@@ -20,7 +21,7 @@ llove::GlobalPtr llove::Parser::ParseGlobal() try
 
     Error("unable to parse global from {} : '{}'", m_Token.Type, m_Token.Value);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Token.Loc, std::nullopt);
 }

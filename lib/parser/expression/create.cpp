@@ -27,9 +27,5 @@ llove::ExpressionPtr llove::Parser::ParseCreateExpression()
         Expect(TokenType_Other, ")");
     }
 
-    return std::make_unique<CreateExpression>(
-        std::move(token.Loc),
-        std::move(type),
-        std::move(destination),
-        std::move(arguments));
+    return std::make_unique<CreateExpression>(std::move(token.Loc), std::move(type), std::move(destination), std::move(arguments));
 }

@@ -13,8 +13,8 @@ llove::ExpressionPtr llove::Parser::ParseStructExpression()
         Assert(!values.contains(name), "struct expression already has field '{}'", name);
 
         values[name] = SkipIf(TokenType_Operator, ":")
-                           ? ParseExpression()
-                           : std::make_unique<SymbolExpression>(std::move(token.Loc), name);
+                         ? ParseExpression()
+                         : std::make_unique<SymbolExpression>(std::move(token.Loc), name);
 
         if (!At(TokenType_Other, "}"))
             Expect(TokenType_Other, ",");

@@ -1,59 +1,60 @@
-#include <map>
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
+#include <map>
 
 llove::ExpressionPtr llove::Parser::ParseBinaryExpression()
 {
     return ParseBinaryExpression(ParseOperandExpression(), 0);
 }
 
-llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, const unsigned min_precedence)
+llove::ExpressionPtr llove::Parser::ParseBinaryExpression(
+    ExpressionPtr left,
+    const unsigned min_precedence)
 {
-    static const std::map<std::string_view, unsigned> map
-    {
-        { "=", 0 },
-        { "+=", 0 },
-        { "-=", 0 },
-        { "*=", 0 },
-        { "/=", 0 },
-        { "%=", 0 },
-        { "&=", 0 },
-        { "^=", 0 },
-        { "|=", 0 },
-        { "&&=", 0 },
-        { "||=", 0 },
-        { "<<=", 0 },
-        { ">>=", 0 },
+    static const std::map<std::string_view, unsigned> map{
+        {   "=",  0 },
+        {  "+=",  0 },
+        {  "-=",  0 },
+        {  "*=",  0 },
+        {  "/=",  0 },
+        {  "%=",  0 },
+        {  "&=",  0 },
+        {  "^=",  0 },
+        {  "|=",  0 },
+        { "&&=",  0 },
+        { "||=",  0 },
+        { "<<=",  0 },
+        { ">>=",  0 },
 
-        { "?", 1 },
+        {   "?",  1 },
 
-        { "||", 2 },
+        {  "||",  2 },
 
-        { "&&", 3 },
+        {  "&&",  3 },
 
-        { "|", 4 },
+        {   "|",  4 },
 
-        { "^", 5 },
+        {   "^",  5 },
 
-        { "&", 6 },
+        {   "&",  6 },
 
-        { "==", 7 },
-        { "!=", 7 },
+        {  "==",  7 },
+        {  "!=",  7 },
 
-        { "<", 8 },
-        { "<=", 8 },
-        { ">", 8 },
-        { ">=", 8 },
+        {   "<",  8 },
+        {  "<=",  8 },
+        {   ">",  8 },
+        {  ">=",  8 },
 
-        { "<<", 9 },
-        { ">>", 9 },
+        {  "<<",  9 },
+        {  ">>",  9 },
 
-        { "+", 10 },
-        { "-", 10 },
+        {   "+", 10 },
+        {   "-", 10 },
 
-        { "*", 11 },
-        { "/", 11 },
-        { "%", 11 },
+        {   "*", 11 },
+        {   "/", 11 },
+        {   "%", 11 },
     };
 
     auto has_precedence = [this]() -> bool
@@ -72,22 +73,14 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, co
         auto token = Skip();
 
         auto right = ParseOperandExpression();
-        while (has_precedence()
-               && (get_precedence() > operator_precedence
-                   || (!get_precedence() && get_precedence() >= operator_precedence)))
-            right = ParseBinaryExpression(
-                std::move(right),
-                operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));
+        while (has_precedence() && (get_precedence() > operator_precedence || (!get_precedence() && get_precedence() >= operator_precedence)))
+            right = ParseBinaryExpression(std::move(right), operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));
 
         if (token.Value == "?")
         {
             Expect(TokenType_Operator, ":");
             auto default_ = ParseBinaryExpression();
-            left = std::make_unique<TernaryExpression>(
-                std::move(token.Loc),
-                std::move(left),
-                std::move(right),
-                std::move(default_));
+            left = std::make_unique<TernaryExpression>(std::move(token.Loc), std::move(left), std::move(right), std::move(default_));
             continue;
         }
 

@@ -9,8 +9,8 @@
 
 void llove::Builder::Seal(
     bool print,
-    std::ostream &print_stream,
-    std::ostream &output_stream,
+    std::ostream& print_stream,
+    std::ostream& output_stream,
     llvm::CodeGenFileType code_gen_type,
     llvm::OptimizationLevel optimization_level)
 {
@@ -45,15 +45,13 @@ void llove::Builder::Seal(
     mpm.run(m_LLVMModule, mam);
 
     if (print)
+    {
         m_LLVMModule.print(raw_print_stream, nullptr);
+    }
 
     // TODO: pls tell llvm devs to update their codegen system!!!
     llvm::legacy::PassManager codegen_pass;
-    const auto emit_error = m_TargetMachine->addPassesToEmitFile(
-        codegen_pass,
-        raw_output_stream,
-        nullptr,
-        code_gen_type);
+    const auto emit_error = m_TargetMachine->addPassesToEmitFile(codegen_pass, raw_output_stream, nullptr, code_gen_type);
     Assert(!emit_error, "target machine cannot emit specified codegen type");
 
     codegen_pass.run(m_LLVMModule);

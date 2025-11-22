@@ -47,11 +47,18 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Symbol, "false", "true"))
     {
         auto token = Skip();
-        return std::make_unique<IntegerExpression>(std::move(token.Loc), token.Value == "true", m_Context.GetBoolean());
+        return std::make_unique<IntegerExpression>(
+            std::move(token.Loc),
+            token.Value == "true",
+            m_Context.GetBoolean());
     }
 
     if (At(TokenType_Symbol))
         return ParseSymbolExpression();
 
-    Error(m_Token.Loc, "unable to parse expression from {} : '{}'", m_Token.Type, m_Token.Value);
+    Error(
+        m_Token.Loc,
+        "unable to parse expression from {} : '{}'",
+        m_Token.Type,
+        m_Token.Value);
 }

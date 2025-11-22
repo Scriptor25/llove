@@ -5,7 +5,7 @@ llove::Global::Global(Location loc)
 {
 }
 
-const llove::Location &llove::Global::Loc() const
+const llove::Location& llove::Global::Loc() const
 {
     return m_Loc;
 }

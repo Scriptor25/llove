@@ -3,7 +3,11 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::MemberExpression::MemberExpression(Location loc, ExpressionPtr value, std::string member, const bool dereference)
+llove::MemberExpression::MemberExpression(
+    Location loc,
+    ExpressionPtr value,
+    std::string member,
+    const bool dereference)
     : Expression(std::move(loc)),
       m_Value(std::move(value)),
       m_Member(std::move(member)),
@@ -11,7 +15,10 @@ llove::MemberExpression::MemberExpression(Location loc, ExpressionPtr value, std
 {
 }
 
-llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect) const try
+llove::ValuePtr llove::MemberExpression::GenVal(
+    Builder& builder,
+    TypePtr expect) const
+try
 {
     auto value = m_Value->GenVal(builder, nullptr);
 
@@ -45,11 +52,7 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
         if (!class_type->HasMember(m_Member))
             break;
 
-        Assert(
-            class_type == builder.GetClass(),
-            "field '{}' in type '{}' is not accessible from current context",
-            m_Member,
-            class_type);
+        Assert(class_type == builder.GetClass(), "field '{}' in type '{}' is not accessible from current context", m_Member, class_type);
 
         index = class_type->GetMemberIndex(m_Member);
         element = class_type->GetMember(index);
@@ -73,7 +76,10 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
             return Value::CreateL(element->GetType(), pointer, element->IsMutable());
         }
 
-        return Value::CreateL(element->GetType(), pointer, value->IsMutable() && element->IsMutable());
+        return Value::CreateL(
+            element->GetType(),
+            pointer,
+            value->IsMutable() && element->IsMutable());
     }
 
     const auto element_value = builder.CreateExtractValue(value->Load(builder), index);
@@ -83,12 +89,13 @@ llove::ValuePtr llove::MemberExpression::GenVal(Builder &builder, TypePtr expect
 
     return Value::CreateR(element->GetType(), element_value);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
+llove::CalleeInfo llove::MemberExpression::GenCallee(Builder& builder) const
+try
 {
     auto value = m_Value->GenVal(builder, nullptr);
 
@@ -101,7 +108,8 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
 
     auto type = value->GetType();
 
-    if (auto candidates = builder.GetFunctions(m_Member, value->AsField()); !candidates.empty())
+    if (auto candidates = builder.GetFunctions(m_Member, value->AsField());
+        !candidates.empty())
         return { .Candidates = std::move(candidates), .Self = std::move(value) };
 
     auto index = ~0u;
@@ -125,11 +133,7 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
         if (!class_type->HasMember(m_Member))
             break;
 
-        Assert(
-            class_type == builder.GetClass(),
-            "field '{}' in type '{}' is not accessible from current context",
-            m_Member,
-            class_type);
+        Assert(class_type == builder.GetClass(), "field '{}' in type '{}' is not accessible from current context", m_Member, class_type);
 
         index = class_type->GetMemberIndex(m_Member);
         element = class_type->GetMember(index);
@@ -147,12 +151,9 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
         value->AsField());
 
     const auto element_type = element->GetType();
-    Assert(
-        element_type->IsFunction(),
-        "illegal callee member field '{}' in type '{}', type '{}' is not a function type",
-        element_type);
+    Assert(element_type->IsFunction(), "illegal callee member field '{}' in type '{}', type '{}' is not a function type", element_type);
 
-    llvm::Value *element_value;
+    llvm::Value* element_value;
     if (value->IsReference())
     {
         auto pointer = builder.CreateStructGEP(type->GenIR(builder), value->GetPointer(), index);
@@ -170,8 +171,7 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
             element_value = builder.CreateLoad(element_type->GenIR(builder), element_value);
     }
 
-    FunctionReference reference
-    {
+    FunctionReference reference{
         .IsExposed = true,
         .IsImplicit = false,
         .Name = m_Member,
@@ -181,12 +181,13 @@ llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
 
     return { .Candidates = { std::move(reference) } };
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::MemberExpression::Reflect(Context &context) const try
+llove::StatementPtr llove::MemberExpression::Reflect(Context& context) const
+try
 {
     ExpressionPtr value;
     if (m_Value)
@@ -194,12 +195,12 @@ llove::StatementPtr llove::MemberExpression::Reflect(Context &context) const try
 
     return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member, m_Dereference);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::MemberExpression::Print(std::ostream &stream) const
+std::ostream& llove::MemberExpression::Print(std::ostream& stream) const
 {
     return stream << m_Value << (m_Dereference ? "::" : ".") << m_Member;
 }

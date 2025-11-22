@@ -1,22 +1,22 @@
-#include <ranges>
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
+#include <ranges>
 
-llove::Context::Context(Context *parent)
+llove::Context::Context(Context* parent)
     : m_Parent(parent)
 {
 }
 
-llove::Context *llove::Context::GetParent() const
+llove::Context* llove::Context::GetParent() const
 {
     return m_Parent;
 }
 
-llove::TypePtr llove::Context::GetNamed(const std::string &id) const
+llove::TypePtr llove::Context::GetNamed(const std::string& id) const
 {
-    for (auto &template_ : std::ranges::reverse_view(m_TemplateTypes))
+    for (auto& template_ : std::ranges::reverse_view(m_TemplateTypes))
         if (template_.contains(id))
             return template_.at(id);
 
@@ -26,12 +26,16 @@ llove::TypePtr llove::Context::GetNamed(const std::string &id) const
     return nullptr;
 }
 
-void llove::Context::SetNamed(const std::string &id, TypePtr type)
+void llove::Context::SetNamed(
+    const std::string& id,
+    TypePtr type)
 {
     m_Named.emplace(id, type);
 }
 
-void llove::Context::Set(std::string hash, TypePtr type)
+void llove::Context::Set(
+    std::string hash,
+    TypePtr type)
 {
     m_Types.emplace(hash, type);
 }
@@ -46,7 +50,9 @@ llove::VariadicType::Ptr llove::Context::GetVariadic()
     return GetOrCreate<VariadicType>();
 }
 
-llove::IntegerType::Ptr llove::Context::GetInteger(bool is_signed, unsigned bits)
+llove::IntegerType::Ptr llove::Context::GetInteger(
+    bool is_signed,
+    unsigned bits)
 {
     return GetOrCreate<IntegerType>(is_signed, bits);
 }
@@ -61,12 +67,16 @@ llove::PointerType::Ptr llove::Context::GetPointer(const bool is_mutable)
     return GetOrCreate<PointerType>(is_mutable);
 }
 
-llove::PointerType::Ptr llove::Context::GetPointer(TypePtr base, bool is_mutable)
+llove::PointerType::Ptr llove::Context::GetPointer(
+    TypePtr base,
+    bool is_mutable)
 {
     return GetOrCreate<PointerType>(std::move(base), is_mutable);
 }
 
-llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, unsigned size)
+llove::ArrayType::Ptr llove::Context::GetArray(
+    TypePtr base,
+    unsigned size)
 {
     return GetOrCreate<ArrayType>(std::move(base), size);
 }
@@ -100,7 +110,9 @@ llove::IntegerType::Ptr llove::Context::GetBoolean()
     return GetOrCreate<IntegerType>(false, 1);
 }
 
-llove::TypePtr llove::Context::TypeUnion(TypePtr left, TypePtr right)
+llove::TypePtr llove::Context::TypeUnion(
+    TypePtr left,
+    TypePtr right)
 {
     if (left == right)
         return left;
@@ -112,13 +124,18 @@ llove::TypePtr llove::Context::TypeUnion(TypePtr left, TypePtr right)
         {
         case TypeId_Integer:
         {
-            const auto sign = As<IntegerType>(left)->IsSigned() || As<IntegerType>(right)->IsSigned();
-            const auto bits = std::max(As<IntegerType>(left)->GetBits(), As<IntegerType>(right)->GetBits());
+            const auto sign = As<IntegerType>(left)->IsSigned()
+                           || As<IntegerType>(right)->IsSigned();
+            const auto bits = std::max(
+                As<IntegerType>(left)->GetBits(),
+                As<IntegerType>(right)->GetBits());
             return GetInteger(sign, bits);
         }
         case TypeId_Float:
         {
-            const auto bits = std::max(As<IntegerType>(left)->GetBits(), As<FloatType>(right)->GetBits());
+            const auto bits = std::max(
+                As<IntegerType>(left)->GetBits(),
+                As<FloatType>(right)->GetBits());
             return GetFloat(bits);
         }
         default:
@@ -131,12 +148,16 @@ llove::TypePtr llove::Context::TypeUnion(TypePtr left, TypePtr right)
         {
         case TypeId_Integer:
         {
-            const auto bits = std::max(As<FloatType>(left)->GetBits(), As<IntegerType>(right)->GetBits());
+            const auto bits = std::max(
+                As<FloatType>(left)->GetBits(),
+                As<IntegerType>(right)->GetBits());
             return GetFloat(bits);
         }
         case TypeId_Float:
         {
-            const auto bits = std::max(As<FloatType>(left)->GetBits(), As<FloatType>(right)->GetBits());
+            const auto bits = std::max(
+                As<FloatType>(left)->GetBits(),
+                As<FloatType>(right)->GetBits());
             return GetFloat(bits);
         }
         default:
@@ -152,16 +173,13 @@ llove::TypePtr llove::Context::TypeUnion(TypePtr left, TypePtr right)
             auto left_pointer = As<PointerType>(left);
             auto right_pointer = As<PointerType>(right);
 
-            if (!left_pointer->IsOpaque()
-                && !right_pointer->IsOpaque()
+            if (!left_pointer->IsOpaque() && !right_pointer->IsOpaque()
                 && left_pointer->GetBase() != right_pointer->GetBase())
                 break;
 
-            const auto base = !left_pointer->IsOpaque()
-                                  ? left_pointer->GetBase()
-                                  : !right_pointer->IsOpaque()
-                                  ? right_pointer->GetBase()
-                                  : nullptr;
+            const auto base = !left_pointer->IsOpaque() ? left_pointer->GetBase()
+                            : !right_pointer->IsOpaque() ? right_pointer->GetBase()
+                                                         : nullptr;
             const auto is_mutable = left_pointer->IsMutable() && right_pointer->IsMutable();
 
             if (base)
@@ -181,22 +199,24 @@ llove::TypePtr llove::Context::TypeUnion(TypePtr left, TypePtr right)
     Error("illegal type unionization of {} and {}", left, right);
 }
 
-llove::ClassTemplate &llove::Context::PushClassTemplate(
+llove::ClassTemplate& llove::Context::PushClassTemplate(
     const bool is_export,
     std::string name,
-    std::vector<std::pair<std::string, TemplateType::Ptr>> type_parameters,
+    std::vector<std::pair<
+        std::string,
+        TemplateType::Ptr>> type_parameters,
     const bool is_imported)
 {
     if (!is_imported)
     {
-        auto &template_frame = m_TemplateTypes.emplace_back();
-        for (auto &[key, type] : type_parameters)
+        auto& template_frame = m_TemplateTypes.emplace_back();
+        for (auto& [key, type] : type_parameters)
             template_frame.emplace(key, type);
     }
 
     if (is_export && m_Parent)
     {
-        auto &ref = m_Parent->PushClassTemplate(false, std::move(name), std::move(type_parameters), true);
+        auto& ref = m_Parent->PushClassTemplate(false, std::move(name), std::move(type_parameters), true);
         ref.IsImported = true;
 
         if (!is_imported)
@@ -205,15 +225,15 @@ llove::ClassTemplate &llove::Context::PushClassTemplate(
         return ref;
     }
 
-    auto &ref = m_ClassTemplates[name];
+    auto& ref = m_ClassTemplates[name];
 
     if (!is_imported)
         m_CurrentClassTemplate = &ref;
 
     return ref = {
-               .Name = std::move(name),
-               .TypeParameters = std::move(type_parameters),
-           };
+        .Name = std::move(name),
+        .TypeParameters = std::move(type_parameters),
+    };
 }
 
 void llove::Context::PopClassTemplate()
@@ -224,64 +244,62 @@ void llove::Context::PopClassTemplate()
     m_TemplateTypes.pop_back();
 }
 
-llove::ClassTemplate &llove::Context::EmplaceClassTemplate(
+llove::ClassTemplate& llove::Context::EmplaceClassTemplate(
     const bool is_export,
     std::string name,
-    std::vector<std::pair<std::string, TemplateType::Ptr>> type_parameters)
+    std::vector<std::pair<
+        std::string,
+        TemplateType::Ptr>> type_parameters)
 {
     if (is_export && m_Parent)
     {
-        auto &ref = m_Parent->EmplaceClassTemplate(false, std::move(name), std::move(type_parameters));
+        auto& ref = m_Parent->EmplaceClassTemplate(false, std::move(name), std::move(type_parameters));
         ref.IsImported = true;
 
         return ref;
     }
 
-    auto &ref = m_ClassTemplates[name];
+    auto& ref = m_ClassTemplates[name];
 
     return ref = {
-               .Name = std::move(name),
-               .TypeParameters = std::move(type_parameters),
-           };
+        .Name = std::move(name),
+        .TypeParameters = std::move(type_parameters),
+    };
 }
 
-llove::DefinitionTemplate &llove::Context::PushDefinitionTemplate(
+llove::DefinitionTemplate& llove::Context::PushDefinitionTemplate(
     const bool is_export,
     const bool is_implicit,
     Location loc,
     std::string name,
-    std::vector<std::pair<std::string, TemplateType::Ptr>> type_parameters,
+    std::vector<std::pair<
+        std::string,
+        TemplateType::Ptr>> type_parameters,
     const bool is_imported)
 {
     if (!is_imported)
     {
-        auto &template_frame = m_TemplateTypes.emplace_back();
-        for (auto &[key, type] : type_parameters)
+        auto& template_frame = m_TemplateTypes.emplace_back();
+        for (auto& [key, type] : type_parameters)
             template_frame.emplace(key, type);
     }
 
     if (is_export && m_Parent)
     {
-        auto &ref = m_Parent->PushDefinitionTemplate(
-            false,
-            is_implicit,
-            std::move(loc),
-            std::move(name),
-            std::move(type_parameters),
-            true);
+        auto& ref = m_Parent->PushDefinitionTemplate(false, is_implicit, std::move(loc), std::move(name), std::move(type_parameters), true);
         ref.IsImported = true;
 
         return ref;
     }
 
-    auto &ref = m_DefinitionTemplates[name];
+    auto& ref = m_DefinitionTemplates[name];
 
     return ref = {
-               .Loc = std::move(loc),
-               .IsImplicit = is_implicit,
-               .Name = std::move(name),
-               .TypeParameters = std::move(type_parameters),
-           };
+        .Loc = std::move(loc),
+        .IsImplicit = is_implicit,
+        .Name = std::move(name),
+        .TypeParameters = std::move(type_parameters),
+    };
 }
 
 void llove::Context::PopDefinitionTemplate()
@@ -299,10 +317,8 @@ llove::TypePtr llove::Context::InstantiateClass(
 
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
-    const auto &class_template = m_ClassTemplates.at(name);
-    Assert(
-        !is_imported || class_template.IsImported,
-        "template is not imported, cannot be accessed from child context");
+    const auto& class_template = m_ClassTemplates.at(name);
+    Assert(!is_imported || class_template.IsImported, "template is not imported, cannot be accessed from child context");
     Assert(class_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
 
     auto template_class = GetOrCreate<TemplateClassType>(name, type_arguments);
@@ -316,7 +332,9 @@ llove::TypePtr llove::Context::InstantiateClass(
     {
         if (i)
             name += ", ";
-        m_TemplateArguments.emplace(class_template.TypeParameters.at(i).first, type_arguments.at(i));
+        m_TemplateArguments.emplace(
+            class_template.TypeParameters.at(i).first,
+            type_arguments.at(i));
         name += type_arguments.at(i)->Mangle();
     }
     name += '>';
@@ -328,23 +346,23 @@ llove::TypePtr llove::Context::InstantiateClass(
     template_class->Instantiate();
 
     std::vector<ClassMember> reflection_members;
-    for (auto &member : class_template.Members)
+    for (auto& member : class_template.Members)
         member.Reflect(*this, reflection_members.emplace_back());
 
     std::vector<ClassFunction> reflection_functions;
-    for (auto &function : class_template.Functions)
+    for (auto& function : class_template.Functions)
         function.Reflect(*this, reflection_functions.emplace_back());
 
     std::vector<ClassMemberReference> members;
-    for (auto &member : reflection_members)
+    for (auto& member : reflection_members)
         members.emplace_back(member.Info, member.Name);
     class_type->SetMembers(std::move(members));
 
     std::vector<ClassFunctionReference> functions;
-    for (const auto &function : reflection_functions)
+    for (const auto& function : reflection_functions)
     {
         std::vector<Field> parameters;
-        for (auto &parameter : function.Parameters)
+        for (auto& parameter : function.Parameters)
             parameters.emplace_back(parameter.Info);
         functions.emplace_back(
             ClassFunctionReference{
@@ -367,8 +385,8 @@ llove::TypePtr llove::Context::InstantiateClass(
     return class_type;
 }
 
-llove::FunctionReference &llove::Context::InstantiateDefinition(
-    Builder &builder,
+llove::FunctionReference& llove::Context::InstantiateDefinition(
+    Builder& builder,
     std::string name,
     std::vector<TypePtr> type_arguments,
     const bool is_imported)
@@ -378,10 +396,8 @@ llove::FunctionReference &llove::Context::InstantiateDefinition(
 
     Assert(m_DefinitionTemplates.contains(name), "undefined definition template '{}'", name);
 
-    const auto &definition_template = m_DefinitionTemplates.at(name);
-    Assert(
-        !is_imported || definition_template.IsImported,
-        "template is not imported, cannot be accessed from child context");
+    const auto& definition_template = m_DefinitionTemplates.at(name);
+    Assert(!is_imported || definition_template.IsImported, "template is not imported, cannot be accessed from child context");
     Assert(definition_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
 
     name = definition_template.Name + '<';
@@ -398,12 +414,14 @@ llove::FunctionReference &llove::Context::InstantiateDefinition(
 
     m_TemplateArguments.clear();
     for (unsigned i = 0; i < type_arguments.size(); ++i)
-        m_TemplateArguments.emplace(definition_template.TypeParameters.at(i).first, type_arguments.at(i));
+        m_TemplateArguments.emplace(
+            definition_template.TypeParameters.at(i).first,
+            type_arguments.at(i));
 
     std::vector<Parameter> parameters;
-    for (auto &parameter : definition_template.Parameters)
+    for (auto& parameter : definition_template.Parameters)
     {
-        auto &reflection = parameters.emplace_back();
+        auto& reflection = parameters.emplace_back();
         reflection.Name = parameter.Name;
         parameter.Info.Reflect(*this, reflection.Info);
     }
@@ -438,11 +456,11 @@ llove::FunctionReference &llove::Context::InstantiateDefinition(
                true);
 }
 
-void llove::Context::InstantiateReflections(Builder &builder)
+void llove::Context::InstantiateReflections(Builder& builder)
 {
-    for (auto &[class_type, functions] : m_ClassReflections)
+    for (auto& [class_type, functions] : m_ClassReflections)
     {
-        for (auto &function : functions)
+        for (auto& function : functions)
             builder.GenFunction(
                 {
                     .Loc = std::move(function.Loc),
@@ -461,14 +479,14 @@ void llove::Context::InstantiateReflections(Builder &builder)
                 });
     }
 
-    for (const auto &function : m_DefinitionReflections)
+    for (const auto& function : m_DefinitionReflections)
         builder.GenFunction(function, true);
 
     m_ClassReflections.clear();
     m_DefinitionReflections.clear();
 }
 
-llove::TypePtr llove::Context::TemplateArgument(const std::string &name) const
+llove::TypePtr llove::Context::TemplateArgument(const std::string& name) const
 {
     Assert(m_TemplateArguments.contains(name), "undefined template argument '{}'", name);
     return m_TemplateArguments.at(name);

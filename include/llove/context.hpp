@@ -1,13 +1,13 @@
 #pragma once
 
-#include <map>
-#include <string>
-#include <vector>
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
 #include <llove/function.hpp>
 #include <llove/template.hpp>
 #include <llove/type.hpp>
+#include <map>
+#include <string>
+#include <vector>
 
 namespace llove
 {
@@ -15,17 +15,26 @@ namespace llove
     {
     public:
         Context() = default;
-        explicit Context(Context *parent);
+        explicit Context(Context* parent);
 
-        [[nodiscard]] Context *GetParent() const;
+        [[nodiscard]] Context* GetParent() const;
 
-        [[nodiscard]] TypePtr GetNamed(const std::string &id) const;
-        void SetNamed(const std::string &id, TypePtr type);
+        [[nodiscard]] TypePtr GetNamed(const std::string& id) const;
+        void SetNamed(
+            const std::string& id,
+            TypePtr type);
 
-        void Set(std::string hash, TypePtr type);
+        void Set(
+            std::string hash,
+            TypePtr type);
 
-        template<typename T, typename... Args> requires std::is_base_of_v<Type, T>
-        std::shared_ptr<T> GetOrCreate(Args &&... args)
+        template<
+            typename T,
+            typename... Args>
+        requires std::is_base_of_v<
+            Type,
+            T>
+        std::shared_ptr<T> GetOrCreate(Args&&... args)
         {
             if (m_Parent)
                 return m_Parent->GetOrCreate<T, Args...>(std::forward<Args>(args)...);
@@ -41,11 +50,17 @@ namespace llove
 
         VoidType::Ptr GetVoid();
         VariadicType::Ptr GetVariadic();
-        IntegerType::Ptr GetInteger(bool is_signed, unsigned bits);
+        IntegerType::Ptr GetInteger(
+            bool is_signed,
+            unsigned bits);
         FloatType::Ptr GetFloat(unsigned bits);
         PointerType::Ptr GetPointer(bool is_mutable);
-        PointerType::Ptr GetPointer(TypePtr base, bool is_mutable);
-        ArrayType::Ptr GetArray(TypePtr base, unsigned size);
+        PointerType::Ptr GetPointer(
+            TypePtr base,
+            bool is_mutable);
+        ArrayType::Ptr GetArray(
+            TypePtr base,
+            unsigned size);
         StructType::Ptr GetStruct(std::vector<Parameter> fields);
         RangeType::Ptr GetRange(TypePtr entry);
         ClassType::Ptr GetClass(std::string name);
@@ -57,42 +72,53 @@ namespace llove
 
         IntegerType::Ptr GetBoolean();
 
-        TypePtr TypeUnion(TypePtr left, TypePtr right);
+        TypePtr TypeUnion(
+            TypePtr left,
+            TypePtr right);
 
-        ClassTemplate &PushClassTemplate(
+        ClassTemplate& PushClassTemplate(
             bool is_export,
             std::string name,
-            std::vector<std::pair<std::string, TemplateType::Ptr>> type_parameters,
+            std::vector<std::pair<
+                std::string,
+                TemplateType::Ptr>> type_parameters,
             bool is_imported);
         void PopClassTemplate();
-        ClassTemplate &EmplaceClassTemplate(
+        ClassTemplate& EmplaceClassTemplate(
             bool is_export,
             std::string name,
-            std::vector<std::pair<std::string, TemplateType::Ptr>> type_parameters);
+            std::vector<std::pair<
+                std::string,
+                TemplateType::Ptr>> type_parameters);
 
-        DefinitionTemplate &PushDefinitionTemplate(
+        DefinitionTemplate& PushDefinitionTemplate(
             bool is_export,
             bool is_implicit,
             Location loc,
             std::string name,
-            std::vector<std::pair<std::string, TemplateType::Ptr>> type_parameters,
+            std::vector<std::pair<
+                std::string,
+                TemplateType::Ptr>> type_parameters,
             bool is_imported);
         void PopDefinitionTemplate();
 
-        TypePtr InstantiateClass(std::string name, std::vector<TypePtr> type_arguments, bool is_imported);
-
-        FunctionReference &InstantiateDefinition(
-            Builder &builder,
+        TypePtr InstantiateClass(
             std::string name,
             std::vector<TypePtr> type_arguments,
             bool is_imported);
 
-        void InstantiateReflections(Builder &builder);
+        FunctionReference& InstantiateDefinition(
+            Builder& builder,
+            std::string name,
+            std::vector<TypePtr> type_arguments,
+            bool is_imported);
 
-        [[nodiscard]] TypePtr TemplateArgument(const std::string &name) const;
+        void InstantiateReflections(Builder& builder);
+
+        [[nodiscard]] TypePtr TemplateArgument(const std::string& name) const;
 
     private:
-        Context *m_Parent = nullptr;
+        Context* m_Parent = nullptr;
 
         std::map<std::string, TypePtr> m_Types;
         std::map<std::string, TypePtr> m_Named;
@@ -100,7 +126,7 @@ namespace llove
         std::vector<std::map<std::string, TemplateType::Ptr>> m_TemplateTypes;
 
         std::map<std::string, ClassTemplate> m_ClassTemplates;
-        ClassTemplate *m_CurrentClassTemplate = nullptr;
+        ClassTemplate* m_CurrentClassTemplate = nullptr;
 
         std::map<std::string, DefinitionTemplate> m_DefinitionTemplates;
         std::map<std::string, FunctionReference> m_DefinitionInstances;

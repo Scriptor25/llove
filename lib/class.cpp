@@ -1,12 +1,14 @@
 #include <llove/class.hpp>
 #include <llove/tree.hpp>
 
-std::ostream &llove::ClassMemberReference::Print(std::ostream &stream) const
+std::ostream& llove::ClassMemberReference::Print(std::ostream& stream) const
 {
     return Info.Print(stream << "let ", true, Name);
 }
 
-void llove::ClassMember::Reflect(Context &context, ClassMember &field) const
+void llove::ClassMember::Reflect(
+    Context& context,
+    ClassMember& field) const
 {
     field.Name = Name;
 
@@ -20,7 +22,7 @@ void llove::ClassMember::Reflect(Context &context, ClassMember &field) const
         Arguments.at(i)->Reflect(context, field.Arguments.at(i));
 }
 
-std::ostream &llove::ClassMember::Print(std::ostream &stream) const
+std::ostream& llove::ClassMember::Print(std::ostream& stream) const
 {
     Info.Print(stream << "let ", true, Name);
     if (Value)
@@ -39,14 +41,9 @@ std::ostream &llove::ClassMember::Print(std::ostream &stream) const
     return stream << ';';
 }
 
-std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
+std::ostream& llove::ClassFunctionReference::Print(std::ostream& stream) const
 {
-    stream
-            << (IsExposed ? "expose " : "")
-            << (IsImplicit ? "implicit " : "")
-            << (IsMutable ? "mut " : "")
-            << Name
-            << '(';
+    stream << (IsExposed ? "expose " : "") << (IsImplicit ? "implicit " : "") << (IsMutable ? "mut " : "") << Name << '(';
     for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
     {
         if (i != Parameters.begin())
@@ -62,7 +59,9 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
     return stream << "): " << Result;
 }
 
-void llove::ClassFunction::Reflect(Context &context, ClassFunction &function) const
+void llove::ClassFunction::Reflect(
+    Context& context,
+    ClassFunction& function) const
 {
     function.Loc = Loc;
     function.IsExposed = IsExposed;
@@ -86,16 +85,9 @@ void llove::ClassFunction::Reflect(Context &context, ClassFunction &function) co
         Content->Reflect(context, function.Content);
 }
 
-std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
+std::ostream& llove::ClassFunction::Print(std::ostream& stream) const
 {
-    stream
-            << (IsExposed ? "expose " : "")
-            << (IsVirtual ? "virtual " : "")
-            << (IsOverride ? "override " : "")
-            << (IsImplicit ? "implicit " : "")
-            << (IsMutable ? "mut " : "")
-            << Name
-            << '(';
+    stream << (IsExposed ? "expose " : "") << (IsVirtual ? "virtual " : "") << (IsOverride ? "override " : "") << (IsImplicit ? "implicit " : "") << (IsMutable ? "mut " : "") << Name << '(';
     for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
     {
         if (i != Parameters.begin())
@@ -116,12 +108,16 @@ std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
     return stream << ' ' << Content;
 }
 
-std::ostream &llove::operator<<(std::ostream &stream, const ClassMember &field)
+std::ostream& llove::operator<<(
+    std::ostream& stream,
+    const ClassMember& field)
 {
     return field.Print(stream);
 }
 
-std::ostream &llove::operator<<(std::ostream &stream, const ClassFunction &function)
+std::ostream& llove::operator<<(
+    std::ostream& stream,
+    const ClassFunction& function)
 {
     return function.Print(stream);
 }

@@ -20,7 +20,8 @@ llove::ForEachStatement::ForEachStatement(
 {
 }
 
-void llove::ForEachStatement::Gen(Builder &builder) const try
+void llove::ForEachStatement::Gen(Builder& builder) const
+try
 {
     const auto parent = builder.GetParent();
     const auto head_block = builder.CreateBlock("head", parent);
@@ -46,7 +47,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         const auto base_type = array_type->GetBase();
         auto iterator_type = builder.GetContext().GetPointer(base_type, range->IsMutable());
 
-        llvm::Value *begin_pointer;
+        llvm::Value* begin_pointer;
         if (range->IsReference())
         {
             begin_pointer = range->GetPointer();
@@ -57,7 +58,10 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             builder.CreateStore(range->Load(builder), begin_pointer);
         }
 
-        auto end_pointer = builder.CreateGEP(base_type->GenIR(builder), begin_pointer, array_type->GetCount());
+        auto end_pointer = builder.CreateGEP(
+            base_type->GenIR(builder),
+            begin_pointer,
+            array_type->GetCount());
 
         begin = Value::CreateR(iterator_type, begin_pointer);
         end = Value::CreateR(iterator_type, end_pointer);
@@ -72,23 +76,35 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         const auto begin_index = struct_type->GetFieldIndex("begin");
         const auto end_index = struct_type->GetFieldIndex("end");
 
-        auto &begin_fld = struct_type->GetField(begin_index);
-        auto &end_fld = struct_type->GetField(end_index);
+        auto& begin_fld = struct_type->GetField(begin_index);
+        auto& end_fld = struct_type->GetField(end_index);
 
         if (range->IsReference())
         {
-            auto begin_pointer = builder.CreateStructGEP(struct_type->GenIR(builder), range->GetPointer(), begin_index);
+            auto begin_pointer = builder.CreateStructGEP(
+                struct_type->GenIR(builder),
+                range->GetPointer(),
+                begin_index);
             if (begin_fld.IsReference())
             {
                 begin_pointer = builder.CreateLoad(builder.GetPointerType(), begin_pointer);
-                begin = Value::CreateL(begin_fld.GetType(), begin_pointer, begin_fld.IsMutable());
+                begin = Value::CreateL(
+                    begin_fld.GetType(),
+                    begin_pointer,
+                    begin_fld.IsMutable());
             }
             else
             {
-                begin = Value::CreateL(begin_fld.GetType(), begin_pointer, range->IsMutable() && begin_fld.IsMutable());
+                begin = Value::CreateL(
+                    begin_fld.GetType(),
+                    begin_pointer,
+                    range->IsMutable() && begin_fld.IsMutable());
             }
 
-            auto end_pointer = builder.CreateStructGEP(struct_type->GenIR(builder), range->GetPointer(), end_index);
+            auto end_pointer = builder.CreateStructGEP(
+                struct_type->GenIR(builder),
+                range->GetPointer(),
+                end_index);
             if (end_fld.IsReference())
             {
                 end_pointer = builder.CreateLoad(builder.GetPointerType(), end_pointer);
@@ -96,7 +112,10 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             }
             else
             {
-                end = Value::CreateL(end_fld.GetType(), end_pointer, range->IsMutable() && end_fld.IsMutable());
+                end = Value::CreateL(
+                    end_fld.GetType(),
+                    end_pointer,
+                    range->IsMutable() && end_fld.IsMutable());
             }
         }
         else
@@ -105,7 +124,10 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
             if (begin_fld.IsReference())
             {
                 begin_value = builder.CreateLoad(builder.GetPointerType(), begin_value);
-                begin = Value::CreateL(begin_fld.GetType(), begin_value, begin_fld.IsMutable());
+                begin = Value::CreateL(
+                    begin_fld.GetType(),
+                    begin_value,
+                    begin_fld.IsMutable());
             }
             else
             {
@@ -151,8 +173,14 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
 
         if (range->IsReference())
         {
-            const auto begin_pointer = builder.CreateStructGEP(range_type->GenIR(builder), range->GetPointer(), 0);
-            const auto end_pointer = builder.CreateStructGEP(range_type->GenIR(builder), range->GetPointer(), 1);
+            const auto begin_pointer = builder.CreateStructGEP(
+                range_type->GenIR(builder),
+                range->GetPointer(),
+                0);
+            const auto end_pointer = builder.CreateStructGEP(
+                range_type->GenIR(builder),
+                range->GetPointer(),
+                1);
 
             begin = Value::CreateL(iterator_type, begin_pointer, false);
             end = Value::CreateL(iterator_type, end_pointer, false);
@@ -220,7 +248,10 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         else
         {
             const auto operator_ = builder.FindOperator("*", iterator->AsField(), false);
-            Assert(operator_ != nullptr, "operator '*{}' not implemented", iterator->AsField());
+            Assert(
+                operator_ != nullptr,
+                "operator '*{}' not implemented",
+                iterator->AsField());
 
             storage = (*operator_)(builder, iterator);
         }
@@ -282,12 +313,13 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
 
     builder.SetInsertPoint(tail_block);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ForEachStatement::Reflect(Context &context) const try
+llove::StatementPtr llove::ForEachStatement::Reflect(Context& context) const
+try
 {
     ExpressionPtr range;
     StatementPtr content;
@@ -297,28 +329,14 @@ llove::StatementPtr llove::ForEachStatement::Reflect(Context &context) const try
     if (m_Content)
         m_Content->Reflect(context, content);
 
-    return std::make_unique<ForEachStatement>(
-        m_Loc,
-        m_Mutable,
-        m_Reference,
-        m_Name,
-        std::move(range),
-        std::move(content));
+    return std::make_unique<ForEachStatement>(m_Loc, m_Mutable, m_Reference, m_Name, std::move(range), std::move(content));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::ForEachStatement::Print(std::ostream &stream) const
+std::ostream& llove::ForEachStatement::Print(std::ostream& stream) const
 {
-    return stream
-           << "foreach ("
-           << (m_Mutable ? "mut " : "")
-           << (m_Reference ? "&" : "")
-           << m_Name
-           << " : "
-           << m_Range
-           << ") "
-           << m_Content;
+    return stream << "foreach (" << (m_Mutable ? "mut " : "") << (m_Reference ? "&" : "") << m_Name << " : " << m_Range << ") " << m_Content;
 }

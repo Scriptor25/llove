@@ -1,6 +1,8 @@
 #include <llove/type.hpp>
 
-unsigned llove::Difference(const TypePtr &left, const TypePtr &right)
+unsigned llove::Difference(
+    const TypePtr& left,
+    const TypePtr& right)
 {
     if (left == right)
         return 0u;
@@ -61,7 +63,9 @@ unsigned llove::Difference(const TypePtr &left, const TypePtr &right)
         {
             const auto right_int = As<IntegerType>(right);
             const auto sign_error = false != right_int->IsSigned() ? 1u : 0u;
-            const auto bits_error = 64u != right_int->GetBits() ? 5u : 0u; // TODO: target dependent
+            const auto bits_error = 64u != right_int->GetBits() ? 5u : 0u; // TODO:
+                                                                           // target
+                                                                           // dependent
             return 4u + sign_error + bits_error;
         }
         case TypeId_Pointer:

@@ -9,7 +9,7 @@ llove::ClassType::ClassType(std::string name)
     Assert(!m_Name.empty(), "name must not be empty");
 }
 
-const std::string &llove::ClassType::GetName() const
+const std::string& llove::ClassType::GetName() const
 {
     return m_Name;
 }
@@ -19,7 +19,7 @@ bool llove::ClassType::IsOpaque() const
     return m_Members.empty();
 }
 
-bool llove::ClassType::InheritsFrom(const TypePtr &type) const
+bool llove::ClassType::InheritsFrom(const TypePtr& type) const
 {
     return m_ParentClass && (m_ParentClass == type || m_ParentClass->InheritsFrom(type));
 }
@@ -35,19 +35,17 @@ llove::ClassType::Ptr llove::ClassType::GetParentClass() const
     return m_ParentClass;
 }
 
-bool llove::ClassType::HasMember(const std::string &name) const
+bool llove::ClassType::HasMember(const std::string& name) const
 {
     Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
     return std::ranges::any_of(
                m_Members,
-               [&name](auto &member)
-               {
-                   return member.Name == name;
-               }) || (m_ParentClass && m_ParentClass->HasMember(name));
+               [&name](auto& member) { return member.Name == name; })
+        || (m_ParentClass && m_ParentClass->HasMember(name));
 }
 
-unsigned llove::ClassType::GetMemberIndex(const std::string &name) const
+unsigned llove::ClassType::GetMemberIndex(const std::string& name) const
 {
     Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
@@ -84,7 +82,10 @@ llove::Field llove::ClassType::GetMember(unsigned index) const
     return m_Members.at(index).Info;
 }
 
-void llove::ClassType::ForEachMember(const std::function<void(unsigned, const ClassMemberReference &)> &callback) const
+void llove::ClassType::ForEachMember(
+    const std::function<void(
+        unsigned,
+        const ClassMemberReference&)>& callback) const
 {
     auto offset = 0u;
     if (m_ParentClass)
@@ -98,14 +99,14 @@ void llove::ClassType::ForEachMember(const std::function<void(unsigned, const Cl
 }
 
 llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFunction(
-    const Ptr &self,
-    const std::string &name,
+    const Ptr& self,
+    const std::string& name,
     const bool is_mutable,
-    const std::vector<Field> &parameters,
+    const std::vector<Field>& parameters,
     const bool has_variadic,
-    const Field &result) const
+    const Field& result) const
 {
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
     {
         if (function.Name != name)
             continue;
@@ -125,7 +126,9 @@ llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFun
         if (i < function.Parameters.size())
             continue;
 
-        return { { self, function } };
+        return {
+            { self, function }
+        };
     }
 
     if (m_ParentClass)
@@ -135,46 +138,46 @@ llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFun
     return std::nullopt;
 }
 
-bool llove::ClassType::HasFunction(const std::string &name) const
+bool llove::ClassType::HasFunction(const std::string& name) const
 {
     return std::ranges::any_of(
                m_Functions,
-               [&name](auto &function)
-               {
-                   return function.Name == name;
-               }) || (m_ParentClass && m_ParentClass->HasFunction(name));
+               [&name](auto& function) { return function.Name == name; })
+        || (m_ParentClass && m_ParentClass->HasFunction(name));
 }
 
 llove::ClassType::VecRef<llove::ClassFunctionReference> llove::ClassType::GetFunctions(
-    const Ptr &self,
-    const std::string &name) const
+    const Ptr& self,
+    const std::string& name) const
 {
     VecRef<ClassFunctionReference> functions;
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
         if (function.Name == name)
             functions.emplace_back(self, function);
 
     if (m_ParentClass)
-        for (auto &ref : m_ParentClass->GetFunctions(m_ParentClass, name))
+        for (auto& ref : m_ParentClass->GetFunctions(m_ParentClass, name))
             functions.emplace_back(std::move(ref));
 
     return functions;
 }
 
-llove::ClassType::VecRef<llove::ClassFunctionReference> llove::ClassType::GetConstructors(const Ptr &self) const
+llove::ClassType::VecRef<llove::ClassFunctionReference> llove::ClassType::GetConstructors(const Ptr& self) const
 {
     VecRef<ClassFunctionReference> constructors;
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
         if (function.Name == "create")
             constructors.emplace_back(self, function);
     return constructors;
 }
 
-llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetDestructor(const Ptr &self) const
+llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetDestructor(const Ptr& self) const
 {
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
         if (function.Name == "delete")
-            return { { self, function } };
+            return {
+                { self, function }
+            };
 
     if (m_ParentClass)
         if (auto ref = m_ParentClass->GetDestructor(m_ParentClass))
@@ -219,11 +222,11 @@ bool llove::ClassType::IsClass() const
     return true;
 }
 
-std::vector<llvm::Type *> llove::ClassType::GenIRElements(Builder &builder) const
+std::vector<llvm::Type*> llove::ClassType::GenIRElements(Builder& builder) const
 {
     Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
-    std::vector<llvm::Type *> elements;
+    std::vector<llvm::Type*> elements;
 
     if (m_ParentClass)
     {
@@ -231,17 +234,20 @@ std::vector<llvm::Type *> llove::ClassType::GenIRElements(Builder &builder) cons
         elements.insert(elements.end(), base_elements.begin(), base_elements.end());
     }
 
-    for (auto &member : m_Members)
+    for (auto& member : m_Members)
         elements.emplace_back(member.Info.GenIRType(builder));
 
     return elements;
 }
 
-std::pair<std::vector<llvm::Metadata *>, unsigned> llove::ClassType::GenDIElements(Builder &builder)
+std::pair<
+    std::vector<llvm::Metadata*>,
+    unsigned>
+llove::ClassType::GenDIElements(Builder& builder)
 {
     Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
 
-    std::vector<llvm::Metadata *> elements;
+    std::vector<llvm::Metadata*> elements;
     auto base_offset = 0u;
 
     const auto layout = builder.GetDataLayout().getStructLayout(GenIR(builder));
@@ -255,22 +261,18 @@ std::pair<std::vector<llvm::Metadata *>, unsigned> llove::ClassType::GenDIElemen
 
     for (unsigned i = 0; i < m_Members.size(); ++i)
     {
-        auto &member = m_Members.at(i);
+        auto& member = m_Members.at(i);
         const auto size = member.Info.SizeBits(builder);
         const auto offset = base_offset + layout->getElementOffsetInBits(i);
 
         elements.emplace_back(
-            builder.GetDebug().GetFieldType(
-                member.Name,
-                member.Info.GenDIType(builder),
-                size,
-                offset));
+            builder.GetDebug().GetFieldType(member.Name, member.Info.GenDIType(builder), size, offset));
     }
 
     return { elements, layout->getSizeInBits() };
 }
 
-llvm::StructType *llove::ClassType::GenIR(Builder &builder)
+llvm::StructType* llove::ClassType::GenIR(Builder& builder)
 {
     if (!m_IRType)
     {
@@ -288,7 +290,7 @@ llvm::StructType *llove::ClassType::GenIR(Builder &builder)
     return llvm::dyn_cast<llvm::StructType>(m_IRType);
 }
 
-llvm::DIType *llove::ClassType::GenDI(Builder &builder)
+llvm::DIType* llove::ClassType::GenDI(Builder& builder)
 {
     if (m_DIType)
         return m_DIType;
@@ -304,12 +306,14 @@ llvm::DIType *llove::ClassType::GenDI(Builder &builder)
     return m_DIType = builder.GetDebug().GetClassType(m_Name, base, elements, size);
 }
 
-llove::TypePtr llove::ClassType::Reflect(Context &context) const
+llove::TypePtr llove::ClassType::Reflect(Context& context) const
 {
     return context.GetClass(m_Name);
 }
 
-bool llove::ClassType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+bool llove::ClassType::TypeInfo(
+    Builder& builder,
+    std::vector<llvm::Constant*>& dst) const
 {
     return false;
 }
@@ -319,7 +323,7 @@ std::string llove::ClassType::Mangle() const
     return 'c' + std::to_string(m_Name.size()) + '_' + m_Name;
 }
 
-std::ostream &llove::ClassType::Print(std::ostream &stream) const
+std::ostream& llove::ClassType::Print(std::ostream& stream) const
 {
     return stream << "class " << m_Name;
 }

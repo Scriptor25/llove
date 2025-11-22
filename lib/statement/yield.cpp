@@ -2,13 +2,16 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::YieldStatement::YieldStatement(Location loc, ExpressionPtr value)
+llove::YieldStatement::YieldStatement(
+    Location loc,
+    ExpressionPtr value)
     : Statement(std::move(loc)),
       m_Value(std::move(value))
 {
 }
 
-void llove::YieldStatement::Gen(Builder &builder) const try
+void llove::YieldStatement::Gen(Builder& builder) const
+try
 {
     if (!m_Value)
     {
@@ -24,7 +27,7 @@ void llove::YieldStatement::Gen(Builder &builder) const try
     const auto value = m_Value->GenVal(builder, result.GetType());
     const auto result_value = result.GenCast(builder, value, true);
 
-    std::set<llvm::Value *> mask;
+    std::set<llvm::Value*> mask;
     if (!result.IsReference() && value->IsReference())
         mask.emplace(value->GetPointer());
 
@@ -32,12 +35,13 @@ void llove::YieldStatement::Gen(Builder &builder) const try
     builder.CallDeferred(mask, true);
     builder.CreateRet(result_value);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::YieldStatement::Reflect(Context &context) const try
+llove::StatementPtr llove::YieldStatement::Reflect(Context& context) const
+try
 {
     ExpressionPtr value;
 
@@ -46,12 +50,12 @@ llove::StatementPtr llove::YieldStatement::Reflect(Context &context) const try
 
     return std::make_unique<YieldStatement>(m_Loc, std::move(value));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::YieldStatement::Print(std::ostream &stream) const
+std::ostream& llove::YieldStatement::Print(std::ostream& stream) const
 {
     if (m_Value)
         return stream << "yield " << m_Value << ';';

@@ -6,11 +6,11 @@
 
 llove::DebugBuilder::DebugBuilder(
     const bool enable,
-    llvm::Module &module,
-    const std::filesystem::path &source_path,
+    llvm::Module& module,
+    const std::filesystem::path& source_path,
     const bool optimized,
     const bool profiling,
-    const std::string &command_line,
+    const std::string& command_line,
     const llvm::DICompileUnit::DebugEmissionKind emission)
     : m_Strip(!enable)
 {
@@ -21,7 +21,9 @@ llove::DebugBuilder::DebugBuilder(
     m_CompileUnit = m_DIBuilder->createCompileUnit(
         /* TODO: submit on https://dwarfstd.org/ for official language code */
         0x8086,
-        m_DIBuilder->createFile(source_path.filename().string(), source_path.parent_path().string()),
+        m_DIBuilder->createFile(
+            source_path.filename().string(),
+            source_path.parent_path().string()),
         "LLove",
         optimized,
         command_line,
@@ -33,69 +35,64 @@ llove::DebugBuilder::DebugBuilder(
         profiling);
 }
 
-llvm::DIScope *llove::DebugBuilder::GetScope() const
+llvm::DIScope* llove::DebugBuilder::GetScope() const
 {
     Assert(!m_Strip, "no debug information");
 
     return m_Scopes.empty() ? m_CompileUnit : m_Scopes.back();
 }
 
-llvm::DIType *llove::DebugBuilder::GetVoidType() const
+llvm::DIType* llove::DebugBuilder::GetVoidType() const
 {
     Assert(!m_Strip, "no debug information");
 
     return m_DIBuilder->createUnspecifiedType("void");
 }
 
-llvm::DIType *llove::DebugBuilder::GetIntegerType(const bool sign, const unsigned bits) const
+llvm::DIType* llove::DebugBuilder::GetIntegerType(
+    const bool sign,
+    const unsigned bits) const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createBasicType(
-        (sign ? 'i' : 'u') + std::to_string(bits),
-        ((bits >> 3) + ((bits & 7) != 0)) << 3,
-        sign ? llvm::dwarf::DW_ATE_signed : llvm::dwarf::DW_ATE_unsigned);
+    return m_DIBuilder->createBasicType((sign ? 'i' : 'u') + std::to_string(bits), ((bits >> 3) + ((bits & 7) != 0)) << 3, sign ? llvm::dwarf::DW_ATE_signed : llvm::dwarf::DW_ATE_unsigned);
 }
 
-llvm::DIType *llove::DebugBuilder::GetFloatType(const unsigned bits) const
+llvm::DIType* llove::DebugBuilder::GetFloatType(const unsigned bits) const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createBasicType(
-        'f' + std::to_string(bits),
-        ((bits >> 3) + ((bits & 7) != 0)) << 3,
-        llvm::dwarf::DW_ATE_float);
+    return m_DIBuilder->createBasicType('f' + std::to_string(bits), ((bits >> 3) + ((bits & 7) != 0)) << 3, llvm::dwarf::DW_ATE_float);
 }
 
-llvm::DIType *llove::DebugBuilder::GetPointerType() const
+llvm::DIType* llove::DebugBuilder::GetPointerType() const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createPointerType(GetVoidType(), 64); // TODO: target dependent
+    return m_DIBuilder->createPointerType(GetVoidType(), 64); // TODO: target
+                                                              // dependent
 }
 
-llvm::DIType *llove::DebugBuilder::GetPointerType(llvm::DIType *base) const
+llvm::DIType* llove::DebugBuilder::GetPointerType(llvm::DIType* base) const
 {
     Assert(!m_Strip, "no debug information");
 
     return m_DIBuilder->createPointerType(base, 64); // TODO: target dependent
 }
 
-llvm::DIType *llove::DebugBuilder::GetArrayType(llvm::DIType *base, const unsigned size) const
+llvm::DIType* llove::DebugBuilder::GetArrayType(
+    llvm::DIType* base,
+    const unsigned size) const
 {
     Assert(!m_Strip, "no debug information");
 
     const auto subrange = m_DIBuilder->getOrCreateSubrange(0, size);
 
-    return m_DIBuilder->createArrayType(
-        size,
-        0,
-        base,
-        m_DIBuilder->getOrCreateArray({ subrange }));
+    return m_DIBuilder->createArrayType(size, 0, base, m_DIBuilder->getOrCreateArray({ subrange }));
 }
 
-llvm::DIType *llove::DebugBuilder::GetStructType(
-    const std::vector<llvm::Metadata *> &elements,
+llvm::DIType* llove::DebugBuilder::GetStructType(
+    const std::vector<llvm::Metadata*>& elements,
     const unsigned size) const
 {
     Assert(!m_Strip, "no debug information");
@@ -112,7 +109,7 @@ llvm::DIType *llove::DebugBuilder::GetStructType(
         m_DIBuilder->getOrCreateArray(elements));
 }
 
-llvm::DIType *llove::DebugBuilder::GetVariadicType() const
+llvm::DIType* llove::DebugBuilder::GetVariadicType() const
 {
     return GetStructType(
         {
@@ -122,47 +119,28 @@ llvm::DIType *llove::DebugBuilder::GetVariadicType() const
         32 + 64); // TODO: target dependent
 }
 
-llvm::DIType *llove::DebugBuilder::GetFieldType(
-    const std::string &name,
-    llvm::DIType *type,
+llvm::DIType* llove::DebugBuilder::GetFieldType(
+    const std::string& name,
+    llvm::DIType* type,
     const unsigned size,
     const unsigned offset) const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createMemberType(
-        nullptr,
-        name,
-        nullptr,
-        0u,
-        size,
-        0u,
-        offset,
-        llvm::DINode::FlagZero,
-        type);
+    return m_DIBuilder->createMemberType(nullptr, name, nullptr, 0u, size, 0u, offset, llvm::DINode::FlagZero, type);
 }
 
-llvm::DIType *llove::DebugBuilder::GetClassType(const std::string &name) const
+llvm::DIType* llove::DebugBuilder::GetClassType(const std::string& name) const
 {
     Assert(!m_Strip, "no debug information");
 
-    return m_DIBuilder->createClassType(
-        nullptr,
-        name,
-        nullptr,
-        0u,
-        0u,
-        0u,
-        0u,
-        llvm::DINode::FlagZero,
-        nullptr,
-        {});
+    return m_DIBuilder->createClassType(nullptr, name, nullptr, 0u, 0u, 0u, 0u, llvm::DINode::FlagZero, nullptr, {});
 }
 
-llvm::DIType *llove::DebugBuilder::GetClassType(
-    const std::string &name,
-    llvm::DIType *base,
-    const std::vector<llvm::Metadata *> &elements,
+llvm::DIType* llove::DebugBuilder::GetClassType(
+    const std::string& name,
+    llvm::DIType* base,
+    const std::vector<llvm::Metadata*>& elements,
     const unsigned size) const
 {
     Assert(!m_Strip, "no debug information");
@@ -180,19 +158,19 @@ llvm::DIType *llove::DebugBuilder::GetClassType(
         m_DIBuilder->getOrCreateArray(elements));
 }
 
-llvm::DISubroutineType *llove::DebugBuilder::GetFunctionType(
-    llvm::DIType *self,
-    const std::vector<llvm::Metadata *> &parameters,
+llvm::DISubroutineType* llove::DebugBuilder::GetFunctionType(
+    llvm::DIType* self,
+    const std::vector<llvm::Metadata*>& parameters,
     const bool variadic,
-    llvm::DIType *result) const
+    llvm::DIType* result) const
 {
     Assert(!m_Strip, "no debug information");
 
-    std::vector<llvm::Metadata *> elements;
+    std::vector<llvm::Metadata*> elements;
     elements.emplace_back(result);
     if (self)
         elements.emplace_back(self);
-    for (auto &parameter : parameters)
+    for (auto& parameter : parameters)
         elements.emplace_back(parameter);
     if (variadic)
         elements.emplace_back(GetPointerType(GetVariadicType()));
@@ -201,10 +179,10 @@ llvm::DISubroutineType *llove::DebugBuilder::GetFunctionType(
 }
 
 void llove::DebugBuilder::CreateParameter(
-    Builder &builder,
-    const std::string &name,
+    Builder& builder,
+    const std::string& name,
     const unsigned index,
-    const ValuePtr &value) const
+    const ValuePtr& value) const
 {
     if (m_Strip)
         return;
@@ -228,7 +206,10 @@ void llove::DebugBuilder::CreateParameter(
         m_DIBuilder->insertDbgValueIntrinsic(value->Load(builder), local_variable, expression, location, block);
 }
 
-void llove::DebugBuilder::CreateVariable(Builder &builder, const std::string &name, const ValuePtr &value) const
+void llove::DebugBuilder::CreateVariable(
+    Builder& builder,
+    const std::string& name,
+    const ValuePtr& value) const
 {
     if (m_Strip)
         return;
@@ -251,7 +232,7 @@ void llove::DebugBuilder::CreateVariable(Builder &builder, const std::string &na
         m_DIBuilder->insertDbgValueIntrinsic(value->Load(builder), local_variable, expression, location, block);
 }
 
-void llove::DebugBuilder::EmitLoc(Builder &builder) const
+void llove::DebugBuilder::EmitLoc(Builder& builder) const
 {
     if (m_Strip)
         return;
@@ -259,20 +240,19 @@ void llove::DebugBuilder::EmitLoc(Builder &builder) const
     builder.SetCurrentDebugLocation({});
 }
 
-void llove::DebugBuilder::EmitLoc(Builder &builder, const Location &loc) const
+void llove::DebugBuilder::EmitLoc(
+    Builder& builder,
+    const Location& loc) const
 {
     if (m_Strip)
         return;
 
-    builder.SetCurrentDebugLocation(
-        llvm::DILocation::get(
-            builder.GetLLVMContext(),
-            loc.Row,
-            loc.Col,
-            GetScope()));
+    builder.SetCurrentDebugLocation(llvm::DILocation::get(builder.GetLLVMContext(), loc.Row, loc.Col, GetScope()));
 }
 
-void llove::DebugBuilder::EmitLoc(Builder &builder, const GlobalPtr &ptr) const
+void llove::DebugBuilder::EmitLoc(
+    Builder& builder,
+    const GlobalPtr& ptr) const
 {
     if (m_Strip)
         return;
@@ -285,7 +265,9 @@ void llove::DebugBuilder::EmitLoc(Builder &builder, const GlobalPtr &ptr) const
             GetScope()));
 }
 
-void llove::DebugBuilder::EmitLoc(Builder &builder, const StatementPtr &ptr) const
+void llove::DebugBuilder::EmitLoc(
+    Builder& builder,
+    const StatementPtr& ptr) const
 {
     if (m_Strip)
         return;
@@ -307,12 +289,12 @@ void llove::DebugBuilder::EndModule() const
 }
 
 void llove::DebugBuilder::BeginFunction(
-    Builder &builder,
-    const std::string &name,
-    const Location &loc,
-    const FunctionType::Ptr &function_type,
-    const std::string &mangled_name,
-    llvm::Function *function)
+    Builder& builder,
+    const std::string& name,
+    const Location& loc,
+    const FunctionType::Ptr& function_type,
+    const std::string& mangled_name,
+    llvm::Function* function)
 {
     if (m_Strip)
         return;
@@ -343,14 +325,14 @@ void llove::DebugBuilder::EndFunction()
     m_Scopes.pop_back();
 }
 
-void llove::DebugBuilder::PushFrame(const std::optional<Location> &loc)
+void llove::DebugBuilder::PushFrame(const std::optional<Location>& loc)
 {
     if (m_Strip)
         return;
 
     auto scope = loc.has_value()
-                     ? m_DIBuilder->createLexicalBlock(GetScope(), GetScope()->getFile(), loc->Row, loc->Col)
-                     : GetScope();
+                   ? m_DIBuilder->createLexicalBlock(GetScope(), GetScope()->getFile(), loc->Row, loc->Col)
+                   : GetScope();
     m_Scopes.emplace_back(scope);
 }
 

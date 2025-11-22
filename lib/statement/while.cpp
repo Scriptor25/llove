@@ -3,14 +3,17 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::WhileStatement::WhileStatement(Location loc, ExpressionPtr condition, StatementPtr content)
+llove::WhileStatement::WhileStatement(
+    Location loc,
+    ExpressionPtr condition,
+    StatementPtr content)
     : Statement(std::move(loc)),
       m_Condition(std::move(condition)),
       m_Content(std::move(content))
 {
 }
 
-void llove::WhileStatement::Gen(Builder &builder) const
+void llove::WhileStatement::Gen(Builder& builder) const
 {
     const auto parent = builder.GetParent();
     const auto head_block = builder.CreateBlock("head", parent);
@@ -45,7 +48,7 @@ void llove::WhileStatement::Gen(Builder &builder) const
     builder.PopFrame();
 }
 
-llove::StatementPtr llove::WhileStatement::Reflect(Context &context) const
+llove::StatementPtr llove::WhileStatement::Reflect(Context& context) const
 {
     ExpressionPtr condition;
     StatementPtr content;
@@ -58,7 +61,7 @@ llove::StatementPtr llove::WhileStatement::Reflect(Context &context) const
     return std::make_unique<WhileStatement>(m_Loc, std::move(condition), std::move(content));
 }
 
-std::ostream &llove::WhileStatement::Print(std::ostream &stream) const
+std::ostream& llove::WhileStatement::Print(std::ostream& stream) const
 {
     return stream << "while (" << m_Condition << ") " << m_Content;
 }

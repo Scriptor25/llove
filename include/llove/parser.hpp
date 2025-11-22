@@ -3,14 +3,14 @@
 #include <cmath>
 #include <format>
 #include <iosfwd>
-#include <map>
-#include <set>
-#include <string>
-#include <vector>
 #include <llove/class.hpp>
 #include <llove/forward.hpp>
 #include <llove/location.hpp>
 #include <llove/type.hpp>
+#include <map>
+#include <set>
+#include <string>
+#include <vector>
 
 namespace llove
 {
@@ -39,39 +39,55 @@ namespace llove
     {
     public:
         explicit Parser(
-            Context &context,
-            std::istream &stream,
-            const std::filesystem::path &filepath,
-            const std::set<std::filesystem::path> &includes);
+            Context& context,
+            std::istream& stream,
+            const std::filesystem::path& filepath,
+            const std::set<std::filesystem::path>& includes);
 
         [[nodiscard]] bool Ok() const;
         GlobalPtr Parse();
 
     protected:
-        void RemoveEscape(std::string &raw, std::string &value);
+        void RemoveEscape(
+            std::string& raw,
+            std::string& value);
 
         int Get();
         Token Next();
-        Token &Pop();
+        Token& Pop();
 
         Token Skip();
 
-        [[nodiscard]] bool At(TokenType type, const std::string &value = {}) const;
-        [[nodiscard]] bool At(TokenType type, const std::vector<std::string> &values) const;
+        [[nodiscard]] bool At(
+            TokenType type,
+            const std::string& value = {}) const;
+        [[nodiscard]] bool At(
+            TokenType type,
+            const std::vector<std::string>& values) const;
 
         template<typename... Values>
-        [[nodiscard]] bool At(const TokenType type, Values... values) const
+        [[nodiscard]] bool At(
+            const TokenType type,
+            Values... values) const
         {
             return At(type, std::vector<std::string>{ values... });
         }
 
-        bool SkipIf(TokenType type, const std::string &value = {});
+        bool SkipIf(
+            TokenType type,
+            const std::string& value = {});
 
-        Token Expect(TokenType type, const std::string &value = {});
-        Token Expect(TokenType type, const std::vector<std::string> &values);
+        Token Expect(
+            TokenType type,
+            const std::string& value = {});
+        Token Expect(
+            TokenType type,
+            const std::vector<std::string>& values);
 
         template<typename... Values>
-        Token Expect(const TokenType type, Values... values)
+        Token Expect(
+            const TokenType type,
+            Values... values)
         {
             return Expect(type, std::vector<std::string>{ values... });
         }
@@ -87,22 +103,32 @@ namespace llove
         TypePtr ParseRangeType();
         TypePtr ParseStructType();
 
-        std::string ParseField(Field &field, bool require_name, bool require_type);
-        void ParseParameter(Parameter &parameter);
-        void ParseInitializer(Initializer &initializer);
+        std::string ParseField(
+            Field& field,
+            bool require_name,
+            bool require_type);
+        void ParseParameter(Parameter& parameter);
+        void ParseInitializer(Initializer& initializer);
 
-        Location ParseParameterList(std::vector<Parameter> &parameters, std::pair<bool, std::string> &variadic);
-        Location ParseTemplateParameterList(std::vector<std::pair<std::string, TemplateType::Ptr>> &parameters);
-        Location ParseArgumentList(std::vector<ExpressionPtr> &arguments);
+        Location ParseParameterList(
+            std::vector<Parameter>& parameters,
+            std::pair<
+                bool,
+                std::string>& variadic);
+        Location ParseTemplateParameterList(
+            std::vector<std::pair<
+                std::string,
+                TemplateType::Ptr>>& parameters);
+        Location ParseArgumentList(std::vector<ExpressionPtr>& arguments);
 
         template<typename T>
         Location ParseList(
-            std::vector<T> &list,
-            const std::function<void(T &element)> &parse_element,
+            std::vector<T>& list,
+            const std::function<void(T& element)>& parse_element,
             const TokenType beg_type,
-            const std::string &beg_value,
+            const std::string& beg_value,
             const TokenType end_type,
-            const std::string &end_value)
+            const std::string& end_value)
         {
             auto token = Expect(beg_type, beg_value);
             while (!At(end_type, end_value))
@@ -116,18 +142,20 @@ namespace llove
             return std::move(token.Loc);
         }
 
-        template<typename T, typename E>
+        template<
+            typename T,
+            typename E>
         Location ParseList(
-            std::vector<T> &list,
-            E &ellipsis,
-            const std::function<void(T &element)> &parse_element,
-            const std::function<void(E &ellipsis)> &parse_ellipsis,
+            std::vector<T>& list,
+            E& ellipsis,
+            const std::function<void(T& element)>& parse_element,
+            const std::function<void(E& ellipsis)>& parse_ellipsis,
             const TokenType beg_type,
-            const std::string &beg_value,
+            const std::string& beg_value,
             const TokenType end_type,
-            const std::string &end_value,
+            const std::string& end_value,
             const TokenType ellipsis_type,
-            const std::string &ellipsis_value)
+            const std::string& ellipsis_value)
         {
             auto token = Expect(beg_type, beg_value);
             while (!At(end_type, end_value))
@@ -155,11 +183,19 @@ namespace llove
         GlobalPtr ParseImportGlobal();
         GlobalPtr ParseTypeGlobal(bool export_);
 
-        void ParseClassMember(ClassMember &member);
-        void ParseClassFunction(ClassFunction &function, bool require_content);
+        void ParseClassMember(ClassMember& member);
+        void ParseClassFunction(
+            ClassFunction& function,
+            bool require_content);
 
-        void ParseClassTemplate(bool is_export, std::string name);
-        void ParseDefinitionTemplate(bool is_export, Location loc, bool implicit, std::string name);
+        void ParseClassTemplate(
+            bool is_export,
+            std::string name);
+        void ParseDefinitionTemplate(
+            bool is_export,
+            Location loc,
+            bool implicit,
+            std::string name);
 
         StatementPtr ParseStatement(bool inline_);
         StatementPtr ParseBreakStatement(bool inline_);
@@ -178,7 +214,9 @@ namespace llove
 
         ExpressionPtr ParseArrayExpression();
         ExpressionPtr ParseBinaryExpression();
-        ExpressionPtr ParseBinaryExpression(ExpressionPtr left, unsigned min_precedence);
+        ExpressionPtr ParseBinaryExpression(
+            ExpressionPtr left,
+            unsigned min_precedence);
         ExpressionPtr ParseCallExpression(ExpressionPtr callee);
         ExpressionPtr ParseCastExpression(ExpressionPtr value);
         ExpressionPtr ParseCreateExpression();
@@ -200,10 +238,10 @@ namespace llove
         ExpressionPtr ParseUnaryExpression(ExpressionPtr operand);
 
     private:
-        Context &m_Context;
-        const std::set<std::filesystem::path> &m_Includes;
+        Context& m_Context;
+        const std::set<std::filesystem::path>& m_Includes;
 
-        std::istream &m_Stream;
+        std::istream& m_Stream;
         int m_Buffer;
         Location m_Loc;
         Token m_Token;
@@ -214,17 +252,18 @@ template<>
 struct std::formatter<llove::TokenType> : std::formatter<std::string_view>
 {
     template<typename FormatContext>
-    auto format(const llove::TokenType &type, FormatContext &ctx) const
+    auto format(
+        const llove::TokenType& type,
+        FormatContext& ctx) const
     {
-        static const std::map<llove::TokenType, std::string_view> m
-        {
+        static const std::map<llove::TokenType, std::string_view> m{
             { llove::TokenType_EndOfFile, "EndOfFile" },
-            { llove::TokenType_Symbol, "Symbol" },
-            { llove::TokenType_String, "String" },
-            { llove::TokenType_Integer, "Integer" },
-            { llove::TokenType_Float, "Float" },
-            { llove::TokenType_Operator, "Operator" },
-            { llove::TokenType_Other, "Other" },
+            {    llove::TokenType_Symbol,    "Symbol" },
+            {    llove::TokenType_String,    "String" },
+            {   llove::TokenType_Integer,   "Integer" },
+            {     llove::TokenType_Float,     "Float" },
+            {  llove::TokenType_Operator,  "Operator" },
+            {     llove::TokenType_Other,     "Other" },
         };
         return std::formatter<std::string_view>::format(m.at(type), ctx);
     }

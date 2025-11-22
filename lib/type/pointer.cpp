@@ -9,7 +9,9 @@ llove::PointerType::PointerType(const bool is_mutable)
 {
 }
 
-llove::PointerType::PointerType(TypePtr base, const bool is_mutable)
+llove::PointerType::PointerType(
+    TypePtr base,
+    const bool is_mutable)
     : m_Base(std::move(base)),
       m_IsMutable(is_mutable)
 {
@@ -42,7 +44,7 @@ bool llove::PointerType::IsPointer() const
     return true;
 }
 
-llvm::PointerType *llove::PointerType::GenIR(Builder &builder)
+llvm::PointerType* llove::PointerType::GenIR(Builder& builder)
 {
     if (!m_IRType)
         m_IRType = builder.GetPointerType();
@@ -50,17 +52,16 @@ llvm::PointerType *llove::PointerType::GenIR(Builder &builder)
     return llvm::dyn_cast<llvm::PointerType>(m_IRType);
 }
 
-llvm::DIType *llove::PointerType::GenDI(Builder &builder)
+llvm::DIType* llove::PointerType::GenDI(Builder& builder)
 {
     if (!m_DIType)
-        m_DIType = m_Base
-                       ? builder.GetDebug().GetPointerType(m_Base->GenDI(builder))
-                       : builder.GetDebug().GetPointerType();
+        m_DIType = m_Base ? builder.GetDebug().GetPointerType(m_Base->GenDI(builder))
+                          : builder.GetDebug().GetPointerType();
 
     return m_DIType;
 }
 
-llove::TypePtr llove::PointerType::Reflect(Context &context) const
+llove::TypePtr llove::PointerType::Reflect(Context& context) const
 {
     if (m_Base)
         return context.GetPointer(m_Base->Reflect(context), m_IsMutable);
@@ -68,7 +69,9 @@ llove::TypePtr llove::PointerType::Reflect(Context &context) const
     return context.GetPointer(m_IsMutable);
 }
 
-bool llove::PointerType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+bool llove::PointerType::TypeInfo(
+    Builder& builder,
+    std::vector<llvm::Constant*>& dst) const
 {
     dst.emplace_back(builder.GetI32(ID));
     dst.emplace_back(builder.GetI1(m_IsMutable));
@@ -86,7 +89,7 @@ std::string llove::PointerType::Mangle() const
     return 'p' + std::string(m_IsMutable ? "m" : "i") + '_';
 }
 
-std::ostream &llove::PointerType::Print(std::ostream &stream) const
+std::ostream& llove::PointerType::Print(std::ostream& stream) const
 {
     if (m_Base)
         return stream << m_Base << '[' << (m_IsMutable ? "mut" : "") << ']';

@@ -1,8 +1,8 @@
 #pragma once
 
+#include <llove/type.hpp>
 #include <string>
 #include <vector>
-#include <llove/type.hpp>
 
 namespace llove
 {

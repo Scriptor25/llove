@@ -16,10 +16,5 @@ llove::GlobalPtr llove::Parser::ParseConstGlobal(const bool export_)
 
     Expect(TokenType_Other, ";");
 
-    return std::make_unique<ConstGlobal>(
-        std::move(token.Loc),
-        export_,
-        std::move(name),
-        std::move(type),
-        std::move(value));
+    return std::make_unique<ConstGlobal>(std::move(token.Loc), export_, std::move(name), std::move(type), std::move(value));
 }

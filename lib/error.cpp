@@ -1,5 +1,5 @@
-#include <ostream>
 #include <llove/error.hpp>
+#include <ostream>
 
 llove::ErrorStack::ErrorStack(
     ref_exception<ErrorStack> cause,
@@ -11,18 +11,11 @@ llove::ErrorStack::ErrorStack(
 {
 }
 
-std::ostream &llove::ErrorStack::Print(std::ostream &stream) const
+std::ostream& llove::ErrorStack::Print(std::ostream& stream) const
 {
     if (m_Loc && (!m_Cause || !m_Cause->m_Loc || *m_Cause->m_Loc != *m_Loc))
-        stream
-                << "at "
-                << std::filesystem::weakly_canonical(m_Loc->Filepath).string()
-                << ':'
-                << m_Loc->Row
-                << ':'
-                << m_Loc->Col
-                << ':'
-                << std::endl;
+        stream << "at " << std::filesystem::weakly_canonical(m_Loc->Filepath).string() << ':'
+               << m_Loc->Row << ':' << m_Loc->Col << ':' << std::endl;
 
     if (m_Message)
         stream << *m_Message << std::endl;

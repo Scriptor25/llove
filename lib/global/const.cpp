@@ -2,7 +2,12 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::ConstGlobal::ConstGlobal(Location loc, const bool export_, std::string name, TypePtr type, ExpressionPtr value)
+llove::ConstGlobal::ConstGlobal(
+    Location loc,
+    const bool export_,
+    std::string name,
+    TypePtr type,
+    ExpressionPtr value)
     : Global(std::move(loc)),
       m_Export(export_),
       m_Name(std::move(name)),
@@ -11,7 +16,7 @@ llove::ConstGlobal::ConstGlobal(Location loc, const bool export_, std::string na
 {
 }
 
-void llove::ConstGlobal::Gen(Builder &builder) const
+void llove::ConstGlobal::Gen(Builder& builder) const
 {
     auto value = m_Value->GenVal(builder, m_Type);
     auto type = m_Type ? m_Type : value->GetType();
@@ -22,11 +27,16 @@ void llove::ConstGlobal::Gen(Builder &builder) const
     builder.SetValue(m_Name, std::move(value));
 }
 
-std::pair<std::string, llove::ValuePtr> llove::ConstGlobal::GenImport(
-    Context &context,
-    Builder &builder,
-    const std::string &as,
-    const std::map<std::string, std::string> &symbols) const
+std::pair<
+    std::string,
+    llove::ValuePtr>
+llove::ConstGlobal::GenImport(
+    Context& context,
+    Builder& builder,
+    const std::string& as,
+    const std::map<
+        std::string,
+        std::string>& symbols) const
 {
     if (!m_Export)
         return {};
@@ -48,7 +58,7 @@ std::pair<std::string, llove::ValuePtr> llove::ConstGlobal::GenImport(
     return { m_Name, std::move(value) };
 }
 
-std::ostream &llove::ConstGlobal::Print(std::ostream &stream) const
+std::ostream& llove::ConstGlobal::Print(std::ostream& stream) const
 {
     stream << (m_Export ? "export " : "") << "const " << m_Name;
 

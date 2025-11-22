@@ -39,11 +39,5 @@ llove::GlobalPtr llove::Parser::ParseClassGlobal(const bool is_export)
     }
     Expect(TokenType_Other, "}");
 
-    return std::make_unique<ClassGlobal>(
-        std::move(loc),
-        is_export,
-        std::move(type),
-        std::move(base_type),
-        std::move(members),
-        std::move(functions));
+    return std::make_unique<ClassGlobal>(std::move(loc), is_export, std::move(type), std::move(base_type), std::move(members), std::move(functions));
 }

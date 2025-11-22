@@ -3,13 +3,18 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::SymbolExpression::SymbolExpression(Location loc, std::string name)
+llove::SymbolExpression::SymbolExpression(
+    Location loc,
+    std::string name)
     : Expression(std::move(loc)),
       m_Name(std::move(name))
 {
 }
 
-llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect) const try
+llove::ValuePtr llove::SymbolExpression::GenVal(
+    Builder& builder,
+    TypePtr expect) const
+try
 {
     if (builder.HasValue(m_Name))
         return builder.GetValue(m_Name);
@@ -22,15 +27,16 @@ llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr expect
 
     builder.EmitLoc(m_Loc);
 
-    const auto &function = functions.front();
+    const auto& function = functions.front();
     return Value::CreateR(function.Type, function.Callee);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
+llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder& builder) const
+try
 {
     std::vector<FunctionReference> candidates;
 
@@ -42,8 +48,7 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
 
         if (symbol_type->IsFunction())
         {
-            FunctionReference reference
-            {
+            FunctionReference reference{
                 .IsExposed = false,
                 .IsImplicit = false,
                 .Name = m_Name,
@@ -62,21 +67,22 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
     Assert(!candidates.empty(), "undefined symbol '{}'", m_Name);
     return { .Candidates = std::move(candidates) };
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::SymbolExpression::Reflect(Context &context) const try
+llove::StatementPtr llove::SymbolExpression::Reflect(Context& context) const
+try
 {
     return std::make_unique<SymbolExpression>(m_Loc, m_Name);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::SymbolExpression::Print(std::ostream &stream) const
+std::ostream& llove::SymbolExpression::Print(std::ostream& stream) const
 {
     return stream << m_Name;
 }

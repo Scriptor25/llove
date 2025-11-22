@@ -14,7 +14,10 @@ llove::CreateExpression::CreateExpression(
 {
 }
 
-llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect) const try
+llove::ValuePtr llove::CreateExpression::GenVal(
+    Builder& builder,
+    TypePtr expect) const
+try
 {
     Assert(m_Type->IsClass(), "cannot construct non-class value");
 
@@ -23,14 +26,14 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
 
     std::vector<Field> argument_fields;
     std::vector<ValuePtr> argument_values;
-    for (auto &argument : m_Arguments)
+    for (auto& argument : m_Arguments)
     {
         auto argument_value = argument->GenVal(builder, nullptr);
         argument_fields.emplace_back(argument_value->AsField());
         argument_values.emplace_back(std::move(argument_value));
     }
 
-    llvm::Value *pointer;
+    llvm::Value* pointer;
     ValuePtr destination;
     if (m_Destination)
     {
@@ -60,12 +63,13 @@ llove::ValuePtr llove::CreateExpression::GenVal(Builder &builder, TypePtr expect
     const auto value = builder.CreateLoad(m_Type->GenIR(builder), pointer);
     return Value::CreateR(m_Type, value);
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::CreateExpression::Reflect(Context &context) const try
+llove::StatementPtr llove::CreateExpression::Reflect(Context& context) const
+try
 {
     TypePtr type;
     Type::Reflect(context, m_Type, type);
@@ -75,17 +79,17 @@ llove::StatementPtr llove::CreateExpression::Reflect(Context &context) const try
         m_Destination->Reflect(context, destination);
 
     std::vector<ExpressionPtr> arguments;
-    for (auto &argument : m_Arguments)
+    for (auto& argument : m_Arguments)
         argument->Reflect(context, arguments.emplace_back());
 
     return std::make_unique<CreateExpression>(m_Loc, std::move(type), std::move(destination), std::move(arguments));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::CreateExpression::Print(std::ostream &stream) const
+std::ostream& llove::CreateExpression::Print(std::ostream& stream) const
 {
     stream << "create";
     if (m_Destination)

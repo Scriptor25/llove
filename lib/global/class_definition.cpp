@@ -1,7 +1,7 @@
-#include <utility>
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
+#include <utility>
 
 llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     Location loc,
@@ -9,7 +9,9 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
     const bool is_mutable,
     std::string name,
     std::vector<Parameter> parameters,
-    std::pair<bool, std::string> variadic,
+    std::pair<
+        bool,
+        std::string> variadic,
     Field result,
     std::vector<Initializer> initializers,
     StatementPtr content)
@@ -25,10 +27,11 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
 {
 }
 
-void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
+void llove::ClassDefinitionGlobal::Gen(Builder& builder) const
+try
 {
     std::vector<Field> parameters;
-    for (auto &parameter : m_Parameters)
+    for (auto& parameter : m_Parameters)
         parameters.emplace_back(parameter.Info);
 
     const auto reference = m_ClassType->GetFunction(
@@ -41,14 +44,14 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
     Assert(reference.has_value(), "class function prototype mismatch");
 
     std::vector<Initializer> initializers;
-    for (auto &initializer : m_Initializers)
+    for (auto& initializer : m_Initializers)
         initializer.Reflect(builder.GetContext(), initializers.emplace_back());
 
     StatementPtr content;
     if (m_Content)
         m_Content->Reflect(builder.GetContext(), content);
 
-    auto &[parent, function] = *reference;
+    auto& [parent, function] = *reference;
     builder.GenFunction(
         {
             .Loc = m_Loc,
@@ -67,29 +70,28 @@ void llove::ClassDefinitionGlobal::Gen(Builder &builder) const try
             .Content = std::move(content),
         });
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<std::string, llove::ValuePtr> llove::ClassDefinitionGlobal::GenImport(
-    Context &context,
-    Builder &builder,
-    const std::string &as,
-    const std::map<std::string, std::string> &symbols) const
+std::pair<
+    std::string,
+    llove::ValuePtr>
+llove::ClassDefinitionGlobal::GenImport(
+    Context& context,
+    Builder& builder,
+    const std::string& as,
+    const std::map<
+        std::string,
+        std::string>& symbols) const
 {
     return {};
 }
 
-std::ostream &llove::ClassDefinitionGlobal::Print(std::ostream &stream) const
+std::ostream& llove::ClassDefinitionGlobal::Print(std::ostream& stream) const
 {
-    stream
-            << "define:"
-            << m_ClassType->GetName()
-            << ' '
-            << (m_IsMutable ? "mut " : "")
-            << m_Name
-            << '(';
+    stream << "define:" << m_ClassType->GetName() << ' ' << (m_IsMutable ? "mut " : "") << m_Name << '(';
 
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)
     {

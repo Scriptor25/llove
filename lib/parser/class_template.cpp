@@ -3,7 +3,9 @@
 #include <llove/template.hpp>
 #include <llove/tree.hpp>
 
-void llove::Parser::ParseClassTemplate(const bool is_export, std::string name)
+void llove::Parser::ParseClassTemplate(
+    const bool is_export,
+    std::string name)
 {
     std::vector<std::pair<std::string, TemplateType::Ptr>> template_parameters;
     ParseTemplateParameterList(template_parameters);
@@ -14,11 +16,7 @@ void llove::Parser::ParseClassTemplate(const bool is_export, std::string name)
         return;
     }
 
-    auto &class_template = m_Context.PushClassTemplate(
-        is_export,
-        std::move(name),
-        std::move(template_parameters),
-        false);
+    auto& class_template = m_Context.PushClassTemplate(is_export, std::move(name), std::move(template_parameters), false);
 
     Expect(TokenType_Other, "{");
     while (!At(TokenType_Other, "}"))

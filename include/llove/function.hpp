@@ -1,21 +1,21 @@
 #pragma once
 
-#include <string>
 #include <llove/type.hpp>
 #include <llvm/IR/Function.h>
+#include <string>
 
 namespace llove
 {
     struct FunctionReference
     {
-        std::ostream &Print(std::ostream &stream) const;
+        std::ostream& Print(std::ostream& stream) const;
 
         bool IsExposed = false;
         bool IsImplicit = false;
 
         std::string Name;
         FunctionType::Ptr Type;
-        llvm::Value *Callee = nullptr;
+        llvm::Value* Callee = nullptr;
     };
 
     struct Function final
@@ -47,7 +47,9 @@ template<>
 struct std::formatter<llove::FunctionReference> : std::formatter<std::string_view>
 {
     template<typename FormatContext>
-    auto format(const llove::FunctionReference &reference, FormatContext &ctx) const
+    auto format(
+        const llove::FunctionReference& reference,
+        FormatContext& ctx) const
     {
         std::stringstream stream;
         reference.Print(stream);

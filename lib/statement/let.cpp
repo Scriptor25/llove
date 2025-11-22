@@ -17,7 +17,8 @@ llove::LetStatement::LetStatement(
 {
 }
 
-void llove::LetStatement::Gen(Builder &builder) const try
+void llove::LetStatement::Gen(Builder& builder) const
+try
 {
     ValuePtr value;
     TypePtr type;
@@ -38,7 +39,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
 
     std::vector<Field> argument_fields;
     std::vector<ValuePtr> argument_values;
-    for (auto &argument : m_Arguments)
+    for (auto& argument : m_Arguments)
     {
         auto argument_value = argument->GenVal(builder, nullptr);
         argument_fields.emplace_back(argument_value->AsField());
@@ -47,7 +48,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value *pointer;
+    llvm::Value* pointer;
     if (m_Field.IsReference())
     {
         Assert(m_Arguments.empty(), "cannot construct reference");
@@ -71,11 +72,8 @@ void llove::LetStatement::Gen(Builder &builder) const try
 
             if (value)
             {
-                if (const auto candidate = builder.FindFunction(
-                    constructors,
-                    { value->AsField() },
-                    self->AsField(),
-                    true))
+                if (const auto
+                        candidate = builder.FindFunction(constructors, { value->AsField() }, self->AsField(), true))
                 {
                     builder.CreateCall(*candidate, { std::move(value) }, self);
                 }
@@ -94,11 +92,7 @@ void llove::LetStatement::Gen(Builder &builder) const try
             }
             else
             {
-                const auto candidate = builder.FindFunction(
-                    constructors,
-                    argument_fields,
-                    self->AsField(),
-                    false);
+                const auto candidate = builder.FindFunction(constructors, argument_fields, self->AsField(), false);
                 Assert(candidate.has_value(), "no suitable candidate");
 
                 builder.CreateCall(*candidate, std::move(argument_values), self);
@@ -127,12 +121,13 @@ void llove::LetStatement::Gen(Builder &builder) const try
     builder.GetDebug().CreateVariable(builder, m_Name, storage);
     builder.SetValue(m_Name, std::move(storage));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::LetStatement::Reflect(Context &context) const try
+llove::StatementPtr llove::LetStatement::Reflect(Context& context) const
+try
 {
     Field field;
     ExpressionPtr value;
@@ -143,17 +138,17 @@ llove::StatementPtr llove::LetStatement::Reflect(Context &context) const try
     if (m_Value)
         m_Value->Reflect(context, value);
 
-    for (auto &argument : m_Arguments)
+    for (auto& argument : m_Arguments)
         argument->Reflect(context, arguments.emplace_back());
 
     return std::make_unique<LetStatement>(m_Loc, std::move(field), m_Name, std::move(value), std::move(arguments));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::LetStatement::Print(std::ostream &stream) const
+std::ostream& llove::LetStatement::Print(std::ostream& stream) const
 {
     m_Field.Print(stream << "let ", true, m_Name);
 

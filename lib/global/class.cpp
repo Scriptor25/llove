@@ -2,7 +2,10 @@
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
 
-llove::ClassGlobal::ClassGlobal(Location loc, const bool is_export, ClassType::Ptr class_type)
+llove::ClassGlobal::ClassGlobal(
+    Location loc,
+    const bool is_export,
+    ClassType::Ptr class_type)
     : Global(std::move(loc)),
       m_IsExport(is_export),
       m_IsOpaque(true),
@@ -27,7 +30,8 @@ llove::ClassGlobal::ClassGlobal(
 {
 }
 
-void llove::ClassGlobal::Gen(Builder &builder) const try
+void llove::ClassGlobal::Gen(Builder& builder) const
+try
 {
     if (m_IsOpaque)
         return;
@@ -35,15 +39,15 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
     m_ClassType->SetParentClass(m_BaseType);
 
     std::vector<ClassMemberReference> class_members;
-    for (auto &member : m_Members)
+    for (auto& member : m_Members)
         class_members.emplace_back(member.Info, member.Name);
     m_ClassType->SetMembers(std::move(class_members));
 
     std::vector<ClassFunctionReference> class_functions;
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
     {
         std::vector<Field> parameters;
-        for (auto &parameter : function.Parameters)
+        for (auto& parameter : function.Parameters)
             parameters.emplace_back(parameter.Info);
         class_functions.emplace_back(
             ClassFunctionReference{
@@ -61,10 +65,10 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
     }
     m_ClassType->SetFunctions(std::move(class_functions));
 
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
     {
         std::vector<Initializer> initializers;
-        for (auto &initializer : function.Initializers)
+        for (auto& initializer : function.Initializers)
             initializer.Reflect(builder.GetContext(), initializers.emplace_back());
 
         StatementPtr content;
@@ -90,21 +94,26 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
             });
     }
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
-    Context &context,
-    Builder &builder,
-    const std::string &as,
-    const std::map<std::string, std::string> &symbols) const
+std::pair<
+    std::string,
+    llove::ValuePtr>
+llove::ClassGlobal::GenImport(
+    Context& context,
+    Builder& builder,
+    const std::string& as,
+    const std::map<
+        std::string,
+        std::string>& symbols) const
 {
     if (!m_IsExport)
         return {};
 
-    auto &name = m_ClassType->GetName();
+    auto& name = m_ClassType->GetName();
 
     if (!(as.empty() && symbols.empty() || symbols.contains(name)))
         return {};
@@ -118,15 +127,15 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     m_ClassType->SetParentClass(m_BaseType);
 
     std::vector<ClassMemberReference> class_members;
-    for (auto &member : m_Members)
+    for (auto& member : m_Members)
         class_members.emplace_back(member.Info, member.Name);
     m_ClassType->SetMembers(std::move(class_members));
 
     std::vector<ClassFunctionReference> class_functions;
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
     {
         std::vector<Field> parameters;
-        for (auto &parameter : function.Parameters)
+        for (auto& parameter : function.Parameters)
             parameters.emplace_back(parameter.Info);
         class_functions.emplace_back(
             ClassFunctionReference{
@@ -147,7 +156,7 @@ std::pair<std::string, llove::ValuePtr> llove::ClassGlobal::GenImport(
     return {};
 }
 
-std::ostream &llove::ClassGlobal::Print(std::ostream &stream) const
+std::ostream& llove::ClassGlobal::Print(std::ostream& stream) const
 {
     stream << "class " << m_ClassType->GetName();
     if (m_IsOpaque)
@@ -159,11 +168,11 @@ std::ostream &llove::ClassGlobal::Print(std::ostream &stream) const
     const auto cur = std::string(PrintDepth += 2, ' ');
 
     stream << " {" << std::endl;
-    for (auto &function : m_Functions)
+    for (auto& function : m_Functions)
         stream << cur << function << std::endl;
     if (!m_Functions.empty() && !m_Members.empty())
         stream << std::endl;
-    for (auto &member : m_Members)
+    for (auto& member : m_Members)
         stream << cur << member << std::endl;
     return stream << std::string(PrintDepth -= 2, ' ') << '}';
 }

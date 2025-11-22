@@ -12,7 +12,8 @@ llove::SwitchStatement::SwitchStatement(
 {
 }
 
-void llove::SwitchStatement::Gen(Builder &builder) const try
+void llove::SwitchStatement::Gen(Builder& builder) const
+try
 {
     const auto parent = builder.GetParent();
     const auto default_block = builder.CreateBlock("default", parent);
@@ -28,13 +29,13 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
     builder.EmitLoc(m_Loc);
     builder.PushFrame(m_Loc, nullptr, tail_block);
 
-    std::map<llvm::ConstantInt *, llvm::BasicBlock *> cases;
+    std::map<llvm::ConstantInt*, llvm::BasicBlock*> cases;
 
-    for (auto &[is_default, keys, content] : m_Cases)
+    for (auto& [is_default, keys, content] : m_Cases)
     {
         auto case_block = is_default ? default_block : builder.CreateBlock("case", parent);
 
-        for (auto &key : keys)
+        for (auto& key : keys)
         {
             auto key_value = key->GenVal(builder, condition_type);
             key_value = builder.CreateCast(key_value, condition_type, true);
@@ -80,41 +81,42 @@ void llove::SwitchStatement::Gen(Builder &builder) const try
         builder.ClearInsertionPoint();
     }
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::SwitchStatement::Reflect(Context &context) const try
+llove::StatementPtr llove::SwitchStatement::Reflect(Context& context) const
+try
 {
     ExpressionPtr condition;
     std::vector<SwitchStatementCase> cases;
 
     m_Condition->Reflect(context, condition);
 
-    for (auto &[is_default_, keys_, content_] : m_Cases)
+    for (auto& [is_default_, keys_, content_] : m_Cases)
     {
-        auto &[is_default, keys, content] = cases.emplace_back();
+        auto& [is_default, keys, content] = cases.emplace_back();
         is_default = is_default_;
-        for (auto &key_ : keys_)
-            if (auto &key = keys.emplace_back(); key_)
+        for (auto& key_ : keys_)
+            if (auto& key = keys.emplace_back(); key_)
                 key_->Reflect(context, key);
         content_->Reflect(context, content);
     }
 
     return std::make_unique<SwitchStatement>(m_Loc, std::move(condition), std::move(cases));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::SwitchStatement::Print(std::ostream &stream) const
+std::ostream& llove::SwitchStatement::Print(std::ostream& stream) const
 {
     const auto cur = std::string(PrintDepth += 2, ' ');
 
     stream << "switch (" << m_Condition << ") {" << std::endl;
-    for (auto &[is_default, keys, content] : m_Cases)
+    for (auto& [is_default, keys, content] : m_Cases)
     {
         stream << cur << '[';
         if (is_default)

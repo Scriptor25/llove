@@ -23,7 +23,7 @@ bool llove::RangeType::IsRange() const
     return true;
 }
 
-llvm::StructType *llove::RangeType::GenIR(Builder &builder)
+llvm::StructType* llove::RangeType::GenIR(Builder& builder)
 {
     if (!m_IRType)
     {
@@ -34,7 +34,7 @@ llvm::StructType *llove::RangeType::GenIR(Builder &builder)
     return llvm::dyn_cast<llvm::StructType>(m_IRType);
 }
 
-llvm::DIType *llove::RangeType::GenDI(Builder &builder)
+llvm::DIType* llove::RangeType::GenDI(Builder& builder)
 {
     if (!m_DIType)
     {
@@ -50,12 +50,14 @@ llvm::DIType *llove::RangeType::GenDI(Builder &builder)
     return m_DIType;
 }
 
-llove::TypePtr llove::RangeType::Reflect(Context &context) const
+llove::TypePtr llove::RangeType::Reflect(Context& context) const
 {
     return context.GetRange(m_Entry->Reflect(context));
 }
 
-bool llove::RangeType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
+bool llove::RangeType::TypeInfo(
+    Builder& builder,
+    std::vector<llvm::Constant*>& dst) const
 {
     dst.emplace_back(builder.GetI32(ID));
     return m_Entry->TypeInfo(builder, dst);
@@ -66,7 +68,7 @@ std::string llove::RangeType::Mangle() const
     return 'r' + m_Entry->Mangle();
 }
 
-std::ostream &llove::RangeType::Print(std::ostream &stream) const
+std::ostream& llove::RangeType::Print(std::ostream& stream) const
 {
     return stream << "range<" << m_Entry << '>';
 }

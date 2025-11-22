@@ -3,7 +3,11 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::IfStatement::IfStatement(Location loc, ExpressionPtr condition, StatementPtr then, StatementPtr else_)
+llove::IfStatement::IfStatement(
+    Location loc,
+    ExpressionPtr condition,
+    StatementPtr then,
+    StatementPtr else_)
     : Statement(std::move(loc)),
       m_Condition(std::move(condition)),
       m_Then(std::move(then)),
@@ -11,7 +15,8 @@ llove::IfStatement::IfStatement(Location loc, ExpressionPtr condition, Statement
 {
 }
 
-void llove::IfStatement::Gen(Builder &builder) const try
+void llove::IfStatement::Gen(Builder& builder) const
+try
 {
     const auto parent = builder.GetParent();
     auto then_block = builder.CreateBlock("then", parent);
@@ -60,12 +65,13 @@ void llove::IfStatement::Gen(Builder &builder) const try
         builder.ClearInsertionPoint();
     }
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::IfStatement::Reflect(Context &context) const try
+llove::StatementPtr llove::IfStatement::Reflect(Context& context) const
+try
 {
     ExpressionPtr condition;
     StatementPtr then, else_;
@@ -79,12 +85,12 @@ llove::StatementPtr llove::IfStatement::Reflect(Context &context) const try
 
     return std::make_unique<IfStatement>(m_Loc, std::move(condition), std::move(then), std::move(else_));
 }
-catch (ref_exception<ErrorStack> &cause)
+catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream &llove::IfStatement::Print(std::ostream &stream) const
+std::ostream& llove::IfStatement::Print(std::ostream& stream) const
 {
     stream << "if (" << m_Condition << ") " << m_Then;
     if (m_Else)
