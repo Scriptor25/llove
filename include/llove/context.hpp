@@ -11,6 +11,21 @@
 
 namespace llove
 {
+    struct ClassReflection
+    {
+        std::map<std::string, TypePtr> Frame;
+
+        ClassType::Ptr Class;
+        std::vector<ClassFunction> Functions;
+    };
+
+    struct DefinitionReflection
+    {
+        std::map<std::string, TypePtr> Frame;
+
+        Function Fun;
+    };
+
     class Context
     {
     public:
@@ -131,9 +146,9 @@ namespace llove
         std::map<std::string, DefinitionTemplate> m_DefinitionTemplates;
         std::map<std::string, FunctionReference> m_DefinitionInstances;
 
-        std::map<std::string, TypePtr> m_TemplateArguments;
+        const std::map<std::string, TypePtr> *m_CurrentFrame = nullptr;
 
-        std::vector<std::pair<ClassType::Ptr, std::vector<ClassFunction>>> m_ClassReflections;
-        std::vector<Function> m_DefinitionReflections;
+        std::vector<ClassReflection> m_ClassReflections;
+        std::vector<DefinitionReflection> m_DefinitionReflections;
     };
 }
