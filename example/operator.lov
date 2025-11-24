@@ -7,7 +7,7 @@ type vec3 = {
 };
 
 define +(&l: vec3, &r: vec3): vec3 {
-    yield {
+    ret {
         x: l.x + r.x,
         y: l.y + r.y,
         z: l.z + r.z,
@@ -15,7 +15,7 @@ define +(&l: vec3, &r: vec3): vec3 {
 }
 
 define -(&l: vec3, &r: vec3): vec3 {
-    yield {
+    ret {
         x: l.x - r.x,
         y: l.y - r.y,
         z: l.z - r.z,
@@ -43,5 +43,5 @@ interface main(count: i32, args: i8[][]): i32 {
     format("{::2} {::2} {::2}\n", v.x, v.y, v.z);
     format("{::2} {::2} {::2}\n", w.x, w.y, w.z);
 
-    yield 0;
+    ret 0;
 }

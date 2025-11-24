@@ -48,77 +48,77 @@ class string {
 define +(&l: string, r: i8): string {
     let mut str: string = l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(l: i8, &r: string): string {
     let mut str: string = l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(&l: string, r: i8[]): string {
     let mut str: string = l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(l: i8[], &r: string): string {
     let mut str: string = l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(mut l: string, r: i8): string {
     let mut str: string = $l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(l: i8, mut r: string): string {
     let mut str: string = l;
     str += $r;
-    yield str;
+    ret str;
 }
 
 define +(mut l: string, r: i8[]): string {
     let mut str: string = $l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(l: i8[], mut r: string): string {
     let mut str: string = l;
     str += $r;
-    yield str;
+    ret str;
 }
 
 define +(&l: string, mut r: string): string {
     let mut str: string = l;
     str += $r;
-    yield str;
+    ret str;
 }
 
 define +(mut l: string, &r: string): string {
     let mut str: string = $l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(&l: string, &r: string): string {
     let mut str: string = l;
     str += r;
-    yield str;
+    ret str;
 }
 
 define +(mut l: string, mut r: string): string {
     let mut str: string = $l;
     str += $r;
-    yield str;
+    ret str;
 }
 
 define implicit cast(src: i8[]): string {
-    yield create string(src);
+    ret create string(src);
 }
 
 define print(s: string) {
@@ -149,11 +149,11 @@ define test(a: u1, b: u1): string {
     }
 
     if (b) {
-        yield s;
+        ret s;
     }
 
     x = s;
-    yield x;
+    ret x;
 }
 
 interface main(count: i32, args: i8[][]): i32 {
@@ -168,7 +168,7 @@ interface main(count: i32, args: i8[][]): i32 {
     test(1, 0);
     test(1, 1);
 
-    yield 0;
+    ret 0;
 }
 
 define:string mut create() {
@@ -220,7 +220,7 @@ define:string mut $(): string {
     self.beg = null;
     self.end = null;
 
-    yield result;
+    ret result;
 }
 
 define:string mut delete() {
@@ -233,11 +233,11 @@ define:string mut delete() {
 }
 
 define:string empty(): u1 {
-    yield self.beg == self.end;
+    ret self.beg == self.end;
 }
 
 define:string length(): u64 {
-    yield self.end - self.beg;
+    ret self.end - self.beg;
 }
 
 define:string raw(): i8[mut] {
@@ -247,23 +247,23 @@ define:string raw(): i8[mut] {
     memcpy(buffer, self.beg, len);
     buffer[len] = 0;
 
-    yield buffer;
+    ret buffer;
 }
 
 define:string begin(): i8[] {
-    yield self.beg;
+    ret self.beg;
 }
 
 define:string end(): i8[] {
-    yield self.end;
+    ret self.end;
 }
 
 define:string mut begin(): i8[mut] {
-    yield self.beg;
+    ret self.beg;
 }
 
 define:string mut end(): i8[mut] {
-    yield self.end;
+    ret self.end;
 }
 
 define:string mut clear() {
@@ -281,7 +281,7 @@ define:string mut =(s: i8): mut &string {
 
     *self.beg = s;
 
-    yield self;
+    ret self;
 }
 
 define:string mut =(s: i8[]): mut &string {
@@ -292,7 +292,7 @@ define:string mut =(s: i8[]): mut &string {
 
     memcpy(self.beg, s, len);
 
-    yield self;
+    ret self;
 }
 
 define:string mut =(mut s: string): mut &string {
@@ -305,7 +305,7 @@ define:string mut =(mut s: string): mut &string {
     s.beg = beg;
     s.end = end;
 
-    yield self;
+    ret self;
 }
 
 define:string mut =(&s: string): mut &string {
@@ -316,7 +316,7 @@ define:string mut =(&s: string): mut &string {
 
     memcpy(self.beg, s.beg, len);
 
-    yield self;
+    ret self;
 }
 
 define:string mut +=(s: i8): mut &string {
@@ -327,7 +327,7 @@ define:string mut +=(s: i8): mut &string {
 
     *(self.beg + len) = s;
 
-    yield self;
+    ret self;
 }
 
 define:string mut +=(s: i8[]): mut &string {
@@ -339,7 +339,7 @@ define:string mut +=(s: i8[]): mut &string {
 
     memcpy(self.beg + len, s, slen);
 
-    yield self;
+    ret self;
 }
 
 define:string mut +=(s: string): mut &string {
@@ -351,7 +351,7 @@ define:string mut +=(s: string): mut &string {
 
     memcpy(self.beg + len, s.beg, slen);
 
-    yield self;
+    ret self;
 }
 
 define:string mut +=(&s: string): mut &string {
@@ -363,5 +363,5 @@ define:string mut +=(&s: string): mut &string {
 
     memcpy(self.beg + len, s.beg, slen);
 
-    yield self;
+    ret self;
 }

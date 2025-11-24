@@ -13,7 +13,7 @@ interface free(block: []);
 define new<T>(mut val: T): T[mut] {
     let p: T[mut] = malloc(sizeof T);
     *p = $val;
-    yield p;
+    ret p;
 }
 
 export class type {
@@ -36,7 +36,7 @@ export class void_type : type {
     }
 
     expose override mut $(): void_type {
-        yield self;
+        ret self;
     }
 }
 
@@ -46,7 +46,7 @@ export class variadic_type : type {
     }
 
     expose override mut $(): variadic_type {
-        yield self;
+        ret self;
     }
 }
 
@@ -60,15 +60,15 @@ export class integer_type : type {
     }
 
     expose override mut $(): integer_type {
-        yield self;
+        ret self;
     }
 
     expose is_signed(): u1 {
-        yield self.is_signed;
+        ret self.is_signed;
     }
 
     expose bits(): u32 {
-        yield self.bits;
+        ret self.bits;
     }
 
     let is_signed: u1;
@@ -84,11 +84,11 @@ export class float_type : type {
     }
 
     expose override mut $(): float_type {
-        yield self;
+        ret self;
     }
 
     expose bits(): u32 {
-        yield self.bits;
+        ret self.bits;
     }
 
     let bits: u32;
@@ -114,19 +114,19 @@ export class pointer_type : type {
     expose override mut $(): pointer_type {
         let mut t: pointer_type(self.is_mutable, self.is_opaque, self.base);
         self.base = null;
-        yield t;
+        ret t;
     }
 
     expose is_mutable(): u1 {
-        yield self.is_mutable;
+        ret self.is_mutable;
     }
 
     expose is_opaque(): u1 {
-        yield self.is_opaque;
+        ret self.is_opaque;
     }
 
     expose base(): type_ptr {
-        yield self.base;
+        ret self.base;
     }
 
     let is_mutable: u1;
@@ -153,15 +153,15 @@ export class array_type : type {
     expose override mut $(): array_type {
         let mut t: array_type(self.count, self.base);
         self.base = null;
-        yield t;
+        ret t;
     }
 
     expose count(): u32 {
-        yield self.count;
+        ret self.count;
     }
 
     expose base(): type_ptr {
-        yield self.base;
+        ret self.base;
     }
 
     let count: u32;
@@ -194,23 +194,23 @@ export class struct_type : type {
         let mut t: struct_type(self.count, self.fields);
         self.count = 0;
         self.fields = null;
-        yield t;
+        ret t;
     }
 
     expose mut begin(): type_ptr[mut] {
-        yield self.fields;
+        ret self.fields;
     }
 
     expose mut end(): type_ptr[mut] {
-        yield self.fields + self.count;
+        ret self.fields + self.count;
     }
 
     expose begin(): type_ptr[] {
-        yield self.fields;
+        ret self.fields;
     }
 
     expose end(): type_ptr[] {
-        yield self.fields + self.count;
+        ret self.fields + self.count;
     }
 
     let mut count: u32;
@@ -235,11 +235,11 @@ export class range_type : type {
     expose override mut $(): range_type {
         let mut t: range_type(self.entry);
         self.entry = null;
-        yield t;
+        ret t;
     }
 
     expose entry(): type_ptr {
-        yield self.entry;
+        ret self.entry;
     }
 
     let mut entry: type_ptr;
@@ -252,10 +252,10 @@ export define parse(mut typeinfo: u8[]): type_ptr {
 
     switch (id) {
         [typeid_void] {
-            yield <void_type> new(create void_type);
+            ret <void_type> new(create void_type);
         }
         [typeid_variadic] {
-            yield <variadic_type> new(create variadic_type);
+            ret <variadic_type> new(create variadic_type);
         }
         [typeid_integer] {
             let is_signed = *(typeinfo as u1[]);
@@ -263,13 +263,13 @@ export define parse(mut typeinfo: u8[]): type_ptr {
             let bits = *(typeinfo as u32[]);
             typeinfo += sizeof u32;
 
-            yield <integer_type> new(create integer_type(is_signed, bits));
+            ret <integer_type> new(create integer_type(is_signed, bits));
         }
         [typeid_float] {
             let bits = *(typeinfo as u32[]);
             typeinfo += sizeof u32;
 
-            yield <float_type> new(create float_type(bits));
+            ret <float_type> new(create float_type(bits));
         }
         [typeid_pointer] {
             let is_mutable = *(typeinfo as u1[]);
@@ -279,14 +279,14 @@ export define parse(mut typeinfo: u8[]): type_ptr {
 
             let base = is_opaque ? null:mut:type : parse(typeinfo);
 
-            yield <pointer_type> new(create pointer_type(is_mutable, is_opaque, base));
+            ret <pointer_type> new(create pointer_type(is_mutable, is_opaque, base));
         }
         [typeid_array] {
             let count = *(typeinfo as u32[]);
             typeinfo += sizeof u32;
             let base = parse(typeinfo);
 
-            yield <array_type> new(create array_type(count, base));
+            ret <array_type> new(create array_type(count, base));
         }
         [typeid_struct] {
             let count = *(typeinfo as u32[]);
@@ -296,15 +296,15 @@ export define parse(mut typeinfo: u8[]): type_ptr {
             for (let mut i: u32; i < count; ++i)
                 fields[i] = parse(typeinfo);
 
-            yield <struct_type> new(create struct_type(count, fields));
+            ret <struct_type> new(create struct_type(count, fields));
         }
         [typeid_range] {
             let entry = parse(typeinfo);
 
-            yield <range_type> new(create range_type(entry));
+            ret <range_type> new(create range_type(entry));
         }
         [default] {
-            yield null:mut:type;
+            ret null:mut:type;
         }
     }
 }
@@ -332,35 +332,35 @@ define:type mut delete() {
 define:type mut $(): type {
     switch (self.id) {
         [typeid_void] {
-            yield $*((&self) as void_type[mut]);
+            ret $*((&self) as void_type[mut]);
         }
         [typeid_variadic] {
-            yield $*((&self) as variadic_type[mut]);
+            ret $*((&self) as variadic_type[mut]);
         }
         [typeid_integer] {
-            yield $*((&self) as integer_type[mut]);
+            ret $*((&self) as integer_type[mut]);
         }
         [typeid_float] {
-            yield $*((&self) as float_type[mut]);
+            ret $*((&self) as float_type[mut]);
         }
         [typeid_pointer] {
-            yield $*((&self) as pointer_type[mut]);
+            ret $*((&self) as pointer_type[mut]);
         }
         [typeid_array] {
-            yield $*((&self) as array_type[mut]);
+            ret $*((&self) as array_type[mut]);
         }
         [typeid_struct] {
-            yield $*((&self) as struct_type[mut]);
+            ret $*((&self) as struct_type[mut]);
         }
         [typeid_range] {
-            yield $*((&self) as range_type[mut]);
+            ret $*((&self) as range_type[mut]);
         }
         [default] {
-            yield self;
+            ret self;
         }
     }
 }
 
 define:type id(): u32 {
-    yield self.id;
+    ret self.id;
 }

@@ -23,8 +23,8 @@ llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
         return ParseSwitchStatement();
     if (At(TokenType_Symbol, "while"))
         return ParseWhileStatement(inline_);
-    if (At(TokenType_Symbol, "yield"))
-        return ParseYieldStatement(inline_);
+    if (At(TokenType_Symbol, "ret"))
+        return ParseRetStatement(inline_);
 
     auto expression = ParseExpression();
     if (inline_)

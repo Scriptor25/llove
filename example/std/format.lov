@@ -48,7 +48,7 @@ define print_string(push: push_fn, context: [mut], str: string_t, from: u64, to:
 }
 
 define min(a: u64, b: u64): u64 {
-    yield a < b ? a : b;
+    ret a < b ? a : b;
 }
 
 #
@@ -97,13 +97,7 @@ define print_int(push: push_fn, context: [mut], mut value: u64, base: u8, sign: 
     }
     for (; value; { value /= base; count += 1; }) {
         let rem = value % base;
-        buffer[--index] = (rem < 10) ? (
-            rem + '0'
-        ) : (upper) ? (
-            (rem - 10) + 'A'
-        ) : (
-            (rem - 10) + 'a'
-        );
+        buffer[--index] = (rem < 10) ? (rem + '0') : ((rem - 10) + (upper ? ('A') : 'a'));
     }
 
     if (pad_zero) {
@@ -344,6 +338,18 @@ export define format(push: push_fn, context: [mut], format: string_t, ...args) {
                             };
                             print_int(push, context, value, base, false, false, flags, length);
                         }
+                    }
+                    [typeid_float] {
+                        let cast_type = type as float_type[];
+                        let bits = cast_type::bits();
+
+                        let value = switch (bits) {
+                            [16] -> *(arg.data as f16[]);
+                            [32] -> *(arg.data as f32[]);
+                            [64] -> *(arg.data as f64[]);
+                            [default] -> 0.0:f64;
+                        };
+                        print_float(push, context, value, flags, length, precision);
                     }
                     [typeid_pointer] {
                         let cast_type = type as pointer_type[];

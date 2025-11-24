@@ -32,34 +32,34 @@ export class unique<T> {
     expose mut $(): class<T> unique {
         let mut u: class<T> unique(self.ptr);
         self.ptr = null;
-        yield u;
+        ret u;
     }
 
     expose cast(): u1 {
-        yield self.ptr != null;
+        ret self.ptr != null;
     }
 
     expose !(): u1 {
-        yield self.ptr == null;
+        ret self.ptr == null;
     }
 
     expose *(): mut &T {
-        yield *self.ptr;
+        ret *self.ptr;
     }
 
     expose get(): T[mut] {
-        yield self.ptr;
+        ret self.ptr;
     }
 
     expose mut release(): T[mut] {
         let ptr = self.ptr;
         self.ptr = null;
-        yield ptr;
+        ret ptr;
     }
 
     let mut ptr: T[mut];
 }
 
 export define implicit cast<T, U>(mut t: class<T> unique): class<U> unique {
-    yield create class<U> unique(t.release());
+    ret create class<U> unique(t.release() as U[mut]);
 }

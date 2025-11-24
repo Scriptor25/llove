@@ -55,11 +55,11 @@ class vec3 {
     }
 
     expose mut $(): vec3 {
-        let copy = self;
+        let v: vec3(self.x, self.y, self.z);
         self.x = 0.0;
         self.y = 0.0;
         self.z = 0.0;
-        yield copy;
+        ret v;
     }
 
     let mut x: f64;
@@ -104,5 +104,5 @@ interface main(): i32 {
         stream.format("{}{}{}", ir, ig, ib);
     }
 
-    yield 0;
+    ret 0;
 }

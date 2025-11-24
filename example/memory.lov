@@ -21,7 +21,7 @@ class test {
     expose mut =(data: i32): mut &test {
         format("test{{ data_ptr: {rx0#:16} }:=(i32)\n", self.data_ptr);
         *self.data_ptr = data;
-        yield self;
+        ret self;
     }
 
     expose mut create(mut other: test) {
@@ -37,7 +37,7 @@ class test {
         self.data_ptr = other.data_ptr;
         other.data_ptr = data_ptr;
         format("=> self={{ data_ptr: {rx0#:16} }, other={{ data_ptr: {rx0#:16} }\n", self.data_ptr, other.data_ptr);
-        yield self;
+        ret self;
     }
 
     expose mut $(): test {
@@ -46,7 +46,7 @@ class test {
         result.data_ptr = self.data_ptr;
         self.data_ptr = null;
 
-        yield result;
+        ret result;
     }
 
     expose mut delete() {
@@ -58,11 +58,11 @@ class test {
     }
 
     expose data(): i32 {
-        yield *self.data_ptr;
+        ret *self.data_ptr;
     }
 
     expose get(): i32[] {
-        yield self.data_ptr;
+        ret self.data_ptr;
     }
 
     let mut data_ptr: i32[mut];
@@ -97,7 +97,7 @@ class unique<T> {
         let ptr = self.ptr;
         self.ptr = other.ptr;
         other.ptr = ptr;
-        yield self;
+        ret self;
     }
 
     expose mut $(): class<T> unique {
@@ -106,7 +106,7 @@ class unique<T> {
         result.ptr = self.ptr;
         self.ptr = null;
 
-        yield self;
+        ret self;
     }
 
     expose mut delete() {
@@ -119,19 +119,19 @@ class unique<T> {
     }
 
     expose *(): mut &T {
-        yield *self.ptr;
+        ret *self.ptr;
     }
 
     expose !(): u1 {
-        yield !self.ptr;
+        ret !self.ptr;
     }
 
     expose get(): T[mut] {
-        yield self.ptr;
+        ret self.ptr;
     }
 
     expose cast(): u1 {
-        yield self.ptr != null;
+        ret self.ptr != null;
     }
 
     let mut ptr: T[mut];
@@ -147,5 +147,5 @@ interface main(): i32 {
 
     format("{} ({rx0#:16})\n", (*u).data(), (*u).get());
 
-    yield 0;
+    ret 0;
 }

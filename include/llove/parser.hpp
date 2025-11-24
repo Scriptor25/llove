@@ -208,7 +208,7 @@ namespace llove
         StatementPtr ParseScopeStatement();
         StatementPtr ParseSwitchStatement();
         StatementPtr ParseWhileStatement(bool inline_);
-        StatementPtr ParseYieldStatement(bool inline_);
+        StatementPtr ParseRetStatement(bool inline_);
 
         ExpressionPtr ParseExpression();
 

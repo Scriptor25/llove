@@ -456,10 +456,10 @@ namespace llove
         StatementPtr m_Content;
     };
 
-    class YieldStatement final : public Statement
+    class RetStatement final : public Statement
     {
     public:
-        explicit YieldStatement(
+        explicit RetStatement(
             Location loc,
             ExpressionPtr value);
 
