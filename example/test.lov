@@ -1,0 +1,8 @@
+import * from "std/unique.lov";
+
+interface main(): i32 {
+
+    let u = <i32> make(123);
+
+    ret 0;
+}

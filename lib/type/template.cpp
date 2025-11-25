@@ -21,17 +21,17 @@ bool llove::TemplateType::IsTemplate() const
 
 unsigned llove::TemplateType::SizeBits(Builder& builder)
 {
-    Error("template");
+    Error("template type '{}' does not have a size", m_Name);
 }
 
 llvm::Type* llove::TemplateType::GenIR(Builder& builder)
 {
-    Error("template");
+    Error("template type '{}' does not have an intermediate representation", m_Name);
 }
 
 llvm::DIType* llove::TemplateType::GenDI(Builder& builder)
 {
-    Error("template");
+    Error("template type '{}' does not have debug information", m_Name);
 }
 
 llove::TypePtr llove::TemplateType::Reflect(Context& context) const
@@ -43,7 +43,7 @@ bool llove::TemplateType::TypeInfo(
     Builder& builder,
     std::vector<llvm::Constant*>& dst) const
 {
-    Error("template");
+    Error("template type '{}' does not have typeinfo", m_Name);
 }
 
 std::string llove::TemplateType::Mangle() const
@@ -86,17 +86,17 @@ bool llove::TemplateClassType::IsTemplate() const
 
 unsigned llove::TemplateClassType::SizeBits(Builder& builder)
 {
-    Error("template");
+    Error("template class type '{}' does not have a size", m_Name);
 }
 
 llvm::Type* llove::TemplateClassType::GenIR(Builder& builder)
 {
-    Error("template");
+    Error("template class type '{}' does not have an intermediate representation", m_Name);
 }
 
 llvm::DIType* llove::TemplateClassType::GenDI(Builder& builder)
 {
-    Error("template");
+    Error("template class type '{}' does not have debug information", m_Name);
 }
 
 llove::TypePtr llove::TemplateClassType::Reflect(Context& context) const
@@ -112,7 +112,7 @@ bool llove::TemplateClassType::TypeInfo(
     Builder& builder,
     std::vector<llvm::Constant*>& dst) const
 {
-    Error("template");
+    Error("template class type '{}' does not have typeinfo", m_Name);
 }
 
 std::string llove::TemplateClassType::Mangle() const
