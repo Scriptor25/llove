@@ -146,7 +146,7 @@ namespace llove
         std::map<std::string, DefinitionTemplate> m_DefinitionTemplates;
         std::map<std::string, FunctionReference> m_DefinitionInstances;
 
-        const std::map<std::string, TypePtr> *m_CurrentFrame = nullptr;
+        const std::map<std::string, TypePtr>* m_CurrentFrame = nullptr;
 
         std::vector<ClassReflection> m_ClassReflections;
         std::vector<DefinitionReflection> m_DefinitionReflections;

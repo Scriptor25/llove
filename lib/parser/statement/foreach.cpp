@@ -18,11 +18,5 @@ llove::StatementPtr llove::Parser::ParseForEachStatement(const bool inline_)
 
     auto content = ScopeStatement::Wrap(ParseStatement(inline_));
 
-    return std::make_unique<ForEachStatement>(
-        std::move(loc),
-        mutable_,
-        reference,
-        std::move(name),
-        std::move(range),
-        std::move(content));
+    return std::make_unique<ForEachStatement>(std::move(loc), mutable_, reference, std::move(name), std::move(range), std::move(content));
 }

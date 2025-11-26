@@ -407,7 +407,9 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
     for (unsigned i = 0; i < type_arguments.size(); ++i)
     {
         if (i)
+        {
             name += ", ";
+        }
         name += type_arguments.at(i)->Mangle();
     }
     name += '>';
@@ -418,7 +420,9 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
     std::map<std::string, TypePtr> frame;
     for (unsigned i = 0; i < type_arguments.size(); ++i)
     {
-        frame.emplace(definition_template.TypeParameters.at(i).first, type_arguments.at(i));
+        frame.emplace(
+            definition_template.TypeParameters.at(i).first,
+            type_arguments.at(i));
     }
 
     m_CurrentFrame = &frame;
@@ -436,7 +440,9 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
 
     StatementPtr content;
     if (definition_template.Content)
+    {
         definition_template.Content->Reflect(*this, content);
+    }
 
     m_CurrentFrame = nullptr;
     m_DefinitionReflections.emplace_back(
@@ -468,7 +474,7 @@ void llove::Context::InstantiateReflections(Builder& builder)
     for (auto& [frame, class_type, functions] : m_ClassReflections)
     {
         m_CurrentFrame = &frame;
-        for (auto &function : functions)
+        for (auto& function : functions)
         {
             builder.GenFunction(
                 {

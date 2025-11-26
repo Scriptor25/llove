@@ -94,17 +94,6 @@ InsertBraces: false
 InsertNewlineAtEOF: true
 InsertTrailingCommas: None
 
-IntegerLiteralSeparator:
-  Binary: 4
-  BinaryMinDigits: 16
-  Decimal: 3
-  DecimalMinDigits: 10
-  Hex: 4
-  HexMinDigits: 16
-
-JavaScriptQuotes: Double
-JavaScriptWrapImports: true
-
 KeepEmptyLines:
   AtEndOfFile: false
   AtStartOfBlock: false
@@ -158,7 +147,6 @@ ShortNamespaceLines: 1
 SkipMacroDefinitionBody: false
 
 SortIncludes: CaseSensitive
-SortJavaStaticImport: After
 SortUsingDeclarations: Lexicographic
 
 SpaceAfterCStyleCast: true
@@ -171,7 +159,6 @@ SpaceBeforeCpp11BracedList: false
 SpaceBeforeCtorInitializerColon: true
 SpaceBeforeInheritanceColon: true
 SpaceBeforeJsonColon: false
-
 SpaceBeforeParens: Custom
 SpaceBeforeParensOptions:
   AfterControlStatements: true
@@ -182,24 +169,20 @@ SpaceBeforeParensOptions:
   AfterRequiresInClause: false
   AfterRequiresInExpression: false
   BeforeNonEmptyParentheses: false
-
 SpaceBeforeRangeBasedForLoopColon: true
 SpaceBeforeSquareBrackets: false
 SpaceInEmptyBlock: true
 SpacesBeforeTrailingComments: 1
 SpacesInAngles: Never
 SpacesInContainerLiterals: true
-
 SpacesInLineCommentPrefix:
   Minimum: 1
   Maximum: -1
-
 SpacesInParens: Custom
 SpacesInParensOptions:
   ExceptDoubleParentheses: true
   InConditionalStatements: false
   InEmptyParentheses: false
-
 SpacesInSquareBrackets: false
 
 Standard: c++20
