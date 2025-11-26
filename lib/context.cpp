@@ -313,7 +313,9 @@ llove::TypePtr llove::Context::InstantiateClass(
     const bool is_imported)
 {
     if (!m_ClassTemplates.contains(name) && m_Parent)
+    {
         return m_Parent->InstantiateClass(std::move(name), std::move(type_arguments), true);
+    }
 
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
@@ -323,20 +325,26 @@ llove::TypePtr llove::Context::InstantiateClass(
 
     auto template_class = GetOrCreate<TemplateClassType>(name, type_arguments);
     if (!class_template.Complete)
+    {
         return template_class;
+    }
 
     name = class_template.Name + '<';
     for (unsigned i = 0; i < type_arguments.size(); ++i)
     {
         if (i)
+        {
             name += ", ";
+        }
         name += type_arguments.at(i)->Mangle();
     }
     name += '>';
 
     auto class_type = GetClass(std::move(name));
     if (template_class->IsInstantiated())
+    {
         return class_type;
+    }
 
     std::map<std::string, TypePtr> frame;
     for (unsigned i = 0; i < type_arguments.size(); ++i)
@@ -349,15 +357,21 @@ llove::TypePtr llove::Context::InstantiateClass(
 
     std::vector<ClassMember> reflection_members;
     for (auto& member : class_template.Members)
+    {
         member.Reflect(*this, reflection_members.emplace_back());
+    }
 
     std::vector<ClassFunction> reflection_functions;
     for (auto& function : class_template.Functions)
+    {
         function.Reflect(*this, reflection_functions.emplace_back());
+    }
 
     std::vector<ClassMemberReference> members;
     for (auto& member : reflection_members)
+    {
         members.emplace_back(member.Info, member.Name);
+    }
     class_type->SetMembers(std::move(members));
 
     std::vector<ClassFunctionReference> functions;
@@ -365,7 +379,10 @@ llove::TypePtr llove::Context::InstantiateClass(
     {
         std::vector<Field> parameters;
         for (auto& parameter : function.Parameters)
+        {
             parameters.emplace_back(parameter.Info);
+        }
+
         functions.emplace_back(
             ClassFunctionReference{
                 .IsExport = false,
@@ -395,7 +412,9 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
     const bool is_imported)
 {
     if (!m_DefinitionTemplates.contains(name) && m_Parent)
+    {
         return m_Parent->InstantiateDefinition(builder, std::move(name), std::move(type_arguments), true);
+    }
 
     Assert(m_DefinitionTemplates.contains(name), "undefined definition template '{}'", name);
 
@@ -415,7 +434,9 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
     name += '>';
 
     if (m_DefinitionInstances.contains(name))
+    {
         return m_DefinitionInstances.at(name);
+    }
 
     std::map<std::string, TypePtr> frame;
     for (unsigned i = 0; i < type_arguments.size(); ++i)

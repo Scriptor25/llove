@@ -103,8 +103,9 @@ llove::TypePtr llove::TemplateClassType::Reflect(Context& context) const
 {
     std::vector<TypePtr> arguments;
     for (auto& argument : m_Arguments)
+    {
         Type::Reflect(context, argument, arguments.emplace_back());
-
+    }
     return context.InstantiateClass(m_Name, std::move(arguments), false);
 }
 
@@ -120,7 +121,9 @@ std::string llove::TemplateClassType::Mangle() const
     auto result = 't' + std::to_string(m_Name.size()) + '_' + m_Name
                 + std::to_string(m_Arguments.size()) + '_';
     for (auto& argument : m_Arguments)
+    {
         result += argument->Mangle();
+    }
     return result;
 }
 
@@ -130,8 +133,9 @@ std::ostream& llove::TemplateClassType::Print(std::ostream& stream) const
     for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
     {
         if (i != m_Arguments.begin())
+        {
             stream << ", ";
-
+        }
         stream << *i;
     }
     return stream << "> " << m_Name;
