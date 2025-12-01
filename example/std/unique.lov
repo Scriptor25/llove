@@ -64,7 +64,7 @@ export define implicit cast<T, U>(mut t: class<T> unique): class<U> unique {
     ret create class<U> unique(t.release() as U[mut]);
 }
 
-export define make<T>(mut val: T): class<T> unique {
+export define make_unique<T>(mut val: T): class<T> unique {
     let p: T[mut] = malloc(sizeof T);
     *p = $val;
     ret create class<T> unique(p);

@@ -239,8 +239,8 @@ llove::ClassTemplate& llove::Context::PushClassTemplate(
 void llove::Context::PopClassTemplate()
 {
     m_CurrentClassTemplate->Complete = true;
-
     m_CurrentClassTemplate = nullptr;
+
     m_TemplateTypes.pop_back();
 }
 
@@ -319,7 +319,7 @@ llove::TypePtr llove::Context::InstantiateClass(
 
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
-    const auto& class_template = m_ClassTemplates.at(name);
+    auto& class_template = m_ClassTemplates.at(name);
     Assert(!is_imported || class_template.IsImported, "template is not imported, cannot be accessed from child context");
     Assert(class_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
 
@@ -352,7 +352,7 @@ llove::TypePtr llove::Context::InstantiateClass(
         frame.emplace(class_template.TypeParameters.at(i).first, type_arguments.at(i));
     }
 
-    m_CurrentFrame = &frame;
+    m_TemplateStack.push_back(&frame);
     template_class->Instantiate();
 
     std::vector<ClassMember> reflection_members;
@@ -399,7 +399,7 @@ llove::TypePtr llove::Context::InstantiateClass(
     }
     class_type->SetFunctions(std::move(functions));
 
-    m_CurrentFrame = nullptr;
+    m_TemplateStack.pop_back();
     m_ClassReflections.emplace_back(std::move(frame), class_type, std::move(reflection_functions));
 
     return class_type;
@@ -446,7 +446,7 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
             type_arguments.at(i));
     }
 
-    m_CurrentFrame = &frame;
+    m_TemplateStack.push_back(&frame);
 
     std::vector<Parameter> parameters;
     for (auto& parameter : definition_template.Parameters)
@@ -465,7 +465,7 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
         definition_template.Content->Reflect(*this, content);
     }
 
-    m_CurrentFrame = nullptr;
+    m_TemplateStack.pop_back();
     m_DefinitionReflections.emplace_back(
         std::move(frame),
         Function{
@@ -494,7 +494,7 @@ void llove::Context::InstantiateReflections(Builder& builder)
 {
     for (auto& [frame, class_type, functions] : m_ClassReflections)
     {
-        m_CurrentFrame = &frame;
+        m_TemplateStack.push_back(&frame);
         for (auto& function : functions)
         {
             builder.GenFunction(
@@ -514,22 +514,25 @@ void llove::Context::InstantiateReflections(Builder& builder)
                     .Content = std::move(function.Content),
                 });
         }
+        m_TemplateStack.pop_back();
     }
+
+    m_ClassReflections.clear();
 
     for (const auto& [frame, function] : m_DefinitionReflections)
     {
-        m_CurrentFrame = &frame;
+        m_TemplateStack.push_back(&frame);
         builder.GenFunction(function, true);
+        m_TemplateStack.pop_back();
     }
 
-    m_CurrentFrame = nullptr;
-    m_ClassReflections.clear();
     m_DefinitionReflections.clear();
 }
 
 llove::TypePtr llove::Context::TemplateArgument(const std::string& name) const
 {
-    Assert(m_CurrentFrame != nullptr, "not a template");
-    Assert(m_CurrentFrame->contains(name), "undefined template argument '{}'", name);
-    return m_CurrentFrame->at(name);
+    Assert(!m_TemplateStack.empty(), "not a template");
+    auto frame = m_TemplateStack.back();
+    Assert(frame->contains(name), "undefined template argument '{}'", name);
+    return frame->at(name);
 }
