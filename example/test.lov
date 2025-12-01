@@ -1,11 +1,14 @@
 import * from "std/unique.lov";
+import { format } from "std/format.lov";
 
 interface main(): i32 {
 
-    let a = <i32> make_unique(123);
-    let b = <i32> make_unique(321);
+    let a = <i32> make_unique(321);
+    let b = <i32> make_unique(123);
 
     let c = *a + *b;
 
-    ret c;
+    format("{} + {} = {}\r\n", *a, *b, c);
+
+    ret 0;
 }
