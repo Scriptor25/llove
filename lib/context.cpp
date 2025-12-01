@@ -170,8 +170,8 @@ llove::TypePtr llove::Context::TypeUnion(
         {
         case TypeId_Pointer:
         {
-            auto left_pointer = As<PointerType>(left);
-            auto right_pointer = As<PointerType>(right);
+            const auto left_pointer = As<PointerType>(left);
+            const auto right_pointer = As<PointerType>(right);
 
             if (!left_pointer->IsOpaque() && !right_pointer->IsOpaque()
                 && left_pointer->GetBase() != right_pointer->GetBase())
@@ -319,12 +319,18 @@ llove::TypePtr llove::Context::InstantiateClass(
 
     Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
 
-    auto& class_template = m_ClassTemplates.at(name);
+    const auto& class_template = m_ClassTemplates.at(name);
     Assert(!is_imported || class_template.IsImported, "template is not imported, cannot be accessed from child context");
     Assert(class_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
 
+    auto complete = class_template.Complete;
+    for (auto it = type_arguments.begin(); it != type_arguments.end() && complete; ++it)
+    {
+        complete = !(*it)->IsTemplate();
+    }
+
     auto template_class = GetOrCreate<TemplateClassType>(name, type_arguments);
-    if (!class_template.Complete)
+    if (!complete)
     {
         return template_class;
     }
@@ -356,19 +362,19 @@ llove::TypePtr llove::Context::InstantiateClass(
     template_class->Instantiate();
 
     std::vector<ClassMember> reflection_members;
-    for (auto& member : class_template.Members)
+    for (const auto& member : class_template.Members)
     {
         member.Reflect(*this, reflection_members.emplace_back());
     }
 
     std::vector<ClassFunction> reflection_functions;
-    for (auto& function : class_template.Functions)
+    for (const auto& function : class_template.Functions)
     {
         function.Reflect(*this, reflection_functions.emplace_back());
     }
 
     std::vector<ClassMemberReference> members;
-    for (auto& member : reflection_members)
+    for (const auto& member : reflection_members)
     {
         members.emplace_back(member.Info, member.Name);
     }
@@ -378,7 +384,7 @@ llove::TypePtr llove::Context::InstantiateClass(
     for (const auto& function : reflection_functions)
     {
         std::vector<Field> parameters;
-        for (auto& parameter : function.Parameters)
+        for (const auto& parameter : function.Parameters)
         {
             parameters.emplace_back(parameter.Info);
         }
@@ -532,7 +538,7 @@ void llove::Context::InstantiateReflections(Builder& builder)
 llove::TypePtr llove::Context::TemplateArgument(const std::string& name) const
 {
     Assert(!m_TemplateStack.empty(), "not a template");
-    auto frame = m_TemplateStack.back();
+    const auto frame = m_TemplateStack.back();
     Assert(frame->contains(name), "undefined template argument '{}'", name);
     return frame->at(name);
 }

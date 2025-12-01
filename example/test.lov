@@ -2,7 +2,10 @@ import * from "std/unique.lov";
 
 interface main(): i32 {
 
-    let u = <i32> make_unique(123);
+    let a = <i32> make_unique(123);
+    let b = <i32> make_unique(321);
 
-    ret *u;
+    let c = *a + *b;
+
+    ret c;
 }
