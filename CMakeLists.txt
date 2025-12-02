@@ -3,6 +3,7 @@ project(llove)
 
 option(SILENCE "silence all generated compiler warnings" OFF)
 
+set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -14,6 +15,7 @@ set(YAML_CPP_FORMAT_SOURCE OFF)
 set(YAML_CPP_DISABLE_UNINSTALL OFF)
 set(YAML_USE_SYSTEM_GTEST OFF)
 set(YAML_ENABLE_PIC ON)
+
 add_subdirectory(deps/yaml-cpp)
 
 find_package(LLVM 21.1 REQUIRED CONFIG)
