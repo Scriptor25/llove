@@ -19,7 +19,7 @@ add_subdirectory(deps/yaml-cpp)
 find_package(LLVM 21.1 REQUIRED CONFIG)
 
 execute_process(
-        COMMAND ${LLVM_TOOLS_BINARY_DIR}/llvm-config --system-libs --libnames core support passes all-targets
+        COMMAND ${LLVM_TOOLS_BINARY_DIR}/llvm-config --libnames core support passes all-targets
         OUTPUT_VARIABLE LLVM_LIBNAMES
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
