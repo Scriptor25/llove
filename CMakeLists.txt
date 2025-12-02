@@ -130,6 +130,14 @@ set_source_files_properties(
 install(TARGETS libllove llove)
 
 if (NOT MSVC)
+    target_compile_options(libllove PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Werror
+        -fno-elide-constructors
+    )
+
     if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
         add_custom_command(TARGET llove POST_BUILD
                 COMMAND ${CMAKE_OBJCOPY} --only-keep-debug $<TARGET_FILE:llove> $<TARGET_FILE:llove>.dbg
@@ -144,13 +152,3 @@ else ()
         install(FILES ${CMAKE_BINARY_DIR}/llove.ilk ${CMAKE_BINARY_DIR}/llove.pdb DESTINATION bin)
     endif ()
 endif ()
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    target_compile_options(libllove PRIVATE
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Werror
-        -fno-elide-constructors
-    )
-endif()
