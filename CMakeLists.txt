@@ -3,7 +3,6 @@ project(llove)
 
 option(SILENCE "silence all generated compiler warnings" OFF)
 
-set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -153,6 +152,9 @@ else ()
         target_compile_options(libllove PRIVATE /W0)
         target_compile_options(llove PRIVATE /W0)
     endif ()
+
+    set(BUILD_SHARED_LIBS OFF)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
     if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
         install(FILES ${CMAKE_BINARY_DIR}/llove.ilk ${CMAKE_BINARY_DIR}/llove.pdb DESTINATION bin)
