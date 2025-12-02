@@ -38,7 +38,6 @@ jobs:
       with:
         path: |
           $env:USERPROFILE\\llvm
-          $env:USERPROFILE\\vcpkg
         key: windows-cache
 
     - name: Install LLVM
