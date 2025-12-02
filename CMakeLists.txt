@@ -1,17 +1,19 @@
 cmake_minimum_required(VERSION 3.21)
 project(llove)
 
+option(SILENCE "silence all generated compiler warnings" OFF)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(YAML_CPP_BUILD_CONTRIB "" OFF)
-option(YAML_CPP_BUILD_TOOLS "" OFF)
-option(YAML_BUILD_SHARED_LIBS "" OFF)
-option(YAML_CPP_INSTALL "" OFF)
-option(YAML_CPP_FORMAT_SOURCE "" OFF)
-option(YAML_CPP_DISABLE_UNINSTALL "" OFF)
-option(YAML_USE_SYSTEM_GTEST "" OFF)
-option(YAML_ENABLE_PIC "" ON)
+set(YAML_CPP_BUILD_CONTRIB OFF)
+set(YAML_CPP_BUILD_TOOLS OFF)
+set(YAML_BUILD_SHARED_LIBS OFF)
+set(YAML_CPP_INSTALL OFF)
+set(YAML_CPP_FORMAT_SOURCE OFF)
+set(YAML_CPP_DISABLE_UNINSTALL OFF)
+set(YAML_USE_SYSTEM_GTEST OFF)
+set(YAML_ENABLE_PIC ON)
 add_subdirectory(deps/yaml-cpp)
 
 find_package(LLVM 21.1 REQUIRED CONFIG)
@@ -130,14 +132,10 @@ set_source_files_properties(
 install(TARGETS libllove llove)
 
 if (NOT MSVC)
-    target_compile_options(libllove PRIVATE
-        -Wall
-        -Wextra
-        -Wpedantic
-        -fno-elide-constructors
-        
-        # -Werror
-    )
+    if (NOT ${SILENCE})
+        target_compile_options(libllove PRIVATE -Wall -Wextra -Wpedantic)
+        target_compile_options(llove PRIVATE -Wall -Wextra -Wpedantic)
+    endif ()
 
     if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
         add_custom_command(TARGET llove POST_BUILD
@@ -149,6 +147,11 @@ if (NOT MSVC)
         install(FILES $<TARGET_FILE:llove>.dbg DESTINATION bin)
     endif ()
 else ()
+    if (${SILENCE})
+        target_compile_options(libllove PRIVATE /W0)
+        target_compile_options(llove PRIVATE /W0)
+    endif ()
+
     if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
         install(FILES ${CMAKE_BINARY_DIR}/llove.ilk ${CMAKE_BINARY_DIR}/llove.pdb DESTINATION bin)
     endif ()

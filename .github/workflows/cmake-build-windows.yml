@@ -76,6 +76,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DCMAKE_TOOLCHAIN_FILE="$env:USERPROFILE\\vcpkg\\scripts\\buildsystems\\vcpkg.cmake"
+        -DSILENCE=ON
 
     - name: Build
       shell: pwsh
