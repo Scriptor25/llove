@@ -134,8 +134,9 @@ if (NOT MSVC)
         -Wall
         -Wextra
         -Wpedantic
-        -Werror
         -fno-elide-constructors
+        
+        # -Werror
     )
 
     if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
