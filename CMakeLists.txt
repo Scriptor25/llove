@@ -157,6 +157,8 @@ else ()
         target_compile_options(libllove PRIVATE /W0)
         target_compile_options(llove PRIVATE /W0)
     endif ()
+
+    target_link_libraries(libllove PUBLIC ntdll)
     
     if (CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
         install(FILES ${CMAKE_BINARY_DIR}/llove.ilk ${CMAKE_BINARY_DIR}/llove.pdb DESTINATION bin)
