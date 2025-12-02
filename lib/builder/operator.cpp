@@ -97,19 +97,19 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(
 
             Assert(error != lowest_error, "ambiguous candidates '{}' and '{}' for operand '{}'", candidate, function, operand);
 
-            auto reference = GenFunction(
-                {
-                    .IsExport = function.IsExport,
-                    .IsExposed = function.IsExposed,
-                    .IsVirtual = function.IsVirtual,
-                    .IsOverride = function.IsOverride,
-                    .IsImplicit = function.IsImplicit,
-                    .IsMutable = function.IsMutable,
-                    .Class = parent,
-                    .Name = function.Name,
-                    .Variadic = { function.HasVariadic, {} },
-                    .Result = function.Result,
-            });
+            Function agg;
+            agg.IsExport = function.IsExport;
+            agg.IsExposed = function.IsExposed;
+            agg.IsVirtual = function.IsVirtual;
+            agg.IsOverride = function.IsOverride;
+            agg.IsImplicit = function.IsImplicit;
+            agg.IsMutable = function.IsMutable;
+            agg.Class = parent;
+            agg.Name = function.Name;
+            agg.Variadic = { function.HasVariadic, {} };
+            agg.Result = function.Result;
+
+            auto reference = GenFunction(agg);
 
             lowest_error = error;
             candidate = std::make_unique<UDOperator<1>>(reference);
@@ -239,19 +239,21 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
             Assert(error != lowest_error, "ambiguous candidates '{}' and '{}' for operands '{}' and '{}'", candidate, function, left, right);
 
-            auto reference = GenFunction(
-                {
-                    .IsExport = function.IsExport,
-                    .IsExposed = function.IsExposed,
-                    .IsVirtual = function.IsVirtual,
-                    .IsOverride = function.IsOverride,
-                    .IsImplicit = function.IsImplicit,
-                    .IsMutable = function.IsMutable,
-                    .Class = parent,
-                    .Name = function.Name,
-                    .Parameters = { { function.Parameters.at(0) } },
-                    .Result = function.Result,
-                });
+            Function agg;
+            agg.IsExport = function.IsExport;
+            agg.IsExposed = function.IsExposed;
+            agg.IsVirtual = function.IsVirtual;
+            agg.IsOverride = function.IsOverride;
+            agg.IsImplicit = function.IsImplicit;
+            agg.IsMutable = function.IsMutable;
+            agg.Class = parent;
+            agg.Name = function.Name;
+            agg.Parameters = {
+                { function.Parameters.at(0), {} },
+            };
+            agg.Result = function.Result;
+
+            auto reference = GenFunction(agg);
 
             lowest_error = error;
             candidate = std::make_unique<UDOperator<2>>(reference);

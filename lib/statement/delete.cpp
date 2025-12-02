@@ -34,17 +34,17 @@ try
             value = Value::CreateL(type, pointer, false);
         }
 
-        const auto reference = builder.GenFunction(
-            {
-                .IsExport = function.IsExport,
-                .IsExposed = function.IsExposed,
-                .IsVirtual = function.IsVirtual,
-                .IsOverride = function.IsOverride,
-                .IsMutable = function.IsMutable,
-                .Class = parent,
-                .Name = function.Name,
-                .Result = function.Result,
-            });
+        Function agg;
+        agg.IsExport = function.IsExport;
+        agg.IsExposed = function.IsExposed;
+        agg.IsVirtual = function.IsVirtual;
+        agg.IsOverride = function.IsOverride;
+        agg.IsMutable = function.IsMutable;
+        agg.Class = parent;
+        agg.Name = function.Name;
+        agg.Result = function.Result;
+
+        const auto reference = builder.GenFunction(agg);
 
         builder.EmitLoc(m_Loc);
         builder.CreateCall(reference, {}, std::move(value));

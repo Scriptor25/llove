@@ -97,20 +97,20 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
                 parameters.emplace_back(parameter);
             }
 
-            auto reference = GenFunction(
-                {
-                    .IsExport = function.IsExport,
-                    .IsExposed = function.IsExposed,
-                    .IsVirtual = function.IsVirtual,
-                    .IsOverride = function.IsOverride,
-                    .IsImplicit = function.IsImplicit,
-                    .IsMutable = function.IsMutable,
-                    .Class = parent,
-                    .Name = function.Name,
-                    .Parameters = std::move(parameters),
-                    .Variadic = { function.HasVariadic, {} },
-                    .Result = function.Result,
-            });
+            Function agg;
+            agg.IsExport = function.IsExport;
+            agg.IsExposed = function.IsExposed;
+            agg.IsVirtual = function.IsVirtual;
+            agg.IsOverride = function.IsOverride;
+            agg.IsImplicit = function.IsImplicit;
+            agg.IsMutable = function.IsMutable;
+            agg.Class = parent;
+            agg.Name = function.Name;
+            agg.Parameters = std::move(parameters);
+            agg.Variadic = { function.HasVariadic, {} };
+            agg.Result = function.Result;
+
+            auto reference = GenFunction(agg);
             functions.emplace_back(std::move(reference));
         }
     }
@@ -287,20 +287,20 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
             parameters.emplace_back(parameter);
         }
 
-        return GenFunction(
-            {
-                .IsExport = candidate.IsExport,
-                .IsExposed = candidate.IsExposed,
-                .IsVirtual = candidate.IsVirtual,
-                .IsOverride = candidate.IsOverride,
-                .IsImplicit = candidate.IsImplicit,
-                .IsMutable = candidate.IsMutable,
-                .Class = parent,
-                .Name = candidate.Name,
-                .Parameters = std::move(parameters),
-                .Variadic = { candidate.HasVariadic, {} },
-                .Result = candidate.Result,
-        });
+        Function agg;
+        agg.IsExport = candidate.IsExport;
+        agg.IsExposed = candidate.IsExposed;
+        agg.IsVirtual = candidate.IsVirtual;
+        agg.IsOverride = candidate.IsOverride;
+        agg.IsImplicit = candidate.IsImplicit;
+        agg.IsMutable = candidate.IsMutable;
+        agg.Class = parent;
+        agg.Name = candidate.Name;
+        agg.Parameters = std::move(parameters);
+        agg.Variadic = { candidate.HasVariadic, {} };
+        agg.Result = candidate.Result;
+
+        return GenFunction(agg);
     }
 
     Error("ambiguous candidates {} for {}, self '{}'", candidates, arguments, self);

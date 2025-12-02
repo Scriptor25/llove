@@ -16,7 +16,7 @@ llove::TemplateCallExpression::TemplateCallExpression(
 
 llove::ValuePtr llove::TemplateCallExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     const auto& callee = builder.GetContext().InstantiateDefinition(builder, m_Callee, m_TypeArguments, false);

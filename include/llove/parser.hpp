@@ -28,11 +28,11 @@ namespace llove
     struct Token
     {
         Location Loc;
-        TokenType Type = TokenType_EndOfFile;
-        std::string Raw;
-        std::string Value;
-        uint64_t IntegerValue = 0;
-        double_t FloatValue = 0.0;
+        TokenType Type;
+        std::string Raw{};
+        std::string Value{};
+        uint64_t IntegerValue{};
+        double_t FloatValue{};
     };
 
     class Parser final

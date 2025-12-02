@@ -34,19 +34,18 @@ try
     if (m_Content)
         m_Content->Reflect(builder.GetContext(), content);
 
-    builder.GenFunction(
-        {
-            .Loc = m_Loc,
-            .IsExport = m_IsExport,
-            .IsInterface = m_IsInterface,
-            .IsImplicit = m_IsImplicit,
-            .Name = m_Name,
-            .Parameters = m_Parameters,
-            .Variadic = m_Variadic,
-            .Result = m_Result,
-            .Content = std::move(content),
-        },
-        true);
+    Function agg;
+    agg.Loc = m_Loc;
+    agg.IsExport = m_IsExport;
+    agg.IsInterface = m_IsInterface;
+    agg.IsImplicit = m_IsImplicit;
+    agg.Name = m_Name;
+    agg.Parameters = m_Parameters;
+    agg.Variadic = m_Variadic;
+    agg.Result = m_Result;
+    agg.Content = std::move(content);
+
+    builder.GenFunction(agg, true);
 }
 catch (ref_exception<ErrorStack>& cause)
 {
@@ -57,7 +56,7 @@ std::pair<
     std::string,
     llove::ValuePtr>
 llove::DefinitionGlobal::GenImport(
-    Context& context,
+    Context& /* context */,
     Builder& builder,
     const std::string& as,
     const std::map<
@@ -73,18 +72,17 @@ llove::DefinitionGlobal::GenImport(
     const auto register_function = (as.empty() && symbols.empty())
                                 || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
 
-    const auto function = builder.GenFunction(
-        {
-            .Loc = m_Loc,
-            .IsExport = true,
-            .IsInterface = m_IsInterface,
-            .IsImplicit = m_IsImplicit,
-            .Name = m_Name,
-            .Parameters = m_Parameters,
-            .Variadic = m_Variadic,
-            .Result = m_Result,
-        },
-        register_function);
+    Function agg;
+    agg.Loc = m_Loc;
+    agg.IsExport = true;
+    agg.IsInterface = m_IsInterface;
+    agg.IsImplicit = m_IsImplicit;
+    agg.Name = m_Name;
+    agg.Parameters = m_Parameters;
+    agg.Variadic = m_Variadic;
+    agg.Result = m_Result;
+
+    const auto function = builder.GenFunction(agg, register_function);
 
     if (register_function)
         return {};

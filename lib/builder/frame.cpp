@@ -133,17 +133,18 @@ void llove::Builder::PushDestructor(
     if (const auto destructor = class_type->GetDestructor(class_type))
     {
         auto& [parent, function] = *destructor;
-        const auto reference = GenFunction(
-            {
-                .IsExport = function.IsExport,
-                .IsExposed = function.IsExposed,
-                .IsVirtual = function.IsVirtual,
-                .IsOverride = function.IsOverride,
-                .IsMutable = function.IsMutable,
-                .Class = parent,
-                .Name = function.Name,
-                .Result = function.Result,
-            });
+
+        Function agg;
+        agg.IsExport = function.IsExport;
+        agg.IsExposed = function.IsExposed;
+        agg.IsVirtual = function.IsVirtual;
+        agg.IsOverride = function.IsOverride;
+        agg.IsMutable = function.IsMutable;
+        agg.Class = parent;
+        agg.Name = function.Name;
+        agg.Result = function.Result;
+
+        const auto reference = GenFunction(agg);
 
         PushDestructor(self, reference);
     }

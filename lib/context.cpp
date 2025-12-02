@@ -230,10 +230,10 @@ llove::ClassTemplate& llove::Context::PushClassTemplate(
     if (!is_imported)
         m_CurrentClassTemplate = &ref;
 
-    return ref = {
-        .Name = std::move(name),
-        .TypeParameters = std::move(type_parameters),
-    };
+    ref.Name = std::move(name);
+    ref.TypeParameters = std::move(type_parameters);
+
+    return ref;
 }
 
 void llove::Context::PopClassTemplate()
@@ -261,10 +261,10 @@ llove::ClassTemplate& llove::Context::EmplaceClassTemplate(
 
     auto& ref = m_ClassTemplates[name];
 
-    return ref = {
-        .Name = std::move(name),
-        .TypeParameters = std::move(type_parameters),
-    };
+    ref.Name = std::move(name);
+    ref.TypeParameters = std::move(type_parameters);
+
+    return ref;
 }
 
 llove::DefinitionTemplate& llove::Context::PushDefinitionTemplate(
@@ -294,12 +294,12 @@ llove::DefinitionTemplate& llove::Context::PushDefinitionTemplate(
 
     auto& ref = m_DefinitionTemplates[name];
 
-    return ref = {
-        .Loc = std::move(loc),
-        .IsImplicit = is_implicit,
-        .Name = std::move(name),
-        .TypeParameters = std::move(type_parameters),
-    };
+    ref.Loc = std::move(loc);
+    ref.IsImplicit = is_implicit;
+    ref.Name = std::move(name);
+    ref.TypeParameters = std::move(type_parameters);
+
+    return ref;
 }
 
 void llove::Context::PopDefinitionTemplate()
@@ -406,7 +406,12 @@ llove::TypePtr llove::Context::InstantiateClass(
     class_type->SetFunctions(std::move(functions));
 
     m_TemplateStack.pop_back();
-    m_ClassReflections.emplace_back(std::move(frame), class_type, std::move(reflection_functions));
+
+    auto& ref = m_ClassReflections.emplace_back();
+
+    ref.Frame = std::move(frame);
+    ref.Class = class_type;
+    ref.Functions = std::move(reflection_functions);
 
     return class_type;
 }
@@ -472,28 +477,29 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
     }
 
     m_TemplateStack.pop_back();
-    m_DefinitionReflections.emplace_back(
-        std::move(frame),
-        Function{
-            .Loc = definition_template.Loc,
-            .IsImplicit = definition_template.IsImplicit,
-            .Name = definition_template.Name,
-            .Parameters = parameters,
-            .Variadic = definition_template.Variadic,
-            .Result = result,
-            .Content = std::move(content),
-        });
 
-    return m_DefinitionInstances[name] = builder.GenFunction(
-               {
-                   .Loc = definition_template.Loc,
-                   .IsImplicit = definition_template.IsImplicit,
-                   .Name = definition_template.Name,
-                   .Parameters = parameters,
-                   .Variadic = definition_template.Variadic,
-                   .Result = result,
-               },
-               true);
+    {
+        Function agg;
+        agg.Loc = definition_template.Loc;
+        agg.IsImplicit = definition_template.IsImplicit;
+        agg.Name = definition_template.Name;
+        agg.Parameters = parameters;
+        agg.Variadic = definition_template.Variadic;
+        agg.Result = result;
+        agg.Content = std::move(content);
+
+        m_DefinitionReflections.emplace_back(std::move(frame), std::move(agg));
+    }
+
+    Function agg;
+    agg.Loc = definition_template.Loc;
+    agg.IsImplicit = definition_template.IsImplicit;
+    agg.Name = definition_template.Name;
+    agg.Parameters = parameters;
+    agg.Variadic = definition_template.Variadic;
+    agg.Result = result;
+
+    return m_DefinitionInstances[name] = builder.GenFunction(agg, true);
 }
 
 void llove::Context::InstantiateReflections(Builder& builder)
@@ -503,22 +509,22 @@ void llove::Context::InstantiateReflections(Builder& builder)
         m_TemplateStack.push_back(&frame);
         for (auto& function : functions)
         {
-            builder.GenFunction(
-                {
-                    .Loc = std::move(function.Loc),
-                    .IsExposed = function.IsExposed,
-                    .IsVirtual = function.IsVirtual,
-                    .IsOverride = function.IsOverride,
-                    .IsImplicit = function.IsImplicit,
-                    .IsMutable = function.IsMutable,
-                    .Class = class_type,
-                    .Name = std::move(function.Name),
-                    .Parameters = std::move(function.Parameters),
-                    .Variadic = std::move(function.Variadic),
-                    .Result = std::move(function.Result),
-                    .Initializers = std::move(function.Initializers),
-                    .Content = std::move(function.Content),
-                });
+            Function agg;
+            agg.Loc = std::move(function.Loc);
+            agg.IsExposed = function.IsExposed;
+            agg.IsVirtual = function.IsVirtual;
+            agg.IsOverride = function.IsOverride;
+            agg.IsImplicit = function.IsImplicit;
+            agg.IsMutable = function.IsMutable;
+            agg.Class = class_type;
+            agg.Name = std::move(function.Name);
+            agg.Parameters = std::move(function.Parameters);
+            agg.Variadic = std::move(function.Variadic);
+            agg.Result = std::move(function.Result);
+            agg.Initializers = std::move(function.Initializers);
+            agg.Content = std::move(function.Content);
+
+            builder.GenFunction(agg);
         }
         m_TemplateStack.pop_back();
     }

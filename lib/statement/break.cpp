@@ -18,7 +18,7 @@ catch (ref_exception<ErrorStack>& cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::BreakStatement::Reflect(Context& context) const
+llove::StatementPtr llove::BreakStatement::Reflect(Context& /* context */) const
 try
 {
     return std::make_unique<BreakStatement>(m_Loc);

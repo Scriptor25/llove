@@ -24,7 +24,7 @@ std::pair<
     llove::ValuePtr>
 llove::TypeGlobal::GenImport(
     Context& context,
-    Builder& builder,
+    Builder& /* builder */,
     const std::string& as,
     const std::map<
         std::string,
@@ -35,7 +35,7 @@ llove::TypeGlobal::GenImport(
     if (!m_Export)
         return {};
 
-    if (as.empty() && symbols.empty() || symbols.contains(m_Name))
+    if (as.empty() && (symbols.empty() || symbols.contains(m_Name)))
         context.GetParent()->SetNamed(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, m_Type);
 
     return {};

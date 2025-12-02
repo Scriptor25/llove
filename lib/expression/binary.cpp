@@ -17,7 +17,7 @@ llove::BinaryExpression::BinaryExpression(
 
 llove::ValuePtr llove::BinaryExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     static const std::map<std::string_view, const char*> assign{

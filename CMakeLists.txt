@@ -144,3 +144,13 @@ else ()
         install(FILES ${CMAKE_BINARY_DIR}/llove.ilk ${CMAKE_BINARY_DIR}/llove.pdb DESTINATION bin)
     endif ()
 endif ()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    target_compile_options(libllove PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Werror
+        -fno-elide-constructors
+    )
+endif()

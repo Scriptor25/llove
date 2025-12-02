@@ -55,28 +55,28 @@ bool llove::RValue::IsMutable() const
     return false;
 }
 
-llvm::Value* llove::RValue::Load(Builder& builder) const
+llvm::Value* llove::RValue::Load(Builder& /* builder */) const
 {
     return m_Value;
 }
 
 void llove::RValue::Store(
-    Builder& builder,
-    llvm::Value* value,
-    bool volatile_) const
+    Builder& /* builder */,
+    llvm::Value* /* value */,
+    bool /* volatile_ */) const
 {
     Error("illegal store to rvalue");
 }
 
 void llove::RValue::Store(
-    Builder& builder,
-    ValuePtr value,
-    bool volatile_) const
+    Builder& /* builder */,
+    ValuePtr /* value */,
+    bool /* volatile_ */) const
 {
     Error("illegal store to rvalue");
 }
 
-llove::ValuePtr llove::RValue::Reference(Builder& builder) const
+llove::ValuePtr llove::RValue::Reference(Builder& /* builder */) const
 {
     Error("illegal reference to rvalue");
 }

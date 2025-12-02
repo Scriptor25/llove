@@ -52,23 +52,24 @@ try
         m_Content->Reflect(builder.GetContext(), content);
 
     auto& [parent, function] = *reference;
-    builder.GenFunction(
-        {
-            .Loc = m_Loc,
-            .IsExport = function.IsExport,
-            .IsExposed = function.IsExposed,
-            .IsVirtual = function.IsVirtual,
-            .IsOverride = function.IsOverride,
-            .IsImplicit = function.IsImplicit,
-            .IsMutable = function.IsMutable,
-            .Class = parent,
-            .Name = function.Name,
-            .Parameters = m_Parameters,
-            .Variadic = m_Variadic,
-            .Result = function.Result,
-            .Initializers = std::move(initializers),
-            .Content = std::move(content),
-        });
+
+    Function agg;
+    agg.Loc = m_Loc;
+    agg.IsExport = function.IsExport;
+    agg.IsExposed = function.IsExposed;
+    agg.IsVirtual = function.IsVirtual;
+    agg.IsOverride = function.IsOverride;
+    agg.IsImplicit = function.IsImplicit;
+    agg.IsMutable = function.IsMutable;
+    agg.Class = parent;
+    agg.Name = function.Name;
+    agg.Parameters = m_Parameters;
+    agg.Variadic = m_Variadic;
+    agg.Result = function.Result;
+    agg.Initializers = std::move(initializers);
+    agg.Content = std::move(content);
+
+    builder.GenFunction(agg);
 }
 catch (ref_exception<ErrorStack>& cause)
 {
@@ -79,12 +80,12 @@ std::pair<
     std::string,
     llove::ValuePtr>
 llove::ClassDefinitionGlobal::GenImport(
-    Context& context,
-    Builder& builder,
-    const std::string& as,
+    Context& /* context */,
+    Builder& /* builder */,
+    const std::string& /* as */,
     const std::map<
         std::string,
-        std::string>& symbols) const
+        std::string>& /* symbols */) const
 {
     return {};
 }

@@ -15,7 +15,7 @@ llove::CallExpression::CallExpression(
 
 llove::ValuePtr llove::CallExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     auto [functions, self] = m_Callee->GenCallee(builder);

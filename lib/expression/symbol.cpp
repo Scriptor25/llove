@@ -13,7 +13,7 @@ llove::SymbolExpression::SymbolExpression(
 
 llove::ValuePtr llove::SymbolExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     if (builder.HasValue(m_Name))
@@ -65,14 +65,14 @@ try
 
     Assert(!candidates.empty() || !symbol_type, "illegal callee symbol '{}', type '{}' is not a function type", m_Name, symbol_type);
     Assert(!candidates.empty(), "undefined symbol '{}'", m_Name);
-    return { .Candidates = std::move(candidates) };
+    return { std::move(candidates), {} };
 }
 catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::SymbolExpression::Reflect(Context& context) const
+llove::StatementPtr llove::SymbolExpression::Reflect(Context& /* context */) const
 try
 {
     return std::make_unique<SymbolExpression>(m_Loc, m_Name);

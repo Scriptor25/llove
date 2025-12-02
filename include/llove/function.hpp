@@ -6,7 +6,7 @@
 
 namespace llove
 {
-    struct FunctionReference
+    struct FunctionReference final
     {
         std::ostream& Print(std::ostream& stream) const;
 
@@ -20,6 +20,14 @@ namespace llove
 
     struct Function final
     {
+        Function() = default;
+
+        Function(Function&&) = default;
+        Function& operator=(Function&&) = default;
+
+        Function(const Function&) = delete;
+        Function& operator=(const Function&) = delete;
+
         Location Loc;
 
         bool IsExport = false;
@@ -31,7 +39,7 @@ namespace llove
         bool IsImplicit = false;
         bool IsMutable = false;
 
-        ClassType::Ptr Class;
+        ClassType::Ptr Class = nullptr;
 
         std::string Name;
         std::vector<Parameter> Parameters;

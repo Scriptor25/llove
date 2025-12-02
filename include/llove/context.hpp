@@ -3,6 +3,7 @@
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
 #include <llove/function.hpp>
+#include <llove/reflection.hpp>
 #include <llove/template.hpp>
 #include <llove/type.hpp>
 #include <map>
@@ -11,22 +12,7 @@
 
 namespace llove
 {
-    struct ClassReflection
-    {
-        std::map<std::string, TypePtr> Frame;
-
-        ClassType::Ptr Class;
-        std::vector<ClassFunction> Functions;
-    };
-
-    struct DefinitionReflection
-    {
-        std::map<std::string, TypePtr> Frame;
-
-        Function Fun;
-    };
-
-    class Context
+    class Context final
     {
     public:
         Context() = default;

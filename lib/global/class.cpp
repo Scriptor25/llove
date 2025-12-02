@@ -75,23 +75,23 @@ try
         if (function.Content)
             function.Content->Reflect(builder.GetContext(), content);
 
-        builder.GenFunction(
-            {
-                .Loc = function.Loc,
-                .IsExport = m_IsExport,
-                .IsExposed = function.IsExposed,
-                .IsVirtual = function.IsVirtual,
-                .IsOverride = function.IsOverride,
-                .IsImplicit = function.IsImplicit,
-                .IsMutable = function.IsMutable,
-                .Class = m_ClassType,
-                .Name = function.Name,
-                .Parameters = function.Parameters,
-                .Variadic = function.Variadic,
-                .Result = function.Result,
-                .Initializers = std::move(initializers),
-                .Content = std::move(content),
-            });
+        Function agg;
+        agg.Loc = function.Loc;
+        agg.IsExport = m_IsExport;
+        agg.IsExposed = function.IsExposed;
+        agg.IsVirtual = function.IsVirtual;
+        agg.IsOverride = function.IsOverride;
+        agg.IsImplicit = function.IsImplicit;
+        agg.IsMutable = function.IsMutable;
+        agg.Class = m_ClassType;
+        agg.Name = function.Name;
+        agg.Parameters = function.Parameters;
+        agg.Variadic = function.Variadic;
+        agg.Result = function.Result;
+        agg.Initializers = std::move(initializers);
+        agg.Content = std::move(content);
+
+        builder.GenFunction(agg);
     }
 }
 catch (ref_exception<ErrorStack>& cause)
@@ -104,7 +104,7 @@ std::pair<
     llove::ValuePtr>
 llove::ClassGlobal::GenImport(
     Context& context,
-    Builder& builder,
+    Builder& /* builder */,
     const std::string& as,
     const std::map<
         std::string,
@@ -115,7 +115,7 @@ llove::ClassGlobal::GenImport(
 
     auto& name = m_ClassType->GetName();
 
-    if (!(as.empty() && symbols.empty() || symbols.contains(name)))
+    if (!(as.empty() && (symbols.empty() || symbols.contains(name))))
         return {};
 
     context.GetParent()->Set(m_ClassType->Mangle(), m_ClassType);

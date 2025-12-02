@@ -17,7 +17,7 @@ llove::MemberExpression::MemberExpression(
 
 llove::ValuePtr llove::MemberExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     auto value = m_Value->GenVal(builder, nullptr);
@@ -179,7 +179,7 @@ try
         .Callee = element_value,
     };
 
-    return { .Candidates = { std::move(reference) } };
+    return { { std::move(reference) }, {} };
 }
 catch (ref_exception<ErrorStack>& cause)
 {

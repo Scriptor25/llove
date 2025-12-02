@@ -19,17 +19,17 @@ bool llove::TemplateType::IsTemplate() const
     return true;
 }
 
-unsigned llove::TemplateType::SizeBits(Builder& builder)
+unsigned llove::TemplateType::SizeBits(Builder& /* builder */)
 {
     Error("template type '{}' does not have a size", m_Name);
 }
 
-llvm::Type* llove::TemplateType::GenIR(Builder& builder)
+llvm::Type* llove::TemplateType::GenIR(Builder& /* builder */)
 {
     Error("template type '{}' does not have an intermediate representation", m_Name);
 }
 
-llvm::DIType* llove::TemplateType::GenDI(Builder& builder)
+llvm::DIType* llove::TemplateType::GenDI(Builder& /* builder */)
 {
     Error("template type '{}' does not have debug information", m_Name);
 }
@@ -40,8 +40,8 @@ llove::TypePtr llove::TemplateType::Reflect(Context& context) const
 }
 
 bool llove::TemplateType::TypeInfo(
-    Builder& builder,
-    std::vector<llvm::Constant*>& dst) const
+    Builder& /* builder */,
+    std::vector<llvm::Constant*>& /* dst */) const
 {
     Error("template type '{}' does not have typeinfo", m_Name);
 }
@@ -84,17 +84,17 @@ bool llove::TemplateClassType::IsTemplate() const
     return true;
 }
 
-unsigned llove::TemplateClassType::SizeBits(Builder& builder)
+unsigned llove::TemplateClassType::SizeBits(Builder& /* builder */)
 {
     Error("template class type '{}' does not have a size", m_Name);
 }
 
-llvm::Type* llove::TemplateClassType::GenIR(Builder& builder)
+llvm::Type* llove::TemplateClassType::GenIR(Builder& /* builder */)
 {
     Error("template class type '{}' does not have an intermediate representation", m_Name);
 }
 
-llvm::DIType* llove::TemplateClassType::GenDI(Builder& builder)
+llvm::DIType* llove::TemplateClassType::GenDI(Builder& /* builder */)
 {
     Error("template class type '{}' does not have debug information", m_Name);
 }
@@ -110,8 +110,8 @@ llove::TypePtr llove::TemplateClassType::Reflect(Context& context) const
 }
 
 bool llove::TemplateClassType::TypeInfo(
-    Builder& builder,
-    std::vector<llvm::Constant*>& dst) const
+    Builder& /* builder */,
+    std::vector<llvm::Constant*>& /* dst */) const
 {
     Error("template class type '{}' does not have typeinfo", m_Name);
 }

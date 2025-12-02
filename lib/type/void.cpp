@@ -12,7 +12,7 @@ bool llove::VoidType::IsVoid() const
     return true;
 }
 
-unsigned llove::VoidType::SizeBits(Builder& builder)
+unsigned llove::VoidType::SizeBits(Builder& /* builder */)
 {
     return 0;
 }

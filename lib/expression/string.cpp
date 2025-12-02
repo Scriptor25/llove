@@ -13,7 +13,7 @@ llove::StringExpression::StringExpression(
 
 llove::ValuePtr llove::StringExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     static std::map<std::string, llvm::Value*> string_cache;
@@ -31,7 +31,7 @@ catch (ref_exception<ErrorStack>& cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::StringExpression::Reflect(Context& context) const
+llove::StatementPtr llove::StringExpression::Reflect(Context& /* context */) const
 try
 {
     return std::make_unique<StringExpression>(m_Loc, m_Value);

@@ -68,10 +68,10 @@ std::pair<
 llove::ImportGlobal::GenImport(
     Context& parent,
     Builder& builder,
-    const std::string& as,
+    const std::string& /* as */,
     const std::map<
         std::string,
-        std::string>& symbols) const
+        std::string>& /* symbols */) const
 try
 {
     // TODO: check recursion

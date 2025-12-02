@@ -121,8 +121,8 @@ llove::TypePtr llove::FunctionType::Reflect(Context& context) const
 }
 
 bool llove::FunctionType::TypeInfo(
-    Builder& builder,
-    std::vector<llvm::Constant*>& dst) const
+    Builder& /* builder */,
+    std::vector<llvm::Constant*>& /* dst */) const
 {
     return false;
 }

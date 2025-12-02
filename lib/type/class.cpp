@@ -312,8 +312,8 @@ llove::TypePtr llove::ClassType::Reflect(Context& context) const
 }
 
 bool llove::ClassType::TypeInfo(
-    Builder& builder,
-    std::vector<llvm::Constant*>& dst) const
+    Builder& /* builder */,
+    std::vector<llvm::Constant*>& /* dst */) const
 {
     return false;
 }

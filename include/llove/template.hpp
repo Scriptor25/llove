@@ -6,13 +6,23 @@
 
 namespace llove
 {
+    using TypeParameter = std::pair<std::string, TemplateType::Ptr>;
+
     struct ClassTemplate final
     {
+        ClassTemplate() = default;
+
+        ClassTemplate(ClassTemplate&&) = default;
+        ClassTemplate& operator=(ClassTemplate&&) = default;
+
+        ClassTemplate(const ClassTemplate&) = delete;
+        ClassTemplate& operator=(const ClassTemplate&) = delete;
+
         bool Complete = false;
         bool IsImported = false;
 
         std::string Name;
-        std::vector<std::pair<std::string, TemplateType::Ptr>> TypeParameters;
+        std::vector<TypeParameter> TypeParameters;
 
         std::vector<ClassMember> Members;
         std::vector<ClassFunction> Functions;
@@ -20,12 +30,20 @@ namespace llove
 
     struct DefinitionTemplate final
     {
+        DefinitionTemplate() = default;
+
+        DefinitionTemplate(DefinitionTemplate&&) = default;
+        DefinitionTemplate& operator=(DefinitionTemplate&&) = default;
+
+        DefinitionTemplate(const DefinitionTemplate&) = delete;
+        DefinitionTemplate& operator=(const DefinitionTemplate&) = delete;
+
         bool IsImported = false;
 
         Location Loc;
-        bool IsImplicit;
+        bool IsImplicit = false;
         std::string Name;
-        std::vector<std::pair<std::string, TemplateType::Ptr>> TypeParameters;
+        std::vector<TypeParameter> TypeParameters;
 
         std::vector<Parameter> Parameters;
         std::pair<bool, std::string> Variadic;

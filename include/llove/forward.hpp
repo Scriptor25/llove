@@ -19,6 +19,9 @@ namespace llove
     struct ClassFunctionReference;
     struct ClassFunction;
 
+    struct ClassReflection;
+    struct DefinitionReflection;
+
     class Global;
     class Statement;
     class Expression;

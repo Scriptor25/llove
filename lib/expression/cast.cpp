@@ -13,7 +13,7 @@ llove::CastExpression::CastExpression(
 
 llove::ValuePtr llove::CastExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     auto value = m_Value->GenVal(builder, m_Type);

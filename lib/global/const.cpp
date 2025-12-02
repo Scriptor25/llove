@@ -31,7 +31,7 @@ std::pair<
     std::string,
     llove::ValuePtr>
 llove::ConstGlobal::GenImport(
-    Context& context,
+    Context& /* context */,
     Builder& builder,
     const std::string& as,
     const std::map<

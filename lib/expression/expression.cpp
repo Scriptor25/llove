@@ -32,12 +32,15 @@ try
     const auto value = GenVal(builder, nullptr);
     auto type = As<FunctionType>(value->GetType());
 
-    return { .Candidates = { FunctionReference{
-                 .IsExposed = false,
-                 .Name = {},
-                 .Type = std::move(type),
-                 .Callee = value->Load(builder),
-             } } };
+    return {
+        { {
+            .IsExposed = false,
+            .Name = {},
+            .Type = std::move(type),
+            .Callee = value->Load(builder),
+        } },
+        {},
+    };
 }
 catch (ref_exception<ErrorStack>& cause)
 {

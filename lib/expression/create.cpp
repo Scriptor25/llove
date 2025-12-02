@@ -16,7 +16,7 @@ llove::CreateExpression::CreateExpression(
 
 llove::ValuePtr llove::CreateExpression::GenVal(
     Builder& builder,
-    TypePtr expect) const
+    TypePtr /* expect */) const
 try
 {
     Assert(m_Type->IsClass(), "cannot construct non-class value");
