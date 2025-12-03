@@ -1,3 +1,5 @@
+#include "llove/type.hpp"
+
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 #include <llove/value.hpp>
@@ -123,6 +125,14 @@ llove::ValuePtr llove::Builder::CreateCast(
             }
             result = m_LLVMBuilder.CreateUIToFP(value->Load(*this), dst_llvm);
             break;
+        case TypeId_Pointer:
+        {
+            const auto dst_pointer = As<PointerType>(dst);
+            if (implicit && dst_pointer->IsMutable())
+                break;
+            result = m_LLVMBuilder.CreateIntToPtr(value->Load(*this), dst_llvm);
+            break;
+        }
         default:
             break;
         }
@@ -162,21 +172,24 @@ llove::ValuePtr llove::Builder::CreateCast(
         switch (dst->GetId())
         {
         case TypeId_Integer:
-            if (const auto dst_integer = As<IntegerType>(dst); dst_integer->GetBits() == 1)
+        {
+            const auto dst_integer = As<IntegerType>(dst);
+            if (dst_integer->GetBits() == 1)
             {
                 result = m_LLVMBuilder.CreateIsNotNull(value->Load(*this));
                 break;
             }
             result = m_LLVMBuilder.CreatePtrToInt(value->Load(*this), dst_llvm);
             break;
+        }
         case TypeId_Pointer:
-            if (const auto dst_pointer = As<PointerType>(dst);
-                !src_pointer->IsMutable() && dst_pointer->IsMutable())
-            {
+        {
+            const auto dst_pointer = As<PointerType>(dst);
+            if (implicit && !src_pointer->IsMutable() && dst_pointer->IsMutable())
                 break;
-            }
             result = value->Load(*this);
             break;
+        }
         default:
             break;
         }
@@ -244,7 +257,7 @@ llove::ValuePtr llove::Builder::CreateCast(
         break;
     }
 
-    Assert(result != nullptr, "illegal cast from '{}' to '{}'", src, dst);
+    Assert(result != nullptr, "illegal {} cast from '{}' to '{}'", implicit ? "implicit" : "explicit", src, dst);
     return Value::CreateR(std::move(dst), result);
 }
 
