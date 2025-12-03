@@ -23,7 +23,7 @@ unsigned llove::ArrayType::GetCount() const
 
 llove::TypeId llove::ArrayType::GetId() const
 {
-    return TypeId_Array;
+    return ID;
 }
 
 bool llove::ArrayType::IsArray() const

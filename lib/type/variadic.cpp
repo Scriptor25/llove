@@ -4,7 +4,7 @@
 
 llove::TypeId llove::VariadicType::GetId() const
 {
-    return TypeId_Variadic;
+    return ID;
 }
 
 bool llove::VariadicType::IsVariadic() const

@@ -214,7 +214,7 @@ void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> function
 
 llove::TypeId llove::ClassType::GetId() const
 {
-    return TypeId_Class;
+    return ID;
 }
 
 bool llove::ClassType::IsClass() const

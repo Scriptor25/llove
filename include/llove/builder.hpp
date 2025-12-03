@@ -84,13 +84,13 @@ namespace llove
             const std::vector<llvm::Type*>& parameters);
         llvm::StructType* GetStructType(
             const std::vector<llvm::Type*>& fields,
-            bool packed);
+            bool packed = false);
         llvm::StructType* GetNamedStructType(const std::string& name);
         llvm::StructType* GetOrCreateNamedStructType(const std::string& name);
         llvm::StructType* GetOrCreateNamedStructType(
             const std::string& name,
             const std::vector<llvm::Type*>& fields,
-            bool packed);
+            bool packed = false);
         llvm::StructType* GetVariadicType();
 
 #pragma region WRAPPER

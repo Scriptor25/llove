@@ -52,17 +52,17 @@ llove::FunctionReference llove::Builder::GenFunction(
     {
         self = Field(function.IsMutable, true, function.Class);
         callee_type = m_Context.GetFunction(
+            function.Result,
             std::move(type_parameters),
             function.Variadic.first,
-            function.Result,
             *self);
     }
     else
     {
         callee_type = m_Context.GetFunction(
+            function.Result,
             std::move(type_parameters),
-            function.Variadic.first,
-            function.Result);
+            function.Variadic.first);
     }
 
     const auto callee = GetOrCreateFunction(

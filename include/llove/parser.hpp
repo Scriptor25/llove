@@ -205,10 +205,10 @@ namespace llove
         StatementPtr ParseForEachStatement(bool inline_);
         StatementPtr ParseIfStatement(bool inline_);
         StatementPtr ParseLetStatement(bool inline_);
+        StatementPtr ParseRetStatement(bool inline_);
         StatementPtr ParseScopeStatement();
         StatementPtr ParseSwitchStatement();
         StatementPtr ParseWhileStatement(bool inline_);
-        StatementPtr ParseRetStatement(bool inline_);
 
         ExpressionPtr ParseExpression();
 
@@ -221,6 +221,7 @@ namespace llove
         ExpressionPtr ParseCastExpression(ExpressionPtr value);
         ExpressionPtr ParseCreateExpression();
         ExpressionPtr ParseFloatExpression();
+        ExpressionPtr ParseInlineExpression();
         ExpressionPtr ParseIntegerExpression();
         ExpressionPtr ParseMemberExpression(ExpressionPtr value);
         ExpressionPtr ParseNullExpression();

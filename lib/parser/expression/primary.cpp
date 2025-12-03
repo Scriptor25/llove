@@ -53,6 +53,9 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
             m_Context.GetBoolean());
     }
 
+    if (At(TokenType_Symbol, "inline"))
+        return ParseInlineExpression();
+
     if (At(TokenType_Symbol))
         return ParseSymbolExpression();
 

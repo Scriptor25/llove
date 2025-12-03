@@ -1,11 +1,15 @@
 export const typeid_void: u32     = 'v';
-export const typeid_variadic: u32 = 'l';
+export const typeid_variadic: u32 = 'z';
 export const typeid_integer: u32  = 'i';
 export const typeid_float: u32    = 'f';
 export const typeid_pointer: u32  = 'p';
 export const typeid_array: u32    = 'a';
 export const typeid_struct: u32   = 's';
+export const typeid_tuple: u32    = 'm';
 export const typeid_range: u32    = 'r';
+export const typeid_class: u32    = 'c';
+export const typeid_function: u32 = 'x';
+export const typeid_template: u32 = 't';
 
 interface malloc(count: u64): [mut];
 interface free(block: []);

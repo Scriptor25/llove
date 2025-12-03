@@ -63,12 +63,13 @@ namespace llove
             TypePtr base,
             unsigned size);
         StructType::Ptr GetStruct(std::vector<Parameter> fields);
+        TupleType::Ptr GetTuple(std::vector<Field> fields);
         RangeType::Ptr GetRange(TypePtr entry);
         ClassType::Ptr GetClass(std::string name);
         FunctionType::Ptr GetFunction(
-            std::vector<Field> parameters,
-            bool variadic,
             Field result,
+            std::vector<Field> parameters,
+            bool variadic = false,
             std::optional<Field> self = std::nullopt);
 
         IntegerType::Ptr GetBoolean();

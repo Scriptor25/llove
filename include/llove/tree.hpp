@@ -13,6 +13,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace llove
@@ -398,6 +399,21 @@ namespace llove
         std::vector<ExpressionPtr> m_Arguments;
     };
 
+    class RetStatement final : public Statement
+    {
+    public:
+        explicit RetStatement(
+            Location loc,
+            ExpressionPtr value);
+
+        void Gen(Builder& builder) const override;
+        StatementPtr Reflect(Context& context) const override;
+        std::ostream& Print(std::ostream& stream) const override;
+
+    private:
+        ExpressionPtr m_Value;
+    };
+
     class ScopeStatement final : public Statement
     {
     public:
@@ -454,21 +470,6 @@ namespace llove
     private:
         ExpressionPtr m_Condition;
         StatementPtr m_Content;
-    };
-
-    class RetStatement final : public Statement
-    {
-    public:
-        explicit RetStatement(
-            Location loc,
-            ExpressionPtr value);
-
-        void Gen(Builder& builder) const override;
-        StatementPtr Reflect(Context& context) const override;
-        std::ostream& Print(std::ostream& stream) const override;
-
-    private:
-        ExpressionPtr m_Value;
     };
 
     struct CalleeInfo
@@ -604,6 +605,35 @@ namespace llove
     private:
         double_t m_Value;
         TypePtr m_Type;
+    };
+
+    using InlineOperand = std::pair<std::string, TypePtr>;
+
+    class InlineExpression final : public Expression
+    {
+    public:
+        explicit InlineExpression(
+            Location loc,
+            std::string asm_string,
+            std::vector<InlineOperand> dst_operands,
+            std::vector<InlineOperand> src_operands,
+            std::vector<std::string> clobbers,
+            bool sideeffect,
+            bool alignstack,
+            bool inteldialect,
+            bool unwind);
+
+        ValuePtr GenVal(
+            Builder& builder,
+            TypePtr expect) const override;
+        StatementPtr Reflect(Context& context) const override;
+        std::ostream& Print(std::ostream& stream) const override;
+
+    private:
+        std::string m_AsmString;
+        std::vector<InlineOperand> m_DstOperands, m_SrcOperands;
+        std::vector<std::string> m_Clobbers;
+        bool m_SideEffect, m_AlignStack, m_IntelDialect, m_Unwind;
     };
 
     class IntegerExpression final : public Expression

@@ -37,7 +37,7 @@ const llove::Field& llove::StructType::GetField(const unsigned index) const
 
 llove::TypeId llove::StructType::GetId() const
 {
-    return TypeId_Struct;
+    return ID;
 }
 
 bool llove::StructType::IsStruct() const
@@ -53,7 +53,7 @@ llvm::StructType* llove::StructType::GenIR(Builder& builder)
         for (auto& field : m_Fields)
             fields.emplace_back(field.Info.GenIRType(builder));
 
-        m_IRType = builder.GetStructType(fields, false);
+        m_IRType = builder.GetStructType(fields);
     }
 
     return llvm::dyn_cast<llvm::StructType>(m_IRType);

@@ -86,6 +86,11 @@ llove::StructType::Ptr llove::Context::GetStruct(std::vector<Parameter> fields)
     return GetOrCreate<StructType>(std::move(fields));
 }
 
+llove::TupleType::Ptr llove::Context::GetTuple(std::vector<Field> fields)
+{
+    return GetOrCreate<TupleType>(std::move(fields));
+}
+
 llove::RangeType::Ptr llove::Context::GetRange(TypePtr entry)
 {
     return GetOrCreate<RangeType>(std::move(entry));
@@ -97,12 +102,12 @@ llove::ClassType::Ptr llove::Context::GetClass(std::string name)
 }
 
 llove::FunctionType::Ptr llove::Context::GetFunction(
+    Field result,
     std::vector<Field> parameters,
     bool variadic,
-    Field result,
     std::optional<Field> self)
 {
-    return GetOrCreate<FunctionType>(std::move(parameters), variadic, std::move(result), std::move(self));
+    return GetOrCreate<FunctionType>(std::move(result), std::move(parameters), variadic, std::move(self));
 }
 
 llove::IntegerType::Ptr llove::Context::GetBoolean()

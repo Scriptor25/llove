@@ -3,13 +3,13 @@
 #include <llove/type.hpp>
 
 llove::FunctionType::FunctionType(
+    Field result,
     std::vector<Field> parameters,
     const bool variadic,
-    Field result,
     std::optional<Field> self)
-    : m_Parameters(std::move(parameters)),
+    : m_Result(std::move(result)),
+      m_Parameters(std::move(parameters)),
       m_Variadic(variadic),
-      m_Result(std::move(result)),
       m_Self(std::move(self))
 {
 }
@@ -41,7 +41,7 @@ const std::optional<llove::Field>& llove::FunctionType::GetSelf() const
 
 llove::TypeId llove::FunctionType::GetId() const
 {
-    return TypeId_Function;
+    return ID;
 }
 
 bool llove::FunctionType::IsFunction() const
@@ -113,11 +113,11 @@ llove::TypePtr llove::FunctionType::Reflect(Context& context) const
     m_Result.Reflect(context, result);
 
     if (!m_Self)
-        return context.GetFunction(std::move(parameters), m_Variadic, std::move(result));
+        return context.GetFunction(std::move(result), std::move(parameters), m_Variadic);
 
     m_Self->Reflect(context, self);
 
-    return context.GetFunction(std::move(parameters), m_Variadic, std::move(result), std::move(self));
+    return context.GetFunction(std::move(result), std::move(parameters), m_Variadic, std::move(self));
 }
 
 bool llove::FunctionType::TypeInfo(

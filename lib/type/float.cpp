@@ -15,7 +15,7 @@ unsigned llove::FloatType::GetBits() const
 
 llove::TypeId llove::FloatType::GetId() const
 {
-    return TypeId_Float;
+    return ID;
 }
 
 bool llove::FloatType::IsFloat() const

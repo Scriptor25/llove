@@ -4,7 +4,7 @@
 
 llove::TypeId llove::VoidType::GetId() const
 {
-    return TypeId_Void;
+    return ID;
 }
 
 bool llove::VoidType::IsVoid() const

@@ -36,7 +36,7 @@ bool llove::PointerType::IsOpaque() const
 
 llove::TypeId llove::PointerType::GetId() const
 {
-    return TypeId_Pointer;
+    return ID;
 }
 
 bool llove::PointerType::IsPointer() const

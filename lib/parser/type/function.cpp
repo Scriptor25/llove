@@ -39,5 +39,5 @@ llove::TypePtr llove::Parser::ParseFunctionType()
     else
         result.SetType(m_Context.GetVoid());
 
-    return m_Context.GetFunction(std::move(parameters), variadic, std::move(result), std::move(self));
+    return m_Context.GetFunction(std::move(result), std::move(parameters), variadic, std::move(self));
 }

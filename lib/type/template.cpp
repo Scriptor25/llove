@@ -11,7 +11,7 @@ llove::TemplateType::TemplateType(std::string name)
 
 llove::TypeId llove::TemplateType::GetId() const
 {
-    return TypeId_Template;
+    return ID;
 }
 
 bool llove::TemplateType::IsTemplate() const
@@ -76,7 +76,7 @@ void llove::TemplateClassType::Instantiate()
 
 llove::TypeId llove::TemplateClassType::GetId() const
 {
-    return TypeId_Template;
+    return ID;
 }
 
 bool llove::TemplateClassType::IsTemplate() const

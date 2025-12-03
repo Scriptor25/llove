@@ -23,7 +23,7 @@ unsigned llove::IntegerType::GetBits() const
 
 llove::TypeId llove::IntegerType::GetId() const
 {
-    return TypeId_Integer;
+    return ID;
 }
 
 bool llove::IntegerType::IsInteger() const

@@ -8,6 +8,7 @@
 #include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <map>
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -17,15 +18,16 @@ namespace llove
     enum TypeId : unsigned
     {
         TypeId_Void = 'v',
-        TypeId_Variadic = 'l',
+        TypeId_Variadic = 'z',
         TypeId_Integer = 'i',
         TypeId_Float = 'f',
         TypeId_Pointer = 'p',
         TypeId_Array = 'a',
         TypeId_Struct = 's',
+        TypeId_Tuple = 'm',
         TypeId_Range = 'r',
         TypeId_Class = 'c',
-        TypeId_Function = 'g',
+        TypeId_Function = 'x',
         TypeId_Template = 't',
     };
 
@@ -36,19 +38,20 @@ namespace llove
 
         virtual ~Type() = default;
 
-        [[nodiscard]] virtual TypeId GetId() const = 0;
+        virtual TypeId GetId() const = 0;
 
-        [[nodiscard]] virtual bool IsTemplate() const;
-        [[nodiscard]] virtual bool IsVoid() const;
-        [[nodiscard]] virtual bool IsVariadic() const;
-        [[nodiscard]] virtual bool IsInteger() const;
-        [[nodiscard]] virtual bool IsFloat() const;
-        [[nodiscard]] virtual bool IsPointer() const;
-        [[nodiscard]] virtual bool IsArray() const;
-        [[nodiscard]] virtual bool IsStruct() const;
-        [[nodiscard]] virtual bool IsRange() const;
-        [[nodiscard]] virtual bool IsClass() const;
-        [[nodiscard]] virtual bool IsFunction() const;
+        virtual bool IsTemplate() const;
+        virtual bool IsVoid() const;
+        virtual bool IsVariadic() const;
+        virtual bool IsInteger() const;
+        virtual bool IsFloat() const;
+        virtual bool IsPointer() const;
+        virtual bool IsArray() const;
+        virtual bool IsStruct() const;
+        virtual bool IsTuple() const;
+        virtual bool IsRange() const;
+        virtual bool IsClass() const;
+        virtual bool IsFunction() const;
 
         virtual unsigned SizeBits(Builder& builder);
         virtual llvm::Type* GenIR(Builder& builder) = 0;
@@ -58,7 +61,7 @@ namespace llove
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const = 0;
 
-        [[nodiscard]] virtual std::string Mangle() const = 0;
+        virtual std::string Mangle() const = 0;
 
         virtual std::ostream& Print(std::ostream& stream) const = 0;
 
@@ -100,8 +103,8 @@ namespace llove
 
         explicit VoidType() = default;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsVoid() const override;
+        TypeId GetId() const override;
+        bool IsVoid() const override;
         unsigned SizeBits(Builder& builder) override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
@@ -113,7 +116,7 @@ namespace llove
         /**
          * @return v
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
     };
@@ -126,8 +129,8 @@ namespace llove
 
         explicit VariadicType() = default;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsVariadic() const override;
+        TypeId GetId() const override;
+        bool IsVariadic() const override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         TypePtr Reflect(Context& context) const override;
@@ -138,7 +141,7 @@ namespace llove
         /**
          * @return z
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
     };
@@ -153,11 +156,11 @@ namespace llove
             bool is_signed,
             unsigned bits);
 
-        [[nodiscard]] bool IsSigned() const;
-        [[nodiscard]] unsigned GetBits() const;
+        bool IsSigned() const;
+        unsigned GetBits() const;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsInteger() const override;
+        TypeId GetId() const override;
+        bool IsInteger() const override;
         llvm::IntegerType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         TypePtr Reflect(Context& context) const override;
@@ -168,7 +171,7 @@ namespace llove
         /**
          * @return <signed?i:u><bits>_
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -185,10 +188,10 @@ namespace llove
 
         explicit FloatType(unsigned bits);
 
-        [[nodiscard]] unsigned GetBits() const;
+        unsigned GetBits() const;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsFloat() const override;
+        TypeId GetId() const override;
+        bool IsFloat() const override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         TypePtr Reflect(Context& context) const override;
@@ -199,7 +202,7 @@ namespace llove
         /**
          * @return f<bits>_
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -218,12 +221,12 @@ namespace llove
             TypePtr base,
             bool is_mutable);
 
-        [[nodiscard]] TypePtr GetBase() const;
-        [[nodiscard]] bool IsMutable() const;
-        [[nodiscard]] bool IsOpaque() const;
+        TypePtr GetBase() const;
+        bool IsMutable() const;
+        bool IsOpaque() const;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsPointer() const override;
+        TypeId GetId() const override;
+        bool IsPointer() const override;
         llvm::PointerType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         TypePtr Reflect(Context& context) const override;
@@ -234,7 +237,7 @@ namespace llove
         /**
          * @return p<mutable?m:i><base>
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -253,11 +256,11 @@ namespace llove
             TypePtr base,
             unsigned count);
 
-        [[nodiscard]] TypePtr GetBase() const;
-        [[nodiscard]] unsigned GetCount() const;
+        TypePtr GetBase() const;
+        unsigned GetCount() const;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsArray() const override;
+        TypeId GetId() const override;
+        bool IsArray() const override;
         llvm::ArrayType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         TypePtr Reflect(Context& context) const override;
@@ -268,7 +271,7 @@ namespace llove
         /**
          * @return a<size>_<base>
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -285,13 +288,13 @@ namespace llove
 
         explicit StructType(std::vector<Parameter> fields);
 
-        [[nodiscard]] bool HasField(const std::string& name) const;
-        [[nodiscard]] unsigned GetFieldIndex(const std::string& name) const;
-        [[nodiscard]] unsigned GetFieldCount() const;
-        [[nodiscard]] const Field& GetField(unsigned index) const;
+        bool HasField(const std::string& name) const;
+        unsigned GetFieldIndex(const std::string& name) const;
+        unsigned GetFieldCount() const;
+        const Field& GetField(unsigned index) const;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsStruct() const override;
+        TypeId GetId() const override;
+        bool IsStruct() const override;
         llvm::StructType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         TypePtr Reflect(Context& context) const override;
@@ -302,12 +305,43 @@ namespace llove
         /**
          * @return s<length>_<fields...>
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
         std::vector<Parameter> m_Fields;
+    };
+
+    class TupleType final : public Type
+    {
+    public:
+        using Ptr = std::shared_ptr<TupleType>;
+        static constexpr auto ID = TypeId_Tuple;
+
+        explicit TupleType(std::vector<Field> fields);
+
+        unsigned GetFieldCount() const;
+        const Field& GetField(unsigned index) const;
+
+        TypeId GetId() const override;
+        bool IsTuple() const override;
+        llvm::StructType* GenIR(Builder& builder) override;
+        llvm::DIType* GenDI(Builder& builder) override;
+        TypePtr Reflect(Context& context) const override;
+        bool TypeInfo(
+            Builder& builder,
+            std::vector<llvm::Constant*>& dst) const override;
+
+        /**
+         * m<length>_<fields...>
+         */
+        std::string Mangle() const override;
+
+        std::ostream& Print(std::ostream& stream) const override;
+
+    private:
+        std::vector<Field> m_Fields;
     };
 
     class RangeType final : public Type
@@ -318,10 +352,10 @@ namespace llove
 
         explicit RangeType(TypePtr entry);
 
-        [[nodiscard]] TypePtr GetEntry() const;
+        TypePtr GetEntry() const;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsRange() const override;
+        TypeId GetId() const override;
+        bool IsRange() const override;
         llvm::StructType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         TypePtr Reflect(Context& context) const override;
@@ -332,7 +366,7 @@ namespace llove
         /**
          * @return r<entry>
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -357,24 +391,24 @@ namespace llove
 
         explicit ClassType(std::string name);
 
-        [[nodiscard]] const std::string& GetName() const;
-        [[nodiscard]] bool IsOpaque() const;
+        const std::string& GetName() const;
+        bool IsOpaque() const;
 
-        [[nodiscard]] bool InheritsFrom(const TypePtr& type) const;
-        [[nodiscard]] bool HasParentClass() const;
-        [[nodiscard]] Ptr GetParentClass() const;
+        bool InheritsFrom(const TypePtr& type) const;
+        bool HasParentClass() const;
+        Ptr GetParentClass() const;
 
-        [[nodiscard]] bool HasMember(const std::string& name) const;
-        [[nodiscard]] unsigned GetMemberIndex(const std::string& name) const;
-        [[nodiscard]] unsigned GetMemberCount() const;
-        [[nodiscard]] Field GetMember(unsigned index) const;
+        bool HasMember(const std::string& name) const;
+        unsigned GetMemberIndex(const std::string& name) const;
+        unsigned GetMemberCount() const;
+        Field GetMember(unsigned index) const;
 
         void ForEachMember(
             const std::function<void(
                 unsigned,
                 const ClassMemberReference&)>& callback) const;
 
-        [[nodiscard]] OptRef<ClassFunctionReference> GetFunction(
+        OptRef<ClassFunctionReference> GetFunction(
             const Ptr& self,
             const std::string& name,
             bool is_mutable,
@@ -382,19 +416,19 @@ namespace llove
             bool has_variadic,
             const Field& result) const;
 
-        [[nodiscard]] bool HasFunction(const std::string& name) const;
-        [[nodiscard]] VecRef<ClassFunctionReference> GetFunctions(
+        bool HasFunction(const std::string& name) const;
+        VecRef<ClassFunctionReference> GetFunctions(
             const Ptr& self,
             const std::string& name) const;
-        [[nodiscard]] VecRef<ClassFunctionReference> GetConstructors(const Ptr& self) const;
-        [[nodiscard]] OptRef<ClassFunctionReference> GetDestructor(const Ptr& self) const;
+        VecRef<ClassFunctionReference> GetConstructors(const Ptr& self) const;
+        OptRef<ClassFunctionReference> GetDestructor(const Ptr& self) const;
 
         void SetParentClass(Ptr parent_class_type);
         void SetMembers(std::vector<ClassMemberReference> members);
         void SetFunctions(std::vector<ClassFunctionReference> functions);
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsClass() const override;
+        TypeId GetId() const override;
+        bool IsClass() const override;
         std::vector<llvm::Type*> GenIRElements(Builder& builder) const;
         std::pair<
             std::vector<llvm::Metadata*>,
@@ -410,7 +444,7 @@ namespace llove
         /**
          * @return c<length>_<name>
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -428,19 +462,19 @@ namespace llove
         static constexpr auto ID = TypeId_Function;
 
         explicit FunctionType(
+            Field result,
             std::vector<Field> parameters,
             bool variadic,
-            Field result,
             std::optional<Field> self);
 
-        [[nodiscard]] unsigned GetParameterCount() const;
-        [[nodiscard]] const Field& GetParameter(unsigned index) const;
-        [[nodiscard]] bool HasVariadic() const;
-        [[nodiscard]] const Field& GetResult() const;
-        [[nodiscard]] const std::optional<Field>& GetSelf() const;
+        unsigned GetParameterCount() const;
+        const Field& GetParameter(unsigned index) const;
+        bool HasVariadic() const;
+        const Field& GetResult() const;
+        const std::optional<Field>& GetSelf() const;
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsFunction() const override;
+        TypeId GetId() const override;
+        bool IsFunction() const override;
         llvm::PointerType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
         llvm::FunctionType* GenFunction(Builder& builder);
@@ -453,7 +487,7 @@ namespace llove
         /**
          * @return x<variadic?v><self?s><length>_<parameters...><result><self>
          */
-        [[nodiscard]] std::string Mangle() const override;
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -462,9 +496,9 @@ namespace llove
         llvm::DISubroutineType* m_DIFunction = nullptr;
 
     private:
+        Field m_Result;
         std::vector<Field> m_Parameters;
         bool m_Variadic;
-        Field m_Result;
         std::optional<Field> m_Self;
     };
 
@@ -476,8 +510,8 @@ namespace llove
 
         explicit TemplateType(std::string name);
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsTemplate() const override;
+        TypeId GetId() const override;
+        bool IsTemplate() const override;
         unsigned SizeBits(Builder& builder) override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
@@ -486,7 +520,10 @@ namespace llove
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
 
-        [[nodiscard]] std::string Mangle() const override;
+        /**
+         * t<length>_<name>
+         */
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -504,11 +541,11 @@ namespace llove
             std::string name,
             std::vector<TypePtr> arguments);
 
-        [[nodiscard]] bool IsInstantiated() const;
+        bool IsInstantiated() const;
         void Instantiate();
 
-        [[nodiscard]] TypeId GetId() const override;
-        [[nodiscard]] bool IsTemplate() const override;
+        TypeId GetId() const override;
+        bool IsTemplate() const override;
         unsigned SizeBits(Builder& builder) override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
@@ -517,7 +554,10 @@ namespace llove
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
 
-        [[nodiscard]] std::string Mangle() const override;
+        /**
+         * t<length>_<name><length>_<parameters...>
+         */
+        std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
@@ -566,14 +606,17 @@ struct std::formatter<llove::TypeId> : std::formatter<std::string_view>
     {
         static const std::map<llove::TypeId, const char*> map{
             {     llove::TypeId_Void,     "void" },
+            { llove::TypeId_Variadic, "variadic" },
             {  llove::TypeId_Integer,  "integer" },
             {    llove::TypeId_Float,    "float" },
             {  llove::TypeId_Pointer,  "pointer" },
             {    llove::TypeId_Array,    "array" },
             {   llove::TypeId_Struct,   "struct" },
+            {    llove::TypeId_Tuple,    "tuple" },
             {    llove::TypeId_Range,    "range" },
             {    llove::TypeId_Class,    "class" },
             { llove::TypeId_Function, "function" },
+            { llove::TypeId_Template, "template" },
         };
         return std::formatter<std::string_view>::format(map.at(id), ctx);
     }

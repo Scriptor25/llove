@@ -41,6 +41,11 @@ bool llove::Type::IsStruct() const
     return false;
 }
 
+bool llove::Type::IsTuple() const
+{
+    return false;
+}
+
 bool llove::Type::IsRange() const
 {
     return false;

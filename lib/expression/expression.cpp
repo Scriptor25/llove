@@ -34,7 +34,6 @@ try
 
     return {
         { {
-            .IsExposed = false,
             .Name = {},
             .Type = std::move(type),
             .Callee = value->Load(builder),

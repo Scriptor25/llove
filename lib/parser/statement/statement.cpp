@@ -17,14 +17,14 @@ llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
         return ParseIfStatement(inline_);
     if (At(TokenType_Symbol, "let"))
         return ParseLetStatement(inline_);
+    if (At(TokenType_Symbol, "ret"))
+        return ParseRetStatement(inline_);
     if (At(TokenType_Other, "{"))
         return ParseScopeStatement();
     if (At(TokenType_Symbol, "switch"))
         return ParseSwitchStatement();
     if (At(TokenType_Symbol, "while"))
         return ParseWhileStatement(inline_);
-    if (At(TokenType_Symbol, "ret"))
-        return ParseRetStatement(inline_);
 
     auto expression = ParseExpression();
     if (inline_)

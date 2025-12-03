@@ -15,7 +15,7 @@ llove::TypePtr llove::RangeType::GetEntry() const
 
 llove::TypeId llove::RangeType::GetId() const
 {
-    return TypeId_Range;
+    return ID;
 }
 
 bool llove::RangeType::IsRange() const
@@ -28,7 +28,7 @@ llvm::StructType* llove::RangeType::GenIR(Builder& builder)
     if (!m_IRType)
     {
         const auto entry_type = m_Entry->GenIR(builder);
-        m_IRType = builder.GetStructType({ entry_type, entry_type }, false);
+        m_IRType = builder.GetStructType({ entry_type, entry_type });
     }
 
     return llvm::dyn_cast<llvm::StructType>(m_IRType);
