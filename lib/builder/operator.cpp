@@ -29,7 +29,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(
 
         if (const auto& function_self = function_type->GetSelf())
         {
-            if (!function.IsExposed && function_self->GetType() != m_Class)
+            if (!function.IsPublic && function_self->GetType() != m_Class)
             {
                 continue;
             }
@@ -77,7 +77,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(
 
             auto error = 0u;
 
-            if (!function.IsExposed && parent != m_Class && m_Class->InheritsFrom(parent))
+            if (!function.IsPublic && parent != m_Class && m_Class->InheritsFrom(parent))
             {
                 continue;
             }
@@ -99,7 +99,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(
 
             Function agg;
             agg.IsExport = function.IsExport;
-            agg.IsExposed = function.IsExposed;
+            agg.IsPublic = function.IsPublic;
             agg.IsVirtual = function.IsVirtual;
             agg.IsOverride = function.IsOverride;
             agg.IsImplicit = function.IsImplicit;
@@ -156,7 +156,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
         if (const auto& function_self = function_type->GetSelf())
         {
-            if (!function.IsExposed && function_self->GetType() != m_Class
+            if (!function.IsPublic && function_self->GetType() != m_Class
                 && !m_Class->InheritsFrom(function_self->GetType()))
             {
                 continue;
@@ -215,7 +215,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
             auto error = 0u;
 
-            if (!function.IsExposed && parent != m_Class && !m_Class->InheritsFrom(parent))
+            if (!function.IsPublic && parent != m_Class && !m_Class->InheritsFrom(parent))
             {
                 continue;
             }
@@ -241,7 +241,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
 
             Function agg;
             agg.IsExport = function.IsExport;
-            agg.IsExposed = function.IsExposed;
+            agg.IsPublic = function.IsPublic;
             agg.IsVirtual = function.IsVirtual;
             agg.IsOverride = function.IsOverride;
             agg.IsImplicit = function.IsImplicit;

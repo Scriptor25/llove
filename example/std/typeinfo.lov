@@ -22,12 +22,12 @@ define new<T>(mut val: T): T[mut] {
 
 export class type {
 
-    expose mut create(id: u32);
+    public mut create(id: u32);
 
-    expose virtual mut delete();
-    expose virtual mut $(): type;
+    public virtual mut delete();
+    public virtual mut $(): type;
 
-    expose id(): u32;
+    public id(): u32;
 
     let id: u32;
 }
@@ -36,42 +36,42 @@ export type type_ptr = type[mut];
 
 export class void_type : type {
 
-    expose mut create() [ create(typeid_void) ] {
+    public mut create() [ create(typeid_void) ] {
     }
 
-    expose override mut $(): void_type {
+    public override mut $(): void_type {
         ret self;
     }
 }
 
 export class variadic_type : type {
 
-    expose mut create() [ create(typeid_variadic) ] {
+    public mut create() [ create(typeid_variadic) ] {
     }
 
-    expose override mut $(): variadic_type {
+    public override mut $(): variadic_type {
         ret self;
     }
 }
 
 export class integer_type : type {
 
-    expose mut create(is_signed: u1, bits: u32) [
+    public mut create(is_signed: u1, bits: u32) [
         create(typeid_integer),
         is_signed,
         bits,
     ] {
     }
 
-    expose override mut $(): integer_type {
+    public override mut $(): integer_type {
         ret self;
     }
 
-    expose is_signed(): u1 {
+    public is_signed(): u1 {
         ret self.is_signed;
     }
 
-    expose bits(): u32 {
+    public bits(): u32 {
         ret self.bits;
     }
 
@@ -81,17 +81,17 @@ export class integer_type : type {
 
 export class float_type : type {
 
-    expose mut create(bits: u32) [
+    public mut create(bits: u32) [
         create(typeid_float),
         bits,
     ] {
     }
 
-    expose override mut $(): float_type {
+    public override mut $(): float_type {
         ret self;
     }
 
-    expose bits(): u32 {
+    public bits(): u32 {
         ret self.bits;
     }
 
@@ -100,7 +100,7 @@ export class float_type : type {
 
 export class pointer_type : type {
 
-    expose mut create(is_mutable: u1, is_opaque: u1, base: type_ptr) [
+    public mut create(is_mutable: u1, is_opaque: u1, base: type_ptr) [
         create(typeid_pointer),
         is_mutable,
         is_opaque,
@@ -108,28 +108,28 @@ export class pointer_type : type {
     ] {
     }
 
-    expose override mut delete() {
+    public override mut delete() {
         if (self.base) {
             free(self.base);
             self.base = null;
         }
     }
 
-    expose override mut $(): pointer_type {
+    public override mut $(): pointer_type {
         let mut t: pointer_type(self.is_mutable, self.is_opaque, self.base);
         self.base = null;
         ret t;
     }
 
-    expose is_mutable(): u1 {
+    public is_mutable(): u1 {
         ret self.is_mutable;
     }
 
-    expose is_opaque(): u1 {
+    public is_opaque(): u1 {
         ret self.is_opaque;
     }
 
-    expose base(): type_ptr {
+    public base(): type_ptr {
         ret self.base;
     }
 
@@ -140,31 +140,31 @@ export class pointer_type : type {
 
 export class array_type : type {
 
-    expose mut create(count: u32, base: type_ptr) [
+    public mut create(count: u32, base: type_ptr) [
         create(typeid_array),
         count,
         base,
     ] {
     }
 
-    expose override mut delete() {
+    public override mut delete() {
         if (self.base) {
             free(self.base);
             self.base = null;
         }
     }
 
-    expose override mut $(): array_type {
+    public override mut $(): array_type {
         let mut t: array_type(self.count, self.base);
         self.base = null;
         ret t;
     }
 
-    expose count(): u32 {
+    public count(): u32 {
         ret self.count;
     }
 
-    expose base(): type_ptr {
+    public base(): type_ptr {
         ret self.base;
     }
 
@@ -174,14 +174,14 @@ export class array_type : type {
 
 export class struct_type : type {
 
-    expose mut create(count: u32, fields: type_ptr[mut]) [
+    public mut create(count: u32, fields: type_ptr[mut]) [
         create(typeid_struct),
         count,
         fields,
     ] {
     }
 
-    expose override mut delete() {
+    public override mut delete() {
         if (self.fields) {
             foreach (field : self) {
                 free(field);
@@ -194,26 +194,26 @@ export class struct_type : type {
         }
     }
 
-    expose override mut $(): struct_type {
+    public override mut $(): struct_type {
         let mut t: struct_type(self.count, self.fields);
         self.count = 0;
         self.fields = null;
         ret t;
     }
 
-    expose mut begin(): type_ptr[mut] {
+    public mut begin(): type_ptr[mut] {
         ret self.fields;
     }
 
-    expose mut end(): type_ptr[mut] {
+    public mut end(): type_ptr[mut] {
         ret self.fields + self.count;
     }
 
-    expose begin(): type_ptr[] {
+    public begin(): type_ptr[] {
         ret self.fields;
     }
 
-    expose end(): type_ptr[] {
+    public end(): type_ptr[] {
         ret self.fields + self.count;
     }
 
@@ -223,26 +223,26 @@ export class struct_type : type {
 
 export class range_type : type {
 
-    expose mut create(entry: type_ptr) [
+    public mut create(entry: type_ptr) [
         create(typeid_range),
         entry,
     ] {
     }
 
-    expose override mut delete() {
+    public override mut delete() {
         if (self.entry) {
             free(self.entry);
             self.entry = null;
         }
     }
 
-    expose override mut $(): range_type {
+    public override mut $(): range_type {
         let mut t: range_type(self.entry);
         self.entry = null;
         ret t;
     }
 
-    expose entry(): type_ptr {
+    public entry(): type_ptr {
         ret self.entry;
     }
 

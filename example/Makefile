@@ -2,15 +2,18 @@ LLOVE = ../build/llove
 LD = ld
 GCC = gcc
 
-STDLIB = std/format.o std/typeinfo.o
+.PHONY: all clean
 
-.PHONY: clean
+all: example.launch fib.launch iterator.launch memory.launch operator.launch rays.launch test.launch
 
 clean:
-	rm *.x
+	- rm *.x
 
 %.o: %.lov
 	$(LLOVE) $^ -o $@
 
-%.x: %.o $(STDLIB)
+%.x: std/format.o std/typeinfo.o %.o
 	$(GCC) $^ -o $@
+
+%.launch: %.x
+	- ./$<

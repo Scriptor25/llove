@@ -136,7 +136,7 @@ void llove::Builder::PushDestructor(
 
         Function agg;
         agg.IsExport = function.IsExport;
-        agg.IsExposed = function.IsExposed;
+        agg.IsPublic = function.IsPublic;
         agg.IsVirtual = function.IsVirtual;
         agg.IsOverride = function.IsOverride;
         agg.IsMutable = function.IsMutable;

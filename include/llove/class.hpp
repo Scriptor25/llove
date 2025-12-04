@@ -26,8 +26,6 @@ namespace llove
 
         Field Info;
         std::string Name;
-        ExpressionPtr Value;
-        std::vector<ExpressionPtr> Arguments;
     };
 
     struct ClassFunctionReference final
@@ -35,7 +33,7 @@ namespace llove
         std::ostream& Print(std::ostream& stream) const;
 
         bool IsExport = false;
-        bool IsExposed = false;
+        bool IsPublic = false;
         bool IsVirtual = false;
         bool IsOverride = false;
         bool IsImplicit = false;
@@ -87,7 +85,7 @@ namespace llove
 
         Location Loc;
 
-        bool IsExposed = false;
+        bool IsPublic = false;
         bool IsVirtual = false;
         bool IsOverride = false;
         bool IsImplicit = false;

@@ -10,7 +10,7 @@ namespace llove
     {
         std::ostream& Print(std::ostream& stream) const;
 
-        bool IsExposed = false;
+        bool IsPublic = false;
         bool IsImplicit = false;
 
         std::string Name;
@@ -32,7 +32,7 @@ namespace llove
 
         bool IsExport = false;
 
-        bool IsExposed = false;
+        bool IsPublic = false;
         bool IsVirtual = false;
         bool IsOverride = false;
         bool IsInterface = false;

@@ -11,39 +11,17 @@ void llove::ClassMember::Reflect(
     ClassMember& field) const
 {
     field.Name = Name;
-
     Info.Reflect(context, field.Info);
-
-    if (Value)
-        Value->Reflect(context, field.Value);
-
-    field.Arguments.resize(Arguments.size());
-    for (unsigned i = 0; i < Arguments.size(); ++i)
-        Arguments.at(i)->Reflect(context, field.Arguments.at(i));
 }
 
 std::ostream& llove::ClassMember::Print(std::ostream& stream) const
 {
-    Info.Print(stream << "let ", true, Name);
-    if (Value)
-        stream << " = " << Value;
-    else if (!Arguments.empty())
-    {
-        stream << '(';
-        for (auto i = Arguments.begin(); i != Arguments.end(); ++i)
-        {
-            if (i != Arguments.begin())
-                stream << ", ";
-            stream << *i;
-        }
-        stream << ')';
-    }
-    return stream << ';';
+    return Info.Print(stream << "let ", true, Name) << ';';
 }
 
 std::ostream& llove::ClassFunctionReference::Print(std::ostream& stream) const
 {
-    stream << (IsExposed ? "expose " : "") << (IsImplicit ? "implicit " : "") << (IsMutable ? "mut " : "") << Name << '(';
+    stream << (IsPublic ? "public " : "") << (IsImplicit ? "implicit " : "") << (IsMutable ? "mut " : "") << Name << '(';
     for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
     {
         if (i != Parameters.begin())
@@ -64,7 +42,7 @@ void llove::ClassFunction::Reflect(
     ClassFunction& function) const
 {
     function.Loc = Loc;
-    function.IsExposed = IsExposed;
+    function.IsPublic = IsPublic;
     function.IsVirtual = IsVirtual;
     function.IsOverride = IsOverride;
     function.IsImplicit = IsImplicit;
@@ -87,7 +65,7 @@ void llove::ClassFunction::Reflect(
 
 std::ostream& llove::ClassFunction::Print(std::ostream& stream) const
 {
-    stream << (IsExposed ? "expose " : "") << (IsVirtual ? "virtual " : "") << (IsOverride ? "override " : "") << (IsImplicit ? "implicit " : "") << (IsMutable ? "mut " : "") << Name << '(';
+    stream << (IsPublic ? "public " : "") << (IsVirtual ? "virtual " : "") << (IsOverride ? "override " : "") << (IsImplicit ? "implicit " : "") << (IsMutable ? "mut " : "") << Name << '(';
     for (auto i = Parameters.begin(); i != Parameters.end(); ++i)
     {
         if (i != Parameters.begin())

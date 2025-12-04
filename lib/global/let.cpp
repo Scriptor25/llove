@@ -21,8 +21,6 @@ llove::LetGlobal::LetGlobal(
 void llove::LetGlobal::Gen(Builder& builder) const
 try
 {
-    builder.EmitLoc(m_Loc);
-
     auto type = m_Type->GenIR(builder);
     auto linkage = m_IsExport ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::InternalLinkage;
     auto initializer = llvm::Constant::getNullValue(type);

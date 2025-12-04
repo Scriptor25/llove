@@ -12,7 +12,7 @@ void llove::Parser::ParseClassFunction(
     };
 
     function.Loc = m_Token.Loc;
-    function.IsExposed = SkipIf(TokenType_Symbol, "expose");
+    function.IsPublic = SkipIf(TokenType_Symbol, "public");
     function.IsVirtual = SkipIf(TokenType_Symbol, "virtual");
     function.IsOverride = SkipIf(TokenType_Symbol, "override");
     function.IsImplicit = SkipIf(TokenType_Symbol, "implicit");

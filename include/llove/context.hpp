@@ -93,7 +93,7 @@ namespace llove
                 std::string,
                 TemplateType::Ptr>> type_parameters);
 
-        DefinitionTemplate& PushDefinitionTemplate(
+        FunctionTemplate& PushDefinitionTemplate(
             bool is_export,
             bool is_implicit,
             Location loc,
@@ -104,12 +104,12 @@ namespace llove
             bool is_imported);
         void PopDefinitionTemplate();
 
-        TypePtr InstantiateClass(
+        TypePtr InstantiateTypeTemplate(
             std::string name,
             std::vector<TypePtr> type_arguments,
             bool is_imported);
 
-        FunctionReference& InstantiateDefinition(
+        FunctionReference& InstantiateFunctionTemplate(
             Builder& builder,
             std::string name,
             std::vector<TypePtr> type_arguments,
@@ -127,11 +127,11 @@ namespace llove
 
         std::vector<std::map<std::string, TemplateType::Ptr>> m_TemplateTypes;
 
-        std::map<std::string, ClassTemplate> m_ClassTemplates;
-        ClassTemplate* m_CurrentClassTemplate = nullptr;
+        std::map<std::string, ClassTemplate> m_TypeTemplates;
+        ClassTemplate* m_CurrentTypeTemplate = nullptr;
 
-        std::map<std::string, DefinitionTemplate> m_DefinitionTemplates;
-        std::map<std::string, FunctionReference> m_DefinitionInstances;
+        std::map<std::string, FunctionTemplate> m_FunctionTemplates;
+        std::map<std::string, FunctionReference> m_FunctionInstances;
 
         std::vector<const std::map<std::string, TypePtr>*> m_TemplateStack;
 

@@ -5,17 +5,17 @@ interface fclose(stream: stream_t): i32;
 
 class stream {
 
-    expose mut create(filename: string_t, mode: string_t) {
+    public mut create(filename: string_t, mode: string_t) {
         self.file = fopen(filename, mode);
     }
 
-    expose mut delete() {
+    public mut delete() {
         if (self.file)
             fclose(self.file);
         self.file = null;
     }
 
-    expose format(format: string_t, ...args) {
+    public format(format: string_t, ...args) {
         format(self.file, format, args);
     }
 
@@ -24,37 +24,37 @@ class stream {
 
 class vec3 {
 
-    expose mut create() {
+    public mut create() {
         self.x = 0.0;
         self.y = 0.0;
         self.z = 0.0;
     }
 
-    expose mut create(s: f64) {
+    public mut create(s: f64) {
         self.x = s;
         self.y = s;
         self.z = s;
     }
 
-    expose mut create(x: f64, y: f64, z: f64) {
+    public mut create(x: f64, y: f64, z: f64) {
         self.x = x;
         self.y = y;
         self.z = z;
     }
 
-    expose implicit mut create(&v: vec3) {
+    public implicit mut create(&v: vec3) {
         self.x = v.x;
         self.y = v.y;
         self.z = v.z;
     }
 
-    expose mut create(v: vec3) {
+    public mut create(v: vec3) {
         self.x = v.x;
         self.y = v.y;
         self.z = v.z;
     }
 
-    expose mut $(): vec3 {
+    public mut $(): vec3 {
         let v: vec3(self.x, self.y, self.z);
         self.x = 0.0;
         self.y = 0.0;
@@ -69,12 +69,12 @@ class vec3 {
 
 class ray {
 
-    expose mut create() {
+    public mut create() {
         create[self.origin] vec3;
         create[self.direction] vec3;
     }
 
-    expose mut create(mut origin: vec3, mut direction: vec3) {
+    public mut create(mut origin: vec3, mut direction: vec3) {
         create[self.origin] vec3($origin);
         create[self.direction] vec3($direction);
     }

@@ -18,15 +18,15 @@ define end_str(): i8[] {
 }
 
 class iterable_class_t {
-    expose mut create() {
+    public mut create() {
         self.str = "Hello!\n";
     }
 
-    expose begin(): i8[] {
+    public begin(): i8[] {
         ret self.str;
     }
 
-    expose end(): i8[] {
+    public end(): i8[] {
         ret self.str + strlen(self.str);
     }
 

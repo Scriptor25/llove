@@ -102,6 +102,7 @@ namespace llove
         TypePtr ParsePointerType();
         TypePtr ParseRangeType();
         TypePtr ParseStructType();
+        TypePtr ParseTemplateType();
 
         std::string ParseField(
             Field& field,

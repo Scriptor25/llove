@@ -19,7 +19,7 @@ llove::ValuePtr llove::TemplateCallExpression::GenVal(
     TypePtr /* expect */) const
 try
 {
-    const auto& callee = builder.GetContext().InstantiateDefinition(builder, m_Callee, m_TypeArguments, false);
+    const auto& callee = builder.GetContext().InstantiateFunctionTemplate(builder, m_Callee, m_TypeArguments, false);
 
     std::vector<ValuePtr> arguments;
     for (unsigned i = 0; i < m_Arguments.size(); ++i)

@@ -56,7 +56,7 @@ try
     Function agg;
     agg.Loc = m_Loc;
     agg.IsExport = function.IsExport;
-    agg.IsExposed = function.IsExposed;
+    agg.IsPublic = function.IsPublic;
     agg.IsVirtual = function.IsVirtual;
     agg.IsOverride = function.IsOverride;
     agg.IsImplicit = function.IsImplicit;

@@ -28,15 +28,15 @@ namespace llove
         std::vector<ClassFunction> Functions;
     };
 
-    struct DefinitionTemplate final
+    struct FunctionTemplate final
     {
-        DefinitionTemplate() = default;
+        FunctionTemplate() = default;
 
-        DefinitionTemplate(DefinitionTemplate&&) = default;
-        DefinitionTemplate& operator=(DefinitionTemplate&&) = default;
+        FunctionTemplate(FunctionTemplate&&) = default;
+        FunctionTemplate& operator=(FunctionTemplate&&) = default;
 
-        DefinitionTemplate(const DefinitionTemplate&) = delete;
-        DefinitionTemplate& operator=(const DefinitionTemplate&) = delete;
+        FunctionTemplate(const FunctionTemplate&) = delete;
+        FunctionTemplate& operator=(const FunctionTemplate&) = delete;
 
         bool IsImported = false;
 

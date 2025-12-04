@@ -52,7 +52,7 @@ try
         class_functions.emplace_back(
             ClassFunctionReference{
                 .IsExport = m_IsExport,
-                .IsExposed = function.IsExposed,
+                .IsPublic = function.IsPublic,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,
                 .IsImplicit = function.IsImplicit,
@@ -78,7 +78,7 @@ try
         Function agg;
         agg.Loc = function.Loc;
         agg.IsExport = m_IsExport;
-        agg.IsExposed = function.IsExposed;
+        agg.IsPublic = function.IsPublic;
         agg.IsVirtual = function.IsVirtual;
         agg.IsOverride = function.IsOverride;
         agg.IsImplicit = function.IsImplicit;
@@ -140,7 +140,7 @@ llove::ClassGlobal::GenImport(
         class_functions.emplace_back(
             ClassFunctionReference{
                 .IsExport = m_IsExport,
-                .IsExposed = function.IsExposed,
+                .IsPublic = function.IsPublic,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,
                 .IsImplicit = function.IsImplicit,

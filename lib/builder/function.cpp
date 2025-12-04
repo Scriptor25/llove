@@ -15,7 +15,7 @@ llvm::Function* llove::Builder::GetOrCreateFunction(
 }
 
 llove::FunctionReference& llove::Builder::PushFunction(
-    const bool expose,
+    const bool is_public,
     const bool is_implicit,
     std::string name,
     FunctionType::Ptr type,
@@ -32,13 +32,13 @@ llove::FunctionReference& llove::Builder::PushFunction(
             continue;
         }
         Assert(
-            expose == function.IsExposed && is_implicit == function.IsImplicit
+            is_public == function.IsPublic && is_implicit == function.IsImplicit
                 && callee == function.Callee,
             "function prototype mismatch");
         return function;
     }
 
-    return m_Functions.emplace_back(expose, is_implicit, std::move(name), std::move(type), callee);
+    return m_Functions.emplace_back(is_public, is_implicit, std::move(name), std::move(type), callee);
 }
 
 std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
@@ -67,13 +67,13 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
             {
                 continue;
             }
-            if (!function.IsExposed && function_self->GetType() != m_Class
+            if (!function.IsPublic && function_self->GetType() != m_Class
                 && !m_Class->InheritsFrom(function_self->GetType()))
             {
                 continue;
             }
         }
-        else if (function_self && !function.IsExposed && function_self->GetType() != m_Class)
+        else if (function_self && !function.IsPublic && function_self->GetType() != m_Class)
         {
             continue;
         }
@@ -86,7 +86,7 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
         const auto class_type = As<ClassType>(self->GetType());
         for (auto class_functions = class_type->GetFunctions(class_type, name); auto& [parent, function] : class_functions)
         {
-            if (!function.IsExposed && parent != m_Class && !m_Class->InheritsFrom(parent))
+            if (!function.IsPublic && parent != m_Class && !m_Class->InheritsFrom(parent))
             {
                 continue;
             }
@@ -99,7 +99,7 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
 
             Function agg;
             agg.IsExport = function.IsExport;
-            agg.IsExposed = function.IsExposed;
+            agg.IsPublic = function.IsPublic;
             agg.IsVirtual = function.IsVirtual;
             agg.IsOverride = function.IsOverride;
             agg.IsImplicit = function.IsImplicit;
@@ -289,7 +289,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         Function agg;
         agg.IsExport = candidate.IsExport;
-        agg.IsExposed = candidate.IsExposed;
+        agg.IsPublic = candidate.IsPublic;
         agg.IsVirtual = candidate.IsVirtual;
         agg.IsOverride = candidate.IsOverride;
         agg.IsImplicit = candidate.IsImplicit;

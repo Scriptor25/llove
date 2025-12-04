@@ -3,25 +3,25 @@ export interface free(block: [mut]);
 
 export class unique<T> {
 
-    expose mut create() {
+    public mut create() {
         self.ptr = null;
     }
 
-    expose mut create(ptr: T[mut]) {
+    public mut create(ptr: T[mut]) {
         self.ptr = ptr;
     }
 
-    expose mut create(mut val: T) {
+    public mut create(mut val: T) {
         self.ptr = malloc(sizeof T);
         *self.ptr = $val;
     }
 
-    expose mut create(&val: T) {
+    public mut create(&val: T) {
         self.ptr = malloc(sizeof T);
         *self.ptr = val;
     }
 
-    expose mut delete() {
+    public mut delete() {
         if (self.ptr) {
             delete *self.ptr;
             free(self.ptr);
@@ -29,29 +29,29 @@ export class unique<T> {
         }
     }
 
-    expose mut $(): class<T> unique {
-        let mut u: class<T> unique(self.ptr);
+    public mut $(): <T> unique {
+        let mut u: <T> unique(self.ptr);
         self.ptr = null;
         ret u;
     }
 
-    expose cast(): u1 {
+    public cast(): u1 {
         ret self.ptr != null;
     }
 
-    expose !(): u1 {
+    public !(): u1 {
         ret self.ptr == null;
     }
 
-    expose *(): mut &T {
+    public *(): mut &T {
         ret *self.ptr;
     }
 
-    expose get(): T[mut] {
+    public get(): T[mut] {
         ret self.ptr;
     }
 
-    expose mut release(): T[mut] {
+    public mut release(): T[mut] {
         let ptr = self.ptr;
         self.ptr = null;
         ret ptr;
@@ -60,12 +60,12 @@ export class unique<T> {
     let mut ptr: T[mut];
 }
 
-export define implicit cast<T, U>(mut t: class<T> unique): class<U> unique {
-    ret create class<U> unique(t.release() as U[mut]);
+export define implicit cast<T, U>(mut t: <T> unique): <U> unique {
+    ret create <U> unique(t.release() as U[mut]);
 }
 
-export define make_unique<T>(mut val: T): class<T> unique {
+export define make_unique<T>(mut val: T): <T> unique {
     let p: T[mut] = malloc(sizeof T);
     *p = $val;
-    ret create class<T> unique(p);
+    ret create <T> unique(p);
 }

@@ -1,7 +1,23 @@
 import * from "std/unique.lov";
 import { format } from "std/format.lov";
 
+class Foo<B, A, R> {
+
+    public create(b: B, a: A, r: R) [ b, a, r ] {
+    }
+    
+    public b(): &B { ret self.b; }
+    public a(): &A { ret self.a; }
+    public r(): &R { ret self.r; }
+
+    let b: B;
+    let a: A;
+    let r: R;
+}
+
 interface main(): i32 {
+
+    let foo: <i8, i16, i32> Foo(0, 1, 2);
 
     let a = <i32> make_unique(321);
     let b = <i32> make_unique(123);

@@ -4,8 +4,8 @@
 
 std::ostream& llove::FunctionReference::Print(std::ostream& stream) const
 {
-    if (IsExposed)
-        stream << "expose ";
+    if (IsPublic)
+        stream << "public ";
     if (IsImplicit)
         stream << "implicit ";
 

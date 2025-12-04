@@ -172,7 +172,7 @@ try
     }
 
     FunctionReference reference{
-        .IsExposed = true,
+        .IsPublic = true,
         .IsImplicit = false,
         .Name = m_Member,
         .Type = As<FunctionType>(element_type),

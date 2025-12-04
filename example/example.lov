@@ -7,39 +7,39 @@ interface memcpy(dst: [mut], src: [], count: u64): [mut];
 
 class string {
 
-    expose implicit mut create();
-    expose implicit mut create(s: i8);
-    expose implicit mut create(s: i8[]);
-    expose implicit mut create(mut s: string);
-    expose implicit mut create(&s: string);
+    public implicit mut create();
+    public implicit mut create(s: i8);
+    public implicit mut create(s: i8[]);
+    public implicit mut create(mut s: string);
+    public implicit mut create(&s: string);
 
     mut create(beg: i8[mut], end: i8[mut]);
 
-    expose mut $(): string;
+    public mut $(): string;
 
-    expose mut delete();
+    public mut delete();
 
-    expose empty(): u1;
-    expose length(): u64;
-    expose raw(): i8[mut];
+    public empty(): u1;
+    public length(): u64;
+    public raw(): i8[mut];
 
-    expose begin(): i8[];
-    expose end(): i8[];
+    public begin(): i8[];
+    public end(): i8[];
 
-    expose mut begin(): i8[mut];
-    expose mut end(): i8[mut];
+    public mut begin(): i8[mut];
+    public mut end(): i8[mut];
 
-    expose mut clear();
+    public mut clear();
 
-    expose mut =(s: i8): mut &string;
-    expose mut =(s: i8[]): mut &string;
-    expose mut =(mut s: string): mut &string;
-    expose mut =(&s: string): mut &string;
+    public mut =(s: i8): mut &string;
+    public mut =(s: i8[]): mut &string;
+    public mut =(mut s: string): mut &string;
+    public mut =(&s: string): mut &string;
 
-    expose mut +=(s: i8): mut &string;
-    expose mut +=(s: i8[]): mut &string;
-    expose mut +=(s: string): mut &string;
-    expose mut +=(&s: string): mut &string;
+    public mut +=(s: i8): mut &string;
+    public mut +=(s: i8[]): mut &string;
+    public mut +=(s: string): mut &string;
+    public mut +=(&s: string): mut &string;
 
     let mut beg: i8[mut];
     let mut end: i8[mut];

@@ -71,13 +71,13 @@ llove::FunctionReference llove::Builder::GenFunction(
         function.IsExport || function.IsInterface);
 
     auto reference = register_function ? PushFunction(
-                                             function.IsExposed,
+                                             function.IsPublic,
                                              function.IsImplicit,
                                              function.Name,
                                              callee_type,
                                              callee)
                                        : FunctionReference{
-                                             .IsExposed = function.IsExposed,
+                                             .IsPublic = function.IsPublic,
                                              .IsImplicit = function.IsImplicit,
                                              .Name = function.Name,
                                              .Type = callee_type,

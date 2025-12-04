@@ -18,6 +18,9 @@ llove::TypePtr llove::Parser::ParseBaseType()
     if (At(TokenType_Other, "{"))
         return ParseStructType();
 
+    if (At(TokenType_Operator, "<"))
+        return ParseTemplateType();
+
     if (At(TokenType_Symbol))
         return ParseNamedType();
 

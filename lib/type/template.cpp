@@ -106,7 +106,7 @@ llove::TypePtr llove::TemplateClassType::Reflect(Context& context) const
     {
         Type::Reflect(context, argument, arguments.emplace_back());
     }
-    return context.InstantiateClass(m_Name, std::move(arguments), false);
+    return context.InstantiateTypeTemplate(m_Name, std::move(arguments), false);
 }
 
 bool llove::TemplateClassType::TypeInfo(

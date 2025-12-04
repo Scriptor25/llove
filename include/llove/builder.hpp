@@ -383,7 +383,7 @@ namespace llove
             bool external);
 
         FunctionReference& PushFunction(
-            bool expose,
+            bool is_public,
             bool is_implicit,
             std::string name,
             FunctionType::Ptr type,

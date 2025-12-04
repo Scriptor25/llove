@@ -49,7 +49,7 @@ try
         if (symbol_type->IsFunction())
         {
             FunctionReference reference{
-                .IsExposed = false,
+                .IsPublic = false,
                 .IsImplicit = false,
                 .Name = m_Name,
                 .Type = As<FunctionType>(symbol_type),

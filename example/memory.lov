@@ -5,33 +5,33 @@ interface free(block: [mut]);
 
 class test {
 
-    expose mut create() {
+    public mut create() {
         format("test:create()\n");
         self.data_ptr = null;
         format("=> self={{ data_ptr: {rx0#:16} }\n", self.data_ptr);
     }
 
-    expose mut create(data: i32) {
+    public mut create(data: i32) {
         format("test:create(i32)\n");
         self.data_ptr = malloc(sizeof i32);
         *self.data_ptr = data;
         format("=> self={{ data_ptr: {rx0#:16} }\n", self.data_ptr);
     }
 
-    expose mut =(data: i32): mut &test {
+    public mut =(data: i32): mut &test {
         format("test{{ data_ptr: {rx0#:16} }:=(i32)\n", self.data_ptr);
         *self.data_ptr = data;
         ret self;
     }
 
-    expose mut create(mut other: test) {
+    public mut create(mut other: test) {
         format("test:create(test)\n");
         self.data_ptr = other.data_ptr;
         other.data_ptr = null;
         format("=> self={{ data_ptr: {rx0#:16} }, other={{ data_ptr: {rx0#:16} }\n", self.data_ptr, other.data_ptr);
     }
 
-    expose mut =(mut other: test): mut &test {
+    public mut =(mut other: test): mut &test {
         format("test{{ data_ptr: {rx0#:16} }:=(test)\n", self.data_ptr);
         let data_ptr = self.data_ptr;
         self.data_ptr = other.data_ptr;
@@ -40,7 +40,7 @@ class test {
         ret self;
     }
 
-    expose mut $(): test {
+    public mut $(): test {
         let mut result: test;
 
         result.data_ptr = self.data_ptr;
@@ -49,7 +49,7 @@ class test {
         ret result;
     }
 
-    expose mut delete() {
+    public mut delete() {
         format("test{{ data_ptr: {rx0#:16} }:delete()\n", self.data_ptr);
         if (self.data_ptr) {
             free(self.data_ptr);
@@ -57,11 +57,11 @@ class test {
         self.data_ptr = null;
     }
 
-    expose data(): i32 {
+    public data(): i32 {
         ret *self.data_ptr;
     }
 
-    expose get(): i32[] {
+    public get(): i32[] {
         ret self.data_ptr;
     }
 
@@ -70,29 +70,29 @@ class test {
 
 class unique<T> {
 
-    expose mut create() {
+    public mut create() {
         format("unique:create()\n");
         self.ptr = null;
     }
 
-    expose mut create(ptr: T[mut]) {
+    public mut create(ptr: T[mut]) {
         format("unique:create(T[mut])\n");
         self.ptr = ptr;
     }
 
-    expose mut create(mut val: T) {
+    public mut create(mut val: T) {
         format("unique:create(T)\n");
         self.ptr = malloc(sizeof T);
-        create[*self.ptr] T($val);
+        create [*self.ptr] T($val);
     }
 
-    expose mut create(mut other: class<T> unique) {
+    public mut create(mut other: <T> unique) {
         format("unique:create(unique)\n");
         self.ptr = other.ptr;
         other.ptr = null;
     }
 
-    expose mut =(mut other: class<T> unique): mut &class<T> unique {
+    public mut =(mut other: <T> unique): mut &<T> unique {
         format("unique{{ ptr: {rx0#:16} }:=(unique)\n", self.ptr as []);
         let ptr = self.ptr;
         self.ptr = other.ptr;
@@ -100,8 +100,8 @@ class unique<T> {
         ret self;
     }
 
-    expose mut $(): class<T> unique {
-        let mut result: class<T> unique;
+    public mut $(): <T> unique {
+        let mut result: <T> unique;
 
         result.ptr = self.ptr;
         self.ptr = null;
@@ -109,7 +109,7 @@ class unique<T> {
         ret self;
     }
 
-    expose mut delete() {
+    public mut delete() {
         format("unique{{ ptr: {rx0#:16} }:delete()\n", self.ptr as []);
         if (self.ptr) {
             delete *self.ptr;
@@ -118,19 +118,19 @@ class unique<T> {
         self.ptr = null;
     }
 
-    expose *(): mut &T {
+    public *(): mut &T {
         ret *self.ptr;
     }
 
-    expose !(): u1 {
+    public !(): u1 {
         ret !self.ptr;
     }
 
-    expose get(): T[mut] {
+    public get(): T[mut] {
         ret self.ptr;
     }
 
-    expose cast(): u1 {
+    public cast(): u1 {
         ret self.ptr != null;
     }
 
@@ -139,7 +139,7 @@ class unique<T> {
 
 interface main(): i32 {
 
-    let u: class<test> unique(create test(0));
+    let u: <test> unique(create test(0));
 
     format("{} ({rx0#:16})\n", (*u).data(), (*u).get());
 

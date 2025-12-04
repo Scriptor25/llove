@@ -225,15 +225,15 @@ llove::ClassTemplate& llove::Context::PushClassTemplate(
         ref.IsImported = true;
 
         if (!is_imported)
-            m_CurrentClassTemplate = &ref;
+            m_CurrentTypeTemplate = &ref;
 
         return ref;
     }
 
-    auto& ref = m_ClassTemplates[name];
+    auto& ref = m_TypeTemplates[name];
 
     if (!is_imported)
-        m_CurrentClassTemplate = &ref;
+        m_CurrentTypeTemplate = &ref;
 
     ref.Name = std::move(name);
     ref.TypeParameters = std::move(type_parameters);
@@ -243,8 +243,8 @@ llove::ClassTemplate& llove::Context::PushClassTemplate(
 
 void llove::Context::PopClassTemplate()
 {
-    m_CurrentClassTemplate->Complete = true;
-    m_CurrentClassTemplate = nullptr;
+    m_CurrentTypeTemplate->Complete = true;
+    m_CurrentTypeTemplate = nullptr;
 
     m_TemplateTypes.pop_back();
 }
@@ -264,7 +264,7 @@ llove::ClassTemplate& llove::Context::EmplaceClassTemplate(
         return ref;
     }
 
-    auto& ref = m_ClassTemplates[name];
+    auto& ref = m_TypeTemplates[name];
 
     ref.Name = std::move(name);
     ref.TypeParameters = std::move(type_parameters);
@@ -272,7 +272,7 @@ llove::ClassTemplate& llove::Context::EmplaceClassTemplate(
     return ref;
 }
 
-llove::DefinitionTemplate& llove::Context::PushDefinitionTemplate(
+llove::FunctionTemplate& llove::Context::PushDefinitionTemplate(
     const bool is_export,
     const bool is_implicit,
     Location loc,
@@ -297,7 +297,7 @@ llove::DefinitionTemplate& llove::Context::PushDefinitionTemplate(
         return ref;
     }
 
-    auto& ref = m_DefinitionTemplates[name];
+    auto& ref = m_FunctionTemplates[name];
 
     ref.Loc = std::move(loc);
     ref.IsImplicit = is_implicit;
@@ -312,19 +312,19 @@ void llove::Context::PopDefinitionTemplate()
     m_TemplateTypes.pop_back();
 }
 
-llove::TypePtr llove::Context::InstantiateClass(
+llove::TypePtr llove::Context::InstantiateTypeTemplate(
     std::string name,
     std::vector<TypePtr> type_arguments,
     const bool is_imported)
 {
-    if (!m_ClassTemplates.contains(name) && m_Parent)
+    if (!m_TypeTemplates.contains(name) && m_Parent)
     {
-        return m_Parent->InstantiateClass(std::move(name), std::move(type_arguments), true);
+        return m_Parent->InstantiateTypeTemplate(std::move(name), std::move(type_arguments), true);
     }
 
-    Assert(m_ClassTemplates.contains(name), "undefined class template '{}'", name);
+    Assert(m_TypeTemplates.contains(name), "undefined type template '{}'", name);
 
-    const auto& class_template = m_ClassTemplates.at(name);
+    const auto& class_template = m_TypeTemplates.at(name);
     Assert(!is_imported || class_template.IsImported, "template is not imported, cannot be accessed from child context");
     Assert(class_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
 
@@ -397,7 +397,7 @@ llove::TypePtr llove::Context::InstantiateClass(
         functions.emplace_back(
             ClassFunctionReference{
                 .IsExport = false,
-                .IsExposed = function.IsExposed,
+                .IsPublic = function.IsPublic,
                 .IsVirtual = function.IsVirtual,
                 .IsOverride = function.IsOverride,
                 .IsImplicit = function.IsImplicit,
@@ -421,20 +421,20 @@ llove::TypePtr llove::Context::InstantiateClass(
     return class_type;
 }
 
-llove::FunctionReference& llove::Context::InstantiateDefinition(
+llove::FunctionReference& llove::Context::InstantiateFunctionTemplate(
     Builder& builder,
     std::string name,
     std::vector<TypePtr> type_arguments,
     const bool is_imported)
 {
-    if (!m_DefinitionTemplates.contains(name) && m_Parent)
+    if (!m_FunctionTemplates.contains(name) && m_Parent)
     {
-        return m_Parent->InstantiateDefinition(builder, std::move(name), std::move(type_arguments), true);
+        return m_Parent->InstantiateFunctionTemplate(builder, std::move(name), std::move(type_arguments), true);
     }
 
-    Assert(m_DefinitionTemplates.contains(name), "undefined definition template '{}'", name);
+    Assert(m_FunctionTemplates.contains(name), "undefined function template '{}'", name);
 
-    const auto& definition_template = m_DefinitionTemplates.at(name);
+    const auto& definition_template = m_FunctionTemplates.at(name);
     Assert(!is_imported || definition_template.IsImported, "template is not imported, cannot be accessed from child context");
     Assert(definition_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
 
@@ -449,9 +449,9 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
     }
     name += '>';
 
-    if (m_DefinitionInstances.contains(name))
+    if (m_FunctionInstances.contains(name))
     {
-        return m_DefinitionInstances.at(name);
+        return m_FunctionInstances.at(name);
     }
 
     std::map<std::string, TypePtr> frame;
@@ -504,7 +504,7 @@ llove::FunctionReference& llove::Context::InstantiateDefinition(
     agg.Variadic = definition_template.Variadic;
     agg.Result = result;
 
-    return m_DefinitionInstances[name] = builder.GenFunction(agg, true);
+    return m_FunctionInstances[name] = builder.GenFunction(agg, true);
 }
 
 void llove::Context::InstantiateReflections(Builder& builder)
@@ -516,7 +516,7 @@ void llove::Context::InstantiateReflections(Builder& builder)
         {
             Function agg;
             agg.Loc = std::move(function.Loc);
-            agg.IsExposed = function.IsExposed;
+            agg.IsPublic = function.IsPublic;
             agg.IsVirtual = function.IsVirtual;
             agg.IsOverride = function.IsOverride;
             agg.IsImplicit = function.IsImplicit;
