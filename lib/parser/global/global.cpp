@@ -7,17 +7,19 @@ try
     if (At(TokenType_Symbol, "import"))
         return ParseImportGlobal();
 
-    const auto export_ = SkipIf(TokenType_Symbol, "export");
+    const auto is_export = SkipIf(TokenType_Symbol, "export");
 
     if (At(TokenType_Symbol, "type"))
-        return ParseTypeGlobal(export_);
+        return ParseTypeGlobal(is_export);
 
-    if (At(TokenType_Symbol, "define", "interface"))
-        return ParseDefinitionGlobal(export_);
     if (At(TokenType_Symbol, "class"))
-        return ParseClassGlobal(export_);
+        return ParseClassGlobal(is_export);
     if (At(TokenType_Symbol, "const"))
-        return ParseConstGlobal(export_);
+        return ParseConstGlobal(is_export);
+    if (At(TokenType_Symbol, "define", "interface"))
+        return ParseDefinitionGlobal(is_export);
+    if (At(TokenType_Symbol, "let"))
+        return ParseLetGlobal(is_export);
 
     Error("unable to parse global from {} : '{}'", m_Token.Type, m_Token.Value);
 }

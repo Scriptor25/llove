@@ -4,11 +4,11 @@
 
 llove::TypeGlobal::TypeGlobal(
     Location loc,
-    const bool export_,
+    const bool is_export,
     std::string name,
     TypePtr type)
     : Global(std::move(loc)),
-      m_Export(export_),
+      m_IsExport(is_export),
       m_Name(std::move(name)),
       m_Type(std::move(type))
 {
@@ -32,16 +32,17 @@ llove::TypeGlobal::GenImport(
 {
     context.SetNamed(m_Name, m_Type);
 
-    if (!m_Export)
+    if (!m_IsExport)
         return {};
 
-    if (as.empty() && (symbols.empty() || symbols.contains(m_Name)))
-        context.GetParent()->SetNamed(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, m_Type);
+    if (!as.empty() && !symbols.empty() && !symbols.contains(m_Name))
+        return {};
 
-    return {};
+    context.GetParent()->SetNamed(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, m_Type);
+    return { m_Name, nullptr };
 }
 
 std::ostream& llove::TypeGlobal::Print(std::ostream& stream) const
 {
-    return stream << (m_Export ? "export " : "") << "type " << m_Name << " = " << m_Type << ';';
+    return stream << (m_IsExport ? "export " : "") << "type " << m_Name << " = " << m_Type << ';';
 }

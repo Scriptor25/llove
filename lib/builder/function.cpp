@@ -16,7 +16,7 @@ llvm::Function* llove::Builder::GetOrCreateFunction(
 
 llove::FunctionReference& llove::Builder::PushFunction(
     const bool expose,
-    const bool implicit,
+    const bool is_implicit,
     std::string name,
     FunctionType::Ptr type,
     llvm::Function* callee)
@@ -32,13 +32,13 @@ llove::FunctionReference& llove::Builder::PushFunction(
             continue;
         }
         Assert(
-            expose == function.IsExposed && implicit == function.IsImplicit
+            expose == function.IsExposed && is_implicit == function.IsImplicit
                 && callee == function.Callee,
             "function prototype mismatch");
         return function;
     }
 
-    return m_Functions.emplace_back(expose, implicit, std::move(name), std::move(type), callee);
+    return m_Functions.emplace_back(expose, is_implicit, std::move(name), std::move(type), callee);
 }
 
 std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
@@ -207,7 +207,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     const ClassType::VecRef<ClassFunctionReference>& functions,
     const std::vector<Field>& arguments,
     const Field& self,
-    const bool implicit)
+    const bool is_implicit)
 {
     auto lowest_error = ~0u;
     ClassType::VecRef<ClassFunctionReference> candidates;
@@ -216,7 +216,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
     {
         const Field function_self(function.IsMutable, true, parent);
 
-        if (implicit && !function.IsImplicit)
+        if (is_implicit && !function.IsImplicit)
         {
             continue;
         }

@@ -23,12 +23,13 @@ try
     const auto parent = builder.GetParent();
     const auto head_block = builder.CreateBlock("head", parent);
     auto loop_block = builder.CreateBlock("loop", parent);
+    const auto next_block = m_Suffix ? builder.CreateBlock("next", parent) : head_block;
     const auto tail_block = builder.CreateBlock("tail");
 
     auto use_tail = false;
 
     builder.EmitLoc(m_Loc);
-    builder.PushFrame(m_Loc, head_block, tail_block);
+    builder.PushFrame(m_Loc, next_block, tail_block);
 
     if (m_Prefix)
         m_Prefix->Gen(builder);
@@ -61,10 +62,14 @@ try
     loop_block = builder.GetInsertBlock();
     if (!loop_block->getTerminator())
     {
-        if (m_Suffix)
-            m_Suffix->Gen(builder);
-
         builder.EmitLoc(m_Loc);
+        builder.CreateBranch(next_block);
+    }
+
+    if (m_Suffix)
+    {
+        builder.SetInsertPoint(next_block);
+        m_Suffix->Gen(builder);
         builder.CreateBranch(head_block);
     }
 

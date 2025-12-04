@@ -1,10 +1,12 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 #include <llove/stream.hpp>
+#include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
+#include <llvm/Support/Error.h>
 #include <llvm/Target/TargetMachine.h>
 
 void llove::Builder::Seal(
@@ -45,9 +47,7 @@ void llove::Builder::Seal(
     mpm.run(m_LLVMModule, mam);
 
     if (print)
-    {
         m_LLVMModule.print(raw_print_stream, nullptr);
-    }
 
     // TODO: pls tell llvm devs to update their codegen system!!!
     llvm::legacy::PassManager codegen_pass;

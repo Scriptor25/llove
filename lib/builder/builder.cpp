@@ -3,6 +3,7 @@
 #include <llove/error.hpp>
 #include <llove/type.hpp>
 #include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/CodeGen.h>
 #include <llvm/TargetParser/Host.h>
 
 llove::Builder::Builder(

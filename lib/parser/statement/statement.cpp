@@ -1,33 +1,33 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::StatementPtr llove::Parser::ParseStatement(const bool inline_)
+llove::StatementPtr llove::Parser::ParseStatement(const bool is_inline)
 {
     if (At(TokenType_Symbol, "break"))
-        return ParseBreakStatement(inline_);
+        return ParseBreakStatement(is_inline);
     if (At(TokenType_Symbol, "continue"))
-        return ParseContinueStatement(inline_);
+        return ParseContinueStatement(is_inline);
     if (At(TokenType_Symbol, "delete"))
-        return ParseDeleteStatement(inline_);
+        return ParseDeleteStatement(is_inline);
     if (At(TokenType_Symbol, "for"))
-        return ParseForStatement(inline_);
+        return ParseForStatement(is_inline);
     if (At(TokenType_Symbol, "foreach"))
-        return ParseForEachStatement(inline_);
+        return ParseForEachStatement(is_inline);
     if (At(TokenType_Symbol, "if"))
-        return ParseIfStatement(inline_);
+        return ParseIfStatement(is_inline);
     if (At(TokenType_Symbol, "let"))
-        return ParseLetStatement(inline_);
+        return ParseLetStatement(is_inline);
     if (At(TokenType_Symbol, "ret"))
-        return ParseRetStatement(inline_);
+        return ParseRetStatement(is_inline);
     if (At(TokenType_Other, "{"))
         return ParseScopeStatement();
     if (At(TokenType_Symbol, "switch"))
         return ParseSwitchStatement();
     if (At(TokenType_Symbol, "while"))
-        return ParseWhileStatement(inline_);
+        return ParseWhileStatement(is_inline);
 
     auto expression = ParseExpression();
-    if (inline_)
+    if (is_inline)
         return expression;
 
     Expect(TokenType_Other, ";");

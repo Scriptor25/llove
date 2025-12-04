@@ -264,13 +264,13 @@ llove::FunctionReference llove::Builder::GenFunction(
 
     m_LLVMBuilder.ClearInsertionPoint();
 
-    if (!verifyFunction(*callee, &llvm::errs()))
+    if (verifyFunction(*callee, &llvm::errs()))
     {
-        return reference;
+        callee->print(llvm::errs());
+        Error("function has errors");
     }
 
-    callee->print(llvm::errs());
-    Error("function has errors");
+    return reference;
 }
 
 llvm::Value* llove::Builder::GenParameters(

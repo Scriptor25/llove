@@ -3,9 +3,14 @@
 #include <format>
 #include <llove/location.hpp>
 #include <map>
+#include <set>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <vector>
+
+template<typename T>
+concept Condition = std::is_convertible_v<T, bool>;
 
 namespace llove
 {
@@ -94,9 +99,9 @@ namespace llove
         throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, message);
     }
 
-    template<typename... Args>
+    template<Condition C, typename... Args>
     void Assert(
-        const bool condition,
+        const C condition,
         std::string_view format,
         Args&&... args)
     {
@@ -114,9 +119,9 @@ namespace llove
         throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::move(loc), std::move(message));
     }
 
-    template<typename... Args>
+    template<Condition C, typename... Args>
     void Assert(
-        const bool condition,
+        const C condition,
         const Location& loc,
         std::string_view format,
         Args&&... args)
@@ -139,9 +144,9 @@ namespace llove
         throw ref_exception<ErrorStack>(std::move(cause), std::move(loc), std::move(message));
     }
 
-    template<typename... Args>
+    template<Condition C, typename... Args>
     void Assert(
-        const bool condition,
+        const C condition,
         ref_exception<ErrorStack> cause,
         Location loc,
         std::string_view format,
@@ -166,6 +171,25 @@ struct std::formatter<std::optional<T>> : std::formatter<T>
         if (opt.has_value())
             return std::formatter<T>::format(opt.value(), ctx);
         return std::format_to(ctx.out(), "[empty]");
+    }
+};
+template<typename T>
+struct std::formatter<std::set<T>> : std::formatter<T>
+{
+    template<typename FormatContext>
+    auto format(
+        const std::set<T>& set,
+        FormatContext& ctx) const
+    {
+        for (auto i = set.begin(); i != set.end(); ++i)
+        {
+            if (i != set.begin())
+                std::format_to(ctx.out(), ", ");
+            std::format_to(ctx.out(), "'");
+            std::formatter<T>::format(*i, ctx);
+            std::format_to(ctx.out(), "'");
+        }
+        return ctx.out();
     }
 };
 

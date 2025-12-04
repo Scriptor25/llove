@@ -125,7 +125,7 @@ namespace llove
     public:
         explicit ConstGlobal(
             Location loc,
-            bool export_,
+            bool is_export,
             std::string name,
             TypePtr type,
             ExpressionPtr value);
@@ -144,7 +144,7 @@ namespace llove
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
-        bool m_Export;
+        bool m_IsExport;
         std::string m_Name;
         TypePtr m_Type;
         ExpressionPtr m_Value;
@@ -158,6 +158,7 @@ namespace llove
             bool is_export,
             bool is_interface,
             bool is_implicit,
+            bool is_operator,
             std::string name,
             std::vector<Parameter> parameters,
             std::pair<
@@ -183,6 +184,7 @@ namespace llove
         bool m_IsExport;
         bool m_IsInterface;
         bool m_IsImplicit;
+        bool m_IsOperator;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
         std::pair<bool, std::string> m_Variadic;
@@ -222,12 +224,12 @@ namespace llove
         const std::set<std::filesystem::path>& m_Includes;
     };
 
-    class TypeGlobal final : public Global
+    class LetGlobal final : public Global
     {
     public:
-        explicit TypeGlobal(
+        explicit LetGlobal(
             Location loc,
-            bool export_,
+            bool is_export,
             std::string name,
             TypePtr type);
 
@@ -245,7 +247,35 @@ namespace llove
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
-        bool m_Export;
+        bool m_IsExport;
+        std::string m_Name;
+        TypePtr m_Type;
+    };
+
+    class TypeGlobal final : public Global
+    {
+    public:
+        explicit TypeGlobal(
+            Location loc,
+            bool is_export,
+            std::string name,
+            TypePtr type);
+
+        void Gen(Builder& builder) const override;
+        std::pair<
+            std::string,
+            ValuePtr>
+        GenImport(
+            Context& context,
+            Builder& builder,
+            const std::string& as,
+            const std::map<
+                std::string,
+                std::string>& symbols) const override;
+        std::ostream& Print(std::ostream& stream) const override;
+
+    private:
+        bool m_IsExport;
         std::string m_Name;
         TypePtr m_Type;
     };

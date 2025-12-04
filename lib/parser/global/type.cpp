@@ -1,7 +1,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseTypeGlobal(bool export_)
+llove::GlobalPtr llove::Parser::ParseTypeGlobal(bool is_export)
 {
     auto loc = Expect(TokenType_Symbol, "type").Loc;
 
@@ -11,5 +11,5 @@ llove::GlobalPtr llove::Parser::ParseTypeGlobal(bool export_)
 
     Expect(TokenType_Other, ";");
 
-    return std::make_unique<TypeGlobal>(std::move(loc), export_, std::move(name), std::move(type));
+    return std::make_unique<TypeGlobal>(std::move(loc), is_export, std::move(name), std::move(type));
 }

@@ -7,7 +7,7 @@
 llove::ValuePtr llove::Builder::CreateCast(
     ValuePtr value,
     TypePtr dst,
-    const bool implicit)
+    const bool is_implicit)
 {
     const auto src_fld(value->AsField());
     const Field dst_fld(dst);
@@ -29,7 +29,7 @@ llove::ValuePtr llove::Builder::CreateCast(
             continue;
         }
 
-        if (implicit && !function.IsImplicit)
+        if (is_implicit && !function.IsImplicit)
         {
             continue;
         }
@@ -128,7 +128,7 @@ llove::ValuePtr llove::Builder::CreateCast(
         case TypeId_Pointer:
         {
             const auto dst_pointer = As<PointerType>(dst);
-            if (implicit && dst_pointer->IsMutable())
+            if (is_implicit && dst_pointer->IsMutable())
                 break;
             result = m_LLVMBuilder.CreateIntToPtr(value->Load(*this), dst_llvm);
             break;
@@ -185,7 +185,7 @@ llove::ValuePtr llove::Builder::CreateCast(
         case TypeId_Pointer:
         {
             const auto dst_pointer = As<PointerType>(dst);
-            if (implicit && !src_pointer->IsMutable() && dst_pointer->IsMutable())
+            if (is_implicit && !src_pointer->IsMutable() && dst_pointer->IsMutable())
                 break;
             result = value->Load(*this);
             break;
@@ -242,7 +242,7 @@ llove::ValuePtr llove::Builder::CreateCast(
         switch (dst->GetId())
         {
         case TypeId_Function:
-            if (implicit)
+            if (is_implicit)
             {
                 break;
             }
@@ -257,14 +257,14 @@ llove::ValuePtr llove::Builder::CreateCast(
         break;
     }
 
-    Assert(result != nullptr, "illegal {} cast from '{}' to '{}'", implicit ? "implicit" : "explicit", src, dst);
+    Assert(result != nullptr, "illegal {} cast from '{}' to '{}'", is_implicit ? "implicit" : "explicit", src, dst);
     return Value::CreateR(std::move(dst), result);
 }
 
 bool llove::Builder::IsCastable(
     const Field& src,
     const Field& dst,
-    const bool implicit) const
+    const bool is_implicit) const
 {
     if (src == dst)
     {
@@ -278,7 +278,7 @@ bool llove::Builder::IsCastable(
             continue;
         }
 
-        if (implicit && !function.IsImplicit)
+        if (is_implicit && !function.IsImplicit)
         {
             continue;
         }
@@ -381,7 +381,7 @@ bool llove::Builder::IsCastable(
         switch (dst_type->GetId())
         {
         case TypeId_Function:
-            return !implicit;
+            return !is_implicit;
         default:
             return false;
         }

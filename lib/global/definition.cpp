@@ -8,6 +8,7 @@ llove::DefinitionGlobal::DefinitionGlobal(
     const bool is_export,
     const bool is_interface,
     const bool is_implicit,
+    const bool is_operator,
     std::string name,
     std::vector<Parameter> parameters,
     std::pair<
@@ -19,6 +20,7 @@ llove::DefinitionGlobal::DefinitionGlobal(
       m_IsExport(is_export),
       m_IsInterface(is_interface),
       m_IsImplicit(is_implicit),
+      m_IsOperator(is_operator),
       m_Name(std::move(name)),
       m_Parameters(std::move(parameters)),
       m_Variadic(std::move(variadic)),
@@ -66,15 +68,15 @@ llove::DefinitionGlobal::GenImport(
     if (!m_IsExport)
         return {};
 
-    if (as.empty() && !symbols.empty() && !symbols.contains(m_Name))
+    if (!m_IsOperator && as.empty() && !symbols.empty() && !symbols.contains(m_Name))
         return {};
 
-    const auto register_function = (as.empty() && symbols.empty())
+    const auto register_function = m_IsOperator || (as.empty() && symbols.empty())
                                 || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
 
     Function agg;
     agg.Loc = m_Loc;
-    agg.IsExport = true;
+    agg.IsExport = m_IsExport;
     agg.IsInterface = m_IsInterface;
     agg.IsImplicit = m_IsImplicit;
     agg.Name = m_Name;
@@ -85,14 +87,14 @@ llove::DefinitionGlobal::GenImport(
     const auto function = builder.GenFunction(agg, register_function);
 
     if (register_function)
-        return {};
+        return { m_Name, nullptr };
 
     auto value = Value::CreateR(function.Type, function.Callee);
 
     if (symbols.contains(m_Name))
     {
         builder.SetValue(symbols.at(m_Name), std::move(value));
-        return {};
+        return { m_Name, nullptr };
     }
 
     return { m_Name, std::move(value) };

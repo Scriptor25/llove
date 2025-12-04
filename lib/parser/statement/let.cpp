@@ -2,7 +2,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
+llove::StatementPtr llove::Parser::ParseLetStatement(const bool is_inline)
 {
     auto token = Expect(TokenType_Symbol, "let");
 
@@ -29,7 +29,7 @@ llove::StatementPtr llove::Parser::ParseLetStatement(const bool inline_)
         Expect(TokenType_Other, ")");
     }
 
-    if (!inline_)
+    if (!is_inline)
         Expect(TokenType_Other, ";");
 
     return std::make_unique<LetStatement>(std::move(token.Loc), std::move(info), std::move(name), std::move(value), std::move(arguments));

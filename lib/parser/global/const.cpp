@@ -1,7 +1,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseConstGlobal(const bool export_)
+llove::GlobalPtr llove::Parser::ParseConstGlobal(const bool is_export)
 {
     auto token = Expect(TokenType_Symbol, "const");
 
@@ -16,5 +16,5 @@ llove::GlobalPtr llove::Parser::ParseConstGlobal(const bool export_)
 
     Expect(TokenType_Other, ";");
 
-    return std::make_unique<ConstGlobal>(std::move(token.Loc), export_, std::move(name), std::move(type), std::move(value));
+    return std::make_unique<ConstGlobal>(std::move(token.Loc), is_export, std::move(name), std::move(type), std::move(value));
 }

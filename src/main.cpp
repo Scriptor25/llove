@@ -161,9 +161,7 @@ try
         (void) arguments.value("relocation", machine.Relocation);
 
         if (std::vector<int> version; arguments.array("option-binutils-version", version))
-        {
             machine.Options.BinutilsVersion = { version[0], version[1] };
-        }
         machine.Options.UnsafeFPMath = arguments.flag("option-unsafe-fp-math");
         machine.Options.NoInfsFPMath = arguments.flag("option-no-infs-fp-math");
         machine.Options.NoNaNsFPMath = arguments.flag("option-no-nans-fp-math");
@@ -222,13 +220,9 @@ try
         (void) arguments.value("option-eabi-version", machine.Options.EABIVersion);
         (void) arguments.value("option-debugger-tuning", machine.Options.DebuggerTuning);
         if (std::vector<llvm::DenormalMode::DenormalModeKind> values; arguments.array("option-fp-denormal-mode", values))
-        {
             machine.Options.setFPDenormalMode({ values[0], values[1] });
-        }
         if (std::vector<llvm::DenormalMode::DenormalModeKind> values; arguments.array("option-fp32-denormal-mode", values))
-        {
             machine.Options.setFP32DenormalMode({ values[0], values[1] });
-        }
         (void) arguments.value("option-exception-model", machine.Options.ExceptionModel);
 
         machine.Options.MCOptions.MCRelaxAll = arguments.flag("mc-option-relax-all");
@@ -293,17 +287,12 @@ try
 
         llove::stream_ref<std::ostream> print_stream_ref;
         if (!has_print_filename || print_filename == "stderr")
-        {
             print_stream_ref = llove::stream_ref(&std::cerr, false);
-        }
         else if (print_filename == "stdout")
-        {
             print_stream_ref = llove::stream_ref(&std::cout, false);
-        }
         else
-        {
             print_stream_ref = llove::stream_ref<std::ofstream>(print_filename);
-        }
+
         if (print_stream_ref->fail())
         {
             std::cerr << "failed to open file '" << print_filename << "'" << std::endl;
@@ -319,7 +308,6 @@ try
         }
 
         while (parser.Ok())
-        {
             if (auto ptr = parser.Parse())
             {
                 if (print_llove)
@@ -327,7 +315,6 @@ try
 
                 ptr->Gen(builder);
             }
-        }
 
         context.InstantiateReflections(builder);
 
@@ -336,17 +323,12 @@ try
 
         llove::stream_ref<std::ostream> output_stream_ref;
         if (!has_output_filename || output_filename == "stdout")
-        {
             output_stream_ref = llove::stream_ref(&std::cout, false);
-        }
         else if (output_filename == "stderr")
-        {
             output_stream_ref = llove::stream_ref(&std::cerr, false);
-        }
         else
-        {
             output_stream_ref = llove::stream_ref<std::ofstream>(output_filename, std::ios_base::out | std::ios_base::binary);
-        }
+
         if (output_stream_ref->fail())
         {
             std::cerr << "failed to open file '" << output_filename << "'" << std::endl;

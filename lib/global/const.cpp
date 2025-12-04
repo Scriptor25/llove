@@ -4,12 +4,12 @@
 
 llove::ConstGlobal::ConstGlobal(
     Location loc,
-    const bool export_,
+    const bool is_export,
     std::string name,
     TypePtr type,
     ExpressionPtr value)
     : Global(std::move(loc)),
-      m_Export(export_),
+      m_IsExport(is_export),
       m_Name(std::move(name)),
       m_Type(std::move(type)),
       m_Value(std::move(value))
@@ -38,7 +38,7 @@ llove::ConstGlobal::GenImport(
         std::string,
         std::string>& symbols) const
 {
-    if (!m_Export)
+    if (!m_IsExport)
         return {};
 
     if (as.empty() && !symbols.empty() && !symbols.contains(m_Name))
@@ -52,7 +52,7 @@ llove::ConstGlobal::GenImport(
     if ((as.empty() && symbols.empty()) || (symbols.contains(m_Name) && symbols.at(m_Name) == m_Name))
     {
         builder.SetValue(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, std::move(value));
-        return {};
+        return { m_Name, nullptr };
     }
 
     return { m_Name, std::move(value) };
@@ -60,7 +60,7 @@ llove::ConstGlobal::GenImport(
 
 std::ostream& llove::ConstGlobal::Print(std::ostream& stream) const
 {
-    stream << (m_Export ? "export " : "") << "const " << m_Name;
+    stream << (m_IsExport ? "export " : "") << "const " << m_Name;
 
     if (m_Type)
         stream << ": " << m_Type;

@@ -350,6 +350,13 @@ namespace llove
 
 #pragma endregion
 
+        llvm::Value* CreateGlobal(
+            std::string name,
+            llvm::Type* type,
+            bool is_external,
+            llvm::GlobalValue::LinkageTypes linkage,
+            llvm::Constant* initializer);
+
         ValuePtr CreateCall(
             const FunctionReference& reference,
             std::vector<ValuePtr> arguments,
@@ -377,7 +384,7 @@ namespace llove
 
         FunctionReference& PushFunction(
             bool expose,
-            bool implicit,
+            bool is_implicit,
             std::string name,
             FunctionType::Ptr type,
             llvm::Function* callee);
@@ -393,7 +400,7 @@ namespace llove
             const ClassType::VecRef<ClassFunctionReference>& functions,
             const std::vector<Field>& arguments,
             const Field& self,
-            bool implicit);
+            bool is_implicit);
 
         Operator<1>::Ptr FindOperator(
             const std::string& name,
@@ -432,11 +439,11 @@ namespace llove
         ValuePtr CreateCast(
             ValuePtr value,
             TypePtr dst,
-            bool implicit);
+            bool is_implicit);
         bool IsCastable(
             const Field& src,
             const Field& dst,
-            bool implicit) const;
+            bool is_implicit) const;
 
         FunctionReference GenFunction(
             const Function& function,

@@ -13,25 +13,30 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool is_export)
         return ParseClassDefinitionGlobal(std::move(loc));
     }
 
-    auto implicit = !is_interface && SkipIf(TokenType_Symbol, "implicit");
+    auto is_implicit = !is_interface && SkipIf(TokenType_Symbol, "implicit");
 
     std::string name;
-    if (implicit)
+    bool is_operator;
+
+    if (is_implicit)
     {
         name = Expect(TokenType_Symbol, "create", "cast").Value;
+        is_operator = false;
     }
     else if (!is_interface && At(TokenType_Operator))
     {
         name = Skip().Value;
+        is_operator = true;
     }
     else
     {
         name = Expect(TokenType_Symbol).Value;
+        is_operator = false;
     }
 
-    if (!is_interface && At(TokenType_Operator, "<"))
+    if (!is_interface && !is_operator && At(TokenType_Operator, "<"))
     {
-        ParseDefinitionTemplate(is_export, std::move(loc), implicit, std::move(name));
+        ParseDefinitionTemplate(is_export, std::move(loc), is_implicit, std::move(name));
         return nullptr;
     }
 
@@ -55,5 +60,5 @@ llove::GlobalPtr llove::Parser::ParseDefinitionGlobal(const bool is_export)
         content = ParseScopeStatement();
     }
 
-    return std::make_unique<DefinitionGlobal>(std::move(loc), is_export, is_interface, implicit, std::move(name), std::move(parameters), variadic, std::move(result), std::move(content));
+    return std::make_unique<DefinitionGlobal>(std::move(loc), is_export, is_interface, is_implicit, is_operator, std::move(name), std::move(parameters), variadic, std::move(result), std::move(content));
 }

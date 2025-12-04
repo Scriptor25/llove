@@ -115,14 +115,14 @@ llove::ClassGlobal::GenImport(
 
     auto& name = m_ClassType->GetName();
 
-    if (!(as.empty() && (symbols.empty() || symbols.contains(name))))
+    if (!as.empty() && !symbols.empty() && !symbols.contains(name))
         return {};
 
     context.GetParent()->Set(m_ClassType->Mangle(), m_ClassType);
     context.GetParent()->SetNamed(symbols.contains(name) ? symbols.at(name) : name, m_ClassType);
 
     if (m_IsOpaque)
-        return {};
+        return { name, nullptr };
 
     m_ClassType->SetParentClass(m_BaseType);
 
@@ -153,7 +153,7 @@ llove::ClassGlobal::GenImport(
     }
     m_ClassType->SetFunctions(std::move(class_functions));
 
-    return {};
+    return { name, nullptr };
 }
 
 std::ostream& llove::ClassGlobal::Print(std::ostream& stream) const

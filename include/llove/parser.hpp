@@ -25,7 +25,7 @@ namespace llove
         TokenType_Other,
     };
 
-    struct Token
+    struct Token final
     {
         Location Loc;
         TokenType Type;
@@ -178,10 +178,11 @@ namespace llove
         GlobalPtr ParseGlobal();
         GlobalPtr ParseClassDefinitionGlobal(Location loc);
         GlobalPtr ParseClassGlobal(bool is_export);
-        GlobalPtr ParseConstGlobal(bool export_);
+        GlobalPtr ParseConstGlobal(bool is_export);
         GlobalPtr ParseDefinitionGlobal(bool is_export);
         GlobalPtr ParseImportGlobal();
-        GlobalPtr ParseTypeGlobal(bool export_);
+        GlobalPtr ParseLetGlobal(bool is_export);
+        GlobalPtr ParseTypeGlobal(bool is_export);
 
         void ParseClassMember(ClassMember& member);
         void ParseClassFunction(
@@ -194,21 +195,21 @@ namespace llove
         void ParseDefinitionTemplate(
             bool is_export,
             Location loc,
-            bool implicit,
+            bool is_implicit,
             std::string name);
 
-        StatementPtr ParseStatement(bool inline_);
-        StatementPtr ParseBreakStatement(bool inline_);
-        StatementPtr ParseContinueStatement(bool inline_);
-        StatementPtr ParseDeleteStatement(bool inline_);
-        StatementPtr ParseForStatement(bool inline_);
-        StatementPtr ParseForEachStatement(bool inline_);
-        StatementPtr ParseIfStatement(bool inline_);
-        StatementPtr ParseLetStatement(bool inline_);
-        StatementPtr ParseRetStatement(bool inline_);
+        StatementPtr ParseStatement(bool is_inline);
+        StatementPtr ParseBreakStatement(bool is_inline);
+        StatementPtr ParseContinueStatement(bool is_inline);
+        StatementPtr ParseDeleteStatement(bool is_inline);
+        StatementPtr ParseForStatement(bool is_inline);
+        StatementPtr ParseForEachStatement(bool is_inline);
+        StatementPtr ParseIfStatement(bool is_inline);
+        StatementPtr ParseLetStatement(bool is_inline);
+        StatementPtr ParseRetStatement(bool is_inline);
         StatementPtr ParseScopeStatement();
         StatementPtr ParseSwitchStatement();
-        StatementPtr ParseWhileStatement(bool inline_);
+        StatementPtr ParseWhileStatement(bool is_inline);
 
         ExpressionPtr ParseExpression();
 

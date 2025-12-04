@@ -4,6 +4,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
+#include <ranges>
 
 llove::ImportGlobal::ImportGlobal(
     Location loc,
@@ -30,13 +31,25 @@ try
     Context context(&builder.GetContext());
     Parser parser(context, stream, m_Filepath, m_Includes);
 
+    std::set<std::string> remaining;
+    for (auto& key : m_Symbols | std::views::values)
+        remaining.insert(key);
+
     std::vector<std::pair<std::string, ValuePtr>> values;
     while (parser.Ok())
         if (auto ptr = parser.Parse())
-            if (auto [name, value] = ptr->GenImport(context, builder, m_As, m_Symbols); value)
+        {
+            auto [name, value] = ptr->GenImport(context, builder, m_As, m_Symbols);
+
+            remaining.erase(name);
+
+            if (value)
                 values.emplace_back(std::move(name), std::move(value));
+        }
 
     stream.close();
+
+    Assert(remaining.empty(), m_Loc, "missing symbols in import: {}", remaining);
 
     if (m_As.empty())
         return;
@@ -87,7 +100,6 @@ try
             (void) ptr->GenImport(context, builder, m_As, m_Symbols);
 
     stream.close();
-
     return {};
 }
 catch (ref_exception<ErrorStack>& cause)
