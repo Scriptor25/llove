@@ -109,10 +109,10 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(
             agg.Variadic = { function.HasVariadic, {} };
             agg.Result = function.Result;
 
-            auto reference = GenFunction(agg);
+            auto reference = GenFunction(agg, false);
 
             lowest_error = error;
-            candidate = std::make_unique<UDOperator<1>>(reference);
+            candidate = std::make_unique<UDOperator<1>>(std::move(reference));
         }
     }
 
@@ -253,10 +253,10 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(
             };
             agg.Result = function.Result;
 
-            auto reference = GenFunction(agg);
+            auto reference = GenFunction(agg, false);
 
             lowest_error = error;
-            candidate = std::make_unique<UDOperator<2>>(reference);
+            candidate = std::make_unique<UDOperator<2>>(std::move(reference));
         }
     }
 

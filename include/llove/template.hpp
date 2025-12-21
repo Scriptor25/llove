@@ -1,54 +1,46 @@
 #pragma once
 
-#include <llove/type.hpp>
-#include <string>
-#include <vector>
+#include <llove/forward.hpp>
+#include <llove/function.hpp>
 
 namespace llove
 {
-    using TypeParameter = std::pair<std::string, TemplateType::Ptr>;
+    using TemplateParameter = std::pair<std::string, TemplateType::Ptr>;
 
-    struct ClassTemplate final
+    struct Template final
     {
-        ClassTemplate() = default;
-
-        ClassTemplate(ClassTemplate&&) = default;
-        ClassTemplate& operator=(ClassTemplate&&) = default;
-
-        ClassTemplate(const ClassTemplate&) = delete;
-        ClassTemplate& operator=(const ClassTemplate&) = delete;
-
-        bool Complete = false;
-        bool IsImported = false;
-
         std::string Name;
-        std::vector<TypeParameter> TypeParameters;
-
-        std::vector<ClassMember> Members;
-        std::vector<ClassFunction> Functions;
+        std::vector<TemplateParameter> Parameters;
+        GlobalPtr Content;
+        TemplateInstancePtr Default;
     };
 
-    struct FunctionTemplate final
+    class TemplateInstance
     {
-        FunctionTemplate() = default;
+    public:
+        explicit TemplateInstance() = default;
+        virtual ~TemplateInstance() = default;
+    };
 
-        FunctionTemplate(FunctionTemplate&&) = default;
-        FunctionTemplate& operator=(FunctionTemplate&&) = default;
+    class FunctionTemplateInstance final : public TemplateInstance
+    {
+    public:
+        explicit FunctionTemplateInstance(FunctionReference callee);
 
-        FunctionTemplate(const FunctionTemplate&) = delete;
-        FunctionTemplate& operator=(const FunctionTemplate&) = delete;
+        const FunctionReference& GetCallee() const;
 
-        bool IsImported = false;
+    private:
+        FunctionReference m_Callee;
+    };
 
-        Location Loc;
-        bool IsImplicit = false;
-        std::string Name;
-        std::vector<TypeParameter> TypeParameters;
+    class TypeTemplateInstance final : public TemplateInstance
+    {
+    public:
+        explicit TypeTemplateInstance(TypePtr type);
 
-        std::vector<Parameter> Parameters;
-        std::pair<bool, std::string> Variadic;
-        Field Result;
+        TypePtr GetType() const;
 
-        StatementPtr Content;
+    private:
+        TypePtr m_Type;
     };
 }

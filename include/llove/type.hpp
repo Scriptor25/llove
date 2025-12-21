@@ -56,7 +56,6 @@ namespace llove
         virtual unsigned SizeBits(Builder& builder);
         virtual llvm::Type* GenIR(Builder& builder) = 0;
         virtual llvm::DIType* GenDI(Builder& builder) = 0;
-        virtual TypePtr Reflect(Context& context) const = 0;
         virtual bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const = 0;
@@ -66,14 +65,8 @@ namespace llove
         virtual std::ostream& Print(std::ostream& stream) const = 0;
 
         template<
-            typename S,
-            typename D>
-        requires std::is_base_of_v<
-                     Type,
-                     S>
-              && std::is_base_of_v<
-                     Type,
-                     D>
+            TypeLike S,
+            TypeLike D>
         static void Reflect(
             Context& context,
             const std::shared_ptr<S>& src,
@@ -85,18 +78,29 @@ namespace llove
                 return;
             }
 
-            auto cast = std::dynamic_pointer_cast<D>(src->Reflect(context));
+            auto reflection = src->Reflect(context);
+            if (!reflection)
+            {
+                dst = src;
+                return;
+            }
+
+            auto cast = std::dynamic_pointer_cast<D>(reflection);
             Assert(!!cast, "invalid reflection cast");
             dst = cast;
         }
 
     protected:
+        virtual TypePtr Reflect(Context& context) const = 0;
+
         llvm::Type* m_IRType = nullptr;
         llvm::DIType* m_DIType = nullptr;
     };
 
     class VoidType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<VoidType>;
         static constexpr auto ID = TypeId_Void;
@@ -108,7 +112,6 @@ namespace llove
         unsigned SizeBits(Builder& builder) override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -119,10 +122,15 @@ namespace llove
         std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
+
+    protected:
+        TypePtr Reflect(Context& context) const override;
     };
 
     class VariadicType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<VariadicType>;
         static constexpr auto ID = TypeId_Variadic;
@@ -133,7 +141,6 @@ namespace llove
         bool IsVariadic() const override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -144,10 +151,15 @@ namespace llove
         std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
+
+    protected:
+        TypePtr Reflect(Context& context) const override;
     };
 
     class IntegerType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<IntegerType>;
         static constexpr auto ID = TypeId_Integer;
@@ -163,7 +175,6 @@ namespace llove
         bool IsInteger() const override;
         llvm::IntegerType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -175,6 +186,9 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         bool m_IsSigned;
         unsigned m_Bits;
@@ -182,6 +196,8 @@ namespace llove
 
     class FloatType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<FloatType>;
         static constexpr auto ID = TypeId_Float;
@@ -194,7 +210,6 @@ namespace llove
         bool IsFloat() const override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -206,12 +221,17 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         unsigned m_Bits;
     };
 
     class PointerType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<PointerType>;
         static constexpr auto ID = TypeId_Pointer;
@@ -229,7 +249,6 @@ namespace llove
         bool IsPointer() const override;
         llvm::PointerType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -241,6 +260,9 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         TypePtr m_Base;
         bool m_IsMutable;
@@ -248,6 +270,8 @@ namespace llove
 
     class ArrayType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<ArrayType>;
         static constexpr auto ID = TypeId_Array;
@@ -263,7 +287,6 @@ namespace llove
         bool IsArray() const override;
         llvm::ArrayType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -275,6 +298,9 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         TypePtr m_Base;
         unsigned m_Count;
@@ -282,6 +308,8 @@ namespace llove
 
     class StructType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<StructType>;
         static constexpr auto ID = TypeId_Struct;
@@ -297,7 +325,6 @@ namespace llove
         bool IsStruct() const override;
         llvm::StructType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -309,12 +336,17 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         std::vector<Parameter> m_Fields;
     };
 
     class TupleType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<TupleType>;
         static constexpr auto ID = TypeId_Tuple;
@@ -328,7 +360,6 @@ namespace llove
         bool IsTuple() const override;
         llvm::StructType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -340,12 +371,17 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         std::vector<Field> m_Fields;
     };
 
     class RangeType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<RangeType>;
         static constexpr auto ID = TypeId_Range;
@@ -358,7 +394,6 @@ namespace llove
         bool IsRange() const override;
         llvm::StructType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -370,12 +405,17 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         TypePtr m_Entry;
     };
 
     class ClassType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<ClassType>;
         static constexpr auto ID = TypeId_Class;
@@ -436,7 +476,6 @@ namespace llove
         GenDIElements(Builder& builder);
         llvm::StructType* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -448,6 +487,9 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         std::string m_Name;
         Ptr m_ParentClass;
@@ -457,6 +499,8 @@ namespace llove
 
     class FunctionType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<FunctionType>;
         static constexpr auto ID = TypeId_Function;
@@ -479,7 +523,6 @@ namespace llove
         llvm::DIType* GenDI(Builder& builder) override;
         llvm::FunctionType* GenFunction(Builder& builder);
         llvm::DISubroutineType* GenDIFunction(Builder& builder);
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -492,10 +535,12 @@ namespace llove
         std::ostream& Print(std::ostream& stream) const override;
 
     protected:
+        TypePtr Reflect(Context& context) const override;
+
+    private:
         llvm::FunctionType* m_IRFunction = nullptr;
         llvm::DISubroutineType* m_DIFunction = nullptr;
 
-    private:
         Field m_Result;
         std::vector<Field> m_Parameters;
         bool m_Variadic;
@@ -504,6 +549,8 @@ namespace llove
 
     class TemplateType final : public Type
     {
+        friend Type;
+
     public:
         using Ptr = std::shared_ptr<TemplateType>;
         static constexpr auto ID = TypeId_Template;
@@ -515,7 +562,6 @@ namespace llove
         unsigned SizeBits(Builder& builder) override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
@@ -527,47 +573,50 @@ namespace llove
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         std::string m_Name;
     };
 
-    class TemplateClassType final : public Type
+    class InstanceType final : public Type
     {
+        friend Type;
+
     public:
-        using Ptr = std::shared_ptr<TemplateClassType>;
+        using Ptr = std::shared_ptr<InstanceType>;
         static constexpr auto ID = TypeId_Template;
 
-        explicit TemplateClassType(
+        explicit InstanceType(
             std::string name,
             std::vector<TypePtr> arguments);
-
-        bool IsInstantiated() const;
-        void Instantiate();
 
         TypeId GetId() const override;
         bool IsTemplate() const override;
         unsigned SizeBits(Builder& builder) override;
         llvm::Type* GenIR(Builder& builder) override;
         llvm::DIType* GenDI(Builder& builder) override;
-        TypePtr Reflect(Context& context) const override;
         bool TypeInfo(
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const override;
 
         /**
-         * t<length>_<name><length>_<parameters...>
+         * t<length>_<name>_<length>_<arguments>
          */
         std::string Mangle() const override;
 
         std::ostream& Print(std::ostream& stream) const override;
 
+    protected:
+        TypePtr Reflect(Context& context) const override;
+
     private:
         std::string m_Name;
         std::vector<TypePtr> m_Arguments;
-        bool m_IsInstantiated = false;
     };
 
-    template<typename T>
+    template<TypeLike T>
     T::Ptr As(TypePtr type)
     {
         Assert(!!type, "type must not be null");
@@ -581,8 +630,7 @@ namespace llove
         const TypePtr& right);
 }
 
-template<typename T>
-requires std::is_base_of_v<llove::Type, T>
+template<TypeLike T>
 struct std::formatter<std::shared_ptr<T>> : std::formatter<std::string_view>
 {
     template<typename FormatContext>

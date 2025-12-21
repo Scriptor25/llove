@@ -415,6 +415,7 @@ namespace llove
             const std::optional<Location>& loc = std::nullopt,
             llvm::BasicBlock* head = nullptr,
             llvm::BasicBlock* tail = nullptr);
+        void PushCleanFrame(const std::optional<Location>& loc = std::nullopt);
         void PopFrame();
 
         void SetValue(
@@ -447,7 +448,7 @@ namespace llove
 
         FunctionReference GenFunction(
             const Function& function,
-            bool register_function = false);
+            bool register_function);
         llvm::Value* GenParameters(
             llvm::Function* parent,
             const std::vector<Parameter>& parameters,

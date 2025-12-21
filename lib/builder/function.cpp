@@ -110,7 +110,7 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
             agg.Variadic = { function.HasVariadic, {} };
             agg.Result = function.Result;
 
-            auto reference = GenFunction(agg);
+            auto reference = GenFunction(agg, false);
             functions.emplace_back(std::move(reference));
         }
     }
@@ -300,7 +300,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
         agg.Variadic = { candidate.HasVariadic, {} };
         agg.Result = candidate.Result;
 
-        return GenFunction(agg);
+        return GenFunction(agg, false);
     }
 
     Error("ambiguous candidates {} for {}, self '{}'", candidates, arguments, self);

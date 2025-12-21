@@ -316,8 +316,6 @@ try
                 ptr->Gen(builder);
             }
 
-        context.InstantiateReflections(builder);
-
         std::string output_filename;
         auto has_output_filename = arguments.value("output", output_filename);
 

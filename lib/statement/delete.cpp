@@ -44,7 +44,7 @@ try
         agg.Name = function.Name;
         agg.Result = function.Result;
 
-        const auto reference = builder.GenFunction(agg);
+        const auto reference = builder.GenFunction(agg, false);
 
         builder.EmitLoc(m_Loc);
         builder.CreateCall(reference, {}, std::move(value));

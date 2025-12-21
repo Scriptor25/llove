@@ -93,6 +93,9 @@ llove::FunctionReference llove::Builder::GenFunction(
 
     m_DebugBuilder.BeginFunction(*this, function.Name, function.Loc, callee_type, mangled, callee);
 
+    auto parent = m_Parent;
+    auto reset_block = m_LLVMBuilder.GetInsertBlock();
+
     m_Parent = callee;
     m_Class = function.Class;
     m_Result = function.Result;
@@ -101,7 +104,7 @@ llove::FunctionReference llove::Builder::GenFunction(
     m_LLVMBuilder.SetInsertPoint(entry_block);
 
     m_DebugBuilder.EmitLoc(*this);
-    PushFrame();
+    PushCleanFrame(function.Loc);
 
     if (auto self_pointer = GenParameters(callee, function.Parameters, function.Variadic, self); self_pointer && function.Name == "create")
     {
@@ -262,7 +265,8 @@ llove::FunctionReference llove::Builder::GenFunction(
         Error("not all paths yield");
     }
 
-    m_LLVMBuilder.ClearInsertionPoint();
+    m_Parent = parent;
+    m_LLVMBuilder.SetInsertPoint(reset_block);
 
     if (verifyFunction(*callee, &llvm::errs()))
     {

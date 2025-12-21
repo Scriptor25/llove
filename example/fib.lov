@@ -1,6 +1,6 @@
 import { format } from "std/format.lov";
 
-define fib(n: i64): i64 {
+function fib(n: i64): i64 {
     if (n <= 1)
         ret 1;
 

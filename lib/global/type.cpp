@@ -1,5 +1,6 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/forward.hpp>
 #include <llove/tree.hpp>
 
 llove::TypeGlobal::TypeGlobal(
@@ -14,21 +15,41 @@ llove::TypeGlobal::TypeGlobal(
 {
 }
 
+std::string llove::TypeGlobal::GetName() const
+{
+    return m_Name;
+}
+llove::GlobalPtr llove::TypeGlobal::Reflect(Context& context) const
+{
+    TypePtr type;
+    Type::Reflect(context, m_Type, type);
+
+    return std::make_unique<TypeGlobal>(m_Loc, m_IsExport, m_Name, std::move(type));
+}
+
 void llove::TypeGlobal::Gen(Builder& builder) const
 {
     builder.GetContext().SetNamed(m_Name, m_Type);
 }
 
-std::pair<
-    std::string,
-    llove::ValuePtr>
-llove::TypeGlobal::GenImport(
+llove::TemplateInstancePtr llove::TypeGlobal::GenTemplate(
+    Builder* /* builder */,
+    Context& context,
+    const std::string name) const
+{
+    TypePtr type;
+    Type::Reflect(context, m_Type, type);
+
+    context.SetNamed(name, type);
+
+    return std::make_unique<TypeTemplateInstance>(std::move(type));
+}
+
+llove::Import llove::TypeGlobal::GenImport(
     Context& context,
     Builder& /* builder */,
     const std::string& as,
-    const std::map<
-        std::string,
-        std::string>& symbols) const
+    const ImportSymbols& symbols) const
 {
     context.SetNamed(m_Name, m_Type);
 

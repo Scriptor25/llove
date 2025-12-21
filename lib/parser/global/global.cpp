@@ -1,25 +1,27 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseGlobal()
+llove::GlobalPtr llove::Parser::ParseGlobal(bool is_template)
 try
 {
-    if (At(TokenType_Symbol, "import"))
+    const auto is_export = !is_template && SkipIf(TokenType_Symbol, "export");
+
+    if (!is_template && !is_export && At(TokenType_Symbol, "import"))
         return ParseImportGlobal();
 
-    const auto is_export = SkipIf(TokenType_Symbol, "export");
-
-    if (At(TokenType_Symbol, "type"))
-        return ParseTypeGlobal(is_export);
+    if (!is_template && At(TokenType_Symbol, "const"))
+        return ParseConstGlobal(is_export);
+    if (!is_template && At(TokenType_Symbol, "let"))
+        return ParseLetGlobal(is_export);
+    if (!is_template && At(TokenType_Symbol, "template"))
+        return ParseTemplateGlobal(is_export);
 
     if (At(TokenType_Symbol, "class"))
-        return ParseClassGlobal(is_export);
-    if (At(TokenType_Symbol, "const"))
-        return ParseConstGlobal(is_export);
-    if (At(TokenType_Symbol, "define", "interface"))
-        return ParseDefinitionGlobal(is_export);
-    if (At(TokenType_Symbol, "let"))
-        return ParseLetGlobal(is_export);
+        return ParseClassGlobal(is_template, is_export);
+    if (At(TokenType_Symbol, "function", "interface"))
+        return ParseFunctionGlobal(is_template, is_export);
+    if (At(TokenType_Symbol, "type"))
+        return ParseTypeGlobal(is_template, is_export);
 
     Error("unable to parse global from {} : '{}'", m_Token.Type, m_Token.Value);
 }

@@ -64,7 +64,11 @@ llvm::DIType* llove::PointerType::GenDI(Builder& builder)
 llove::TypePtr llove::PointerType::Reflect(Context& context) const
 {
     if (m_Base)
-        return context.GetPointer(m_Base->Reflect(context), m_IsMutable);
+    {
+        TypePtr base;
+        Type::Reflect(context, m_Base, base);
+        return context.GetPointer(std::move(base), m_IsMutable);
+    }
 
     return context.GetPointer(m_IsMutable);
 }

@@ -39,7 +39,7 @@ const flag_base_8       = 16:u8; # print base 8 integer
 const flag_base_16      = 32:u8; # print base 16 integer
 const flag_raw          = 64:u8; # print raw value, even if string or character
 
-define print_string(push: push_fn, context: [mut], str: string_t, from: u64, to: u64) {
+function print_string(push: push_fn, context: [mut], str: string_t, from: u64, to: u64) {
     let beg = str + from;
     let end = str + to;
 
@@ -47,7 +47,7 @@ define print_string(push: push_fn, context: [mut], str: string_t, from: u64, to:
         push(c, context);
 }
 
-define min(a: u64, b: u64): u64 {
+function min(a: u64, b: u64): u64 {
     ret a < b ? a : b;
 }
 
@@ -55,7 +55,7 @@ define min(a: u64, b: u64): u64 {
 # length: minimum length, use padding if not long enough
 # precision: maximum length, trim if too long
 #
-define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, length: u8, precision: u8) {
+function print_string(push: push_fn, context: [mut], str: string_t, flags: u8, length: u8, precision: u8) {
     let len = strlen(str);
     let end = str + (precision ? min(len, precision) : len);
 
@@ -80,7 +80,7 @@ define print_string(push: push_fn, context: [mut], str: string_t, flags: u8, len
 #
 # length: minimum length, use padding if not long enough
 #
-define print_int(push: push_fn, context: [mut], mut value: u64, base: u8, sign: u1, upper: u1, flags: u8, length: u8) {
+function print_int(push: push_fn, context: [mut], mut value: u64, base: u8, sign: u1, upper: u1, flags: u8, length: u8) {
 
     let mut buffer: i8[256];
     let mut index: u64 = 256;
@@ -143,7 +143,7 @@ define print_int(push: push_fn, context: [mut], mut value: u64, base: u8, sign: 
 # length: minimum length, use padding if not long enough
 # precision: number of digits after the floating point
 #
-define print_float(push: push_fn, context: [mut], mut value: f64, flags: u8, length: u8, precision: u8) {
+function print_float(push: push_fn, context: [mut], mut value: f64, flags: u8, length: u8, precision: u8) {
 
     let mut buffer: i8[256];
     let mut index: u64 = 256;
@@ -183,7 +183,7 @@ const state_length    = 2:u8;
 const state_precision = 3:u8;
 const state_exit      = 4:u8;
 
-export define format(push: push_fn, context: [mut], format: string_t, ...args) {
+export function format(push: push_fn, context: [mut], format: string_t, ...args) {
 
     let beg = format;
     let end = format + strlen(format);
@@ -392,13 +392,13 @@ type buffer_context_t = {
     mut index: u64,
 };
 
-define push_buffer(c: i32, ptr: [mut]) {
+function push_buffer(c: i32, ptr: [mut]) {
     let mut &context = *(ptr as buffer_context_t[mut]);
     if (context.index < context.count)
         context.buffer[context.index++] = c;
 }
 
-export define format(buffer: buffer_t, count: u64, format: string_t, ...args) {
+export function format(buffer: buffer_t, count: u64, format: string_t, ...args) {
     let mut context: buffer_context_t = {
         buffer: buffer,
         count: count,
@@ -407,19 +407,19 @@ export define format(buffer: buffer_t, count: u64, format: string_t, ...args) {
     format(push_buffer, &context, format, args);
 }
 
-define push_stream(c: i32, ptr: [mut]) {
+function push_stream(c: i32, ptr: [mut]) {
     let stream = ptr as stream_t;
     fputc(c, stream);
 }
 
-export define format(stream: stream_t, format: string_t, ...args) {
+export function format(stream: stream_t, format: string_t, ...args) {
     format(push_stream, stream, format, args);
 }
 
-define push_stdout(c: i32, ptr: [mut]) {
+function push_stdout(c: i32, ptr: [mut]) {
     putchar(c);
 }
 
-export define format(format: string_t, ...args) {
+export function format(format: string_t, ...args) {
     format(push_stdout, null:mut, format, args);
 }

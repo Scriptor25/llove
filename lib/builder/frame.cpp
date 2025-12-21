@@ -42,18 +42,21 @@ void llove::Builder::PushFrame(
     {
         const auto& frame = m_Stack.back();
         if (!head)
-        {
             head = frame.Head;
-        }
         if (!tail)
-        {
             tail = frame.Tail;
-        }
     }
 
     auto& frame = m_Stack.emplace_back();
     frame.Head = head;
     frame.Tail = tail;
+
+    m_DebugBuilder.PushFrame(loc);
+}
+
+void llove::Builder::PushCleanFrame(const std::optional<Location>& loc)
+{
+    m_Stack.emplace_back();
 
     m_DebugBuilder.PushFrame(loc);
 }
@@ -144,9 +147,9 @@ void llove::Builder::PushDestructor(
         agg.Name = function.Name;
         agg.Result = function.Result;
 
-        const auto reference = GenFunction(agg);
+        auto reference = GenFunction(agg, false);
 
-        PushDestructor(self, reference);
+        PushDestructor(self, std::move(reference));
     }
 }
 

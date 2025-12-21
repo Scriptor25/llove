@@ -45,101 +45,101 @@ class string {
     let mut end: i8[mut];
 }
 
-define +(&l: string, r: i8): string {
+function +(&l: string, r: i8): string {
     let mut str: string = l;
     str += r;
     ret str;
 }
 
-define +(l: i8, &r: string): string {
+function +(l: i8, &r: string): string {
     let mut str: string = l;
     str += r;
     ret str;
 }
 
-define +(&l: string, r: i8[]): string {
+function +(&l: string, r: i8[]): string {
     let mut str: string = l;
     str += r;
     ret str;
 }
 
-define +(l: i8[], &r: string): string {
+function +(l: i8[], &r: string): string {
     let mut str: string = l;
     str += r;
     ret str;
 }
 
-define +(mut l: string, r: i8): string {
+function +(mut l: string, r: i8): string {
     let mut str: string = $l;
     str += r;
     ret str;
 }
 
-define +(l: i8, mut r: string): string {
+function +(l: i8, mut r: string): string {
     let mut str: string = l;
     str += $r;
     ret str;
 }
 
-define +(mut l: string, r: i8[]): string {
+function +(mut l: string, r: i8[]): string {
     let mut str: string = $l;
     str += r;
     ret str;
 }
 
-define +(l: i8[], mut r: string): string {
+function +(l: i8[], mut r: string): string {
     let mut str: string = l;
     str += $r;
     ret str;
 }
 
-define +(&l: string, mut r: string): string {
+function +(&l: string, mut r: string): string {
     let mut str: string = l;
     str += $r;
     ret str;
 }
 
-define +(mut l: string, &r: string): string {
+function +(mut l: string, &r: string): string {
     let mut str: string = $l;
     str += r;
     ret str;
 }
 
-define +(&l: string, &r: string): string {
+function +(&l: string, &r: string): string {
     let mut str: string = l;
     str += r;
     ret str;
 }
 
-define +(mut l: string, mut r: string): string {
+function +(mut l: string, mut r: string): string {
     let mut str: string = $l;
     str += $r;
     ret str;
 }
 
-define implicit cast(src: i8[]): string {
+function implicit cast(src: i8[]): string {
     ret create string(src);
 }
 
-define print(s: string) {
+function print(s: string) {
     foreach (c : s)
         putchar(c);
 }
 
-define print(&s: string) {
+function print(&s: string) {
     foreach (&c : s)
         putchar(c);
 }
 
-define hello(&name: string) {
+function hello(&name: string) {
     print("Hello, " + name + "!\n");
 }
 
-define hello(name: string) {
+function hello(name: string) {
     print("Hello, " + name + "!\n");
 }
 
-define test(a: u1, b: u1): string {
+function test(a: u1, b: u1): string {
     let mut x: string = "<empty>\n";
     let s: string = "Hello there!\n";
     let mut m: string = "ABC, 123.\n";
@@ -171,19 +171,19 @@ interface main(count: i32, args: i8[][]): i32 {
     ret 0;
 }
 
-define:string mut create() {
+function:string mut create() {
     self.beg = null;
     self.end = null;
 }
 
-define:string mut create(s: i8) {
+function:string mut create(s: i8) {
     self.beg = malloc(1);
     self.end = self.beg + 1;
 
     *self.beg = s;
 }
 
-define:string mut create(s: i8[]) {
+function:string mut create(s: i8[]) {
     let len = strlen(s);
 
     self.beg = malloc(len);
@@ -192,7 +192,7 @@ define:string mut create(s: i8[]) {
     memcpy(self.beg, s, len);
 }
 
-define:string mut create(mut s: string) {
+function:string mut create(mut s: string) {
     self.beg = s.beg;
     self.end = s.end;
 
@@ -200,7 +200,7 @@ define:string mut create(mut s: string) {
     s.end = null;
 }
 
-define:string mut create(&s: string) {
+function:string mut create(&s: string) {
     let len = s.length();
 
     self.beg = malloc(len);
@@ -209,12 +209,12 @@ define:string mut create(&s: string) {
     memcpy(self.beg, s.beg, len);
 }
 
-define:string mut create(beg: i8[mut], end: i8[mut]) {
+function:string mut create(beg: i8[mut], end: i8[mut]) {
     self.beg = beg;
     self.end = end;
 }
 
-define:string mut $(): string {
+function:string mut $(): string {
     let result: string(self.beg, self.end);
 
     self.beg = null;
@@ -223,7 +223,7 @@ define:string mut $(): string {
     ret result;
 }
 
-define:string mut delete() {
+function:string mut delete() {
     if (self.beg) {
         free(self.beg);
     }
@@ -232,15 +232,15 @@ define:string mut delete() {
     self.end = null;
 }
 
-define:string empty(): u1 {
+function:string empty(): u1 {
     ret self.beg == self.end;
 }
 
-define:string length(): u64 {
+function:string length(): u64 {
     ret self.end - self.beg;
 }
 
-define:string raw(): i8[mut] {
+function:string raw(): i8[mut] {
     let len = self.length();
     let buffer: i8[mut] = malloc(len + 1);
 
@@ -250,23 +250,23 @@ define:string raw(): i8[mut] {
     ret buffer;
 }
 
-define:string begin(): i8[] {
+function:string begin(): i8[] {
     ret self.beg;
 }
 
-define:string end(): i8[] {
+function:string end(): i8[] {
     ret self.end;
 }
 
-define:string mut begin(): i8[mut] {
+function:string mut begin(): i8[mut] {
     ret self.beg;
 }
 
-define:string mut end(): i8[mut] {
+function:string mut end(): i8[mut] {
     ret self.end;
 }
 
-define:string mut clear() {
+function:string mut clear() {
     if (self.beg) {
         free(self.beg);
     }
@@ -275,7 +275,7 @@ define:string mut clear() {
     self.end = null;
 }
 
-define:string mut =(s: i8): mut &string {
+function:string mut =(s: i8): mut &string {
     self.beg = realloc(self.beg, 1);
     self.end = self.beg + 1;
 
@@ -284,7 +284,7 @@ define:string mut =(s: i8): mut &string {
     ret self;
 }
 
-define:string mut =(s: i8[]): mut &string {
+function:string mut =(s: i8[]): mut &string {
     let len = strlen(s);
 
     self.beg = realloc(self.beg, len);
@@ -295,7 +295,7 @@ define:string mut =(s: i8[]): mut &string {
     ret self;
 }
 
-define:string mut =(mut s: string): mut &string {
+function:string mut =(mut s: string): mut &string {
     let beg = self.beg;
     let end = self.end;
 
@@ -308,7 +308,7 @@ define:string mut =(mut s: string): mut &string {
     ret self;
 }
 
-define:string mut =(&s: string): mut &string {
+function:string mut =(&s: string): mut &string {
     let len = s.length();
 
     self.beg = realloc(self.beg, len);
@@ -319,7 +319,7 @@ define:string mut =(&s: string): mut &string {
     ret self;
 }
 
-define:string mut +=(s: i8): mut &string {
+function:string mut +=(s: i8): mut &string {
     let len = self.length();
 
     self.beg = realloc(self.beg, len + 1);
@@ -330,7 +330,7 @@ define:string mut +=(s: i8): mut &string {
     ret self;
 }
 
-define:string mut +=(s: i8[]): mut &string {
+function:string mut +=(s: i8[]): mut &string {
     let len = self.length();
     let slen = strlen(s);
 
@@ -342,7 +342,7 @@ define:string mut +=(s: i8[]): mut &string {
     ret self;
 }
 
-define:string mut +=(s: string): mut &string {
+function:string mut +=(s: string): mut &string {
     let len = self.length();
     let slen = s.length();
 
@@ -354,7 +354,7 @@ define:string mut +=(s: string): mut &string {
     ret self;
 }
 
-define:string mut +=(&s: string): mut &string {
+function:string mut +=(&s: string): mut &string {
     let len = self.length();
     let slen = s.length();
 

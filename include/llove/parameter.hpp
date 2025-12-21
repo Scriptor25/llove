@@ -14,6 +14,10 @@ namespace llove
             Builder& builder,
             std::vector<llvm::Constant*>& dst) const;
 
+        void Reflect(
+            Context& context,
+            Parameter& parameter) const;
+
         Field Info;
         std::string Name;
     };

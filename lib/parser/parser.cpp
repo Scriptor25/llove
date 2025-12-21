@@ -26,5 +26,5 @@ bool llove::Parser::Ok() const
 
 llove::GlobalPtr llove::Parser::Parse()
 {
-    return ParseGlobal();
+    return ParseGlobal(false);
 }

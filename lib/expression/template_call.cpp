@@ -1,5 +1,8 @@
+#include "llove/template.hpp"
+
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/function.hpp>
 #include <llove/tree.hpp>
 
 llove::TemplateCallExpression::TemplateCallExpression(
@@ -19,7 +22,8 @@ llove::ValuePtr llove::TemplateCallExpression::GenVal(
     TypePtr /* expect */) const
 try
 {
-    const auto& callee = builder.GetContext().InstantiateFunctionTemplate(builder, m_Callee, m_TypeArguments, false);
+    auto& instance = builder.GetContext().InstantiateTemplate<FunctionTemplateInstance>(builder, m_Callee, m_TypeArguments);
+    auto& callee = instance.GetCallee();
 
     std::vector<ValuePtr> arguments;
     for (unsigned i = 0; i < m_Arguments.size(); ++i)

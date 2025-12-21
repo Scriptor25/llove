@@ -3,8 +3,6 @@
 #include <cmath>
 #include <format>
 #include <iosfwd>
-#include <llove/class.hpp>
-#include <llove/forward.hpp>
 #include <llove/location.hpp>
 #include <llove/type.hpp>
 #include <map>
@@ -44,7 +42,7 @@ namespace llove
             const std::filesystem::path& filepath,
             const std::set<std::filesystem::path>& includes);
 
-        [[nodiscard]] bool Ok() const;
+        bool Ok() const;
         GlobalPtr Parse();
 
     protected:
@@ -58,15 +56,15 @@ namespace llove
 
         Token Skip();
 
-        [[nodiscard]] bool At(
+        bool At(
             TokenType type,
             const std::string& value = {}) const;
-        [[nodiscard]] bool At(
+        bool At(
             TokenType type,
             const std::vector<std::string>& values) const;
 
         template<typename... Values>
-        [[nodiscard]] bool At(
+        bool At(
             const TokenType type,
             Values... values) const
         {
@@ -176,28 +174,30 @@ namespace llove
             return std::move(token.Loc);
         }
 
-        GlobalPtr ParseGlobal();
-        GlobalPtr ParseClassDefinitionGlobal(Location loc);
-        GlobalPtr ParseClassGlobal(bool is_export);
-        GlobalPtr ParseConstGlobal(bool is_export);
-        GlobalPtr ParseDefinitionGlobal(bool is_export);
+        GlobalPtr ParseGlobal(bool is_template);
+
         GlobalPtr ParseImportGlobal();
+
+        GlobalPtr ParseConstGlobal(bool is_export);
         GlobalPtr ParseLetGlobal(bool is_export);
-        GlobalPtr ParseTypeGlobal(bool is_export);
+        GlobalPtr ParseTemplateGlobal(bool is_export);
+
+        GlobalPtr ParseClassGlobal(
+            bool is_template,
+            bool is_export);
+        GlobalPtr ParseFunctionGlobal(
+            bool is_template,
+            bool is_export);
+        GlobalPtr ParseTypeGlobal(
+            bool is_template,
+            bool is_export);
+
+        GlobalPtr ParseClassFunctionGlobal(Location loc);
 
         void ParseClassMember(ClassMember& member);
         void ParseClassFunction(
             ClassFunction& function,
             bool require_content);
-
-        void ParseClassTemplate(
-            bool is_export,
-            std::string name);
-        void ParseDefinitionTemplate(
-            bool is_export,
-            Location loc,
-            bool is_implicit,
-            std::string name);
 
         StatementPtr ParseStatement(bool is_inline);
         StatementPtr ParseBreakStatement(bool is_inline);

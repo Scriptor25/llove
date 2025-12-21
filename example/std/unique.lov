@@ -1,7 +1,8 @@
 export interface malloc(count: u64): [mut];
 export interface free(block: [mut]);
 
-export class unique<T> {
+export template<T>
+class unique {
 
     public mut create() {
         self.ptr = null;
@@ -60,11 +61,13 @@ export class unique<T> {
     let mut ptr: T[mut];
 }
 
-export define implicit cast<T, U>(mut t: <T> unique): <U> unique {
+export template<T, U>
+function implicit cast(mut t: <T> unique): <U> unique {
     ret create <U> unique(t.release() as U[mut]);
 }
 
-export define make_unique<T>(mut val: T): <T> unique {
+export template<T>
+function make_unique(mut val: T): <T> unique {
     let p: T[mut] = malloc(sizeof T);
     *p = $val;
     ret create <T> unique(p);

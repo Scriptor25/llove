@@ -19,9 +19,6 @@ namespace llove
     struct ClassFunctionReference;
     struct ClassFunction;
 
-    struct ClassReflection;
-    struct DefinitionReflection;
-
     class Global;
     class Statement;
     class Expression;
@@ -36,6 +33,9 @@ namespace llove
     using GlobalPtr = std::unique_ptr<Global>;
     using StatementPtr = std::unique_ptr<Statement>;
     using ExpressionPtr = std::unique_ptr<Expression>;
+
+    class TemplateInstance;
+    using TemplateInstancePtr = std::unique_ptr<TemplateInstance>;
 
     std::ostream& operator<<(
         std::ostream& stream,
@@ -65,3 +65,9 @@ namespace llove
         std::ostream& stream,
         const ExpressionPtr& ptr);
 }
+
+template<typename T>
+concept TypeLike = std::is_base_of_v<llove::Type, T>;
+
+template<typename T>
+concept InstanceLike = std::is_base_of_v<llove::TemplateInstance, T>;

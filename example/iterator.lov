@@ -7,11 +7,11 @@ type iterable_struct_t = {
     end:   () => i8[],
 };
 
-define begin_str(): i8[] {
+function begin_str(): i8[] {
     ret "Hello!\n";
 }
 
-define end_str(): i8[] {
+function end_str(): i8[] {
     let str = begin_str();
     let len = strlen(str);
     ret str + len;

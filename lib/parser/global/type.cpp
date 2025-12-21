@@ -1,7 +1,9 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseTypeGlobal(bool is_export)
+llove::GlobalPtr llove::Parser::ParseTypeGlobal(
+    bool /* is_template */,
+    bool is_export)
 {
     auto loc = Expect(TokenType_Symbol, "type").Loc;
 

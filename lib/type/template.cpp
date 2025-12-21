@@ -36,7 +36,9 @@ llvm::DIType* llove::TemplateType::GenDI(Builder& /* builder */)
 
 llove::TypePtr llove::TemplateType::Reflect(Context& context) const
 {
-    return context.TemplateArgument(m_Name);
+    if (context.IsInstantiating())
+        return context.GetTemplateArgument(m_Name);
+    return nullptr;
 }
 
 bool llove::TemplateType::TypeInfo(
@@ -56,7 +58,7 @@ std::ostream& llove::TemplateType::Print(std::ostream& stream) const
     return stream << m_Name;
 }
 
-llove::TemplateClassType::TemplateClassType(
+llove::InstanceType::InstanceType(
     std::string name,
     std::vector<TypePtr> arguments)
     : m_Name(std::move(name)),
@@ -64,79 +66,62 @@ llove::TemplateClassType::TemplateClassType(
 {
 }
 
-bool llove::TemplateClassType::IsInstantiated() const
-{
-    return m_IsInstantiated;
-}
-
-void llove::TemplateClassType::Instantiate()
-{
-    m_IsInstantiated = true;
-}
-
-llove::TypeId llove::TemplateClassType::GetId() const
+llove::TypeId llove::InstanceType::GetId() const
 {
     return ID;
 }
 
-bool llove::TemplateClassType::IsTemplate() const
+bool llove::InstanceType::IsTemplate() const
 {
     return true;
 }
 
-unsigned llove::TemplateClassType::SizeBits(Builder& /* builder */)
+unsigned llove::InstanceType::SizeBits(Builder& /* builder */)
 {
-    Error("template class type '{}' does not have a size", m_Name);
+    Error("template type '{}' does not have a size", m_Name);
 }
 
-llvm::Type* llove::TemplateClassType::GenIR(Builder& /* builder */)
+llvm::Type* llove::InstanceType::GenIR(Builder& /* builder */)
 {
-    Error("template class type '{}' does not have an intermediate representation", m_Name);
+    Error("template type '{}' does not have an intermediate representation", m_Name);
 }
 
-llvm::DIType* llove::TemplateClassType::GenDI(Builder& /* builder */)
+llvm::DIType* llove::InstanceType::GenDI(Builder& /* builder */)
 {
-    Error("template class type '{}' does not have debug information", m_Name);
+    Error("template type '{}' does not have debug information", m_Name);
 }
 
-llove::TypePtr llove::TemplateClassType::Reflect(Context& context) const
-{
-    std::vector<TypePtr> arguments;
-    for (auto& argument : m_Arguments)
-    {
-        Type::Reflect(context, argument, arguments.emplace_back());
-    }
-    return context.InstantiateTypeTemplate(m_Name, std::move(arguments), false);
-}
-
-bool llove::TemplateClassType::TypeInfo(
+bool llove::InstanceType::TypeInfo(
     Builder& /* builder */,
     std::vector<llvm::Constant*>& /* dst */) const
 {
-    Error("template class type '{}' does not have typeinfo", m_Name);
+    Error("template type '{}' does not have typeinfo", m_Name);
 }
 
-std::string llove::TemplateClassType::Mangle() const
+std::string llove::InstanceType::Mangle() const
 {
-    auto result = 't' + std::to_string(m_Name.size()) + '_' + m_Name
-                + std::to_string(m_Arguments.size()) + '_';
+    std::string arguments;
     for (auto& argument : m_Arguments)
-    {
-        result += argument->Mangle();
-    }
-    return result;
+        arguments += argument->Mangle();
+
+    return 't' + std::to_string(m_Name.size()) + '_' + m_Name
+         + std::to_string(m_Arguments.size()) + '_' + arguments;
 }
 
-std::ostream& llove::TemplateClassType::Print(std::ostream& stream) const
+std::ostream& llove::InstanceType::Print(std::ostream& stream) const
 {
-    stream << "class<";
-    for (auto i = m_Arguments.begin(); i != m_Arguments.end(); ++i)
+    stream << '<';
+    for (auto it = m_Arguments.begin(); it != m_Arguments.end(); ++it)
     {
-        if (i != m_Arguments.begin())
-        {
+        if (it != m_Arguments.begin())
             stream << ", ";
-        }
-        stream << *i;
+        stream << *it;
     }
     return stream << "> " << m_Name;
+}
+
+llove::TypePtr llove::InstanceType::Reflect(Context& context) const
+{
+    auto& instance = context.InstantiateTemplate<TypeTemplateInstance>(m_Name, m_Arguments);
+    return instance.GetType();
 }

@@ -52,7 +52,9 @@ llvm::DIType* llove::RangeType::GenDI(Builder& builder)
 
 llove::TypePtr llove::RangeType::Reflect(Context& context) const
 {
-    return context.GetRange(m_Entry->Reflect(context));
+    TypePtr entry;
+    Type::Reflect(context, m_Entry, entry);
+    return context.GetRange(std::move(entry));
 }
 
 bool llove::RangeType::TypeInfo(

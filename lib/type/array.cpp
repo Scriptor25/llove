@@ -49,7 +49,9 @@ llvm::DIType* llove::ArrayType::GenDI(Builder& builder)
 
 llove::TypePtr llove::ArrayType::Reflect(Context& context) const
 {
-    return context.GetArray(m_Base->Reflect(context), m_Count);
+    TypePtr base;
+    Type::Reflect(context, m_Base, base);
+    return context.GetArray(std::move(base), m_Count);
 }
 
 bool llove::ArrayType::TypeInfo(

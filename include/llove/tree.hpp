@@ -8,6 +8,7 @@
 #include <llove/function.hpp>
 #include <llove/location.hpp>
 #include <llove/parameter.hpp>
+#include <llove/template.hpp>
 #include <llove/type.hpp>
 #include <map>
 #include <memory>
@@ -18,25 +19,46 @@
 
 namespace llove
 {
+    using Import = std::pair<std::string, ValuePtr>;
+    using ImportSymbols = std::map<std::string, std::string>;
+
+    using Variadic = std::pair<bool, std::string>;
+
     class Global
     {
     public:
         explicit Global(Location loc);
-
-        [[nodiscard]] const Location& Loc() const;
-
         virtual ~Global() = default;
+
+        const Location& Loc() const;
+        virtual std::string GetName() const = 0;
+
+        virtual GlobalPtr Reflect(Context& context) const = 0;
+
+        template<typename T>
+        requires std::is_base_of_v<
+            Global,
+            T>
+        void Reflect(
+            Context& context,
+            std::unique_ptr<T>& ref) const
+        {
+            auto ptr = Reflect(context).release();
+            auto cast = dynamic_cast<T*>(ptr);
+            Assert(cast, "invalid reflection cast");
+            ref = std::unique_ptr<T>(cast);
+        }
+
         virtual void Gen(Builder& builder) const = 0;
-        virtual std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        virtual TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const = 0;
+        virtual Import GenImport(
             Context& context,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const = 0;
+            const ImportSymbols& symbols) const = 0;
         virtual std::ostream& Print(std::ostream& stream) const = 0;
 
     protected:
@@ -58,17 +80,20 @@ namespace llove
             std::vector<ClassMember> members,
             std::vector<ClassFunction> functions);
 
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
         void Gen(Builder& builder) const override;
-        std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
             Context& context,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const override;
+            const ImportSymbols& symbols) const override;
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
@@ -80,33 +105,34 @@ namespace llove
         std::vector<ClassFunction> m_Functions;
     };
 
-    class ClassDefinitionGlobal final : public Global
+    class ClassFunctionGlobal final : public Global
     {
     public:
-        explicit ClassDefinitionGlobal(
+        explicit ClassFunctionGlobal(
             Location loc,
             ClassType::Ptr class_type,
             bool is_mutable,
             std::string name,
             std::vector<Parameter> parameters,
-            std::pair<
-                bool,
-                std::string> variadic,
+            Variadic variadic,
             Field result,
             std::vector<Initializer> initializers,
             StatementPtr content);
 
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
         void Gen(Builder& builder) const override;
-        std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
             Context& context,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const override;
+            const ImportSymbols& symbols) const override;
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
@@ -130,17 +156,20 @@ namespace llove
             TypePtr type,
             ExpressionPtr value);
 
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
         void Gen(Builder& builder) const override;
-        std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
             Context& context,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const override;
+            const ImportSymbols& symbols) const override;
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
@@ -150,10 +179,10 @@ namespace llove
         ExpressionPtr m_Value;
     };
 
-    class DefinitionGlobal final : public Global
+    class FunctionGlobal final : public Global
     {
     public:
-        explicit DefinitionGlobal(
+        explicit FunctionGlobal(
             Location loc,
             bool is_export,
             bool is_interface,
@@ -161,23 +190,24 @@ namespace llove
             bool is_operator,
             std::string name,
             std::vector<Parameter> parameters,
-            std::pair<
-                bool,
-                std::string> variadic,
+            Variadic variadic,
             Field result,
             StatementPtr content);
 
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
         void Gen(Builder& builder) const override;
-        std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
             Context& context,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const override;
+            const ImportSymbols& symbols) const override;
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
@@ -198,23 +228,24 @@ namespace llove
         explicit ImportGlobal(
             Location loc,
             std::string as,
-            std::map<
-                std::string,
-                std::string> symbols,
+            ImportSymbols symbols,
             std::filesystem::path filepath,
             const std::set<std::filesystem::path>& includes);
 
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
         void Gen(Builder& builder) const override;
-        std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
             Context& parent,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const override;
+            const ImportSymbols& symbols) const override;
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
@@ -233,23 +264,57 @@ namespace llove
             std::string name,
             TypePtr type);
 
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
         void Gen(Builder& builder) const override;
-        std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
             Context& context,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const override;
+            const ImportSymbols& symbols) const override;
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
         bool m_IsExport;
         std::string m_Name;
         TypePtr m_Type;
+    };
+
+    class TemplateGlobal final : public Global
+    {
+    public:
+        explicit TemplateGlobal(
+            Location loc,
+            bool is_export,
+            std::vector<TemplateParameter> parameters,
+            GlobalPtr content);
+
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
+        void Gen(Builder& builder) const override;
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
+            Context& context,
+            Builder& builder,
+            const std::string& as,
+            const ImportSymbols& symbols) const override;
+        std::ostream& Print(std::ostream& stream) const override;
+
+    private:
+        bool m_IsExport;
+        std::vector<TemplateParameter> m_Parameters;
+        GlobalPtr m_Content;
     };
 
     class TypeGlobal final : public Global
@@ -261,17 +326,20 @@ namespace llove
             std::string name,
             TypePtr type);
 
+        std::string GetName() const override;
+
+        GlobalPtr Reflect(Context& context) const override;
+
         void Gen(Builder& builder) const override;
-        std::pair<
-            std::string,
-            ValuePtr>
-        GenImport(
+        TemplateInstancePtr GenTemplate(
+            Builder* builder,
+            Context& context,
+            std::string name) const override;
+        Import GenImport(
             Context& context,
             Builder& builder,
             const std::string& as,
-            const std::map<
-                std::string,
-                std::string>& symbols) const override;
+            const ImportSymbols& symbols) const override;
         std::ostream& Print(std::ostream& stream) const override;
 
     private:
@@ -285,7 +353,7 @@ namespace llove
     public:
         explicit Statement(Location loc);
 
-        [[nodiscard]] const Location& Loc() const;
+        const Location& Loc() const;
 
         virtual ~Statement() = default;
         virtual void Gen(Builder& builder) const = 0;

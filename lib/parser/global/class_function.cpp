@@ -2,7 +2,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
+llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
 {
     static const std::set<std::string_view> no_result{
         "create",
@@ -37,5 +37,5 @@ llove::GlobalPtr llove::Parser::ParseClassDefinitionGlobal(Location loc)
 
     auto content = ParseScopeStatement();
 
-    return std::make_unique<ClassDefinitionGlobal>(std::move(loc), std::move(class_type), is_mutable, std::move(name), std::move(parameters), variadic, std::move(result), std::move(initializers), std::move(content));
+    return std::make_unique<ClassFunctionGlobal>(std::move(loc), std::move(class_type), is_mutable, std::move(name), std::move(parameters), variadic, std::move(result), std::move(initializers), std::move(content));
 }

@@ -13,3 +13,11 @@ bool llove::Parameter::TypeInfo(
     dst.push_back(builder.GetStr(Name));
     return Info.TypeInfo(builder, dst);
 }
+
+void llove::Parameter::Reflect(
+    Context& context,
+    Parameter& parameter) const
+{
+    parameter.Name = Name;
+    Info.Reflect(context, parameter.Info);
+}

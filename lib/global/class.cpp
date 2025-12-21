@@ -1,5 +1,6 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/forward.hpp>
 #include <llove/tree.hpp>
 
 llove::ClassGlobal::ClassGlobal(
@@ -28,6 +29,29 @@ llove::ClassGlobal::ClassGlobal(
       m_Members(std::move(members)),
       m_Functions(std::move(functions))
 {
+}
+
+std::string llove::ClassGlobal::GetName() const
+{
+    return m_ClassType->GetName();
+}
+
+llove::GlobalPtr llove::ClassGlobal::Reflect(Context& context) const
+{
+    ClassType::Ptr class_type, base_type;
+    Type::Reflect(context, m_ClassType, class_type);
+    Type::Reflect(context, m_BaseType, base_type);
+
+    std::vector<ClassMember> members;
+    std::vector<ClassFunction> functions;
+
+    for (auto& member : m_Members)
+        member.Reflect(context, members.emplace_back());
+
+    for (auto& function : m_Functions)
+        function.Reflect(context, functions.emplace_back());
+
+    return std::make_unique<ClassGlobal>(m_Loc, m_IsExport, std::move(class_type), std::move(base_type), std::move(members), std::move(functions));
 }
 
 void llove::ClassGlobal::Gen(Builder& builder) const
@@ -91,7 +115,7 @@ try
         agg.Initializers = std::move(initializers);
         agg.Content = std::move(content);
 
-        builder.GenFunction(agg);
+        builder.GenFunction(agg, false);
     }
 }
 catch (ref_exception<ErrorStack>& cause)
@@ -99,23 +123,101 @@ catch (ref_exception<ErrorStack>& cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<
-    std::string,
-    llove::ValuePtr>
-llove::ClassGlobal::GenImport(
+llove::TemplateInstancePtr llove::ClassGlobal::GenTemplate(
+    Builder* builder,
+    Context& context,
+    std::string name) const
+{
+    auto class_type = context.GetClass(std::move(name));
+
+    ClassType::Ptr base_type;
+    Type::Reflect(context, m_BaseType, base_type);
+
+    class_type->SetParentClass(base_type);
+
+    std::vector<ClassMemberReference> class_members;
+    for (auto& member : m_Members)
+    {
+        Field info;
+        member.Info.Reflect(context, info);
+
+        class_members.emplace_back(std::move(info), member.Name);
+    }
+    class_type->SetMembers(std::move(class_members));
+
+    std::vector<ClassFunctionReference> class_functions;
+    for (auto& function : m_Functions)
+    {
+        std::vector<Field> parameters;
+        for (auto& parameter : function.Parameters)
+        {
+            Field info;
+            parameter.Info.Reflect(context, info);
+
+            parameters.emplace_back(std::move(info));
+        }
+
+        class_functions.emplace_back(
+            ClassFunctionReference{
+                .IsExport = m_IsExport,
+                .IsPublic = function.IsPublic,
+                .IsVirtual = function.IsVirtual,
+                .IsOverride = function.IsOverride,
+                .IsImplicit = function.IsImplicit,
+                .IsMutable = function.IsMutable,
+                .Name = function.Name,
+                .Parameters = std::move(parameters),
+                .HasVariadic = function.Variadic.first,
+                .Result = function.Result,
+            });
+    }
+    class_type->SetFunctions(std::move(class_functions));
+
+    for (auto& function : m_Functions)
+    {
+        std::vector<Initializer> initializers;
+        for (auto& initializer : function.Initializers)
+            initializer.Reflect(context, initializers.emplace_back());
+
+        StatementPtr content;
+        if (function.Content)
+            function.Content->Reflect(context, content);
+
+        Function agg;
+        agg.Loc = function.Loc;
+        agg.IsExport = m_IsExport;
+        agg.IsPublic = function.IsPublic;
+        agg.IsVirtual = function.IsVirtual;
+        agg.IsOverride = function.IsOverride;
+        agg.IsImplicit = function.IsImplicit;
+        agg.IsMutable = function.IsMutable;
+        agg.Class = class_type;
+        agg.Name = function.Name;
+        agg.Parameters = function.Parameters;
+        agg.Variadic = function.Variadic;
+        agg.Result = function.Result;
+        agg.Initializers = std::move(initializers);
+        agg.Content = std::move(content);
+
+        // TODO
+        // builder->GenFunction(agg, false);
+    }
+
+    return std::make_unique<TypeTemplateInstance>(std::move(class_type));
+}
+
+llove::Import llove::ClassGlobal::GenImport(
     Context& context,
     Builder& /* builder */,
     const std::string& as,
-    const std::map<
-        std::string,
-        std::string>& symbols) const
+    const ImportSymbols& symbols) const
 {
     if (!m_IsExport)
         return {};
 
     auto& name = m_ClassType->GetName();
 
-    if (!as.empty() && !symbols.empty() && !symbols.contains(name))
+    if (as.empty() && !symbols.empty() && !symbols.contains(name))
         return {};
 
     context.GetParent()->Set(m_ClassType->Mangle(), m_ClassType);

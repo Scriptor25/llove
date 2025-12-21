@@ -1,6 +1,7 @@
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/error.hpp>
+#include <llove/forward.hpp>
 #include <llove/tree.hpp>
 #include <ranges>
 
@@ -16,9 +17,10 @@ llove::Context* llove::Context::GetParent() const
 
 llove::TypePtr llove::Context::GetNamed(const std::string& id) const
 {
-    for (auto& template_ : std::ranges::reverse_view(m_TemplateTypes))
-        if (template_.contains(id))
-            return template_.at(id);
+    for (auto& frame : std::ranges::reverse_view(m_TemplateParameterStack))
+        for (auto& parameter : frame)
+            if (parameter.first == id)
+                return parameter.second;
 
     if (m_Named.contains(id))
         return m_Named.at(id);
@@ -108,6 +110,22 @@ llove::FunctionType::Ptr llove::Context::GetFunction(
     std::optional<Field> self)
 {
     return GetOrCreate<FunctionType>(std::move(result), std::move(parameters), variadic, std::move(self));
+}
+
+llove::InstanceType::Ptr llove::Context::GetInstance(std::string name)
+{
+    std::vector<TypePtr> arguments;
+    for (auto& frame = m_TemplateParameterStack.back(); auto& parameter : frame)
+        arguments.emplace_back(parameter.second);
+
+    return GetInstance(std::move(name), std::move(arguments));
+}
+
+llove::InstanceType::Ptr llove::Context::GetInstance(
+    std::string name,
+    std::vector<TypePtr> arguments)
+{
+    return GetOrCreate<InstanceType>(std::move(name), std::move(arguments));
 }
 
 llove::IntegerType::Ptr llove::Context::GetBoolean()
@@ -204,352 +222,100 @@ llove::TypePtr llove::Context::TypeUnion(
     Error("illegal type unionization of {} and {}", left, right);
 }
 
-llove::ClassTemplate& llove::Context::PushClassTemplate(
-    const bool is_export,
-    std::string name,
-    std::vector<std::pair<
-        std::string,
-        TemplateType::Ptr>> type_parameters,
-    const bool is_imported)
+void llove::Context::PushTemplate(const std::vector<TemplateParameter>& parameters)
 {
-    if (!is_imported)
-    {
-        auto& template_frame = m_TemplateTypes.emplace_back();
-        for (auto& [key, type] : type_parameters)
-            template_frame.emplace(key, type);
-    }
-
-    if (is_export && m_Parent)
-    {
-        auto& ref = m_Parent->PushClassTemplate(false, std::move(name), std::move(type_parameters), true);
-        ref.IsImported = true;
-
-        if (!is_imported)
-            m_CurrentTypeTemplate = &ref;
-
-        return ref;
-    }
-
-    auto& ref = m_TypeTemplates[name];
-
-    if (!is_imported)
-        m_CurrentTypeTemplate = &ref;
-
-    ref.Name = std::move(name);
-    ref.TypeParameters = std::move(type_parameters);
-
-    return ref;
+    auto& frame = m_TemplateParameterStack.emplace_back();
+    for (auto& entry : parameters)
+        frame.emplace_back(entry);
 }
 
-void llove::Context::PopClassTemplate()
+void llove::Context::PopTemplate()
 {
-    m_CurrentTypeTemplate->Complete = true;
-    m_CurrentTypeTemplate = nullptr;
-
-    m_TemplateTypes.pop_back();
+    m_TemplateParameterStack.pop_back();
 }
 
-llove::ClassTemplate& llove::Context::EmplaceClassTemplate(
-    const bool is_export,
-    std::string name,
-    std::vector<std::pair<
-        std::string,
-        TemplateType::Ptr>> type_parameters)
+void llove::Context::CreateTemplate(
+    const std::string& name,
+    TemplateInstancePtr instance)
 {
-    if (is_export && m_Parent)
-    {
-        auto& ref = m_Parent->EmplaceClassTemplate(false, std::move(name), std::move(type_parameters));
-        ref.IsImported = true;
+    Assert(!m_TemplateParameterStack.empty(), "no current template");
 
-        return ref;
-    }
-
-    auto& ref = m_TypeTemplates[name];
-
-    ref.Name = std::move(name);
-    ref.TypeParameters = std::move(type_parameters);
-
-    return ref;
+    m_Templates[name] = {
+        name,
+        m_TemplateParameterStack.back(),
+        nullptr,
+        std::move(instance),
+    };
 }
 
-llove::FunctionTemplate& llove::Context::PushDefinitionTemplate(
-    const bool is_export,
-    const bool is_implicit,
-    Location loc,
-    std::string name,
-    std::vector<std::pair<
-        std::string,
-        TemplateType::Ptr>> type_parameters,
-    const bool is_imported)
+void llove::Context::CreateTemplate(
+    const std::string& name,
+    std::vector<TemplateParameter> parameters,
+    GlobalPtr content)
 {
-    if (!is_imported)
-    {
-        auto& template_frame = m_TemplateTypes.emplace_back();
-        for (auto& [key, type] : type_parameters)
-            template_frame.emplace(key, type);
-    }
-
-    if (is_export && m_Parent)
-    {
-        auto& ref = m_Parent->PushDefinitionTemplate(false, is_implicit, std::move(loc), std::move(name), std::move(type_parameters), true);
-        ref.IsImported = true;
-
-        return ref;
-    }
-
-    auto& ref = m_FunctionTemplates[name];
-
-    ref.Loc = std::move(loc);
-    ref.IsImplicit = is_implicit;
-    ref.Name = std::move(name);
-    ref.TypeParameters = std::move(type_parameters);
-
-    return ref;
+    m_Templates[name] = {
+        name,
+        std::move(parameters),
+        std::move(content),
+        nullptr,
+    };
 }
 
-void llove::Context::PopDefinitionTemplate()
+llove::TemplateInstance* llove::Context::InstantiateUniqueTemplate(
+    Builder* builder,
+    const std::string& name,
+    const std::vector<TypePtr>& type_arguments)
 {
-    m_TemplateTypes.pop_back();
+    auto index = name + '<';
+    for (auto it = type_arguments.begin(); it != type_arguments.end(); ++it)
+    {
+        if (it != type_arguments.begin())
+            index += ',';
+        index += (*it)->Mangle();
+    }
+    index += '>';
+
+    auto contains = m_Instances.contains(index);
+    if (contains)
+        if (auto ptr = m_Instances.at(index).get())
+            return ptr;
+
+    Assert(m_Templates.contains(name), "undefined template name {}", name);
+
+    auto& temp = m_Templates.at(name);
+
+    Assert(type_arguments.size() == temp.Parameters.size(), "invalid number of type argument");
+
+    auto& ref = m_Instances[index];
+
+    auto& frame = m_TemplateArgumentStack.emplace_back();
+    for (auto i = 0u; i < type_arguments.size(); ++i)
+        frame.emplace(temp.Parameters.at(i).first, type_arguments.at(i));
+
+    TemplateInstance* ptr;
+    if (!contains && temp.Content)
+    {
+        ref = temp.Content->GenTemplate(builder, *this, std::move(index));
+        ptr = ref.get();
+    }
+    else
+    {
+        ptr = temp.Default.get();
+    }
+
+    m_TemplateArgumentStack.pop_back();
+    return ptr;
 }
 
-llove::TypePtr llove::Context::InstantiateTypeTemplate(
-    std::string name,
-    std::vector<TypePtr> type_arguments,
-    const bool is_imported)
+bool llove::Context::IsInstantiating() const
 {
-    if (!m_TypeTemplates.contains(name) && m_Parent)
-    {
-        return m_Parent->InstantiateTypeTemplate(std::move(name), std::move(type_arguments), true);
-    }
-
-    Assert(m_TypeTemplates.contains(name), "undefined type template '{}'", name);
-
-    const auto& class_template = m_TypeTemplates.at(name);
-    Assert(!is_imported || class_template.IsImported, "template is not imported, cannot be accessed from child context");
-    Assert(class_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
-
-    auto complete = class_template.Complete;
-    for (auto it = type_arguments.begin(); it != type_arguments.end() && complete; ++it)
-    {
-        complete = !(*it)->IsTemplate();
-    }
-
-    auto template_class = GetOrCreate<TemplateClassType>(name, type_arguments);
-    if (!complete)
-    {
-        return template_class;
-    }
-
-    name = class_template.Name + '<';
-    for (unsigned i = 0; i < type_arguments.size(); ++i)
-    {
-        if (i)
-        {
-            name += ", ";
-        }
-        name += type_arguments.at(i)->Mangle();
-    }
-    name += '>';
-
-    auto class_type = GetClass(std::move(name));
-    if (template_class->IsInstantiated())
-    {
-        return class_type;
-    }
-
-    std::map<std::string, TypePtr> frame;
-    for (unsigned i = 0; i < type_arguments.size(); ++i)
-    {
-        frame.emplace(class_template.TypeParameters.at(i).first, type_arguments.at(i));
-    }
-
-    m_TemplateStack.push_back(&frame);
-    template_class->Instantiate();
-
-    std::vector<ClassMember> reflection_members;
-    for (const auto& member : class_template.Members)
-    {
-        member.Reflect(*this, reflection_members.emplace_back());
-    }
-
-    std::vector<ClassFunction> reflection_functions;
-    for (const auto& function : class_template.Functions)
-    {
-        function.Reflect(*this, reflection_functions.emplace_back());
-    }
-
-    std::vector<ClassMemberReference> members;
-    for (const auto& member : reflection_members)
-    {
-        members.emplace_back(member.Info, member.Name);
-    }
-    class_type->SetMembers(std::move(members));
-
-    std::vector<ClassFunctionReference> functions;
-    for (const auto& function : reflection_functions)
-    {
-        std::vector<Field> parameters;
-        for (const auto& parameter : function.Parameters)
-        {
-            parameters.emplace_back(parameter.Info);
-        }
-
-        functions.emplace_back(
-            ClassFunctionReference{
-                .IsExport = false,
-                .IsPublic = function.IsPublic,
-                .IsVirtual = function.IsVirtual,
-                .IsOverride = function.IsOverride,
-                .IsImplicit = function.IsImplicit,
-                .IsMutable = function.IsMutable,
-                .Name = function.Name,
-                .Parameters = std::move(parameters),
-                .HasVariadic = function.Variadic.first,
-                .Result = function.Result,
-            });
-    }
-    class_type->SetFunctions(std::move(functions));
-
-    m_TemplateStack.pop_back();
-
-    auto& ref = m_ClassReflections.emplace_back();
-
-    ref.Frame = std::move(frame);
-    ref.Class = class_type;
-    ref.Functions = std::move(reflection_functions);
-
-    return class_type;
+    return !m_TemplateArgumentStack.empty();
 }
 
-llove::FunctionReference& llove::Context::InstantiateFunctionTemplate(
-    Builder& builder,
-    std::string name,
-    std::vector<TypePtr> type_arguments,
-    const bool is_imported)
+llove::TypePtr llove::Context::GetTemplateArgument(const std::string& name) const
 {
-    if (!m_FunctionTemplates.contains(name) && m_Parent)
-    {
-        return m_Parent->InstantiateFunctionTemplate(builder, std::move(name), std::move(type_arguments), true);
-    }
-
-    Assert(m_FunctionTemplates.contains(name), "undefined function template '{}'", name);
-
-    const auto& definition_template = m_FunctionTemplates.at(name);
-    Assert(!is_imported || definition_template.IsImported, "template is not imported, cannot be accessed from child context");
-    Assert(definition_template.TypeParameters.size() == type_arguments.size(), "wrong number of type arguments");
-
-    name = definition_template.Name + '<';
-    for (unsigned i = 0; i < type_arguments.size(); ++i)
-    {
-        if (i)
-        {
-            name += ", ";
-        }
-        name += type_arguments.at(i)->Mangle();
-    }
-    name += '>';
-
-    if (m_FunctionInstances.contains(name))
-    {
-        return m_FunctionInstances.at(name);
-    }
-
-    std::map<std::string, TypePtr> frame;
-    for (unsigned i = 0; i < type_arguments.size(); ++i)
-    {
-        frame.emplace(
-            definition_template.TypeParameters.at(i).first,
-            type_arguments.at(i));
-    }
-
-    m_TemplateStack.push_back(&frame);
-
-    std::vector<Parameter> parameters;
-    for (auto& parameter : definition_template.Parameters)
-    {
-        auto& reflection = parameters.emplace_back();
-        reflection.Name = parameter.Name;
-        parameter.Info.Reflect(*this, reflection.Info);
-    }
-
-    Field result;
-    definition_template.Result.Reflect(*this, result);
-
-    StatementPtr content;
-    if (definition_template.Content)
-    {
-        definition_template.Content->Reflect(*this, content);
-    }
-
-    m_TemplateStack.pop_back();
-
-    {
-        Function agg;
-        agg.Loc = definition_template.Loc;
-        agg.IsImplicit = definition_template.IsImplicit;
-        agg.Name = definition_template.Name;
-        agg.Parameters = parameters;
-        agg.Variadic = definition_template.Variadic;
-        agg.Result = result;
-        agg.Content = std::move(content);
-
-        m_DefinitionReflections.emplace_back(std::move(frame), std::move(agg));
-    }
-
-    Function agg;
-    agg.Loc = definition_template.Loc;
-    agg.IsImplicit = definition_template.IsImplicit;
-    agg.Name = definition_template.Name;
-    agg.Parameters = parameters;
-    agg.Variadic = definition_template.Variadic;
-    agg.Result = result;
-
-    return m_FunctionInstances[name] = builder.GenFunction(agg, true);
-}
-
-void llove::Context::InstantiateReflections(Builder& builder)
-{
-    for (auto& [frame, class_type, functions] : m_ClassReflections)
-    {
-        m_TemplateStack.push_back(&frame);
-        for (auto& function : functions)
-        {
-            Function agg;
-            agg.Loc = std::move(function.Loc);
-            agg.IsPublic = function.IsPublic;
-            agg.IsVirtual = function.IsVirtual;
-            agg.IsOverride = function.IsOverride;
-            agg.IsImplicit = function.IsImplicit;
-            agg.IsMutable = function.IsMutable;
-            agg.Class = class_type;
-            agg.Name = std::move(function.Name);
-            agg.Parameters = std::move(function.Parameters);
-            agg.Variadic = std::move(function.Variadic);
-            agg.Result = std::move(function.Result);
-            agg.Initializers = std::move(function.Initializers);
-            agg.Content = std::move(function.Content);
-
-            builder.GenFunction(agg);
-        }
-        m_TemplateStack.pop_back();
-    }
-
-    m_ClassReflections.clear();
-
-    for (const auto& [frame, function] : m_DefinitionReflections)
-    {
-        m_TemplateStack.push_back(&frame);
-        builder.GenFunction(function, true);
-        m_TemplateStack.pop_back();
-    }
-
-    m_DefinitionReflections.clear();
-}
-
-llove::TypePtr llove::Context::TemplateArgument(const std::string& name) const
-{
-    Assert(!m_TemplateStack.empty(), "not a template");
-    const auto frame = m_TemplateStack.back();
-    Assert(frame->contains(name), "undefined template argument '{}'", name);
-    return frame->at(name);
+    Assert(!m_TemplateArgumentStack.empty(), "not a template");
+    auto& frame = m_TemplateArgumentStack.back();
+    Assert(frame.contains(name), "undefined template parameter '{}'", name);
+    return frame.at(name);
 }

@@ -1,6 +1,7 @@
 #include <fstream>
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
+#include <llove/forward.hpp>
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
@@ -9,9 +10,7 @@
 llove::ImportGlobal::ImportGlobal(
     Location loc,
     std::string as,
-    std::map<
-        std::string,
-        std::string> symbols,
+    ImportSymbols symbols,
     std::filesystem::path filepath,
     const std::set<std::filesystem::path>& includes)
     : Global(std::move(loc)),
@@ -20,6 +19,16 @@ llove::ImportGlobal::ImportGlobal(
       m_Filepath(std::move(filepath)),
       m_Includes(includes)
 {
+}
+
+std::string llove::ImportGlobal::GetName() const
+{
+    return {};
+}
+
+llove::GlobalPtr llove::ImportGlobal::Reflect(Context& /* context */) const
+{
+    return std::make_unique<ImportGlobal>(m_Loc, m_As, m_Symbols, m_Filepath, m_Includes);
 }
 
 void llove::ImportGlobal::Gen(Builder& builder) const
@@ -35,7 +44,7 @@ try
     for (auto& key : m_Symbols | std::views::values)
         remaining.insert(key);
 
-    std::vector<std::pair<std::string, ValuePtr>> values;
+    std::vector<Import> values;
     while (parser.Ok())
         if (auto ptr = parser.Parse())
         {
@@ -75,16 +84,19 @@ catch (ref_exception<ErrorStack>& cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<
-    std::string,
-    llove::ValuePtr>
-llove::ImportGlobal::GenImport(
+llove::TemplateInstancePtr llove::ImportGlobal::GenTemplate(
+    Builder* /* builder */,
+    Context& /* context */,
+    std::string /* name */) const
+{
+    Error(m_Loc, "imports do not support templating");
+}
+
+llove::Import llove::ImportGlobal::GenImport(
     Context& parent,
     Builder& builder,
     const std::string& /* as */,
-    const std::map<
-        std::string,
-        std::string>& /* symbols */) const
+    const ImportSymbols& /* symbols */) const
 try
 {
     // TODO: check recursion

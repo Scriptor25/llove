@@ -87,7 +87,7 @@ namespace llove
 
         T* operator->() const { return m_Stream; }
 
-        [[nodiscard]] T* get() const { return m_Stream; }
+        T* get() const { return m_Stream; }
 
         std::pair<
             T*,
@@ -138,7 +138,7 @@ namespace llove
             m_Stream.write(ptr, static_cast<std::streamsize>(size));
         }
 
-        [[nodiscard]] uint64_t current_pos() const override
+        uint64_t current_pos() const override
         {
             return m_Stream.tellp();
         }

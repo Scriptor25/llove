@@ -1,4 +1,5 @@
 #include <llove/builder.hpp>
+#include <llove/forward.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
@@ -16,6 +17,22 @@ llove::ConstGlobal::ConstGlobal(
 {
 }
 
+std::string llove::ConstGlobal::GetName() const
+{
+    return m_Name;
+}
+
+llove::GlobalPtr llove::ConstGlobal::Reflect(Context& context) const
+{
+    TypePtr type;
+    Type::Reflect(context, m_Type, type);
+
+    ExpressionPtr value;
+    m_Value->Reflect(context, value);
+
+    return std::make_unique<ConstGlobal>(m_Loc, m_IsExport, m_Name, std::move(type), std::move(value));
+}
+
 void llove::ConstGlobal::Gen(Builder& builder) const
 {
     auto value = m_Value->GenVal(builder, m_Type);
@@ -27,16 +44,19 @@ void llove::ConstGlobal::Gen(Builder& builder) const
     builder.SetValue(m_Name, std::move(value));
 }
 
-std::pair<
-    std::string,
-    llove::ValuePtr>
-llove::ConstGlobal::GenImport(
+llove::TemplateInstancePtr llove::ConstGlobal::GenTemplate(
+    Builder* /* builder */,
+    Context& /* context */,
+    std::string /* name */) const
+{
+    Error(m_Loc, "consts do not support templating");
+}
+
+llove::Import llove::ConstGlobal::GenImport(
     Context& /* context */,
     Builder& builder,
     const std::string& as,
-    const std::map<
-        std::string,
-        std::string>& symbols) const
+    const ImportSymbols& symbols) const
 {
     if (!m_IsExport)
         return {};

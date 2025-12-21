@@ -1,7 +1,8 @@
-import * from "std/unique.lov";
-import { format } from "std/format.lov";
+import { format }      from "std/format.lov";
+import { make_unique } from "std/unique.lov";
 
-class Foo<B, A, R> {
+template<B, A, R>
+class Foo {
 
     public create(b: B, a: A, r: R) [ b, a, r ] {
     }

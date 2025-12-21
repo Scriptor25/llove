@@ -6,7 +6,7 @@ type vec3 = {
     mut z: f64,
 };
 
-define +(&l: vec3, &r: vec3): vec3 {
+function +(&l: vec3, &r: vec3): vec3 {
     ret {
         x: l.x + r.x,
         y: l.y + r.y,
@@ -14,7 +14,7 @@ define +(&l: vec3, &r: vec3): vec3 {
     };
 }
 
-define -(&l: vec3, &r: vec3): vec3 {
+function -(&l: vec3, &r: vec3): vec3 {
     ret {
         x: l.x - r.x,
         y: l.y - r.y,
@@ -22,7 +22,7 @@ define -(&l: vec3, &r: vec3): vec3 {
     };
 }
 
-define foo(mut bar: i32) {
+function foo(mut bar: i32) {
     bar = bar + 1;
     bar = bar - 1;
     bar += 1;

@@ -19,32 +19,32 @@ namespace llove
             const std::string& command_line,
             llvm::DICompileUnit::DebugEmissionKind emission);
 
-        [[nodiscard]] llvm::DIType* GetVoidType() const;
-        [[nodiscard]] llvm::DIType* GetIntegerType(
+        llvm::DIType* GetVoidType() const;
+        llvm::DIType* GetIntegerType(
             bool sign,
             unsigned bits) const;
-        [[nodiscard]] llvm::DIType* GetFloatType(unsigned bits) const;
-        [[nodiscard]] llvm::DIType* GetPointerType() const;
-        [[nodiscard]] llvm::DIType* GetPointerType(llvm::DIType* base) const;
-        [[nodiscard]] llvm::DIType* GetArrayType(
+        llvm::DIType* GetFloatType(unsigned bits) const;
+        llvm::DIType* GetPointerType() const;
+        llvm::DIType* GetPointerType(llvm::DIType* base) const;
+        llvm::DIType* GetArrayType(
             llvm::DIType* base,
             unsigned size) const;
-        [[nodiscard]] llvm::DIType* GetStructType(
+        llvm::DIType* GetStructType(
             const std::vector<llvm::Metadata*>& elements,
             unsigned size) const;
-        [[nodiscard]] llvm::DIType* GetVariadicType() const;
-        [[nodiscard]] llvm::DIType* GetFieldType(
+        llvm::DIType* GetVariadicType() const;
+        llvm::DIType* GetFieldType(
             const std::string& name,
             llvm::DIType* type,
             unsigned size,
             unsigned offset) const;
-        [[nodiscard]] llvm::DIType* GetClassType(const std::string& name) const;
-        [[nodiscard]] llvm::DIType* GetClassType(
+        llvm::DIType* GetClassType(const std::string& name) const;
+        llvm::DIType* GetClassType(
             const std::string& name,
             llvm::DIType* base,
             const std::vector<llvm::Metadata*>& elements,
             unsigned size) const;
-        [[nodiscard]] llvm::DISubroutineType* GetFunctionType(
+        llvm::DISubroutineType* GetFunctionType(
             llvm::DIType* self,
             const std::vector<llvm::Metadata*>& parameters,
             bool variadic,
@@ -86,7 +86,7 @@ namespace llove
         void PopFrame();
 
     protected:
-        [[nodiscard]] llvm::DIScope* GetScope() const;
+        llvm::DIScope* GetScope() const;
 
     private:
         bool m_Strip;

@@ -14,7 +14,8 @@ export const typeid_template: u32 = 't';
 interface malloc(count: u64): [mut];
 interface free(block: []);
 
-define new<T>(mut val: T): T[mut] {
+template<T>
+function new(mut val: T): T[mut] {
     let p: T[mut] = malloc(sizeof T);
     *p = $val;
     ret p;
@@ -249,7 +250,7 @@ export class range_type : type {
     let mut entry: type_ptr;
 }
 
-export define parse(mut typeinfo: u8[]): type_ptr {
+export function parse(mut typeinfo: u8[]): type_ptr {
 
     let id = *(typeinfo as u32[]);
     typeinfo += sizeof u32;
@@ -313,10 +314,10 @@ export define parse(mut typeinfo: u8[]): type_ptr {
     }
 }
 
-define:type mut create(id: u32) [ id ] {
+function:type mut create(id: u32) [ id ] {
 }
 
-define:type mut delete() {
+function:type mut delete() {
     switch (self.id) {
         [typeid_pointer] {
             ((&self) as pointer_type[mut])::delete();
@@ -333,7 +334,7 @@ define:type mut delete() {
     }
 }
 
-define:type mut $(): type {
+function:type mut $(): type {
     switch (self.id) {
         [typeid_void] {
             ret $*((&self) as void_type[mut]);
@@ -365,6 +366,6 @@ define:type mut $(): type {
     }
 }
 
-define:type id(): u32 {
+function:type id(): u32 {
     ret self.id;
 }

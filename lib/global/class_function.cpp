@@ -1,9 +1,10 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
+#include <llove/forward.hpp>
 #include <llove/tree.hpp>
 #include <utility>
 
-llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
+llove::ClassFunctionGlobal::ClassFunctionGlobal(
     Location loc,
     ClassType::Ptr class_type,
     const bool is_mutable,
@@ -27,7 +28,38 @@ llove::ClassDefinitionGlobal::ClassDefinitionGlobal(
 {
 }
 
-void llove::ClassDefinitionGlobal::Gen(Builder& builder) const
+std::string llove::ClassFunctionGlobal::GetName() const
+{
+    return m_Name;
+}
+
+llove::GlobalPtr llove::ClassFunctionGlobal::Reflect(Context& context) const
+{
+    ClassType::Ptr class_type;
+    Type::Reflect(context, m_ClassType, class_type);
+
+    std::vector<Parameter> parameters;
+    for (auto& parameter : m_Parameters)
+    {
+        auto& p = parameters.emplace_back();
+        p.Name = parameter.Name;
+        parameter.Info.Reflect(context, p.Info);
+    }
+
+    Field result;
+    m_Result.Reflect(context, result);
+
+    std::vector<Initializer> initializers;
+    for (auto& initializer : m_Initializers)
+        initializer.Reflect(context, initializers.emplace_back());
+
+    StatementPtr content;
+    m_Content->Reflect(context, content);
+
+    return std::make_unique<ClassFunctionGlobal>(m_Loc, std::move(class_type), m_IsMutable, m_Name, std::move(parameters), m_Variadic, std::move(result), std::move(initializers), std::move(content));
+}
+
+void llove::ClassFunctionGlobal::Gen(Builder& builder) const
 try
 {
     std::vector<Field> parameters;
@@ -69,30 +101,33 @@ try
     agg.Initializers = std::move(initializers);
     agg.Content = std::move(content);
 
-    builder.GenFunction(agg);
+    builder.GenFunction(agg, false);
 }
 catch (ref_exception<ErrorStack>& cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<
-    std::string,
-    llove::ValuePtr>
-llove::ClassDefinitionGlobal::GenImport(
+llove::TemplateInstancePtr llove::ClassFunctionGlobal::GenTemplate(
+    Builder* /* builder */,
+    Context& /* context */,
+    std::string /* name */) const
+{
+    Error(m_Loc, "class functions do not support templating");
+}
+
+llove::Import llove::ClassFunctionGlobal::GenImport(
     Context& /* context */,
     Builder& /* builder */,
     const std::string& /* as */,
-    const std::map<
-        std::string,
-        std::string>& /* symbols */) const
+    const ImportSymbols& /* symbols */) const
 {
     return {};
 }
 
-std::ostream& llove::ClassDefinitionGlobal::Print(std::ostream& stream) const
+std::ostream& llove::ClassFunctionGlobal::Print(std::ostream& stream) const
 {
-    stream << "define:" << m_ClassType->GetName() << ' ' << (m_IsMutable ? "mut " : "") << m_Name << '(';
+    stream << "function:" << m_ClassType->GetName() << ' ' << (m_IsMutable ? "mut " : "") << m_Name << '(';
 
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)
     {

@@ -1,9 +1,10 @@
 #include <llove/builder.hpp>
+#include <llove/forward.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 #include <utility>
 
-llove::DefinitionGlobal::DefinitionGlobal(
+llove::FunctionGlobal::FunctionGlobal(
     Location loc,
     const bool is_export,
     const bool is_interface,
@@ -29,7 +30,27 @@ llove::DefinitionGlobal::DefinitionGlobal(
 {
 }
 
-void llove::DefinitionGlobal::Gen(Builder& builder) const
+std::string llove::FunctionGlobal::GetName() const
+{
+    return m_Name;
+}
+
+llove::GlobalPtr llove::FunctionGlobal::Reflect(Context& context) const
+{
+    std::vector<Parameter> parameters;
+    for (auto& parameter : m_Parameters)
+        parameter.Reflect(context, parameters.emplace_back());
+
+    Field result;
+    m_Result.Reflect(context, result);
+
+    StatementPtr content;
+    m_Content->Reflect(context, content);
+
+    return std::make_unique<FunctionGlobal>(m_Loc, m_IsExport, m_IsInterface, m_IsImplicit, m_IsOperator, m_Name, std::move(parameters), m_Variadic, std::move(result), std::move(content));
+}
+
+void llove::FunctionGlobal::Gen(Builder& builder) const
 try
 {
     StatementPtr content;
@@ -54,16 +75,42 @@ catch (ref_exception<ErrorStack>& cause)
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::pair<
-    std::string,
-    llove::ValuePtr>
-llove::DefinitionGlobal::GenImport(
+llove::TemplateInstancePtr llove::FunctionGlobal::GenTemplate(
+    Builder* builder,
+    Context& context,
+    std::string /* name */) const
+{
+    Assert(!!builder, m_Loc, "builder must not be null");
+
+    StatementPtr content;
+    if (m_Content)
+        m_Content->Reflect(context, content);
+
+    std::vector<Parameter> parameters;
+    for (auto& parameter : m_Parameters)
+        parameter.Reflect(context, parameters.emplace_back());
+
+    Function agg;
+    agg.Loc = m_Loc;
+    agg.IsExport = m_IsExport;
+    agg.IsInterface = m_IsInterface;
+    agg.IsImplicit = m_IsImplicit;
+    agg.Name = m_Name;
+    agg.Parameters = std::move(parameters);
+    agg.Variadic = m_Variadic;
+    agg.Result = m_Result;
+    agg.Content = std::move(content);
+
+    auto callee = builder->GenFunction(agg, false);
+
+    return std::make_unique<FunctionTemplateInstance>(std::move(callee));
+}
+
+llove::Import llove::FunctionGlobal::GenImport(
     Context& /* context */,
     Builder& builder,
     const std::string& as,
-    const std::map<
-        std::string,
-        std::string>& symbols) const
+    const ImportSymbols& symbols) const
 {
     if (!m_IsExport)
         return {};
@@ -100,9 +147,9 @@ llove::DefinitionGlobal::GenImport(
     return { m_Name, std::move(value) };
 }
 
-std::ostream& llove::DefinitionGlobal::Print(std::ostream& stream) const
+std::ostream& llove::FunctionGlobal::Print(std::ostream& stream) const
 {
-    stream << (m_IsExport ? "export " : "") << (m_IsInterface ? "interface " : "define ") << (m_IsImplicit ? "implicit " : "") << m_Name << '(';
+    stream << (m_IsExport ? "export " : "") << (m_IsInterface ? "interface " : "function ") << (m_IsImplicit ? "implicit " : "") << m_Name << '(';
 
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)
     {

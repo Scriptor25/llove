@@ -2,9 +2,7 @@
 
 #include <llove/field.hpp>
 #include <llove/forward.hpp>
-#include <llove/function.hpp>
-#include <llove/reflection.hpp>
-#include <llove/template.hpp>
+#include <llove/tree.hpp>
 #include <llove/type.hpp>
 #include <map>
 #include <string>
@@ -18,9 +16,9 @@ namespace llove
         Context() = default;
         explicit Context(Context* parent);
 
-        [[nodiscard]] Context* GetParent() const;
+        Context* GetParent() const;
 
-        [[nodiscard]] TypePtr GetNamed(const std::string& id) const;
+        TypePtr GetNamed(const std::string& id) const;
         void SetNamed(
             const std::string& id,
             TypePtr type);
@@ -72,52 +70,54 @@ namespace llove
             bool variadic = false,
             std::optional<Field> self = std::nullopt);
 
+        InstanceType::Ptr GetInstance(std::string name);
+        InstanceType::Ptr GetInstance(
+            std::string name,
+            std::vector<TypePtr> arguments);
+
         IntegerType::Ptr GetBoolean();
 
         TypePtr TypeUnion(
             TypePtr left,
             TypePtr right);
 
-        ClassTemplate& PushClassTemplate(
-            bool is_export,
-            std::string name,
-            std::vector<std::pair<
-                std::string,
-                TemplateType::Ptr>> type_parameters,
-            bool is_imported);
-        void PopClassTemplate();
-        ClassTemplate& EmplaceClassTemplate(
-            bool is_export,
-            std::string name,
-            std::vector<std::pair<
-                std::string,
-                TemplateType::Ptr>> type_parameters);
+        void PushTemplate(const std::vector<TemplateParameter>& parameters);
+        void PopTemplate();
 
-        FunctionTemplate& PushDefinitionTemplate(
-            bool is_export,
-            bool is_implicit,
-            Location loc,
-            std::string name,
-            std::vector<std::pair<
-                std::string,
-                TemplateType::Ptr>> type_parameters,
-            bool is_imported);
-        void PopDefinitionTemplate();
+        void CreateTemplate(
+            const std::string& name,
+            TemplateInstancePtr instance);
+        void CreateTemplate(
+            const std::string& name,
+            std::vector<TemplateParameter> parameters,
+            GlobalPtr content);
 
-        TypePtr InstantiateTypeTemplate(
-            std::string name,
-            std::vector<TypePtr> type_arguments,
-            bool is_imported);
-
-        FunctionReference& InstantiateFunctionTemplate(
+        template<InstanceLike T>
+        T& InstantiateTemplate(
             Builder& builder,
-            std::string name,
-            std::vector<TypePtr> type_arguments,
-            bool is_imported);
+            const std::string& name,
+            const std::vector<TypePtr>& type_arguments)
+        {
+            auto instance = InstantiateUniqueTemplate(&builder, name, type_arguments);
+            return *dynamic_cast<T*>(instance);
+        }
 
-        void InstantiateReflections(Builder& builder);
+        template<InstanceLike T>
+        T& InstantiateTemplate(
+            const std::string& name,
+            const std::vector<TypePtr>& type_arguments)
+        {
+            auto instance = InstantiateUniqueTemplate(nullptr, name, type_arguments);
+            return *dynamic_cast<T*>(instance);
+        }
 
-        [[nodiscard]] TypePtr TemplateArgument(const std::string& name) const;
+        TemplateInstance* InstantiateUniqueTemplate(
+            Builder* builder,
+            const std::string& name,
+            const std::vector<TypePtr>& type_arguments);
+
+        bool IsInstantiating() const;
+        TypePtr GetTemplateArgument(const std::string& name) const;
 
     private:
         Context* m_Parent = nullptr;
@@ -125,17 +125,9 @@ namespace llove
         std::map<std::string, TypePtr> m_Types;
         std::map<std::string, TypePtr> m_Named;
 
-        std::vector<std::map<std::string, TemplateType::Ptr>> m_TemplateTypes;
-
-        std::map<std::string, ClassTemplate> m_TypeTemplates;
-        ClassTemplate* m_CurrentTypeTemplate = nullptr;
-
-        std::map<std::string, FunctionTemplate> m_FunctionTemplates;
-        std::map<std::string, FunctionReference> m_FunctionInstances;
-
-        std::vector<const std::map<std::string, TypePtr>*> m_TemplateStack;
-
-        std::vector<ClassReflection> m_ClassReflections;
-        std::vector<DefinitionReflection> m_DefinitionReflections;
+        std::vector<std::vector<TemplateParameter>> m_TemplateParameterStack;
+        std::vector<std::map<std::string, TypePtr>> m_TemplateArgumentStack;
+        std::map<std::string, Template> m_Templates;
+        std::map<std::string, TemplateInstancePtr> m_Instances;
     };
 }

@@ -1,4 +1,5 @@
 #include <llove/parser.hpp>
+#include <llove/tree.hpp>
 
 llove::Location llove::Parser::ParseParameterList(
     std::vector<Parameter>& parameters,
@@ -29,7 +30,7 @@ llove::Location llove::Parser::ParseTemplateParameterList(
         std::string,
         TemplateType::Ptr>>& parameters)
 {
-    return ParseList<std::pair<std::string, TemplateType::Ptr>>(
+    return ParseList<TemplateParameter>(
         parameters,
         [this](auto& element)
         {

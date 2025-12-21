@@ -21,13 +21,13 @@ namespace llove
          * @param strict
          * @return true if not permitted
          */
-        [[nodiscard]] static bool GetCastError(
+        static bool GetCastError(
             const Builder& builder,
             const Field& dst,
             const Field& src,
             unsigned& error,
             bool strict);
-        [[nodiscard]] static bool IsCastable(
+        static bool IsCastable(
             const Builder& builder,
             const Field& dst,
             const Field& src,
@@ -40,10 +40,10 @@ namespace llove
             bool is_reference,
             TypePtr type);
 
-        [[nodiscard]] bool IsMutable() const;
-        [[nodiscard]] bool IsReference() const;
-        [[nodiscard]] bool HasType() const;
-        [[nodiscard]] TypePtr GetType() const;
+        bool IsMutable() const;
+        bool IsReference() const;
+        bool HasType() const;
+        TypePtr GetType() const;
 
         Field& SetIsMutable(bool is_mutable);
         Field& SetIsReference(bool is_reference);
@@ -61,8 +61,8 @@ namespace llove
             ValuePtr value,
             bool unstable_ownership = false) const;
 
-        [[nodiscard]] unsigned SizeBits(Builder& builder) const;
-        [[nodiscard]] std::string Mangle() const;
+        unsigned SizeBits(Builder& builder) const;
+        std::string Mangle() const;
 
         bool TypeInfo(
             Builder& builder,
