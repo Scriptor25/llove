@@ -253,11 +253,17 @@ void llove::Context::CreateTemplate(
     std::vector<TemplateParameter> parameters,
     GlobalPtr content)
 {
+    TemplateInstancePtr instance;
+    if (m_Templates.contains(name))
+    {
+        instance = std::move(m_Templates.at(name).Default);
+    }
+
     m_Templates[name] = {
         name,
         std::move(parameters),
         std::move(content),
-        nullptr,
+        std::move(instance),
     };
 }
 
@@ -275,9 +281,9 @@ llove::TemplateInstance* llove::Context::InstantiateUniqueTemplate(
     }
     index += '>';
 
-    auto contains = m_Instances.contains(index);
+    const auto contains = m_Instances.contains(index);
     if (contains)
-        if (auto ptr = m_Instances.at(index).get())
+        if (const auto ptr = m_Instances.at(index).get())
             return ptr;
 
     Assert(m_Templates.contains(name), "undefined template name {}", name);

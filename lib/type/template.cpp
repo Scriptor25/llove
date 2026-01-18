@@ -50,6 +50,8 @@ bool llove::TemplateType::TypeInfo(
 
 std::string llove::TemplateType::Mangle() const
 {
+    // TODO: give more context, e.g. instead of "t1_T": "t10_my_class.T" or
+    // TODO: "t13_my_function.T"
     return 't' + std::to_string(m_Name.size()) + '_' + m_Name;
 }
 
