@@ -11,17 +11,7 @@ if (MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif ()
 
-set(YAML_CPP_BUILD_CONTRIB OFF)
-set(YAML_CPP_BUILD_TOOLS OFF)
-set(YAML_BUILD_SHARED_LIBS OFF)
-set(YAML_CPP_INSTALL OFF)
-set(YAML_CPP_FORMAT_SOURCE OFF)
-set(YAML_CPP_DISABLE_UNINSTALL OFF)
-set(YAML_USE_SYSTEM_GTEST OFF)
-set(YAML_ENABLE_PIC ON)
-
-add_subdirectory(deps/yaml-cpp)
-
+find_package(yaml-cpp REQUIRED)
 find_package(LLVM 21.1 REQUIRED CONFIG)
 
 execute_process(
