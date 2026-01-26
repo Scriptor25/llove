@@ -28,6 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Cache
+        id: cache
         uses: actions/cache@v4
         with:
           path: |
@@ -36,6 +37,7 @@ jobs:
           key: windows-cache
 
       - name: Install Dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           vcpkg install yaml-cpp
