@@ -51,11 +51,11 @@ jobs:
           7z x llvm.tar.xz
           7z x llvm.tar
           Move-Item clang+llvm-21.1.6-x86_64-pc-windows-msvc C:\\llvm
-          echo "C:\\llvm\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Verify LLVM
         shell: pwsh
         run: |
+          echo "C:\\llvm\\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           llvm-config --version
 
       - name: Configure CMake
