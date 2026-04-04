@@ -27,7 +27,7 @@ namespace llove
     public:
         explicit FunctionTemplateInstance(FunctionReference callee);
 
-        const FunctionReference& GetCallee() const;
+        const FunctionReference &GetCallee() const;
 
     private:
         FunctionReference m_Callee;

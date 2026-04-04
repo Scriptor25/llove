@@ -3,11 +3,7 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::UnaryExpression::UnaryExpression(
-    Location loc,
-    std::string operator_,
-    ExpressionPtr operand,
-    const bool suffix)
+llove::UnaryExpression::UnaryExpression(Location loc, std::string operator_, ExpressionPtr operand, const bool suffix)
     : Expression(std::move(loc)),
       m_Operator(std::move(operator_)),
       m_Operand(std::move(operand)),
@@ -15,10 +11,7 @@ llove::UnaryExpression::UnaryExpression(
 {
 }
 
-llove::ValuePtr llove::UnaryExpression::GenVal(
-    Builder& builder,
-    TypePtr expect) const
-try
+llove::ValuePtr llove::UnaryExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     auto operand = m_Operand->GenVal(builder, std::move(expect));
 
@@ -42,13 +35,12 @@ try
         operand->AsField(),
         m_Suffix ? m_Operator : std::string{});
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::UnaryExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::UnaryExpression::Reflect(Context &context) const try
 {
     ExpressionPtr operand;
     if (m_Operand)
@@ -56,12 +48,12 @@ try
 
     return std::make_unique<UnaryExpression>(m_Loc, m_Operator, std::move(operand), m_Suffix);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::UnaryExpression::Print(std::ostream& stream) const
+std::ostream &llove::UnaryExpression::Print(std::ostream &stream) const
 {
     if (m_Suffix)
         return stream << m_Operand << m_Operator;

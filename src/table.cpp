@@ -1,19 +1,14 @@
-#include <cli/table.hpp>
 #include <ostream>
 
+#include <cli/table.hpp>
+
 template<typename T>
-static T ceil_div(
-    T lhs,
-    T rhs)
+static constexpr T ceil_div(T lhs, T rhs)
 {
     return lhs / rhs + (lhs % rhs != 0);
 }
 
-cli::Table::Table(
-    std::ostream& stream,
-    const unsigned columns,
-    const unsigned console_width,
-    const bool ascii)
+cli::Table::Table(std::ostream &stream, const unsigned columns, const unsigned console_width, const bool ascii)
     : m_Stream(stream),
       m_Columns(columns),
       m_MaxColumnWidth(console_width / columns - (3 * columns + 1)),
@@ -28,8 +23,8 @@ cli::Table::~Table()
 
     for (unsigned i = 0; i < m_Cells.size(); ++i)
     {
-        auto& width = widths.at(i % m_Columns);
-        auto& height = heights.at(i / m_Columns);
+        auto &width = widths.at(i % m_Columns);
+        auto &height = heights.at(i / m_Columns);
 
         auto cell_width = m_Cells.at(i).size();
         auto cell_height = 1u;
@@ -56,29 +51,29 @@ cli::Table::~Table()
     PrintBorder(widths, "└", "┴", "┘");
 }
 
-cli::Table& cli::Table::operator<<(const std::string& cell)
+cli::Table &cli::Table::operator<<(const std::string &cell)
 {
-    m_Cells.emplace_back(cell);
+    m_Cells.push_back(cell);
     return *this;
 }
 
-cli::Table& cli::Table::operator<<(std::string&& cell)
+cli::Table &cli::Table::operator<<(std::string &&cell)
 {
-    m_Cells.emplace_back(cell);
+    m_Cells.push_back(cell);
     return *this;
 }
 
-cli::Table& cli::Table::operator<<(const char* cell)
+cli::Table &cli::Table::operator<<(const char *cell)
 {
-    m_Cells.emplace_back(cell);
+    m_Cells.push_back(cell);
     return *this;
 }
 
 void cli::Table::PrintBorder(
-    const std::vector<unsigned>& widths,
-    std::string&& begin,
-    std::string&& cross,
-    std::string&& end) const
+    const std::vector<unsigned> &widths,
+    std::string &&begin,
+    std::string &&cross,
+    std::string &&end) const
 {
     if (PRINT_BORDER)
     {
@@ -98,10 +93,7 @@ void cli::Table::PrintBorder(
     }
 }
 
-void cli::Table::PrintData(
-    const std::vector<unsigned>& widths,
-    const unsigned height,
-    const unsigned index) const
+void cli::Table::PrintData(const std::vector<unsigned> &widths, const unsigned height, const unsigned index) const
 {
     std::vector<unsigned> offsets(m_Columns);
 
@@ -113,10 +105,10 @@ void cli::Table::PrintData(
         }
         for (unsigned j = 0; j < m_Columns; ++j)
         {
-            const auto& cell_data = m_Cells.at(index + j);
+            const auto &cell_data = m_Cells.at(index + j);
 
             const auto width = widths.at(j);
-            auto& cell_offset = offsets.at(j);
+            auto &cell_offset = offsets.at(j);
 
             auto [cell, offset] = TrimLine(cell_data, cell_offset, width);
             cell_offset = offset;
@@ -148,13 +140,7 @@ void cli::Table::PrintData(
     }
 }
 
-std::pair<
-    std::string,
-    unsigned>
-cli::Table::TrimLine(
-    std::string line,
-    unsigned offset,
-    const unsigned max_width)
+std::pair<std::string, unsigned> cli::Table::TrimLine(std::string line, unsigned offset, const unsigned max_width)
 {
     constexpr std::string_view FILTER_TOKEN = " \t\v\n\r";
 
@@ -184,7 +170,8 @@ cli::Table::TrimLine(
         return { line, static_cast<unsigned>(offset + line.size()) };
     }
 
-    if (const auto last_space = line.find_last_of(FILTER_TOKEN, max_width); last_space == std::string::npos || last_space == 0)
+    if (const auto last_space = line.find_last_of(FILTER_TOKEN, max_width);
+        last_space == std::string::npos || last_space == 0)
     {
         line = line.substr(0, max_width);
         offset += max_width;

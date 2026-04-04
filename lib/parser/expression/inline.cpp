@@ -19,7 +19,7 @@ llove::ExpressionPtr llove::Parser::ParseInlineExpression()
         while (!At(TokenType_Other, "]"))
         {
             auto symbol = Expect(TokenType_Symbol, "sideeffect", "alignstack", "inteldialect", "unwind");
-            auto& flag = symbol.Value;
+            auto &flag = symbol.Value;
             if (flag == "sideeffect")
                 sideeffect = true;
             else if (flag == "alignstack")
@@ -73,7 +73,7 @@ llove::ExpressionPtr llove::Parser::ParseInlineExpression()
         {
             auto constraint = Skip().Value;
 
-            clobbers.emplace_back(std::move(constraint));
+            clobbers.push_back(std::move(constraint));
 
             if (!SkipIf(TokenType_Other, ","))
                 break;
@@ -82,5 +82,14 @@ llove::ExpressionPtr llove::Parser::ParseInlineExpression()
 
     Expect(TokenType_Other, ")");
 
-    return std::make_unique<InlineExpression>(std::move(loc), std::move(asm_string), std::move(dst_operands), std::move(src_operands), std::move(clobbers), sideeffect, alignstack, inteldialect, unwind);
+    return std::make_unique<InlineExpression>(
+        std::move(loc),
+        std::move(asm_string),
+        std::move(dst_operands),
+        std::move(src_operands),
+        std::move(clobbers),
+        sideeffect,
+        alignstack,
+        inteldialect,
+        unwind);
 }

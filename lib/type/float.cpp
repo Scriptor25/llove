@@ -23,31 +23,29 @@ bool llove::FloatType::IsFloat() const
     return true;
 }
 
-llvm::Type* llove::FloatType::GenIR(Builder& builder)
+llvm::Type *llove::FloatType::GenIR(Builder &builder)
 {
     if (!m_IRType)
         m_IRType = builder.GetFloatType(m_Bits);
     return m_IRType;
 }
 
-llvm::DIType* llove::FloatType::GenDI(Builder& builder)
+llvm::DIType *llove::FloatType::GenDI(Builder &builder)
 {
     if (!m_DIType)
         m_DIType = builder.GetDebug().GetFloatType(m_Bits);
     return m_DIType;
 }
 
-llove::TypePtr llove::FloatType::Reflect(Context& context) const
+llove::TypePtr llove::FloatType::Reflect(Context &context) const
 {
     return context.GetFloat(m_Bits);
 }
 
-bool llove::FloatType::TypeInfo(
-    Builder& builder,
-    std::vector<llvm::Constant*>& dst) const
+bool llove::FloatType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
 {
-    dst.emplace_back(builder.GetI32(ID));
-    dst.emplace_back(builder.GetI32(m_Bits));
+    dst.push_back(builder.GetI32(ID));
+    dst.push_back(builder.GetI32(m_Bits));
     return true;
 }
 
@@ -56,7 +54,7 @@ std::string llove::FloatType::Mangle() const
     return 'f' + std::to_string(m_Bits) + '_';
 }
 
-std::ostream& llove::FloatType::Print(std::ostream& stream) const
+std::ostream &llove::FloatType::Print(std::ostream &stream) const
 {
     return stream << 'f' << m_Bits;
 }

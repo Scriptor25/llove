@@ -2,48 +2,39 @@
 #include <llove/context.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
+
 #include <llvm/IR/Verifier.h>
 
-std::string llove::Builder::Mangle(const Function& function)
+std::string llove::Builder::Mangle(const Function &function)
 {
     if (function.IsInterface)
-    {
         return function.Name;
-    }
 
     auto mangled = '?' + std::to_string(function.Name.size()) + '_' + function.Name;
 
     if (function.Class)
     {
-        auto& class_name = function.Class->GetName();
+        auto &class_name = function.Class->GetName();
         mangled += (function.IsMutable ? 'm' : 'c') + std::to_string(class_name.size()) + '_' + class_name;
     }
 
     if (function.Variadic.first)
-    {
         mangled += 'v';
-    }
 
     mangled += std::to_string(function.Parameters.size()) + '_';
-    for (auto& parameter : function.Parameters)
-    {
-        mangled += parameter.Info.Mangle();
-    }
+    for (const auto &[info_, name_] : function.Parameters)
+        mangled += info_.Mangle();
 
     return mangled + function.Result.Mangle();
 }
 
-llove::FunctionReference llove::Builder::GenFunction(
-    const Function& function,
-    const bool register_function)
+llove::FunctionReference llove::Builder::GenFunction(const Function &function, const bool register_function)
 {
     const auto mangled = Mangle(function);
 
     std::vector<Field> type_parameters;
-    for (auto& parameter : function.Parameters)
-    {
-        type_parameters.emplace_back(parameter.Info);
-    }
+    for (const auto &[info_, name_] : function.Parameters)
+        type_parameters.emplace_back(info_);
 
     std::optional<Field> self;
     FunctionType::Ptr callee_type;
@@ -58,36 +49,23 @@ llove::FunctionReference llove::Builder::GenFunction(
             *self);
     }
     else
-    {
-        callee_type = m_Context.GetFunction(
-            function.Result,
-            std::move(type_parameters),
-            function.Variadic.first);
-    }
+        callee_type = m_Context.GetFunction(function.Result, std::move(type_parameters), function.Variadic.first);
 
-    const auto callee = GetOrCreateFunction(
-        mangled,
-        callee_type,
-        function.IsExport || function.IsInterface);
+    const auto callee = GetOrCreateFunction(mangled, callee_type, function.IsExport || function.IsInterface);
 
-    auto reference = register_function ? PushFunction(
-                                             function.IsPublic,
-                                             function.IsImplicit,
-                                             function.Name,
-                                             callee_type,
-                                             callee)
-                                       : FunctionReference{
-                                             .IsPublic = function.IsPublic,
-                                             .IsImplicit = function.IsImplicit,
-                                             .Name = function.Name,
-                                             .Type = callee_type,
-                                             .Callee = callee,
-                                         };
+    auto reference = register_function
+                         ? PushFunction(function.IsPublic, function.IsImplicit, function.Name, callee_type, callee)
+                         : FunctionReference
+                         {
+                             .IsPublic = function.IsPublic,
+                             .IsImplicit = function.IsImplicit,
+                             .Name = function.Name,
+                             .Type = callee_type,
+                             .Callee = callee,
+                         };
 
     if (!function.Content)
-    {
         return reference;
-    }
 
     Assert(callee->empty(), "function is already defined");
 
@@ -106,7 +84,8 @@ llove::FunctionReference llove::Builder::GenFunction(
     m_DebugBuilder.EmitLoc(*this);
     PushCleanFrame(function.Loc);
 
-    if (auto self_pointer = GenParameters(callee, function.Parameters, function.Variadic, self); self_pointer && function.Name == "create")
+    if (auto self_pointer = GenParameters(callee, function.Parameters, function.Variadic, self);
+        self_pointer && function.Name == "create")
     {
         EmitLoc(function.Loc);
 
@@ -114,28 +93,28 @@ llove::FunctionReference llove::Builder::GenFunction(
         auto self_llvm_type = self_class_type->GenIR(*this);
 
         self_class_type->ForEachMember(
-            [this, self_llvm_type, self_pointer](auto index, auto& member)
+            [&](const unsigned index, const ClassMemberReference &member)
             {
-                auto type = member.Info.GenIRType(*this);
-                auto value = llvm::Constant::getNullValue(type);
-                auto pointer = CreateStructGEP(self_llvm_type, self_pointer, index);
+                const auto type = member.Info.GenIRType(*this);
+                const auto value = llvm::Constant::getNullValue(type);
+                const auto pointer = CreateStructGEP(self_llvm_type, self_pointer, index);
 
                 CreateStore(value, pointer);
             });
 
         // TODO: set virtual pointers
 
-        for (auto& initializer : function.Initializers)
+        for (auto &initializer : function.Initializers)
         {
             std::vector<Field> argument_fields;
             std::vector<ValuePtr> argument_values;
-            for (auto& argument : initializer.Arguments)
+            for (auto &argument : initializer.Arguments)
             {
                 auto argument_value = argument->GenVal(
                     *this,
                     initializer.Arguments.size() == 1 ? self_class_type : nullptr);
-                argument_fields.emplace_back(argument_value->AsField());
-                argument_values.emplace_back(std::move(argument_value));
+                argument_fields.push_back(argument_value->AsField());
+                argument_values.push_back(std::move(argument_value));
             }
 
             if (initializer.Name == "create")
@@ -147,19 +126,20 @@ llove::FunctionReference llove::Builder::GenFunction(
                 auto candidate = FindFunction(constructors, argument_fields, *self, false);
                 Assert(candidate.has_value(), "no suitable candidate");
 
-                CreateCall(*candidate, std::move(argument_values), Value::CreateL(self->GetType(), self_pointer, self->IsMutable()));
+                CreateCall(
+                    *candidate,
+                    std::move(argument_values),
+                    Value::CreateL(self->GetType(), self_pointer, self->IsMutable()));
                 continue;
             }
 
             auto index = self_class_type->GetMemberIndex(initializer.Name);
-            auto member = self_class_type->GetMember(index);
+            auto &member = self_class_type->GetMember(index);
             auto member_pointer = CreateStructGEP(self_llvm_type, self_pointer, index);
 
             ValuePtr value;
             if (initializer.Value)
-            {
                 value = initializer.Value->GenVal(*this, member.GetType());
-            }
 
             if (member.IsReference())
             {
@@ -168,9 +148,7 @@ llove::FunctionReference llove::Builder::GenFunction(
                 Assert(value->IsReference(), "reference from rvalue");
                 Assert(
                     value->GetType() == member.GetType()
-                        || (value->GetType()->IsClass()
-                            && As<ClassType>(value->GetType())
-                                   ->InheritsFrom(member.GetType())),
+                    || (value->GetType()->IsClass() && As<ClassType>(value->GetType())->InheritsFrom(member.GetType())),
                     "reference type mismatch");
                 Assert(!member.IsMutable() || value->IsMutable(), "reference mutability violation");
 
@@ -188,13 +166,11 @@ llove::FunctionReference llove::Builder::GenFunction(
                     if (value)
                     {
                         if (const auto candidate = FindFunction(
-                                constructors,
-                                { value->AsField() },
-                                member_self->AsField(),
-                                true))
-                        {
+                            constructors,
+                            { value->AsField() },
+                            member_self->AsField(),
+                            true))
                             CreateCall(*candidate, { std::move(value) }, member_self);
-                        }
                         else
                         {
                             Assert(!value->IsReference(), "illegal implicit copy");
@@ -227,14 +203,10 @@ llove::FunctionReference llove::Builder::GenFunction(
                     {
                         Assert(argument_values.empty(), "cannot construct non-class value");
 
-                        value = Value::CreateR(
-                            member.GetType(),
-                            llvm::Constant::getNullValue(member.GenIRType(*this)));
+                        value = Value::CreateR(member.GetType(), llvm::Constant::getNullValue(member.GenIRType(*this)));
                     }
                     else if (member.GetType())
-                    {
                         value = CreateCast(std::move(value), member.GetType(), true);
-                    }
 
                     CreateStore(value->Load(*this), member_pointer);
                 }
@@ -247,12 +219,10 @@ llove::FunctionReference llove::Builder::GenFunction(
 
     m_DebugBuilder.EndFunction();
 
-    for (auto& block : *callee)
+    for (auto &block : *callee)
     {
         if (block.getTerminator())
-        {
             continue;
-        }
 
         if (function.Result.GetType()->IsVoid())
         {
@@ -277,18 +247,16 @@ llove::FunctionReference llove::Builder::GenFunction(
     return reference;
 }
 
-llvm::Value* llove::Builder::GenParameters(
-    llvm::Function* parent,
-    const std::vector<Parameter>& parameters,
-    const std::pair<
-        bool,
-        std::string>& variadic,
-    const std::optional<Field>& self)
+llvm::Value *llove::Builder::GenParameters(
+    llvm::Function *parent,
+    const std::vector<Parameter> &parameters,
+    const std::pair<bool, std::string> &variadic,
+    const std::optional<Field> &self)
 {
     auto iterator = parent->arg_begin();
     auto index = 1u;
 
-    llvm::Value* self_pointer = nullptr;
+    llvm::Value *self_pointer = nullptr;
     if (self)
     {
         const auto argument = iterator++;
@@ -301,48 +269,35 @@ llvm::Value* llove::Builder::GenParameters(
         SetValue("self", std::move(storage));
     }
 
-    for (auto& parameter : parameters)
+    for (const auto &[info_, name_] : parameters)
     {
         const auto argument = iterator++;
-        argument->setName(parameter.Name);
+        argument->setName(name_);
 
         ValuePtr storage;
-        if (parameter.Info.IsReference())
+        if (info_.IsReference())
+            storage = Value::CreateL(info_.GetType(), argument, info_.IsMutable());
+        else if (info_.GetType()->IsClass())
         {
-            storage = Value::CreateL(
-                parameter.Info.GetType(),
-                argument,
-                parameter.Info.IsMutable());
-        }
-        else if (parameter.Info.GetType()->IsClass())
-        {
-            const auto pointer = CreateAlloca(parameter.Info.GetType()->GenIR(*this), parent);
+            const auto pointer = CreateAlloca(info_.GetType()->GenIR(*this), parent);
             m_LLVMBuilder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(
-                parameter.Info.GetType(),
-                pointer,
-                parameter.Info.IsMutable());
+            storage = Value::CreateL(info_.GetType(), pointer, info_.IsMutable());
 
-            PushDestructor(pointer, As<ClassType>(parameter.Info.GetType()));
+            PushDestructor(pointer, As<ClassType>(info_.GetType()));
         }
-        else if (parameter.Info.IsMutable())
+        else if (info_.IsMutable())
         {
-            const auto pointer = CreateAlloca(parameter.Info.GetType()->GenIR(*this), parent);
+            const auto pointer = CreateAlloca(info_.GetType()->GenIR(*this), parent);
             m_LLVMBuilder.CreateStore(argument, pointer);
 
-            storage = Value::CreateL(
-                parameter.Info.GetType(),
-                pointer,
-                parameter.Info.IsMutable());
+            storage = Value::CreateL(info_.GetType(), pointer, info_.IsMutable());
         }
         else
-        {
-            storage = Value::CreateR(parameter.Info.GetType(), argument);
-        }
+            storage = Value::CreateR(info_.GetType(), argument);
 
-        m_DebugBuilder.CreateParameter(*this, parameter.Name, index++, storage);
-        SetValue(parameter.Name, std::move(storage));
+        m_DebugBuilder.CreateParameter(*this, name_, index++, storage);
+        SetValue(name_, std::move(storage));
     }
 
     if (variadic.first && !variadic.second.empty())

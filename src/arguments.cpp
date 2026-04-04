@@ -1,9 +1,11 @@
-#include <cli/arguments.hpp>
 #include <config.h>
-#include <llove/error.hpp>
+
 #include <ranges>
 
-static std::string config_yaml = { reinterpret_cast<const char*>(config_data), config_data_len };
+#include <cli/arguments.hpp>
+#include <llove/error.hpp>
+
+static std::string config_yaml = { reinterpret_cast<const char *>(config_data), config_data_len };
 
 static std::vector<std::string> split_string(
     std::string value,
@@ -12,29 +14,29 @@ static std::vector<std::string> split_string(
     std::vector<std::string> values;
     for (size_t pos; (pos = value.find(delimiter)) != std::string::npos;)
     {
-        values.emplace_back(value.substr(0, pos));
+        values.push_back(value.substr(0, pos));
         value = value.substr(pos + 1);
     }
     if (!value.empty())
     {
-        values.emplace_back(value);
+        values.push_back(value);
     }
     return values;
 }
 
 cli::Arguments::Arguments(
-    const char* const* begin,
-    const char* const* end)
+    const char *const*begin,
+    const char *const*end)
 {
     m_Templates = YAML::Load(config_yaml).as<std::map<std::string, OptionTemplate>>();
 
     for (auto i = begin; i != end; ++i)
     {
         auto arg = split_string(*i, '=');
-        auto& pat = arg.at(0);
+        auto &pat = arg.at(0);
 
         auto match = false;
-        for (auto& [id, template_] : m_Templates)
+        for (auto &[id, template_] : m_Templates)
         {
             if (!template_.Pattern.contains(pat))
             {
@@ -85,7 +87,7 @@ cli::Arguments::Arguments(
                 }
 
                 auto vals = split_string(val_str, ',');
-                for (auto& val : vals)
+                for (auto &val : vals)
                 {
                     template_.Filter->Validate(pat, val);
                 }
@@ -115,7 +117,7 @@ std::string cli::Arguments::BuildCommandLine() const
     std::stringstream stream;
 
     auto first = true;
-    for (auto& id : m_Flags)
+    for (auto &id : m_Flags)
     {
         if (first)
         {
@@ -127,7 +129,7 @@ std::string cli::Arguments::BuildCommandLine() const
         }
         stream << '"' << *m_Templates.at(id).Pattern.begin() << '"';
     }
-    for (auto& [id, value] : m_Values)
+    for (auto &[id, value] : m_Values)
     {
         if (first)
         {
@@ -139,7 +141,7 @@ std::string cli::Arguments::BuildCommandLine() const
         }
         stream << '"' << *m_Templates.at(id).Pattern.begin() << '=' << value << '"';
     }
-    for (auto& [id, values] : m_Arrays)
+    for (auto &[id, values] : m_Arrays)
     {
         if (first)
         {
@@ -166,45 +168,47 @@ std::string cli::Arguments::BuildCommandLine() const
 
 const std::map<
     std::string,
-    cli::OptionTemplate>&
-cli::Arguments::templates() const
+    cli::OptionTemplate> &cli::Arguments::templates() const
 {
     return m_Templates;
 }
 
-const std::string& cli::Arguments::filename() const
+const std::string &cli::Arguments::filename() const
 {
     return m_Filename;
 }
 
-bool cli::Arguments::has_none_except(const std::set<std::string>& id_set) const
+bool cli::Arguments::has_none_except(const std::set<std::string> &id_set) const
 {
-    const auto pred = [&id_set](const std::string& id) -> bool
+    const auto pred = [&](const std::string &id) -> bool
     {
         return id_set.contains(id);
     };
 
-    return m_Filename.empty() && std::ranges::all_of(m_Flags, pred) && std::ranges::all_of(m_Values | std::views::keys, pred) && std::ranges::all_of(m_Arrays | std::views::keys, pred);
+    return m_Filename.empty()
+           && std::ranges::all_of(m_Flags, pred)
+           && std::ranges::all_of(m_Values | std::views::keys, pred)
+           && std::ranges::all_of(m_Arrays | std::views::keys, pred);
 }
 
-bool cli::Arguments::flag(const std::string& id) const
+bool cli::Arguments::flag(const std::string &id) const
 {
     return m_Flags.contains(id);
 }
 
-std::optional<std::string> cli::Arguments::value(const std::string& id) const
+std::optional<std::string> cli::Arguments::value(const std::string &id) const
 {
     return m_Values.contains(id) ? std::optional{ m_Values.at(id) } : std::nullopt;
 }
 
-std::optional<std::vector<std::string>> cli::Arguments::array(const std::string& id) const
+std::optional<std::vector<std::string>> cli::Arguments::array(const std::string &id) const
 {
     return m_Arrays.contains(id) ? std::optional{ m_Arrays.at(id) } : std::nullopt;
 }
 
 bool cli::Arguments::value(
-    const std::string& id,
-    std::string& dst) const
+    const std::string &id,
+    std::string &dst) const
 {
     if (!m_Values.contains(id))
     {
@@ -215,8 +219,8 @@ bool cli::Arguments::value(
 }
 
 bool cli::Arguments::array(
-    const std::string& id,
-    std::vector<std::string>& dst) const
+    const std::string &id,
+    std::vector<std::string> &dst) const
 {
     if (!m_Arrays.contains(id))
     {
@@ -227,33 +231,33 @@ bool cli::Arguments::array(
 }
 
 bool cli::Arguments::set(
-    const std::string& id,
-    std::set<std::string>& dst) const
+    const std::string &id,
+    std::set<std::string> &dst) const
 {
     if (!m_Arrays.contains(id))
     {
         return false;
     }
-    auto& array = m_Arrays.at(id);
+    auto &array = m_Arrays.at(id);
     dst = std::set(array.begin(), array.end());
     return true;
 }
 
-bool cli::Arguments::has_value(const std::string& id) const
+bool cli::Arguments::has_value(const std::string &id) const
 {
     return m_Values.contains(id);
 }
 
 bool cli::Arguments::has_value_and_is(
-    const std::string& id,
-    const std::string& value) const
+    const std::string &id,
+    const std::string &value) const
 {
     return m_Values.contains(id) && m_Values.at(id) == value;
 }
 
 bool cli::Arguments::has_value_and_is_not(
-    const std::string& id,
-    const std::string& value) const
+    const std::string &id,
+    const std::string &value) const
 {
     return m_Values.contains(id) && m_Values.at(id) != value;
 }

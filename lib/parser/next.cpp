@@ -1,11 +1,10 @@
 #include <istream>
-#include <llove/parser.hpp>
 #include <map>
 #include <set>
 
-static bool isdigit(
-    const int c,
-    const int base)
+#include <llove/parser.hpp>
+
+static bool isdigit(const int c, const int base)
 {
     switch (base)
     {
@@ -32,8 +31,8 @@ static unsigned ctoi(const int c)
 }
 
 void llove::Parser::RemoveEscape(
-    std::string& raw,
-    std::string& value)
+    std::string &raw,
+    std::string &value)
 {
     if (m_Buffer != '\\')
     {
@@ -113,25 +112,26 @@ int llove::Parser::Get()
 
 llove::Token llove::Parser::Next()
 {
-    static const std::map<std::string, std::set<int>> compound_map{
-        {  "+",      { '=', '+' } },
-        {  "-", { '=', '-', '>' } },
-        {  "*",           { '=' } },
-        {  "/",           { '=' } },
-        {  "%",           { '=' } },
-        {  "&",      { '=', '&' } },
-        {  "|",      { '=', '|' } },
-        {  "^",           { '=' } },
-        { "&&",           { '=' } },
-        { "||",           { '=' } },
-        {  "=",      { '=', '>' } },
-        {  "<",      { '=', '<' } },
-        {  ">",      { '=', '>' } },
-        {  "!",           { '=' } },
-        {  "~",           { '=' } },
-        {  ".",           { '.' } },
-        { "..",           { '.' } },
-        {  ":",           { ':' } },
+    static const std::map<std::string, std::set<int>> compound_map
+    {
+        { "+", { '=', '+' } },
+        { "-", { '=', '-', '>' } },
+        { "*", { '=' } },
+        { "/", { '=' } },
+        { "%", { '=' } },
+        { "&", { '=', '&' } },
+        { "|", { '=', '|' } },
+        { "^", { '=' } },
+        { "&&", { '=' } },
+        { "||", { '=' } },
+        { "=", { '=', '>' } },
+        { "<", { '=', '<' } },
+        { ">", { '=', '>' } },
+        { "!", { '=' } },
+        { "~", { '=' } },
+        { ".", { '.' } },
+        { "..", { '.' } },
+        { ":", { ':' } },
     };
 
     enum

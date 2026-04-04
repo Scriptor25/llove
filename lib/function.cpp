@@ -1,8 +1,9 @@
-#include <llove/function.hpp>
-#include <llove/tree.hpp>
 #include <utility>
 
-std::ostream& llove::FunctionReference::Print(std::ostream& stream) const
+#include <llove/function.hpp>
+#include <llove/tree.hpp>
+
+std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
 {
     if (IsPublic)
         stream << "public ";
@@ -30,23 +31,18 @@ std::ostream& llove::FunctionReference::Print(std::ostream& stream) const
     return stream << "): " << Type->GetResult();
 }
 
-llove::Initializer::Initializer(
-    std::string name,
-    ExpressionPtr value,
-    std::vector<ExpressionPtr> arguments)
+llove::Initializer::Initializer(std::string name, ExpressionPtr value, std::vector<ExpressionPtr> arguments)
     : Name(std::move(name)),
       Value(std::move(value)),
       Arguments(std::move(arguments))
 {
 }
 
-void llove::Initializer::Reflect(
-    Context& context,
-    Initializer& initializer) const
+void llove::Initializer::Reflect(Context &context, Initializer &initializer) const
 {
     initializer.Name = Name;
     if (Value)
         Value->Reflect(context, initializer.Value);
-    for (auto& argument : Arguments)
+    for (auto &argument : Arguments)
         argument->Reflect(context, initializer.Arguments.emplace_back());
 }

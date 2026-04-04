@@ -1,8 +1,9 @@
 #include <algorithm>
+
 #include <llove/error.hpp>
 #include <llove/parser.hpp>
 
-llove::Token& llove::Parser::Pop()
+llove::Token &llove::Parser::Pop()
 {
     return m_Token = Next();
 }
@@ -14,27 +15,24 @@ llove::Token llove::Parser::Skip()
     return token;
 }
 
-bool llove::Parser::At(
-    const TokenType type,
-    const std::string& value) const
+bool llove::Parser::At(const TokenType type, const std::string &value) const
 {
     return m_Token.Type == type && (value.empty() || m_Token.Value == value);
 }
 
-bool llove::Parser::At(
-    const TokenType type,
-    const std::vector<std::string>& values) const
+bool llove::Parser::At(const TokenType type, const std::vector<std::string> &values) const
 {
     if (m_Token.Type != type)
         return false;
     return std::ranges::any_of(
         values,
-        [this](auto& value) { return m_Token.Value == value; });
+        [&](const std::string &value)
+        {
+            return m_Token.Value == value;
+        });
 }
 
-bool llove::Parser::SkipIf(
-    const TokenType type,
-    const std::string& value)
+bool llove::Parser::SkipIf(const TokenType type, const std::string &value)
 {
     if (At(type, value))
     {
@@ -44,9 +42,7 @@ bool llove::Parser::SkipIf(
     return false;
 }
 
-llove::Token llove::Parser::Expect(
-    TokenType type,
-    const std::string& value)
+llove::Token llove::Parser::Expect(TokenType type, const std::string &value)
 {
     Assert(
         At(type, value),
@@ -59,9 +55,7 @@ llove::Token llove::Parser::Expect(
     return Skip();
 }
 
-llove::Token llove::Parser::Expect(
-    TokenType type,
-    const std::vector<std::string>& values)
+llove::Token llove::Parser::Expect(TokenType type, const std::vector<std::string> &values)
 {
     Assert(
         At(type, values),

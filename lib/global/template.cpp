@@ -21,7 +21,7 @@ std::string llove::TemplateGlobal::GetName() const
     return {};
 }
 
-llove::GlobalPtr llove::TemplateGlobal::Reflect(Context& context) const
+llove::GlobalPtr llove::TemplateGlobal::Reflect(Context &context) const
 {
     GlobalPtr content;
     m_Content->Reflect(context, content);
@@ -29,9 +29,9 @@ llove::GlobalPtr llove::TemplateGlobal::Reflect(Context& context) const
     return std::make_unique<TemplateGlobal>(m_Loc, m_IsExport, m_Parameters, std::move(content));
 }
 
-void llove::TemplateGlobal::Gen(Builder& builder) const
+void llove::TemplateGlobal::Gen(Builder &builder) const
 {
-    auto& context = builder.GetContext();
+    auto &context = builder.GetContext();
 
     auto name = m_Content->GetName();
 
@@ -42,18 +42,18 @@ void llove::TemplateGlobal::Gen(Builder& builder) const
 }
 
 llove::TemplateInstancePtr llove::TemplateGlobal::GenTemplate(
-    Builder* /* builder */,
-    Context& /* context */,
+    Builder * /* builder */,
+    Context & /* context */,
     std::string /* name */) const
 {
     Error(m_Loc, "templates do not support templating");
 }
 
 llove::Import llove::TemplateGlobal::GenImport(
-    Context& context,
-    Builder& builder,
-    const std::string& as,
-    const ImportSymbols& symbols) const
+    Context &context,
+    Builder &builder,
+    const std::string &as,
+    const ImportSymbols &symbols) const
 {
     auto name = m_Content->GetName();
 
@@ -79,7 +79,7 @@ llove::Import llove::TemplateGlobal::GenImport(
     return { name, nullptr };
 }
 
-std::ostream& llove::TemplateGlobal::Print(std::ostream& stream) const
+std::ostream &llove::TemplateGlobal::Print(std::ostream &stream) const
 {
     if (m_IsExport)
         stream << "export ";

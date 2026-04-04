@@ -1,12 +1,14 @@
 #pragma once
 
 #include <format>
-#include <llove/error.hpp>
-#include <llove/forward.hpp>
-#include <llvm/IR/DebugInfoMetadata.h>
-#include <llvm/IR/Value.h>
 #include <sstream>
 #include <string>
+
+#include <llove/error.hpp>
+#include <llove/forward.hpp>
+
+#include <llvm/IR/DebugInfoMetadata.h>
+#include <llvm/IR/Value.h>
 
 namespace llove
 {
@@ -22,57 +24,40 @@ namespace llove
          * @return true if not permitted
          */
         static bool GetCastError(
-            const Builder& builder,
-            const Field& dst,
-            const Field& src,
-            unsigned& error,
+            const Builder &builder,
+            const Field &dst,
+            const Field &src,
+            unsigned &error,
             bool strict);
-        static bool IsCastable(
-            const Builder& builder,
-            const Field& dst,
-            const Field& src,
-            bool strict);
+        static bool IsCastable(const Builder &builder, const Field &dst, const Field &src, bool strict);
 
         Field() = default;
         explicit Field(TypePtr type);
-        explicit Field(
-            bool is_mutable,
-            bool is_reference,
-            TypePtr type);
+        explicit Field(bool is_mutable, bool is_reference, TypePtr type);
 
         bool IsMutable() const;
         bool IsReference() const;
         bool HasType() const;
         TypePtr GetType() const;
 
-        Field& SetIsMutable(bool is_mutable);
-        Field& SetIsReference(bool is_reference);
-        Field& SetType(TypePtr type);
+        Field &SetIsMutable(bool is_mutable);
+        Field &SetIsReference(bool is_reference);
+        Field &SetType(TypePtr type);
 
-        std::ostream& Print(
-            std::ostream& stream,
-            bool has_name = false,
-            const std::string& name = {}) const;
+        std::ostream &Print(std::ostream &stream, bool has_name = false, const std::string &name = {}) const;
 
-        llvm::Type* GenIRType(Builder& builder) const;
-        llvm::DIType* GenDIType(Builder& builder) const;
-        llvm::Value* GenCast(
-            Builder& builder,
-            ValuePtr value,
-            bool unstable_ownership = false) const;
+        llvm::Type *GenIRType(Builder &builder) const;
+        llvm::DIType *GenDIType(Builder &builder) const;
+        llvm::Value *GenCast(Builder &builder, ValuePtr value, bool unstable_ownership = false) const;
 
-        unsigned SizeBits(Builder& builder) const;
+        unsigned SizeBits(Builder &builder) const;
         std::string Mangle() const;
 
-        bool TypeInfo(
-            Builder& builder,
-            std::vector<llvm::Constant*>& dst) const;
+        bool TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const;
 
-        bool operator==(const Field& other) const;
+        bool operator==(const Field &other) const;
 
-        void Reflect(
-            Context& context,
-            Field& field) const;
+        void Reflect(Context &context, Field &field) const;
 
     private:
         bool m_IsMutable = false;
@@ -80,16 +65,14 @@ namespace llove
         TypePtr m_Type;
     };
 
-    std::string GetFieldHash(const std::vector<Field>& fields);
+    std::string GetFieldHash(const std::vector<Field> &fields);
 }
 
 template<>
 struct std::formatter<llove::Field> : std::formatter<std::string_view>
 {
     template<typename FormatContext>
-    auto format(
-        const llove::Field& field,
-        FormatContext& ctx) const
+    auto format(const llove::Field &field, FormatContext &ctx) const
     {
         std::stringstream stream;
         field.Print(stream);

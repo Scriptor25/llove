@@ -1,9 +1,12 @@
+#include <functional>
+
 #include <cli/templates.hpp>
+
 #include <llove/error.hpp>
 
-bool YAML::convert<cli::OptionTemplate>::decode(
-    const Node& node,
-    cli::OptionTemplate& option)
+using namespace std::placeholders;
+
+bool YAML::convert<cli::OptionTemplate>::decode(const Node &node, cli::OptionTemplate &option)
 {
     if (!node.IsMap() || !node["pattern"].IsDefined() || !node["type"].IsDefined())
     {
@@ -30,12 +33,10 @@ bool YAML::convert<cli::OptionTemplate>::decode(
     return true;
 }
 
-bool YAML::convert<cli::OptionTemplateType>::decode(
-    const Node& node,
-    cli::OptionTemplateType& type)
+bool YAML::convert<cli::OptionTemplateType>::decode(const Node &node, cli::OptionTemplateType &type)
 {
     static const std::map<std::string_view, cli::OptionTemplateType> map{
-        {  "flag",  cli::OptionTemplateType_Flag },
+        { "flag", cli::OptionTemplateType_Flag },
         { "value", cli::OptionTemplateType_Value },
         { "array", cli::OptionTemplateType_Array },
     };
@@ -51,8 +52,8 @@ bool YAML::convert<cli::OptionTemplateType>::decode(
 }
 
 bool YAML::convert<std::unique_ptr<cli::FilterTemplate>>::decode(
-    const Node& node,
-    std::unique_ptr<cli::FilterTemplate>& ptr)
+    const Node &node,
+    std::unique_ptr<cli::FilterTemplate> &ptr)
 {
     if (node.IsSequence())
     {
@@ -83,15 +84,18 @@ bool YAML::convert<std::unique_ptr<cli::FilterTemplate>>::decode(
     return false;
 }
 
-void cli::FilterTemplate::Validate(
-    const std::string& pat,
-    const std::string& val) const
+void cli::FilterTemplate::Validate(const std::string &pat, const std::string &val) const
 {
+    auto is_digit = [](const char c)
+    {
+        return std::isdigit(c);
+    };
+
     switch (Type)
     {
     case FilterTemplateType_Integer:
         llove::Assert(
-            std::ranges::all_of(val, [](auto c) { return std::isdigit(c); }),
+            std::ranges::all_of(val, is_digit),
             "illegal use of argument '{}': value '{}' does not match filter "
             "'integer'",
             pat,
@@ -104,7 +108,7 @@ void cli::FilterTemplate::Validate(
     }
 }
 
-void cli::FilterTemplate::Stringify(std::string& filter_str) const
+void cli::FilterTemplate::Stringify(std::string &filter_str) const
 {
     switch (Type)
     {
@@ -120,14 +124,16 @@ void cli::FilterTemplate::Stringify(std::string& filter_str) const
     }
 }
 
-void cli::FilterTemplateValue::Validate(
-    const std::string& pat,
-    const std::string& val) const
+void cli::FilterTemplateValue::Validate(const std::string &pat, const std::string &val) const
 {
-    llove::Assert(Values.empty() || Values.contains(val), "illegal use of argument '{}': value '{}' does not match filter '[...]'", pat, val);
+    llove::Assert(
+        Values.empty() || Values.contains(val),
+        "illegal use of argument '{}': value '{}' does not match filter '[...]'",
+        pat,
+        val);
 }
 
-void cli::FilterTemplateValue::Stringify(std::string& filter_str) const
+void cli::FilterTemplateValue::Stringify(std::string &filter_str) const
 {
     filter_str += '[';
     for (auto value = Values.begin(); value != Values.end(); ++value)

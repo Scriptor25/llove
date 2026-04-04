@@ -1,7 +1,6 @@
 #pragma once
 
 #include <format>
-#include <llove/location.hpp>
 #include <map>
 #include <set>
 #include <string>
@@ -9,8 +8,7 @@
 #include <type_traits>
 #include <vector>
 
-template<typename T>
-concept Condition = std::is_convertible_v<T, bool>;
+#include <llove/location.hpp>
 
 namespace llove
 {
@@ -23,50 +21,65 @@ namespace llove
         {
         }
 
-        explicit ref_exception(T* pointer) noexcept
+        explicit ref_exception(T *pointer) noexcept
             : m_Pointer(pointer)
         {
         }
 
-        explicit ref_exception(T&& value) noexcept
+        explicit ref_exception(T &&value) noexcept
             : m_Pointer(new T(value))
         {
         }
 
         template<typename... Args>
-        explicit ref_exception(Args&&... args) noexcept
+        explicit ref_exception(Args &&... args) noexcept
             : m_Pointer(new T(std::forward<Args>(args)...))
         {
         }
 
-        ref_exception(const ref_exception& other) = delete;
+        ref_exception(const ref_exception &other) = delete;
 
-        ref_exception(ref_exception&& other) noexcept
+        ref_exception(ref_exception &&other) noexcept
             : m_Pointer(other.m_Pointer)
         {
             other.m_Pointer = nullptr;
         }
 
-        ref_exception& operator=(const ref_exception& other) = delete;
+        ref_exception &operator=(const ref_exception &other) = delete;
 
-        ref_exception& operator=(ref_exception&& other) noexcept
+        ref_exception &operator=(ref_exception &&other) noexcept
         {
             std::swap(m_Pointer, other.m_Pointer);
             return *this;
         }
 
-        ~ref_exception() noexcept override { delete m_Pointer; }
+        ~ref_exception() noexcept override
+        {
+            delete m_Pointer;
+        }
 
-        explicit operator bool() const noexcept { return m_Pointer != nullptr; }
+        explicit operator bool() const noexcept
+        {
+            return m_Pointer != nullptr;
+        }
 
-        bool operator!() const noexcept { return !m_Pointer; }
+        bool operator!() const noexcept
+        {
+            return !m_Pointer;
+        }
 
-        T* operator->() const noexcept { return m_Pointer; }
+        T *operator->() const noexcept
+        {
+            return m_Pointer;
+        }
 
-        T& operator*() const noexcept { return *m_Pointer; }
+        T &operator*() const noexcept
+        {
+            return *m_Pointer;
+        }
 
     private:
-        T* m_Pointer;
+        T *m_Pointer;
     };
 
     class ErrorStack final
@@ -77,7 +90,7 @@ namespace llove
             std::optional<Location> loc,
             std::optional<std::string> message);
 
-        std::ostream& Print(std::ostream& stream) const;
+        std::ostream &Print(std::ostream &stream) const;
 
     private:
         ref_exception<ErrorStack> m_Cause;
@@ -86,50 +99,39 @@ namespace llove
     };
 
     template<typename... Args>
-    [[noreturn]] void Error(
-        std::string_view format,
-        Args&&... args)
+    [[noreturn]] void Error(std::format_string<Args...> format, Args &&... args)
     {
-        auto message = std::vformat(std::move(format), std::make_format_args(args...));
+        auto message = std::format(std::move(format), std::forward<Args>(args)...);
         throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, std::move(message));
     }
 
-    [[noreturn]] inline void AssertFail(std::string&& message)
+    template<std::convertible_to<std::string> S>
+    [[noreturn]] void AssertFail(S &&message)
     {
-        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, message);
+        throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::nullopt, std::forward<S>(message));
     }
 
-    template<Condition C, typename... Args>
-    void Assert(
-        const C condition,
-        std::string_view format,
-        Args&&... args)
+    template<std::convertible_to<bool> C, typename... Args>
+    void Assert(const C condition, std::format_string<Args...> format, Args &&... args)
     {
         if (!condition)
-            AssertFail(std::vformat(std::move(format), std::make_format_args(args...)));
+            AssertFail(std::format(std::move(format), std::forward<Args>(args)...));
     }
 
     template<typename... Args>
-    [[noreturn]] void Error(
-        const Location& loc,
-        std::string_view format,
-        Args&&... args)
+    [[noreturn]] void Error(const Location &loc, std::format_string<Args...> format, Args &&... args)
     {
-        auto message = std::vformat(std::move(format), std::make_format_args(args...));
+        auto message = std::format(std::move(format), std::forward<Args>(args)...);
         throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::move(loc), std::move(message));
     }
 
-    template<Condition C, typename... Args>
-    void Assert(
-        const C condition,
-        const Location& loc,
-        std::string_view format,
-        Args&&... args)
+    template<std::convertible_to<bool> C, typename... Args>
+    void Assert(const C condition, const Location &loc, std::format_string<Args...> format, Args &&... args)
     {
         if (condition)
             return;
 
-        auto message = std::vformat(std::move(format), std::make_format_args(args...));
+        auto message = std::format(std::move(format), std::forward<Args>(args)...);
         throw ref_exception<ErrorStack>(ref_exception<ErrorStack>(), std::move(loc), std::move(message));
     }
 
@@ -137,25 +139,25 @@ namespace llove
     [[noreturn]] void Error(
         ref_exception<ErrorStack> cause,
         Location loc,
-        std::string_view format,
-        Args&&... args)
+        std::format_string<Args...> format,
+        Args &&... args)
     {
-        auto message = std::vformat(std::move(format), std::make_format_args(args...));
+        auto message = std::format(std::move(format), std::forward<Args>(args)...);
         throw ref_exception<ErrorStack>(std::move(cause), std::move(loc), std::move(message));
     }
 
-    template<Condition C, typename... Args>
+    template<std::convertible_to<bool> C, typename... Args>
     void Assert(
         const C condition,
         ref_exception<ErrorStack> cause,
         Location loc,
-        std::string_view format,
-        Args&&... args)
+        std::format_string<Args...> format,
+        Args &&... args)
     {
         if (condition)
             return;
 
-        auto message = std::vformat(std::move(format), std::make_format_args(args...));
+        auto message = std::format(std::move(format), std::forward<Args>(args)...);
         throw ref_exception<ErrorStack>(cause, loc, message);
     }
 }
@@ -164,22 +166,19 @@ template<typename T>
 struct std::formatter<std::optional<T>> : std::formatter<T>
 {
     template<typename FormatContext>
-    auto format(
-        const std::optional<T>& opt,
-        FormatContext& ctx) const
+    auto format(const std::optional<T> &opt, FormatContext &ctx) const
     {
         if (opt.has_value())
             return std::formatter<T>::format(opt.value(), ctx);
         return std::format_to(ctx.out(), "[empty]");
     }
 };
+
 template<typename T>
 struct std::formatter<std::set<T>> : std::formatter<T>
 {
     template<typename FormatContext>
-    auto format(
-        const std::set<T>& set,
-        FormatContext& ctx) const
+    auto format(const std::set<T> &set, FormatContext &ctx) const
     {
         for (auto i = set.begin(); i != set.end(); ++i)
         {
@@ -197,11 +196,7 @@ template<typename T, typename A>
 struct std::formatter<std::vector<T, A>> : std::formatter<T>
 {
     template<typename FormatContext>
-    auto format(
-        const std::vector<
-            T,
-            A>& vec,
-        FormatContext& ctx) const
+    auto format(const std::vector<T, A> &vec, FormatContext &ctx) const
     {
         for (auto i = vec.begin(); i != vec.end(); ++i)
         {
@@ -224,11 +219,7 @@ template<typename K, typename V>
 struct std::formatter<std::pair<K, V>> : std::formatter<std::string_view>
 {
     template<typename FormatContext>
-    auto format(
-        const std::pair<
-            K,
-            V>& pair,
-        FormatContext& ctx) const
+    auto format(const std::pair<K, V> &pair, FormatContext &ctx) const
     {
         return std::format_to(ctx.out(), "'{}': '{}'", pair.first, pair.second);
     }
@@ -238,11 +229,7 @@ template<typename K, typename V>
 struct std::formatter<std::map<K, V>> : std::formatter<std::pair<K, V>>
 {
     template<typename FormatContext>
-    auto format(
-        const std::map<
-            K,
-            V>& map,
-        FormatContext& ctx) const
+    auto format(const std::map<K, V> &map, FormatContext &ctx) const
     {
         for (auto i = map.begin(); i != map.end(); ++i)
         {

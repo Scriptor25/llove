@@ -29,5 +29,10 @@ llove::StatementPtr llove::Parser::ParseForStatement(const bool is_inline)
 
     auto content = ScopeStatement::Wrap(ParseStatement(is_inline));
 
-    return std::make_unique<ForStatement>(std::move(loc), std::move(prefix), std::move(suffix), std::move(condition), std::move(content));
+    return std::make_unique<ForStatement>(
+        std::move(loc),
+        std::move(prefix),
+        std::move(suffix),
+        std::move(condition),
+        std::move(content));
 }

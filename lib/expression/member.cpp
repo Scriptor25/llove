@@ -16,9 +16,8 @@ llove::MemberExpression::MemberExpression(
 }
 
 llove::ValuePtr llove::MemberExpression::GenVal(
-    Builder& builder,
-    TypePtr /* expect */) const
-try
+    Builder &builder,
+    TypePtr /* expect */) const try
 {
     auto value = m_Value->GenVal(builder, nullptr);
 
@@ -32,7 +31,7 @@ try
     const auto type = value->GetType();
 
     auto index = ~0u;
-    std::optional<Field> element;
+    const Field *element = nullptr;
 
     switch (type->GetId())
     {
@@ -43,7 +42,7 @@ try
             break;
 
         index = struct_type->GetFieldIndex(m_Member);
-        element = struct_type->GetField(index);
+        element = &struct_type->GetField(index);
         break;
     }
     case TypeId_Class:
@@ -52,17 +51,21 @@ try
         if (!class_type->HasMember(m_Member))
             break;
 
-        Assert(class_type == builder.GetClass(), "field '{}' in type '{}' is not accessible from current context", m_Member, class_type);
+        Assert(
+            class_type == builder.GetClass(),
+            "field '{}' in type '{}' is not accessible from current context",
+            m_Member,
+            class_type);
 
         index = class_type->GetMemberIndex(m_Member);
-        element = class_type->GetMember(index);
+        element = &class_type->GetMember(index);
         break;
     }
     default:
         break;
     }
 
-    Assert(element.has_value(), "no field '{}' in type '{}'", m_Member, type);
+    Assert(element != nullptr, "no field '{}' in type '{}'", m_Member, type);
 
     builder.EmitLoc(m_Loc);
 
@@ -89,13 +92,12 @@ try
 
     return Value::CreateR(element->GetType(), element_value);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::CalleeInfo llove::MemberExpression::GenCallee(Builder& builder) const
-try
+llove::CalleeInfo llove::MemberExpression::GenCallee(Builder &builder) const try
 {
     auto value = m_Value->GenVal(builder, nullptr);
 
@@ -113,7 +115,7 @@ try
         return { .Candidates = std::move(candidates), .Self = std::move(value) };
 
     auto index = ~0u;
-    std::optional<Field> element;
+    const Field *element = nullptr;
 
     switch (type->GetId())
     {
@@ -124,7 +126,7 @@ try
             break;
 
         index = struct_type->GetFieldIndex(m_Member);
-        element = struct_type->GetField(index);
+        element = &struct_type->GetField(index);
         break;
     }
     case TypeId_Class:
@@ -133,10 +135,14 @@ try
         if (!class_type->HasMember(m_Member))
             break;
 
-        Assert(class_type == builder.GetClass(), "field '{}' in type '{}' is not accessible from current context", m_Member, class_type);
+        Assert(
+            class_type == builder.GetClass(),
+            "field '{}' in type '{}' is not accessible from current context",
+            m_Member,
+            class_type);
 
         index = class_type->GetMemberIndex(m_Member);
-        element = class_type->GetMember(index);
+        element = &class_type->GetMember(index);
         break;
     }
     default:
@@ -144,16 +150,21 @@ try
     }
 
     Assert(
-        element.has_value(),
+        element != nullptr,
         "no field '{}' in type '{}' or function with self '{}'",
         m_Member,
         type,
         value->AsField());
 
     const auto element_type = element->GetType();
-    Assert(element_type->IsFunction(), "illegal callee member field '{}' in type '{}', type '{}' is not a function type", element_type);
+    Assert(
+        element_type->IsFunction(),
+        "illegal callee member field '{}' in type '{}', type '{}' is not a function type",
+        m_Member,
+        type,
+        element_type);
 
-    llvm::Value* element_value;
+    llvm::Value *element_value;
     if (value->IsReference())
     {
         auto pointer = builder.CreateStructGEP(type->GenIR(builder), value->GetPointer(), index);
@@ -181,13 +192,12 @@ try
 
     return { { std::move(reference) }, {} };
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::MemberExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::MemberExpression::Reflect(Context &context) const try
 {
     ExpressionPtr value;
     if (m_Value)
@@ -195,12 +205,12 @@ try
 
     return std::make_unique<MemberExpression>(m_Loc, std::move(value), m_Member, m_Dereference);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::MemberExpression::Print(std::ostream& stream) const
+std::ostream &llove::MemberExpression::Print(std::ostream &stream) const
 {
     return stream << m_Value << (m_Dereference ? "::" : ".") << m_Member;
 }

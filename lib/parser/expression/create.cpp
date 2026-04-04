@@ -19,7 +19,7 @@ llove::ExpressionPtr llove::Parser::ParseCreateExpression()
     {
         while (!At(TokenType_Other, ")"))
         {
-            arguments.emplace_back(ParseExpression());
+            arguments.push_back(ParseExpression());
 
             if (!At(TokenType_Other, ")"))
                 Expect(TokenType_Other, ",");
@@ -27,5 +27,9 @@ llove::ExpressionPtr llove::Parser::ParseCreateExpression()
         Expect(TokenType_Other, ")");
     }
 
-    return std::make_unique<CreateExpression>(std::move(token.Loc), std::move(type), std::move(destination), std::move(arguments));
+    return std::make_unique<CreateExpression>(
+        std::move(token.Loc),
+        std::move(type),
+        std::move(destination),
+        std::move(arguments));
 }

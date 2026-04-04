@@ -20,7 +20,7 @@ llove::StatementPtr llove::Parser::ParseLetStatement(const bool is_inline)
     {
         while (!At(TokenType_Other, ")"))
         {
-            arguments.emplace_back(ParseExpression());
+            arguments.push_back(ParseExpression());
 
             if (!At(TokenType_Other, ")"))
                 Expect(TokenType_Other, ",");
@@ -32,5 +32,10 @@ llove::StatementPtr llove::Parser::ParseLetStatement(const bool is_inline)
     if (!is_inline)
         Expect(TokenType_Other, ";");
 
-    return std::make_unique<LetStatement>(std::move(token.Loc), std::move(info), std::move(name), std::move(value), std::move(arguments));
+    return std::make_unique<LetStatement>(
+        std::move(token.Loc),
+        std::move(info),
+        std::move(name),
+        std::move(value),
+        std::move(arguments));
 }

@@ -16,19 +16,18 @@ llove::BinaryExpression::BinaryExpression(
 }
 
 llove::ValuePtr llove::BinaryExpression::GenVal(
-    Builder& builder,
-    TypePtr /* expect */) const
-try
+    Builder &builder,
+    TypePtr /* expect */) const try
 {
-    static const std::map<std::string_view, const char*> assign{
-        {  "+=",  "+" },
-        {  "-=",  "-" },
-        {  "*=",  "*" },
-        {  "/=",  "/" },
-        {  "%=",  "%" },
-        {  "&=",  "&" },
-        {  "|=",  "|" },
-        {  "^=",  "^" },
+    static const std::map<std::string_view, const char *> assign{
+        { "+=", "+" },
+        { "-=", "-" },
+        { "*=", "*" },
+        { "/=", "/" },
+        { "%=", "%" },
+        { "&=", "&" },
+        { "|=", "|" },
+        { "^=", "^" },
         { "<<=", "<<" },
         { ">>=", ">>" },
         { "&&=", "&&" },
@@ -40,36 +39,25 @@ try
 
     builder.EmitLoc(m_Loc);
 
-    if (const auto operator_ = builder.FindOperator(
-            m_Operator,
-            left->AsField(),
-            right->AsField()))
+    if (const auto operator_ = builder.FindOperator(m_Operator, left->AsField(), right->AsField()))
         return (*operator_)(builder, std::move(left), std::move(right));
 
-    if (assign.contains(m_Operator))
-        if (const auto operator_ = builder.FindOperator(
-                assign.at(m_Operator),
-                left->AsField(),
-                right->AsField()))
+    if (const auto it = assign.find(m_Operator); it != assign.end())
+        if (const auto operator_ = builder.FindOperator(it->second, left->AsField(), right->AsField()))
         {
             const auto value = (*operator_)(builder, left, std::move(right));
-            left->Store(builder, value);
+            left->Store(builder, value, false);
             return left;
         }
 
-    Error(
-        "operator '{} {} {}' not implemented",
-        left->AsField(),
-        m_Operator,
-        right->AsField());
+    Error("operator '{} {} {}' not implemented", left->AsField(), m_Operator, right->AsField());
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::BinaryExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::BinaryExpression::Reflect(Context &context) const try
 {
     ExpressionPtr left;
     if (m_Left)
@@ -81,12 +69,12 @@ try
 
     return std::make_unique<BinaryExpression>(m_Loc, m_Operator, std::move(left), std::move(right));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::BinaryExpression::Print(std::ostream& stream) const
+std::ostream &llove::BinaryExpression::Print(std::ostream &stream) const
 {
     return stream << m_Left << ' ' << m_Operator << ' ' << m_Right;
 }

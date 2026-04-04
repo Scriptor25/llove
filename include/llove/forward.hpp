@@ -37,37 +37,48 @@ namespace llove
     class TemplateInstance;
     using TemplateInstancePtr = std::unique_ptr<TemplateInstance>;
 
-    std::ostream& operator<<(
-        std::ostream& stream,
-        const Field& field);
-    std::ostream& operator<<(
-        std::ostream& stream,
-        const Parameter& parameter);
+    template<typename T>
+    concept type_base = std::is_base_of_v<Type, T>;
 
     template<typename T>
-    requires std::is_base_of_v<
-        Type,
-        T>
-    std::ostream& operator<<(
-        std::ostream& stream,
-        std::shared_ptr<T> ptr)
+    concept template_instance_base = std::is_base_of_v<TemplateInstance, T>;
+
+    template<typename T>
+    concept global_base = std::is_base_of_v<Global, T>;
+
+    template<typename T>
+    concept statement_base = std::is_base_of_v<Statement, T>;
+
+    template<typename T>
+    concept expression_base = std::is_base_of_v<Expression, T>;
+
+    std::ostream &operator<<(std::ostream &stream, const Field &field);
+    std::ostream &operator<<(std::ostream &stream, const Parameter &parameter);
+
+    template<type_base T>
+    std::ostream &operator<<(std::ostream &stream, std::shared_ptr<T> ptr)
     {
         return ptr->Print(stream);
     }
 
-    std::ostream& operator<<(
-        std::ostream& stream,
-        const GlobalPtr& ptr);
-    std::ostream& operator<<(
-        std::ostream& stream,
-        const StatementPtr& ptr);
-    std::ostream& operator<<(
-        std::ostream& stream,
-        const ExpressionPtr& ptr);
+    template<global_base T>
+    std::ostream &operator<<(std::ostream &stream, std::shared_ptr<T> ptr)
+    {
+        return ptr->Print(stream);
+    }
+
+    template<statement_base T>
+    std::ostream &operator<<(std::ostream &stream, std::shared_ptr<T> ptr)
+    {
+        if (dynamic_cast<Expression *>(ptr.get()))
+            return ptr->Print(stream) << ';';
+
+        return ptr->Print(stream);
+    }
+
+    template<expression_base T>
+    std::ostream &operator<<(std::ostream &stream, std::shared_ptr<T> ptr)
+    {
+        return ptr->Print(stream);
+    }
 }
-
-template<typename T>
-concept TypeLike = std::is_base_of_v<llove::Type, T>;
-
-template<typename T>
-concept InstanceLike = std::is_base_of_v<llove::TemplateInstance, T>;

@@ -29,7 +29,7 @@ llove::StatementPtr llove::Parser::ParseSwitchStatement()
             }
             else
             {
-                keys.emplace_back(ParseExpression());
+                keys.push_back(ParseExpression());
             }
 
             if (!At(TokenType_Other, "]"))

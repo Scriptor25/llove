@@ -61,7 +61,7 @@ bool llove::Type::IsFunction() const
     return false;
 }
 
-unsigned llove::Type::SizeBits(Builder& builder)
+unsigned llove::Type::SizeBits(Builder &builder)
 {
     return builder.GetDataLayout().getTypeSizeInBits(GenIR(builder));
 }

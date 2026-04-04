@@ -15,38 +15,38 @@ llove::IntegerExpression::IntegerExpression(
 }
 
 llove::ValuePtr llove::IntegerExpression::GenVal(
-    Builder& builder,
-    TypePtr expect) const
-try
+    Builder &builder,
+    TypePtr expect) const try
 {
-    auto type = m_Type ? As<IntegerType>(m_Type)
-              : expect && expect->IsInteger() ? As<IntegerType>(std::move(expect))
-                                              : builder.GetContext().GetInteger(false, 64);
+    auto type = m_Type
+                    ? As<IntegerType>(m_Type)
+                    : expect && expect->IsInteger()
+                    ? As<IntegerType>(std::move(expect))
+                    : builder.GetContext().GetInteger(false, 64);
 
     builder.EmitLoc(m_Loc);
 
     const auto value = llvm::ConstantInt::get(type->GenIR(builder), m_Value, type->IsSigned());
     return Value::CreateR(std::move(type), value);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::IntegerExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::IntegerExpression::Reflect(Context &context) const try
 {
     TypePtr type;
     Type::Reflect(context, m_Type, type);
 
     return std::make_unique<IntegerExpression>(m_Loc, m_Value, std::move(type));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::IntegerExpression::Print(std::ostream& stream) const
+std::ostream &llove::IntegerExpression::Print(std::ostream &stream) const
 {
     if (m_Type)
         return stream << m_Value << ':' << m_Type;

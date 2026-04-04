@@ -10,7 +10,7 @@ llove::ExpressionPtr llove::Parser::ParseTemplateCallExpression()
 
     while (!At(TokenType_Operator, ">"))
     {
-        type_arguments.emplace_back(ParseType());
+        type_arguments.push_back(ParseType());
 
         if (!At(TokenType_Operator, ">"))
             Expect(TokenType_Other, ",");
@@ -21,5 +21,9 @@ llove::ExpressionPtr llove::Parser::ParseTemplateCallExpression()
 
     ParseArgumentList(arguments);
 
-    return std::make_unique<TemplateCallExpression>(std::move(token.Loc), std::move(type_arguments), std::move(callee), std::move(arguments));
+    return std::make_unique<TemplateCallExpression>(
+        std::move(token.Loc),
+        std::move(type_arguments),
+        std::move(callee),
+        std::move(arguments));
 }

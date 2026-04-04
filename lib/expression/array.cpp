@@ -15,13 +15,14 @@ llove::ArrayExpression::ArrayExpression(
 }
 
 llove::ValuePtr llove::ArrayExpression::GenVal(
-    Builder& builder,
-    TypePtr expect) const
-try
+    Builder &builder,
+    TypePtr expect) const try
 {
-    auto type = m_Type                      ? As<ArrayType>(m_Type)
-              : expect && expect->IsArray() ? As<ArrayType>(std::move(expect))
-                                            : nullptr;
+    auto type = m_Type
+                    ? As<ArrayType>(m_Type)
+                    : expect && expect->IsArray()
+                    ? As<ArrayType>(std::move(expect))
+                    : nullptr;
     Assert(type != nullptr, "untyped array expression");
 
     const auto base = type->GetBase();
@@ -29,11 +30,11 @@ try
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value* aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
 
     for (unsigned index = 0; index < m_Values.size(); ++index)
     {
-        auto gen_val = m_Values.at(index)->GenVal(builder, base);
+        auto gen_val = m_Values[index]->GenVal(builder, base);
         const auto val = field.GenCast(builder, std::move(gen_val));
 
         aggregate = builder.CreateInsertValue(aggregate, val, index);
@@ -41,16 +42,15 @@ try
 
     return Value::CreateR(std::move(type), aggregate);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::ArrayExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::ArrayExpression::Reflect(Context &context) const try
 {
     std::vector<ExpressionPtr> values;
-    for (auto& value : m_Values)
+    for (auto &value : m_Values)
         value->Reflect(context, values.emplace_back());
 
     ArrayType::Ptr type;
@@ -58,12 +58,12 @@ try
 
     return std::make_unique<ArrayExpression>(m_Loc, std::move(values), std::move(type));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::ArrayExpression::Print(std::ostream& stream) const
+std::ostream &llove::ArrayExpression::Print(std::ostream &stream) const
 {
     stream << "[ ";
     for (auto i = m_Values.begin(); i != m_Values.end(); ++i)

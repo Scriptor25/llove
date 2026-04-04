@@ -1,18 +1,18 @@
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
 #include <llove/stream.hpp>
+
 #include <llvm/Analysis/TargetLibraryInfo.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Passes/PassBuilder.h>
 #include <llvm/Passes/StandardInstrumentations.h>
-#include <llvm/Support/Error.h>
 #include <llvm/Target/TargetMachine.h>
 
 void llove::Builder::Seal(
     bool print,
-    std::ostream& print_stream,
-    std::ostream& output_stream,
+    std::ostream &print_stream,
+    std::ostream &output_stream,
     llvm::CodeGenFileType code_gen_type,
     llvm::OptimizationLevel optimization_level)
 {
@@ -51,7 +51,11 @@ void llove::Builder::Seal(
 
     // TODO: pls tell llvm devs to update their codegen system!!!
     llvm::legacy::PassManager codegen_pass;
-    const auto emit_error = m_TargetMachine->addPassesToEmitFile(codegen_pass, raw_output_stream, nullptr, code_gen_type);
+    const auto emit_error = m_TargetMachine->addPassesToEmitFile(
+        codegen_pass,
+        raw_output_stream,
+        nullptr,
+        code_gen_type);
     Assert(!emit_error, "target machine cannot emit specified codegen type");
 
     codegen_pass.run(m_LLVMModule);

@@ -6,7 +6,7 @@ llove::FunctionTemplateInstance::FunctionTemplateInstance(FunctionReference call
 {
 }
 
-const llove::FunctionReference& llove::FunctionTemplateInstance::GetCallee() const
+const llove::FunctionReference &llove::FunctionTemplateInstance::GetCallee() const
 {
     return m_Callee;
 }

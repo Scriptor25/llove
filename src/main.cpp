@@ -1,21 +1,24 @@
-#include <cli/arguments.hpp>
-#include <cli/table.hpp>
-#include <cli/templates.hpp>
 #include <fstream>
 #include <iostream>
 #include <istream>
+#include <map>
+#include <ranges>
+#include <string>
+
+#include <cli/arguments.hpp>
+#include <cli/table.hpp>
+#include <cli/templates.hpp>
+
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/parser.hpp>
 #include <llove/stream.hpp>
 #include <llove/tree.hpp>
+
 #include <llvm/MC/MCTargetOptions.h>
 #include <llvm/Passes/OptimizationLevel.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/TargetParser/Host.h>
-#include <map>
-#include <ranges>
-#include <string>
 
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
@@ -46,25 +49,27 @@ static unsigned get_console_width()
 static void print_help(
     const std::map<
         std::string,
-        cli::OptionTemplate>& templates,
+        cli::OptionTemplate> &templates,
     const bool ascii)
 {
     print_version();
 
-    std::cerr << std::endl
-              << "USAGE" << std::endl
-              << " llove <PATTERN{=<FILTER>},...> <FILENAME>" << std::endl
-              << std::endl
-              << "FILENAME: empty, \"stdin\" or existing filename" << std::endl
-              << std::endl
-              << "OPTIONS" << std::endl;
+    std::cerr
+            << std::endl
+            << "USAGE" << std::endl
+            << " llove <PATTERN{=<FILTER>},...> <FILENAME>" << std::endl
+            << std::endl
+            << "FILENAME: empty, \"stdin\" or existing filename" << std::endl
+            << std::endl
+            << "OPTIONS" << std::endl;
 
     const auto console_width = get_console_width();
     cli::Table table(std::cerr, 3, console_width ? console_width : 120u, ascii);
 
     table << "PATTERN" << "FILTER" << "DESCRIPTION";
 
-    for (auto& [template_pattern, template_type, template_filter, template_description] : templates | std::views::values)
+    for (auto &[template_pattern, template_type, template_filter, template_description] :
+         templates | std::views::values)
     {
         std::string pattern_str;
         for (auto p = template_pattern.begin(); p != template_pattern.end(); ++p)
@@ -94,8 +99,7 @@ static void print_help(
 
 int main(
     const int argc,
-    const char* const* argv)
-try
+    const char *const*argv) try
 {
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
@@ -106,9 +110,7 @@ try
     {
         if (argc == 1)
         {
-            std::cerr << "no arguments. use '--help', '-h', '-?' or '?' for "
-                         "help."
-                      << std::endl;
+            std::cerr << "no arguments. use '--help', '-h', '-?' or '?' for help." << std::endl;
             return 1;
         }
 
@@ -169,16 +171,15 @@ try
         machine.Options.NoSignedZerosFPMath = arguments.flag("option-no-signed-zeros-fp-math");
         machine.Options.ApproxFuncFPMath = arguments.flag("option-approx-func-fp-math");
         machine.Options.EnableAIXExtendedAltivecABI = arguments.flag("option-enable-aix-extended-altivec-abi");
-        machine.Options.HonorSignDependentRoundingFPMathOption = arguments.flag("option-honor-sign-dependent-rounding-fp-math");
+        machine.Options.HonorSignDependentRoundingFPMathOption =
+                arguments.flag("option-honor-sign-dependent-rounding-fp-math");
         machine.Options.NoZerosInBSS = arguments.flag("option-no-zeros-in-bss");
         machine.Options.GuaranteedTailCallOpt = arguments.flag("option-guaranteed-tail-call-opt");
         machine.Options.StackSymbolOrdering = arguments.flag("option-stack-symbol-ordering");
         machine.Options.EnableFastISel = arguments.flag("option-enable-fast-isel");
         machine.Options.EnableGlobalISel = arguments.flag("option-enable-global-isel");
         (void) arguments.value("option-global-isel-abort", machine.Options.GlobalISelAbort);
-        (void) arguments.value(
-            "option-swift-async-frame-pointer",
-            machine.Options.SwiftAsyncFramePointer);
+        (void) arguments.value("option-swift-async-frame-pointer", machine.Options.SwiftAsyncFramePointer);
         machine.Options.UseInitArray = arguments.flag("option-use-init-array");
         machine.Options.DisableIntegratedAS = arguments.flag("option-disable-integrated-as");
         machine.Options.FunctionSections = arguments.flag("option-function-sections");
@@ -219,9 +220,11 @@ try
         (void) arguments.value("option-thread-model", machine.Options.ThreadModel);
         (void) arguments.value("option-eabi-version", machine.Options.EABIVersion);
         (void) arguments.value("option-debugger-tuning", machine.Options.DebuggerTuning);
-        if (std::vector<llvm::DenormalMode::DenormalModeKind> values; arguments.array("option-fp-denormal-mode", values))
+        if (std::vector<llvm::DenormalMode::DenormalModeKind> values;
+            arguments.array("option-fp-denormal-mode", values))
             machine.Options.setFPDenormalMode({ values[0], values[1] });
-        if (std::vector<llvm::DenormalMode::DenormalModeKind> values; arguments.array("option-fp32-denormal-mode", values))
+        if (std::vector<llvm::DenormalMode::DenormalModeKind> values;
+            arguments.array("option-fp32-denormal-mode", values))
             machine.Options.setFP32DenormalMode({ values[0], values[1] });
         (void) arguments.value("option-exception-model", machine.Options.ExceptionModel);
 
@@ -232,32 +235,22 @@ try
         machine.Options.MCOptions.MCNoDeprecatedWarn = arguments.flag("mc-option-no-deprecated-warn");
         machine.Options.MCOptions.MCNoTypeCheck = arguments.flag("mc-option-no-type-check");
         machine.Options.MCOptions.MCSaveTempLabels = arguments.flag("mc-option-save-temp-labels");
-        machine.Options.MCOptions.MCIncrementalLinkerCompatible = arguments.flag("mc-option-incremental-linker-compatible");
+        machine.Options.MCOptions.MCIncrementalLinkerCompatible =
+                arguments.flag("mc-option-incremental-linker-compatible");
         machine.Options.MCOptions.ShowMCEncoding = arguments.flag("mc-option-show-mc-encoding");
         machine.Options.MCOptions.ShowMCInst = arguments.flag("mc-option-show-mc-inst");
         machine.Options.MCOptions.AsmVerbose = arguments.flag("mc-option-asm-verbose");
         machine.Options.MCOptions.PreserveAsmComments = arguments.flag("mc-option-preserve-asm-comments");
         machine.Options.MCOptions.Dwarf64 = arguments.flag("mc-option-dwarf64");
-        (void) arguments.value(
-            "mc-option-emit-dwarf-unwind",
-            machine.Options.MCOptions.EmitDwarfUnwind);
-        (void) arguments.value(
-            "mc-option-dwarf-version",
-            machine.Options.MCOptions.DwarfVersion);
-        (void) arguments.value(
-            "mc-option-use-dwarf-directory",
-            machine.Options.MCOptions.MCUseDwarfDirectory);
+        (void) arguments.value("mc-option-emit-dwarf-unwind", machine.Options.MCOptions.EmitDwarfUnwind);
+        (void) arguments.value("mc-option-dwarf-version", machine.Options.MCOptions.DwarfVersion);
+        (void) arguments.value("mc-option-use-dwarf-directory", machine.Options.MCOptions.MCUseDwarfDirectory);
         (void) arguments.value("mc-option-abi-name", machine.Options.MCOptions.ABIName);
-        (void) arguments.value(
-            "mc-option-assembly-language",
-            machine.Options.MCOptions.AssemblyLanguage);
-        (void) arguments.value(
-            "mc-option-split-dwarf-file",
-            machine.Options.MCOptions.SplitDwarfFile);
-        (void) arguments.value(
-            "mc-option-as-secure-log-file",
-            machine.Options.MCOptions.AsSecureLogFile);
-        machine.Options.MCOptions.EmitCompactUnwindNonCanonical = arguments.flag("mc-option-emit-compact-unwind-non-canonical");
+        (void) arguments.value("mc-option-assembly-language", machine.Options.MCOptions.AssemblyLanguage);
+        (void) arguments.value("mc-option-split-dwarf-file", machine.Options.MCOptions.SplitDwarfFile);
+        (void) arguments.value("mc-option-as-secure-log-file", machine.Options.MCOptions.AsSecureLogFile);
+        machine.Options.MCOptions.EmitCompactUnwindNonCanonical =
+                arguments.flag("mc-option-emit-compact-unwind-non-canonical");
         machine.Options.MCOptions.PPCUseFullRegisterNames = arguments.flag("mc-option-ppc-use-full-register-names");
 
         auto debug = arguments.flag("debug");
@@ -325,7 +318,8 @@ try
         else if (output_filename == "stderr")
             output_stream_ref = llove::stream_ref(&std::cerr, false);
         else
-            output_stream_ref = llove::stream_ref<std::ofstream>(output_filename, std::ios_base::out | std::ios_base::binary);
+            output_stream_ref =
+                    llove::stream_ref<std::ofstream>(output_filename, std::ios_base::out | std::ios_base::binary);
 
         if (output_stream_ref->fail())
         {
@@ -344,7 +338,7 @@ try
 
     return 0;
 }
-catch (const llove::ref_exception<llove::ErrorStack>& cause)
+catch (const llove::ref_exception<llove::ErrorStack> &cause)
 {
     cause->Print(std::cerr);
     return 1;

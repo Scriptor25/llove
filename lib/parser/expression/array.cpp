@@ -9,7 +9,7 @@ llove::ExpressionPtr llove::Parser::ParseArrayExpression()
     std::vector<ExpressionPtr> values;
     while (!At(TokenType_Other, "]"))
     {
-        values.emplace_back(ParseExpression());
+        values.push_back(ParseExpression());
 
         if (!At(TokenType_Other, "]"))
             Expect(TokenType_Other, ",");

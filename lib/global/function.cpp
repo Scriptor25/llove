@@ -35,10 +35,10 @@ std::string llove::FunctionGlobal::GetName() const
     return m_Name;
 }
 
-llove::GlobalPtr llove::FunctionGlobal::Reflect(Context& context) const
+llove::GlobalPtr llove::FunctionGlobal::Reflect(Context &context) const
 {
     std::vector<Parameter> parameters;
-    for (auto& parameter : m_Parameters)
+    for (auto &parameter : m_Parameters)
         parameter.Reflect(context, parameters.emplace_back());
 
     Field result;
@@ -47,11 +47,20 @@ llove::GlobalPtr llove::FunctionGlobal::Reflect(Context& context) const
     StatementPtr content;
     m_Content->Reflect(context, content);
 
-    return std::make_unique<FunctionGlobal>(m_Loc, m_IsExport, m_IsInterface, m_IsImplicit, m_IsOperator, m_Name, std::move(parameters), m_Variadic, std::move(result), std::move(content));
+    return std::make_unique<FunctionGlobal>(
+        m_Loc,
+        m_IsExport,
+        m_IsInterface,
+        m_IsImplicit,
+        m_IsOperator,
+        m_Name,
+        std::move(parameters),
+        m_Variadic,
+        std::move(result),
+        std::move(content));
 }
 
-void llove::FunctionGlobal::Gen(Builder& builder) const
-try
+void llove::FunctionGlobal::Gen(Builder &builder) const try
 {
     StatementPtr content;
     if (m_Content)
@@ -70,14 +79,14 @@ try
 
     builder.GenFunction(agg, true);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::TemplateInstancePtr llove::FunctionGlobal::GenTemplate(
-    Builder* builder,
-    Context& context,
+    Builder *builder,
+    Context &context,
     std::string /* name */) const
 {
     Assert(!!builder, m_Loc, "builder must not be null");
@@ -87,7 +96,7 @@ llove::TemplateInstancePtr llove::FunctionGlobal::GenTemplate(
         m_Content->Reflect(context, content);
 
     std::vector<Parameter> parameters;
-    for (auto& parameter : m_Parameters)
+    for (auto &parameter : m_Parameters)
         parameter.Reflect(context, parameters.emplace_back());
 
     Function agg;
@@ -107,10 +116,10 @@ llove::TemplateInstancePtr llove::FunctionGlobal::GenTemplate(
 }
 
 llove::Import llove::FunctionGlobal::GenImport(
-    Context& /* context */,
-    Builder& builder,
-    const std::string& as,
-    const ImportSymbols& symbols) const
+    Context & /* context */,
+    Builder &builder,
+    const std::string &as,
+    const ImportSymbols &symbols) const
 {
     if (!m_IsExport)
         return {};
@@ -118,8 +127,9 @@ llove::Import llove::FunctionGlobal::GenImport(
     if (!m_IsOperator && as.empty() && !symbols.empty() && !symbols.contains(m_Name))
         return {};
 
-    const auto register_function = m_IsOperator || (as.empty() && symbols.empty())
-                                || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
+    const auto register_function = m_IsOperator
+                                   || (as.empty() && symbols.empty())
+                                   || (as.empty() && symbols.contains(m_Name) && symbols.at(m_Name) == m_Name);
 
     Function agg;
     agg.Loc = m_Loc;
@@ -147,9 +157,10 @@ llove::Import llove::FunctionGlobal::GenImport(
     return { m_Name, std::move(value) };
 }
 
-std::ostream& llove::FunctionGlobal::Print(std::ostream& stream) const
+std::ostream &llove::FunctionGlobal::Print(std::ostream &stream) const
 {
-    stream << (m_IsExport ? "export " : "") << (m_IsInterface ? "interface " : "function ") << (m_IsImplicit ? "implicit " : "") << m_Name << '(';
+    stream << (m_IsExport ? "export " : "") << (m_IsInterface ? "interface " : "function ") << (
+        m_IsImplicit ? "implicit " : "") << m_Name << '(';
 
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)
     {

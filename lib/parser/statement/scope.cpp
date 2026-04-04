@@ -7,7 +7,7 @@ llove::StatementPtr llove::Parser::ParseScopeStatement()
 
     auto loc = Expect(TokenType_Other, "{").Loc;
     while (!At(TokenType_Other, "}"))
-        content.emplace_back(ParseStatement(false));
+        content.push_back(ParseStatement(false));
     Expect(TokenType_Other, "}");
 
     return std::make_unique<ScopeStatement>(std::move(loc), std::move(content));

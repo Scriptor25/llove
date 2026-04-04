@@ -1,43 +1,40 @@
+#include <ranges>
+
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/forward.hpp>
 #include <llove/tree.hpp>
-#include <ranges>
 
-llove::Context::Context(Context* parent)
+llove::Context::Context(Context *parent)
     : m_Parent(parent)
 {
 }
 
-llove::Context* llove::Context::GetParent() const
+llove::Context *llove::Context::GetParent() const
 {
     return m_Parent;
 }
 
-llove::TypePtr llove::Context::GetNamed(const std::string& id) const
+llove::TypePtr llove::Context::GetNamed(const std::string &id) const
 {
-    for (auto& frame : std::ranges::reverse_view(m_TemplateParameterStack))
-        for (auto& parameter : frame)
-            if (parameter.first == id)
-                return parameter.second;
+    for (auto &frame : std::ranges::reverse_view(m_TemplateParameterStack))
+        for (const auto &[id_, type_] : frame)
+            if (id_ == id)
+                return type_;
 
-    if (m_Named.contains(id))
-        return m_Named.at(id);
+    if (const auto it = m_Named.find(id); it != m_Named.end())
+        return it->second;
 
     return nullptr;
 }
 
-void llove::Context::SetNamed(
-    const std::string& id,
-    TypePtr type)
+void llove::Context::SetNamed(const std::string &id, TypePtr type)
 {
     m_Named.emplace(id, type);
 }
 
-void llove::Context::Set(
-    std::string hash,
-    TypePtr type)
+void llove::Context::Set(std::string hash, TypePtr type)
 {
     m_Types.emplace(hash, type);
 }
@@ -52,9 +49,7 @@ llove::VariadicType::Ptr llove::Context::GetVariadic()
     return GetOrCreate<VariadicType>();
 }
 
-llove::IntegerType::Ptr llove::Context::GetInteger(
-    bool is_signed,
-    unsigned bits)
+llove::IntegerType::Ptr llove::Context::GetInteger(bool is_signed, unsigned bits)
 {
     return GetOrCreate<IntegerType>(is_signed, bits);
 }
@@ -69,16 +64,12 @@ llove::PointerType::Ptr llove::Context::GetPointer(const bool is_mutable)
     return GetOrCreate<PointerType>(is_mutable);
 }
 
-llove::PointerType::Ptr llove::Context::GetPointer(
-    TypePtr base,
-    bool is_mutable)
+llove::PointerType::Ptr llove::Context::GetPointer(TypePtr base, bool is_mutable)
 {
     return GetOrCreate<PointerType>(std::move(base), is_mutable);
 }
 
-llove::ArrayType::Ptr llove::Context::GetArray(
-    TypePtr base,
-    unsigned size)
+llove::ArrayType::Ptr llove::Context::GetArray(TypePtr base, unsigned size)
 {
     return GetOrCreate<ArrayType>(std::move(base), size);
 }
@@ -115,15 +106,14 @@ llove::FunctionType::Ptr llove::Context::GetFunction(
 llove::InstanceType::Ptr llove::Context::GetInstance(std::string name)
 {
     std::vector<TypePtr> arguments;
-    for (auto& frame = m_TemplateParameterStack.back(); auto& parameter : frame)
-        arguments.emplace_back(parameter.second);
+    for (auto &frame = m_TemplateParameterStack.back();
+         auto &value : frame | std::views::values)
+        arguments.push_back(value);
 
     return GetInstance(std::move(name), std::move(arguments));
 }
 
-llove::InstanceType::Ptr llove::Context::GetInstance(
-    std::string name,
-    std::vector<TypePtr> arguments)
+llove::InstanceType::Ptr llove::Context::GetInstance(std::string name, std::vector<TypePtr> arguments)
 {
     return GetOrCreate<InstanceType>(std::move(name), std::move(arguments));
 }
@@ -133,9 +123,7 @@ llove::IntegerType::Ptr llove::Context::GetBoolean()
     return GetOrCreate<IntegerType>(false, 1);
 }
 
-llove::TypePtr llove::Context::TypeUnion(
-    TypePtr left,
-    TypePtr right)
+llove::TypePtr llove::Context::TypeUnion(TypePtr left, TypePtr right)
 {
     if (left == right)
         return left;
@@ -147,18 +135,13 @@ llove::TypePtr llove::Context::TypeUnion(
         {
         case TypeId_Integer:
         {
-            const auto sign = As<IntegerType>(left)->IsSigned()
-                           || As<IntegerType>(right)->IsSigned();
-            const auto bits = std::max(
-                As<IntegerType>(left)->GetBits(),
-                As<IntegerType>(right)->GetBits());
+            const auto sign = As<IntegerType>(left)->IsSigned() || As<IntegerType>(right)->IsSigned();
+            const auto bits = std::max(As<IntegerType>(left)->GetBits(), As<IntegerType>(right)->GetBits());
             return GetInteger(sign, bits);
         }
         case TypeId_Float:
         {
-            const auto bits = std::max(
-                As<IntegerType>(left)->GetBits(),
-                As<FloatType>(right)->GetBits());
+            const auto bits = std::max(As<IntegerType>(left)->GetBits(), As<FloatType>(right)->GetBits());
             return GetFloat(bits);
         }
         default:
@@ -171,16 +154,12 @@ llove::TypePtr llove::Context::TypeUnion(
         {
         case TypeId_Integer:
         {
-            const auto bits = std::max(
-                As<FloatType>(left)->GetBits(),
-                As<IntegerType>(right)->GetBits());
+            const auto bits = std::max(As<FloatType>(left)->GetBits(), As<IntegerType>(right)->GetBits());
             return GetFloat(bits);
         }
         case TypeId_Float:
         {
-            const auto bits = std::max(
-                As<FloatType>(left)->GetBits(),
-                As<FloatType>(right)->GetBits());
+            const auto bits = std::max(As<FloatType>(left)->GetBits(), As<FloatType>(right)->GetBits());
             return GetFloat(bits);
         }
         default:
@@ -200,9 +179,11 @@ llove::TypePtr llove::Context::TypeUnion(
                 && left_pointer->GetBase() != right_pointer->GetBase())
                 break;
 
-            const auto base = !left_pointer->IsOpaque() ? left_pointer->GetBase()
-                            : !right_pointer->IsOpaque() ? right_pointer->GetBase()
-                                                         : nullptr;
+            const auto base = !left_pointer->IsOpaque()
+                                  ? left_pointer->GetBase()
+                                  : !right_pointer->IsOpaque()
+                                  ? right_pointer->GetBase()
+                                  : nullptr;
             const auto is_mutable = left_pointer->IsMutable() && right_pointer->IsMutable();
 
             if (base)
@@ -222,11 +203,11 @@ llove::TypePtr llove::Context::TypeUnion(
     Error("illegal type unionization of {} and {}", left, right);
 }
 
-void llove::Context::PushTemplate(const std::vector<TemplateParameter>& parameters)
+void llove::Context::PushTemplate(const std::vector<TemplateParameter> &parameters)
 {
-    auto& frame = m_TemplateParameterStack.emplace_back();
-    for (auto& entry : parameters)
-        frame.emplace_back(entry);
+    auto &frame = m_TemplateParameterStack.emplace_back();
+    for (auto &entry : parameters)
+        frame.push_back(entry);
 }
 
 void llove::Context::PopTemplate()
@@ -234,9 +215,7 @@ void llove::Context::PopTemplate()
     m_TemplateParameterStack.pop_back();
 }
 
-void llove::Context::CreateTemplate(
-    const std::string& name,
-    TemplateInstancePtr instance)
+void llove::Context::CreateTemplate(const std::string &name, TemplateInstancePtr instance)
 {
     Assert(!m_TemplateParameterStack.empty(), "no current template");
 
@@ -249,15 +228,13 @@ void llove::Context::CreateTemplate(
 }
 
 void llove::Context::CreateTemplate(
-    const std::string& name,
+    const std::string &name,
     std::vector<TemplateParameter> parameters,
     GlobalPtr content)
 {
     TemplateInstancePtr instance;
-    if (m_Templates.contains(name))
-    {
-        instance = std::move(m_Templates.at(name).Default);
-    }
+    if (const auto it = m_Templates.find(name); it != m_Templates.end())
+        instance = std::move(it->second.Default);
 
     m_Templates[name] = {
         name,
@@ -267,10 +244,10 @@ void llove::Context::CreateTemplate(
     };
 }
 
-llove::TemplateInstance* llove::Context::InstantiateUniqueTemplate(
-    Builder* builder,
-    const std::string& name,
-    const std::vector<TypePtr>& type_arguments)
+llove::TemplateInstance *llove::Context::InstantiateUniqueTemplate(
+    Builder *builder,
+    const std::string &name,
+    const std::vector<TypePtr> &type_arguments)
 {
     auto index = name + '<';
     for (auto it = type_arguments.begin(); it != type_arguments.end(); ++it)
@@ -281,33 +258,36 @@ llove::TemplateInstance* llove::Context::InstantiateUniqueTemplate(
     }
     index += '>';
 
-    const auto contains = m_Instances.contains(index);
-    if (contains)
-        if (const auto ptr = m_Instances.at(index).get())
+    auto contains = false;
+    if (const auto it = m_Instances.find(index); it != m_Instances.end())
+    {
+        contains = true;
+
+        if (const auto ptr = it->second.get())
             return ptr;
+    }
 
-    Assert(m_Templates.contains(name), "undefined template name {}", name);
+    const auto temp_it = m_Templates.find(name);
+    Assert(temp_it != m_Templates.end(), "undefined template name {}", name);
 
-    auto& temp = m_Templates.at(name);
+    auto &temp = temp_it->second;
 
     Assert(type_arguments.size() == temp.Parameters.size(), "invalid number of type argument");
 
-    auto& ref = m_Instances[index];
+    auto &ref = m_Instances[index];
 
-    auto& frame = m_TemplateArgumentStack.emplace_back();
+    auto &frame = m_TemplateArgumentStack.emplace_back();
     for (auto i = 0u; i < type_arguments.size(); ++i)
-        frame.emplace(temp.Parameters.at(i).first, type_arguments.at(i));
+        frame.emplace(temp.Parameters[i].first, type_arguments[i]);
 
-    TemplateInstance* ptr;
+    TemplateInstance *ptr;
     if (!contains && temp.Content)
     {
         ref = temp.Content->GenTemplate(builder, *this, std::move(index));
         ptr = ref.get();
     }
     else
-    {
         ptr = temp.Default.get();
-    }
 
     m_TemplateArgumentStack.pop_back();
     return ptr;
@@ -318,10 +298,12 @@ bool llove::Context::IsInstantiating() const
     return !m_TemplateArgumentStack.empty();
 }
 
-llove::TypePtr llove::Context::GetTemplateArgument(const std::string& name) const
+llove::TypePtr llove::Context::GetTemplateArgument(const std::string &name) const
 {
     Assert(!m_TemplateArgumentStack.empty(), "not a template");
-    auto& frame = m_TemplateArgumentStack.back();
-    Assert(frame.contains(name), "undefined template parameter '{}'", name);
-    return frame.at(name);
+    auto &frame = m_TemplateArgumentStack.back();
+
+    const auto it = frame.find(name);
+    Assert(it != frame.end(), "undefined template parameter '{}'", name);
+    return it->second;
 }

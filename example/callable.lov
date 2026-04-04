@@ -1,0 +1,72 @@
+import { format } from "std/format.lov";
+
+function add_fn(a: i32, b: i32): i32 {
+    ret a + b;
+}
+
+class add_ty {
+
+    public ()(a: i32, b: i32): i32 {
+        ret a + b;
+    }
+
+    let _: i32;
+}
+
+function callable() {
+
+    let a: i32 = 1;
+    let b: i32 = 2;
+
+    let c = add_fn(a, b);
+
+    format("{} + {} = {}\n", a, b, c);
+
+    let i: add_ty;
+    let d = i(a, b);
+
+    format("{} + {} = {}\n", a, b, d);
+}
+
+type context_ty = { mut v: i32 };
+
+function inc_fn(mut &ctx: context_ty, v: i32) {
+    ctx.v += v;
+}
+
+class inc_ty {
+
+    public mut ()(v: i32) {
+        self.v += v;
+    }
+
+    public v(): &i32 {
+        ret self.v;
+    }
+
+    let mut v: i32;
+}
+
+function callable_context() {
+
+    let mut ctx: context_ty;
+    inc_fn(ctx, 1);
+    inc_fn(ctx, 2);
+    inc_fn(ctx, 3);
+
+    format("{} + {} + {} = {}\n", 1, 2, 3, ctx.v);
+
+    let mut i: inc_ty;
+    i(1);
+    i(2);
+    i(3);
+
+    format("{} + {} + {} = {}\n", 1, 2, 3, i.v());
+}
+
+interface main(): i32 {
+    callable();
+    callable_context();
+
+    ret 0;
+}

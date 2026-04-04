@@ -1,10 +1,7 @@
 #include <llove/field.hpp>
 #include <llove/parser.hpp>
 
-std::string llove::Parser::ParseField(
-    Field& field,
-    const bool require_name,
-    bool require_type)
+std::string llove::Parser::ParseField(Field &field, const bool require_name, bool require_type)
 {
     field.SetIsMutable(SkipIf(TokenType_Symbol, "mut"));
     field.SetIsReference(SkipIf(TokenType_Operator, "&"));

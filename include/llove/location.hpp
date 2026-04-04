@@ -6,10 +6,9 @@ namespace llove
 {
     struct Location
     {
-        bool operator==(const Location& other) const
+        bool operator==(const Location &other) const
         {
-            return Filepath == other.Filepath && Row == other.Row
-                && Col == other.Col;
+            return Filepath == other.Filepath && Row == other.Row && Col == other.Col;
         }
 
         std::filesystem::path Filepath;

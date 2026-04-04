@@ -1,20 +1,16 @@
 #include <llove/builder.hpp>
+#include <llove/context.hpp>
 #include <llove/error.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::SymbolExpression::SymbolExpression(
-    Location loc,
-    std::string name)
+llove::SymbolExpression::SymbolExpression(Location loc, std::string name)
     : Expression(std::move(loc)),
       m_Name(std::move(name))
 {
 }
 
-llove::ValuePtr llove::SymbolExpression::GenVal(
-    Builder& builder,
-    TypePtr /* expect */) const
-try
+llove::ValuePtr llove::SymbolExpression::GenVal(Builder &builder, TypePtr /* expect */) const try
 {
     if (builder.HasValue(m_Name))
         return builder.GetValue(m_Name);
@@ -27,62 +23,69 @@ try
 
     builder.EmitLoc(m_Loc);
 
-    const auto& function = functions.front();
+    const auto &function = functions.front();
     return Value::CreateR(function.Type, function.Callee);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder& builder) const
-try
+llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
 {
     std::vector<FunctionReference> candidates;
 
-    TypePtr symbol_type;
+    TypePtr value_type;
+    ValuePtr self;
+
     if (builder.HasValue(m_Name))
     {
         const auto value = builder.GetValue(m_Name);
-        symbol_type = value->GetType();
+        value_type = value->GetType();
 
-        if (symbol_type->IsFunction())
+        if (value_type->IsFunction())
+            candidates.push_back(
+                {
+                    .IsPublic = false,
+                    .IsImplicit = false,
+                    .Name = m_Name,
+                    .Type = As<FunctionType>(value_type),
+                    .Callee = value->Load(builder),
+                });
+        else if (value_type->IsClass())
         {
-            FunctionReference reference{
-                .IsPublic = false,
-                .IsImplicit = false,
-                .Name = m_Name,
-                .Type = As<FunctionType>(symbol_type),
-                .Callee = value->Load(builder),
-            };
-
-            candidates.emplace_back(std::move(reference));
+            auto functions = builder.GetFunctions("()", value->AsField());
+            candidates.insert(candidates.end(), functions.begin(), functions.end());
+            self = value;
         }
     }
 
     auto functions = builder.GetFunctions(m_Name);
     candidates.insert(candidates.end(), functions.begin(), functions.end());
 
-    Assert(!candidates.empty() || !symbol_type, "illegal callee symbol '{}', type '{}' is not a function type", m_Name, symbol_type);
+    Assert(
+        !candidates.empty() || !value_type,
+        "illegal callee symbol '{}', type '{}' is not a function type",
+        m_Name,
+        value_type);
     Assert(!candidates.empty(), "undefined symbol '{}'", m_Name);
-    return { std::move(candidates), {} };
+    return { std::move(candidates), std::move(self) };
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::SymbolExpression::Reflect(Context& /* context */) const
-try
+llove::StatementPtr llove::SymbolExpression::Reflect(Context & /* context */) const try
 {
     return std::make_unique<SymbolExpression>(m_Loc, m_Name);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::SymbolExpression::Print(std::ostream& stream) const
+std::ostream &llove::SymbolExpression::Print(std::ostream &stream) const
 {
     return stream << m_Name;
 }

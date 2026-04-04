@@ -9,14 +9,17 @@ llove::StructType::StructType(std::vector<Parameter> fields)
     Assert(!m_Fields.empty(), "fields must not be empty");
 }
 
-bool llove::StructType::HasField(const std::string& name) const
+bool llove::StructType::HasField(const std::string &name) const
 {
     return std::ranges::any_of(
         m_Fields,
-        [&name](auto& field) { return field.Name == name; });
+        [&](const Parameter &field)
+        {
+            return field.Name == name;
+        });
 }
 
-unsigned llove::StructType::GetFieldIndex(const std::string& name) const
+unsigned llove::StructType::GetFieldIndex(const std::string &name) const
 {
     for (unsigned i = 0; i < m_Fields.size(); ++i)
         if (m_Fields.at(i).Name == name)
@@ -30,7 +33,7 @@ unsigned llove::StructType::GetFieldCount() const
     return m_Fields.size();
 }
 
-const llove::Field& llove::StructType::GetField(const unsigned index) const
+const llove::Field &llove::StructType::GetField(const unsigned index) const
 {
     return m_Fields.at(index).Info;
 }
@@ -45,13 +48,13 @@ bool llove::StructType::IsStruct() const
     return true;
 }
 
-llvm::StructType* llove::StructType::GenIR(Builder& builder)
+llvm::StructType *llove::StructType::GenIR(Builder &builder)
 {
     if (!m_IRType)
     {
-        std::vector<llvm::Type*> fields;
-        for (auto& field : m_Fields)
-            fields.emplace_back(field.Info.GenIRType(builder));
+        std::vector<llvm::Type *> fields;
+        for (auto &[info_, name_] : m_Fields)
+            fields.push_back(info_.GenIRType(builder));
 
         m_IRType = builder.GetStructType(fields);
     }
@@ -59,22 +62,21 @@ llvm::StructType* llove::StructType::GenIR(Builder& builder)
     return llvm::dyn_cast<llvm::StructType>(m_IRType);
 }
 
-llvm::DIType* llove::StructType::GenDI(Builder& builder)
+llvm::DIType *llove::StructType::GenDI(Builder &builder)
 {
     if (!m_DIType)
     {
         const auto layout = builder.GetDataLayout().getStructLayout(GenIR(builder));
 
-        std::vector<llvm::Metadata*> elements;
+        std::vector<llvm::Metadata *> elements;
 
         for (unsigned i = 0; i < m_Fields.size(); ++i)
         {
-            auto& field = m_Fields.at(i);
-            const auto size = field.Info.SizeBits(builder);
+            auto &[info_, name_] = m_Fields.at(i);
+            const auto size = info_.SizeBits(builder);
             const auto offset = layout->getElementOffsetInBits(i);
 
-            elements.emplace_back(
-                builder.GetDebug().GetFieldType(field.Name, field.Info.GenDIType(builder), size, offset));
+            elements.push_back(builder.GetDebug().GetFieldType(name_, info_.GenDIType(builder), size, offset));
         }
 
         m_DIType = builder.GetDebug().GetStructType(elements, layout->getSizeInBits());
@@ -83,7 +85,7 @@ llvm::DIType* llove::StructType::GenDI(Builder& builder)
     return m_DIType;
 }
 
-llove::TypePtr llove::StructType::Reflect(Context& context) const
+llove::TypePtr llove::StructType::Reflect(Context &context) const
 {
     std::vector<Parameter> fields(m_Fields.size());
     for (unsigned i = 0; i < m_Fields.size(); ++i)
@@ -95,13 +97,11 @@ llove::TypePtr llove::StructType::Reflect(Context& context) const
     return context.GetStruct(std::move(fields));
 }
 
-bool llove::StructType::TypeInfo(
-    Builder& builder,
-    std::vector<llvm::Constant*>& dst) const
+bool llove::StructType::TypeInfo(Builder &builder, std::vector<llvm::Constant *> &dst) const
 {
-    dst.emplace_back(builder.GetI32(ID));
-    dst.emplace_back(builder.GetI32(m_Fields.size()));
-    for (auto& field : m_Fields)
+    dst.push_back(builder.GetI32(ID));
+    dst.push_back(builder.GetI32(m_Fields.size()));
+    for (auto &field : m_Fields)
         if (!field.TypeInfo(builder, dst))
             return false;
     return true;
@@ -110,12 +110,12 @@ bool llove::StructType::TypeInfo(
 std::string llove::StructType::Mangle() const
 {
     std::string fields;
-    for (auto& field : m_Fields)
-        fields += field.Info.Mangle();
+    for (const auto &[info_, name_] : m_Fields)
+        fields += info_.Mangle();
     return 's' + std::to_string(m_Fields.size()) + '_' + fields;
 }
 
-std::ostream& llove::StructType::Print(std::ostream& stream) const
+std::ostream &llove::StructType::Print(std::ostream &stream) const
 {
     stream << "{ ";
     for (auto i = m_Fields.begin(); i != m_Fields.end(); ++i)

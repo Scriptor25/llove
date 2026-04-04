@@ -22,7 +22,7 @@ std::string llove::ConstGlobal::GetName() const
     return m_Name;
 }
 
-llove::GlobalPtr llove::ConstGlobal::Reflect(Context& context) const
+llove::GlobalPtr llove::ConstGlobal::Reflect(Context &context) const
 {
     TypePtr type;
     Type::Reflect(context, m_Type, type);
@@ -33,7 +33,7 @@ llove::GlobalPtr llove::ConstGlobal::Reflect(Context& context) const
     return std::make_unique<ConstGlobal>(m_Loc, m_IsExport, m_Name, std::move(type), std::move(value));
 }
 
-void llove::ConstGlobal::Gen(Builder& builder) const
+void llove::ConstGlobal::Gen(Builder &builder) const
 {
     auto value = m_Value->GenVal(builder, m_Type);
     auto type = m_Type ? m_Type : value->GetType();
@@ -45,18 +45,18 @@ void llove::ConstGlobal::Gen(Builder& builder) const
 }
 
 llove::TemplateInstancePtr llove::ConstGlobal::GenTemplate(
-    Builder* /* builder */,
-    Context& /* context */,
+    Builder * /* builder */,
+    Context & /* context */,
     std::string /* name */) const
 {
     Error(m_Loc, "consts do not support templating");
 }
 
 llove::Import llove::ConstGlobal::GenImport(
-    Context& /* context */,
-    Builder& builder,
-    const std::string& as,
-    const ImportSymbols& symbols) const
+    Context & /* context */,
+    Builder &builder,
+    const std::string &as,
+    const ImportSymbols &symbols) const
 {
     if (!m_IsExport)
         return {};
@@ -71,14 +71,17 @@ llove::Import llove::ConstGlobal::GenImport(
 
     if ((as.empty() && symbols.empty()) || (symbols.contains(m_Name) && symbols.at(m_Name) == m_Name))
     {
-        builder.SetValue(symbols.contains(m_Name) ? symbols.at(m_Name) : m_Name, std::move(value));
+        if (const auto it = symbols.find(m_Name); it != symbols.end())
+            builder.SetValue(it->second, std::move(value));
+        else
+            builder.SetValue(m_Name, std::move(value));
         return { m_Name, nullptr };
     }
 
     return { m_Name, std::move(value) };
 }
 
-std::ostream& llove::ConstGlobal::Print(std::ostream& stream) const
+std::ostream &llove::ConstGlobal::Print(std::ostream &stream) const
 {
     stream << (m_IsExport ? "export " : "") << "const " << m_Name;
 

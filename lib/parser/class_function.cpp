@@ -2,11 +2,12 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-void llove::Parser::ParseClassFunction(
-    ClassFunction& function,
-    const bool require_content)
+using namespace std::placeholders;
+
+void llove::Parser::ParseClassFunction(ClassFunction &function, const bool require_content)
 {
-    static const std::set<std::string_view> no_result{
+    static const std::set<std::string_view> no_result
+    {
         "create",
         "delete",
     };
@@ -17,8 +18,19 @@ void llove::Parser::ParseClassFunction(
     function.IsOverride = SkipIf(TokenType_Symbol, "override");
     function.IsImplicit = SkipIf(TokenType_Symbol, "implicit");
     function.IsMutable = SkipIf(TokenType_Symbol, "mut");
-    function.Name = At(TokenType_Operator) ? Skip().Value
-                                           : Expect(TokenType_Symbol).Value;
+
+    if (At(TokenType_Symbol) || At(TokenType_Operator))
+        function.Name = Skip().Value;
+    else if (SkipIf(TokenType_Other, "("))
+    {
+        Expect(TokenType_Other, ")");
+        function.Name = "()";
+    }
+    else if (SkipIf(TokenType_Other, "["))
+    {
+        Expect(TokenType_Other, "]");
+        function.Name = "[]";
+    }
 
     ParseParameterList(function.Parameters, function.Variadic);
 
@@ -30,7 +42,7 @@ void llove::Parser::ParseClassFunction(
     if (function.Name == "create" && At(TokenType_Other, "["))
         ParseList<Initializer>(
             function.Initializers,
-            [this](auto& element) { ParseInitializer(element); },
+            std::bind(&Parser::ParseInitializer, this, _1),
             TokenType_Other,
             "[",
             TokenType_Other,

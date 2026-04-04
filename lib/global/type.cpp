@@ -19,7 +19,8 @@ std::string llove::TypeGlobal::GetName() const
 {
     return m_Name;
 }
-llove::GlobalPtr llove::TypeGlobal::Reflect(Context& context) const
+
+llove::GlobalPtr llove::TypeGlobal::Reflect(Context &context) const
 {
     TypePtr type;
     Type::Reflect(context, m_Type, type);
@@ -27,14 +28,14 @@ llove::GlobalPtr llove::TypeGlobal::Reflect(Context& context) const
     return std::make_unique<TypeGlobal>(m_Loc, m_IsExport, m_Name, std::move(type));
 }
 
-void llove::TypeGlobal::Gen(Builder& builder) const
+void llove::TypeGlobal::Gen(Builder &builder) const
 {
     builder.GetContext().SetNamed(m_Name, m_Type);
 }
 
 llove::TemplateInstancePtr llove::TypeGlobal::GenTemplate(
-    Builder* /* builder */,
-    Context& context,
+    Builder * /* builder */,
+    Context &context,
     const std::string name) const
 {
     TypePtr type;
@@ -46,10 +47,10 @@ llove::TemplateInstancePtr llove::TypeGlobal::GenTemplate(
 }
 
 llove::Import llove::TypeGlobal::GenImport(
-    Context& context,
-    Builder& /* builder */,
-    const std::string& as,
-    const ImportSymbols& symbols) const
+    Context &context,
+    Builder & /* builder */,
+    const std::string &as,
+    const ImportSymbols &symbols) const
 {
     context.SetNamed(m_Name, m_Type);
 
@@ -63,7 +64,7 @@ llove::Import llove::TypeGlobal::GenImport(
     return { m_Name, nullptr };
 }
 
-std::ostream& llove::TypeGlobal::Print(std::ostream& stream) const
+std::ostream &llove::TypeGlobal::Print(std::ostream &stream) const
 {
     return stream << (m_IsExport ? "export " : "") << "type " << m_Name << " = " << m_Type << ';';
 }

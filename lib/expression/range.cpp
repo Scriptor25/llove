@@ -14,9 +14,8 @@ llove::RangeExpression::RangeExpression(
 }
 
 llove::ValuePtr llove::RangeExpression::GenVal(
-    Builder& builder,
-    TypePtr expect) const
-try
+    Builder &builder,
+    TypePtr expect) const try
 {
     TypePtr type;
     if (expect && expect->IsRange())
@@ -33,19 +32,18 @@ try
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value* aggregate = llvm::Constant::getNullValue(range_type->GenIR(builder));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(range_type->GenIR(builder));
     aggregate = builder.CreateInsertValue(aggregate, beg->Load(builder), 0);
     aggregate = builder.CreateInsertValue(aggregate, end->Load(builder), 1);
 
     return Value::CreateR(std::move(range_type), aggregate);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::RangeExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::RangeExpression::Reflect(Context &context) const try
 {
     ExpressionPtr beg;
     if (m_Beg)
@@ -57,12 +55,12 @@ try
 
     return std::make_unique<RangeExpression>(m_Loc, std::move(beg), std::move(end));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::RangeExpression::Print(std::ostream& stream) const
+std::ostream &llove::RangeExpression::Print(std::ostream &stream) const
 {
     return stream << m_Beg << ".." << m_End;
 }

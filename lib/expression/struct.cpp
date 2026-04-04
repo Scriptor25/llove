@@ -16,23 +16,24 @@ llove::StructExpression::StructExpression(
 }
 
 llove::ValuePtr llove::StructExpression::GenVal(
-    Builder& builder,
-    TypePtr expect) const
-try
+    Builder &builder,
+    TypePtr expect) const try
 {
-    auto type = m_Type                       ? As<StructType>(m_Type)
-              : expect && expect->IsStruct() ? As<StructType>(std::move(expect))
-                                             : nullptr;
+    auto type = m_Type
+                    ? As<StructType>(m_Type)
+                    : expect && expect->IsStruct()
+                    ? As<StructType>(std::move(expect))
+                    : nullptr;
     Assert(type != nullptr, "untyped struct expression");
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value* aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
 
-    for (auto& [key, value] : m_Values)
+    for (auto &[key, value] : m_Values)
     {
         const auto index = type->GetFieldIndex(key);
-        auto& field = type->GetField(index);
+        auto &field = type->GetField(index);
 
         auto gen_val = value->GenVal(builder, field.GetType());
         const auto val = field.GenCast(builder, std::move(gen_val));
@@ -42,16 +43,15 @@ try
 
     return Value::CreateR(std::move(type), aggregate);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::StructExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::StructExpression::Reflect(Context &context) const try
 {
     std::map<std::string, ExpressionPtr> values;
-    for (auto& [key, value] : m_Values)
+    for (auto &[key, value] : m_Values)
         value->Reflect(context, values[key]);
 
     TypePtr type;
@@ -59,12 +59,12 @@ try
 
     return std::make_unique<StructExpression>(m_Loc, std::move(values), std::move(type));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::StructExpression::Print(std::ostream& stream) const
+std::ostream &llove::StructExpression::Print(std::ostream &stream) const
 {
     stream << "{ ";
     for (auto i = m_Values.begin(); i != m_Values.end(); ++i)

@@ -2,9 +2,12 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
+using namespace std::placeholders;
+
 llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
 {
-    static const std::set<std::string_view> no_result{
+    static const std::set<std::string_view> no_result
+    {
         "create",
         "delete",
     };
@@ -13,7 +16,20 @@ llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
     auto class_type = m_Context.GetClass(std::move(class_name));
 
     auto is_mutable = SkipIf(TokenType_Symbol, "mut");
-    auto name = At(TokenType_Operator) ? Skip().Value : Expect(TokenType_Symbol).Value;
+
+    std::string name;
+    if (At(TokenType_Symbol) || At(TokenType_Operator))
+        name = Skip().Value;
+    else if (SkipIf(TokenType_Other, "("))
+    {
+        Expect(TokenType_Other, ")");
+        name = "()";
+    }
+    else if (SkipIf(TokenType_Other, "["))
+    {
+        Expect(TokenType_Other, "]");
+        name = "[]";
+    }
 
     std::vector<Parameter> parameters;
     std::pair<bool, std::string> variadic;
@@ -29,7 +45,7 @@ llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
     if (name == "create" && At(TokenType_Other, "["))
         ParseList<Initializer>(
             initializers,
-            [this](auto& element) { ParseInitializer(element); },
+            std::bind(&Parser::ParseInitializer, this, _1),
             TokenType_Other,
             "[",
             TokenType_Other,
@@ -37,5 +53,14 @@ llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
 
     auto content = ParseScopeStatement();
 
-    return std::make_unique<ClassFunctionGlobal>(std::move(loc), std::move(class_type), is_mutable, std::move(name), std::move(parameters), variadic, std::move(result), std::move(initializers), std::move(content));
+    return std::make_unique<ClassFunctionGlobal>(
+        std::move(loc),
+        std::move(class_type),
+        is_mutable,
+        std::move(name),
+        std::move(parameters),
+        variadic,
+        std::move(result),
+        std::move(initializers),
+        std::move(content));
 }

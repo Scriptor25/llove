@@ -12,7 +12,7 @@ llove::ImportGlobal::ImportGlobal(
     std::string as,
     ImportSymbols symbols,
     std::filesystem::path filepath,
-    const std::set<std::filesystem::path>& includes)
+    const std::set<std::filesystem::path> &includes)
     : Global(std::move(loc)),
       m_As(std::move(as)),
       m_Symbols(std::move(symbols)),
@@ -26,13 +26,12 @@ std::string llove::ImportGlobal::GetName() const
     return {};
 }
 
-llove::GlobalPtr llove::ImportGlobal::Reflect(Context& /* context */) const
+llove::GlobalPtr llove::ImportGlobal::Reflect(Context & /* context */) const
 {
     return std::make_unique<ImportGlobal>(m_Loc, m_As, m_Symbols, m_Filepath, m_Includes);
 }
 
-void llove::ImportGlobal::Gen(Builder& builder) const
-try
+void llove::ImportGlobal::Gen(Builder &builder) const try
 {
     std::ifstream stream(m_Filepath);
     Assert(stream.is_open(), "failed to open import file '{}'", m_Filepath.string());
@@ -41,7 +40,7 @@ try
     Parser parser(context, stream, m_Filepath, m_Includes);
 
     std::set<std::string> remaining;
-    for (auto& key : m_Symbols | std::views::values)
+    for (auto &key : m_Symbols | std::views::values)
         remaining.insert(key);
 
     std::vector<Import> values;
@@ -64,40 +63,39 @@ try
         return;
 
     std::vector<Parameter> fields;
-    for (auto& [name, value] : values)
+    for (auto &[name, value] : values)
         fields.emplace_back(value->AsField(), name);
     auto type = builder.GetContext().GetStruct(std::move(fields));
 
-    llvm::Value* aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
+    llvm::Value *aggregate = llvm::Constant::getNullValue(type->GenIR(builder));
 
     for (unsigned i = 0; i < values.size(); ++i)
     {
-        auto& [name, value] = values.at(i);
+        auto &[name, value] = values.at(i);
         aggregate = builder.CreateInsertValue(aggregate, value->Load(builder), i);
     }
 
     auto value = Value::CreateR(type, aggregate);
     builder.SetValue(m_As, std::move(value));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::TemplateInstancePtr llove::ImportGlobal::GenTemplate(
-    Builder* /* builder */,
-    Context& /* context */,
+    Builder * /* builder */,
+    Context & /* context */,
     std::string /* name */) const
 {
     Error(m_Loc, "imports do not support templating");
 }
 
 llove::Import llove::ImportGlobal::GenImport(
-    Context& parent,
-    Builder& builder,
-    const std::string& /* as */,
-    const ImportSymbols& /* symbols */) const
-try
+    Context &parent,
+    Builder &builder,
+    const std::string & /* as */,
+    const ImportSymbols & /* symbols */) const try
 {
     // TODO: check recursion
 
@@ -114,16 +112,16 @@ try
     stream.close();
     return {};
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::ImportGlobal::Print(std::ostream& stream) const
+std::ostream &llove::ImportGlobal::Print(std::ostream &stream) const
 {
     if (m_Symbols.empty())
         return stream << "import " << (m_As.empty() ? "*" : m_As) << " from \""
-                      << m_Filepath.string() << "\";";
+               << m_Filepath.string() << "\";";
 
     stream << "import { ";
     for (auto i = m_Symbols.begin(); i != m_Symbols.end(); ++i)

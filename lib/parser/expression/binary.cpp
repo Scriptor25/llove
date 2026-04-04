@@ -12,57 +12,57 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(
     const unsigned min_precedence)
 {
     static const std::map<std::string_view, unsigned> map{
-        {   "=",  0 },
-        {  "+=",  0 },
-        {  "-=",  0 },
-        {  "*=",  0 },
-        {  "/=",  0 },
-        {  "%=",  0 },
-        {  "&=",  0 },
-        {  "^=",  0 },
-        {  "|=",  0 },
-        { "&&=",  0 },
-        { "||=",  0 },
-        { "<<=",  0 },
-        { ">>=",  0 },
+        { "=", 0 },
+        { "+=", 0 },
+        { "-=", 0 },
+        { "*=", 0 },
+        { "/=", 0 },
+        { "%=", 0 },
+        { "&=", 0 },
+        { "^=", 0 },
+        { "|=", 0 },
+        { "&&=", 0 },
+        { "||=", 0 },
+        { "<<=", 0 },
+        { ">>=", 0 },
 
-        {   "?",  1 },
+        { "?", 1 },
 
-        {  "||",  2 },
+        { "||", 2 },
 
-        {  "&&",  3 },
+        { "&&", 3 },
 
-        {   "|",  4 },
+        { "|", 4 },
 
-        {   "^",  5 },
+        { "^", 5 },
 
-        {   "&",  6 },
+        { "&", 6 },
 
-        {  "==",  7 },
-        {  "!=",  7 },
+        { "==", 7 },
+        { "!=", 7 },
 
-        {   "<",  8 },
-        {  "<=",  8 },
-        {   ">",  8 },
-        {  ">=",  8 },
+        { "<", 8 },
+        { "<=", 8 },
+        { ">", 8 },
+        { ">=", 8 },
 
-        {  "<<",  9 },
-        {  ">>",  9 },
+        { "<<", 9 },
+        { ">>", 9 },
 
-        {   "+", 10 },
-        {   "-", 10 },
+        { "+", 10 },
+        { "-", 10 },
 
-        {   "*", 11 },
-        {   "/", 11 },
-        {   "%", 11 },
+        { "*", 11 },
+        { "/", 11 },
+        { "%", 11 },
     };
 
-    auto has_precedence = [this]() -> bool
+    auto has_precedence = [&]
     {
         return m_Token.Type == TokenType_Operator && map.contains(m_Token.Value);
     };
 
-    auto get_precedence = [this]() -> unsigned
+    auto get_precedence = [&]
     {
         return map.at(m_Token.Value);
     };
@@ -73,14 +73,21 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(
         auto token = Skip();
 
         auto right = ParseOperandExpression();
-        while (has_precedence() && (get_precedence() > operator_precedence || (!get_precedence() && get_precedence() >= operator_precedence)))
-            right = ParseBinaryExpression(std::move(right), operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));
+        while (has_precedence() && (get_precedence() > operator_precedence || (
+                                        !get_precedence() && get_precedence() >= operator_precedence)))
+            right = ParseBinaryExpression(
+                std::move(right),
+                operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));
 
         if (token.Value == "?")
         {
             Expect(TokenType_Operator, ":");
             auto default_ = ParseBinaryExpression();
-            left = std::make_unique<TernaryExpression>(std::move(token.Loc), std::move(left), std::move(right), std::move(default_));
+            left = std::make_unique<TernaryExpression>(
+                std::move(token.Loc),
+                std::move(left),
+                std::move(right),
+                std::move(default_));
             continue;
         }
 

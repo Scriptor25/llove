@@ -1,19 +1,18 @@
-LLOVE = ../build/llove
-LD = ld
-GCC = gcc
+LOV = ../build/llove
+CC = clang
 
 .PHONY: all clean
 
-all: example.launch fib.launch iterator.launch memory.launch operator.launch rays.launch test.launch
+all: callable.launch example.launch fib.launch iterator.launch memory.launch operator.launch rays.launch test.launch
 
 clean:
 	- rm *.x
 
 %.o: %.lov
-	$(LLOVE) $^ -o $@
+	$(LOV) $^ -o $@
 
 %.x: std/format.o std/typeinfo.o %.o
-	$(GCC) $^ -o $@
+	$(CC) $^ -o $@
 
 %.launch: %.x
 	- ./$<

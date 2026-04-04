@@ -12,20 +12,18 @@ llove::CastExpression::CastExpression(
 }
 
 llove::ValuePtr llove::CastExpression::GenVal(
-    Builder& builder,
-    TypePtr /* expect */) const
-try
+    Builder &builder,
+    TypePtr /* expect */) const try
 {
     auto value = m_Value->GenVal(builder, m_Type);
     return builder.CreateCast(std::move(value), m_Type, false);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::CastExpression::Reflect(Context& context) const
-try
+llove::StatementPtr llove::CastExpression::Reflect(Context &context) const try
 {
     ExpressionPtr value;
     TypePtr type;
@@ -35,12 +33,12 @@ try
 
     return std::make_unique<CastExpression>(m_Loc, std::move(value), std::move(type));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::CastExpression::Print(std::ostream& stream) const
+std::ostream &llove::CastExpression::Print(std::ostream &stream) const
 {
     return stream << m_Value << " as " << m_Type;
 }

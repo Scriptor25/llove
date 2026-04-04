@@ -19,7 +19,7 @@ unsigned llove::FunctionType::GetParameterCount() const
     return m_Parameters.size();
 }
 
-const llove::Field& llove::FunctionType::GetParameter(const unsigned index) const
+const llove::Field &llove::FunctionType::GetParameter(const unsigned index) const
 {
     return m_Parameters.at(index);
 }
@@ -29,12 +29,12 @@ bool llove::FunctionType::HasVariadic() const
     return m_Variadic;
 }
 
-const llove::Field& llove::FunctionType::GetResult() const
+const llove::Field &llove::FunctionType::GetResult() const
 {
     return m_Result;
 }
 
-const std::optional<llove::Field>& llove::FunctionType::GetSelf() const
+const std::optional<llove::Field> &llove::FunctionType::GetSelf() const
 {
     return m_Self;
 }
@@ -49,7 +49,7 @@ bool llove::FunctionType::IsFunction() const
     return true;
 }
 
-llvm::PointerType* llove::FunctionType::GenIR(Builder& builder)
+llvm::PointerType *llove::FunctionType::GenIR(Builder &builder)
 {
     if (!m_IRType)
         m_IRType = builder.GetPointerType();
@@ -57,7 +57,7 @@ llvm::PointerType* llove::FunctionType::GenIR(Builder& builder)
     return llvm::dyn_cast<llvm::PointerType>(m_IRType);
 }
 
-llvm::DIType* llove::FunctionType::GenDI(Builder& builder)
+llvm::DIType *llove::FunctionType::GenDI(Builder &builder)
 {
     if (!m_DIType)
         m_DIType = builder.GetDebug().GetPointerType(GenDIFunction(builder));
@@ -65,17 +65,17 @@ llvm::DIType* llove::FunctionType::GenDI(Builder& builder)
     return m_DIType;
 }
 
-llvm::FunctionType* llove::FunctionType::GenFunction(Builder& builder)
+llvm::FunctionType *llove::FunctionType::GenFunction(Builder &builder)
 {
     if (!m_IRFunction)
     {
-        std::vector<llvm::Type*> parameters;
+        std::vector<llvm::Type *> parameters;
         if (m_Self)
-            parameters.emplace_back(m_Self->GenIRType(builder));
-        for (auto& parameter : m_Parameters)
-            parameters.emplace_back(parameter.GenIRType(builder));
+            parameters.push_back(m_Self->GenIRType(builder));
+        for (auto &parameter : m_Parameters)
+            parameters.push_back(parameter.GenIRType(builder));
         if (m_Variadic)
-            parameters.emplace_back(builder.GetVariadicType());
+            parameters.push_back(builder.GetVariadicType());
 
         const auto result = m_Result.GenIRType(builder);
 
@@ -85,12 +85,12 @@ llvm::FunctionType* llove::FunctionType::GenFunction(Builder& builder)
     return m_IRFunction;
 }
 
-llvm::DISubroutineType* llove::FunctionType::GenDIFunction(Builder& builder)
+llvm::DISubroutineType *llove::FunctionType::GenDIFunction(Builder &builder)
 {
     if (!m_DIFunction)
     {
-        std::vector<llvm::Metadata*> parameters;
-        for (auto& parameter : m_Parameters)
+        std::vector<llvm::Metadata *> parameters;
+        for (auto &parameter : m_Parameters)
             parameters.emplace_back(parameter.GenDIType(builder));
 
         const auto self = m_Self ? m_Self->GenDIType(builder) : nullptr;
@@ -102,12 +102,12 @@ llvm::DISubroutineType* llove::FunctionType::GenDIFunction(Builder& builder)
     return m_DIFunction;
 }
 
-llove::TypePtr llove::FunctionType::Reflect(Context& context) const
+llove::TypePtr llove::FunctionType::Reflect(Context &context) const
 {
     std::vector<Field> parameters;
     Field result, self;
 
-    for (auto& parameter : m_Parameters)
+    for (auto &parameter : m_Parameters)
         parameter.Reflect(context, parameters.emplace_back());
 
     m_Result.Reflect(context, result);
@@ -120,9 +120,7 @@ llove::TypePtr llove::FunctionType::Reflect(Context& context) const
     return context.GetFunction(std::move(result), std::move(parameters), m_Variadic, std::move(self));
 }
 
-bool llove::FunctionType::TypeInfo(
-    Builder& /* builder */,
-    std::vector<llvm::Constant*>& /* dst */) const
+bool llove::FunctionType::TypeInfo(Builder & /* builder */, std::vector<llvm::Constant *> & /* dst */) const
 {
     return false;
 }
@@ -130,14 +128,19 @@ bool llove::FunctionType::TypeInfo(
 std::string llove::FunctionType::Mangle() const
 {
     std::string parameters;
-    for (auto& parameter : m_Parameters)
+    for (auto &parameter : m_Parameters)
         parameters += parameter.Mangle();
-    return 'x' + std::string(m_Variadic ? "v" : "") + std::string(m_Self ? "s" : "")
-         + std::to_string(m_Parameters.size()) + '_' + parameters + m_Result.Mangle()
-         + (m_Self ? m_Self->Mangle() : std::string());
+    return 'x'
+           + std::string(m_Variadic ? "v" : "")
+           + std::string(m_Self ? "s" : "")
+           + std::to_string(m_Parameters.size())
+           + '_'
+           + parameters
+           + m_Result.Mangle()
+           + (m_Self ? m_Self->Mangle() : std::string());
 }
 
-std::ostream& llove::FunctionType::Print(std::ostream& stream) const
+std::ostream &llove::FunctionType::Print(std::ostream &stream) const
 {
     stream << '(';
     for (auto i = m_Parameters.begin(); i != m_Parameters.end(); ++i)

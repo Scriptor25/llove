@@ -23,7 +23,7 @@ std::string llove::LetGlobal::GetName() const
     return m_Name;
 }
 
-llove::GlobalPtr llove::LetGlobal::Reflect(Context& context) const
+llove::GlobalPtr llove::LetGlobal::Reflect(Context &context) const
 {
     TypePtr type;
     Type::Reflect(context, m_Type, type);
@@ -31,8 +31,7 @@ llove::GlobalPtr llove::LetGlobal::Reflect(Context& context) const
     return std::make_unique<LetGlobal>(m_Loc, m_IsExport, m_Name, std::move(type));
 }
 
-void llove::LetGlobal::Gen(Builder& builder) const
-try
+void llove::LetGlobal::Gen(Builder &builder) const try
 {
     auto type = m_Type->GenIR(builder);
     auto linkage = m_IsExport ? llvm::GlobalValue::ExternalLinkage : llvm::GlobalValue::InternalLinkage;
@@ -41,24 +40,24 @@ try
 
     builder.SetValue(m_Name, Value::CreateL(m_Type, pointer, true));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::TemplateInstancePtr llove::LetGlobal::GenTemplate(
-    Builder* /* builder */,
-    Context& /* context */,
+    Builder * /* builder */,
+    Context & /* context */,
     std::string /* name */) const
 {
     Error(m_Loc, "lets do not support templating");
 }
 
 llove::Import llove::LetGlobal::GenImport(
-    Context& /* context */,
-    Builder& builder,
-    const std::string& as,
-    const ImportSymbols& symbols) const
+    Context & /* context */,
+    Builder &builder,
+    const std::string &as,
+    const ImportSymbols &symbols) const
 {
     if (!m_IsExport)
         return {};
@@ -81,7 +80,7 @@ llove::Import llove::LetGlobal::GenImport(
     return { m_Name, std::move(value) };
 }
 
-std::ostream& llove::LetGlobal::Print(std::ostream& stream) const
+std::ostream &llove::LetGlobal::Print(std::ostream &stream) const
 {
     return stream << (m_IsExport ? "export " : "") << "let " << m_Name << ": " << m_Type << ";";
 }

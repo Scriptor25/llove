@@ -1,8 +1,7 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::GlobalPtr llove::Parser::ParseGlobal(bool is_template)
-try
+llove::GlobalPtr llove::Parser::ParseGlobal(bool is_template) try
 {
     const auto is_export = !is_template && SkipIf(TokenType_Symbol, "export");
 
@@ -25,7 +24,7 @@ try
 
     Error("unable to parse global from {} : '{}'", m_Token.Type, m_Token.Value);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Token.Loc, std::nullopt);
 }

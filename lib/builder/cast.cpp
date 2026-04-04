@@ -1,73 +1,49 @@
-#include "llove/type.hpp"
-
 #include <llove/builder.hpp>
 #include <llove/error.hpp>
+#include <llove/type.hpp>
 #include <llove/value.hpp>
 
-llove::ValuePtr llove::Builder::CreateCast(
-    ValuePtr value,
-    TypePtr dst,
-    const bool is_implicit)
+llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bool is_implicit)
 {
     const auto src_fld(value->AsField());
     const Field dst_fld(dst);
 
     const auto src = value->GetType();
     if (src == dst)
-    {
         return value;
-    }
 
     std::optional<FunctionReference> callee;
-    for (auto& function : m_Functions)
+    for (auto &function : m_Functions)
     {
-        const auto& function_type = function.Type;
-        const auto& function_result = function_type->GetResult();
+        const auto &function_type = function.Type;
+        const auto &function_result = function_type->GetResult();
 
         if (function.Name != "cast")
-        {
             continue;
-        }
 
         if (is_implicit && !function.IsImplicit)
-        {
             continue;
-        }
 
         if (function_type->HasVariadic())
-        {
             continue;
-        }
 
-        if (const auto& function_self = function_type->GetSelf())
+        if (const auto &function_self = function_type->GetSelf())
         {
             if (function_type->GetParameterCount() != 0)
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, dst_fld, function_result, true))
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, *function_self, src_fld, true))
-            {
                 continue;
-            }
         }
         else
         {
             if (function_type->GetParameterCount() != 1)
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, dst_fld, function_result, true))
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, function_type->GetParameter(0), src_fld, true))
-            {
                 continue;
-            }
         }
 
         callee = function;
@@ -80,13 +56,9 @@ llove::ValuePtr llove::Builder::CreateCast(
         ValuePtr self;
 
         if (callee->Type->GetSelf())
-        {
             self = std::move(value);
-        }
         else
-        {
-            arguments.emplace_back(std::move(value));
-        }
+            arguments.push_back(std::move(value));
 
         return CreateCall(*callee, std::move(arguments), std::move(self));
     }
@@ -94,7 +66,7 @@ llove::ValuePtr llove::Builder::CreateCast(
     auto src_llvm = src->GenIR(*this);
     auto dst_llvm = dst->GenIR(*this);
 
-    llvm::Value* result = nullptr;
+    llvm::Value *result = nullptr;
 
     switch (src->GetId())
     {
@@ -111,10 +83,7 @@ llove::ValuePtr llove::Builder::CreateCast(
                 result = m_LLVMBuilder.CreateIsNotNull(value->Load(*this));
                 break;
             }
-            result = m_LLVMBuilder.CreateIntCast(
-                value->Load(*this),
-                dst_llvm,
-                dst_integer->IsSigned());
+            result = m_LLVMBuilder.CreateIntCast(value->Load(*this), dst_llvm, dst_integer->IsSigned());
             break;
         }
         case TypeId_Float:
@@ -205,13 +174,9 @@ llove::ValuePtr llove::Builder::CreateCast(
         {
             const auto dst_pointer = As<PointerType>(dst);
             if (!dst_pointer->IsOpaque() && src_array->GetBase() != dst_pointer->GetBase())
-            {
                 break;
-            }
             if (!value->IsMutable() && dst_pointer->IsMutable())
-            {
                 break;
-            }
             result = value->GetPointer();
             break;
         }
@@ -224,11 +189,9 @@ llove::ValuePtr llove::Builder::CreateCast(
     case TypeId_Class:
         if (As<ClassType>(src)->InheritsFrom(dst))
         {
-            llvm::Value* pointer;
+            llvm::Value *pointer;
             if (value->IsReference())
-            {
                 pointer = value->GetPointer();
-            }
             else
             {
                 pointer = CreateAlloca(src_llvm);
@@ -243,9 +206,7 @@ llove::ValuePtr llove::Builder::CreateCast(
         {
         case TypeId_Function:
             if (is_implicit)
-            {
                 break;
-            }
             result = value->Load(*this);
             break;
         default:
@@ -261,65 +222,42 @@ llove::ValuePtr llove::Builder::CreateCast(
     return Value::CreateR(std::move(dst), result);
 }
 
-bool llove::Builder::IsCastable(
-    const Field& src,
-    const Field& dst,
-    const bool is_implicit) const
+bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool is_implicit) const
 {
     if (src == dst)
-    {
         return true;
-    }
 
-    for (auto& function : m_Functions)
+    for (auto &function : m_Functions)
     {
         if (function.Name != "cast")
-        {
             continue;
-        }
 
         if (is_implicit && !function.IsImplicit)
-        {
             continue;
-        }
 
-        const auto& function_type = function.Type;
-        const auto& function_result = function_type->GetResult();
+        const auto &function_type = function.Type;
+        const auto &function_result = function_type->GetResult();
 
         if (function_type->HasVariadic())
-        {
             continue;
-        }
 
-        if (const auto& function_self = function_type->GetSelf())
+        if (const auto &function_self = function_type->GetSelf())
         {
             if (function_type->GetParameterCount() != 0)
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, dst, function_result, true))
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, *function_self, src, true))
-            {
                 continue;
-            }
         }
         else
         {
             if (function_type->GetParameterCount() != 1)
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, dst, function_result, true))
-            {
                 continue;
-            }
             if (!Field::IsCastable(*this, function_type->GetParameter(0), src, true))
-            {
                 continue;
-            }
         }
         return true;
     }
@@ -365,9 +303,8 @@ bool llove::Builder::IsCastable(
         case TypeId_Pointer:
         {
             const auto dst_pointer = As<PointerType>(dst_type);
-            return (dst_pointer->IsOpaque()
-                    || src_array->GetBase() == dst_pointer->GetBase())
-                && (src.IsMutable() || !dst_pointer->IsMutable());
+            return (dst_pointer->IsOpaque() || src_array->GetBase() == dst_pointer->GetBase())
+                   && (src.IsMutable() || !dst_pointer->IsMutable());
         }
         default:
             return false;

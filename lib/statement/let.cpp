@@ -17,8 +17,7 @@ llove::LetStatement::LetStatement(
 {
 }
 
-void llove::LetStatement::Gen(Builder& builder) const
-try
+void llove::LetStatement::Gen(Builder &builder) const try
 {
     ValuePtr value;
     TypePtr type;
@@ -27,9 +26,7 @@ try
     {
         type = m_Field.GetType();
         if (m_Value)
-        {
             value = m_Value->GenVal(builder, type);
-        }
     }
     else
     {
@@ -39,16 +36,16 @@ try
 
     std::vector<Field> argument_fields;
     std::vector<ValuePtr> argument_values;
-    for (auto& argument : m_Arguments)
+    for (auto &argument : m_Arguments)
     {
         auto argument_value = argument->GenVal(builder, nullptr);
-        argument_fields.emplace_back(argument_value->AsField());
-        argument_values.emplace_back(std::move(argument_value));
+        argument_fields.push_back(argument_value->AsField());
+        argument_values.push_back(std::move(argument_value));
     }
 
     builder.EmitLoc(m_Loc);
 
-    llvm::Value* pointer;
+    llvm::Value *pointer;
     if (m_Field.IsReference())
     {
         Assert(m_Arguments.empty(), "cannot construct reference");
@@ -72,11 +69,12 @@ try
 
             if (value)
             {
-                if (const auto
-                        candidate = builder.FindFunction(constructors, { value->AsField() }, self->AsField(), true))
-                {
+                if (const auto candidate = builder.FindFunction(
+                    constructors,
+                    { value->AsField() },
+                    self->AsField(),
+                    true))
                     builder.CreateCall(*candidate, { std::move(value) }, self);
-                }
                 else
                 {
                     Assert(!value->IsReference(), "illegal implicit copy");
@@ -109,9 +107,7 @@ try
                 value = Value::CreateR(type, llvm::Constant::getNullValue(type->GenIR(builder)));
             }
             else if (type)
-            {
                 value = builder.CreateCast(std::move(value), type, true);
-            }
 
             builder.CreateStore(value->Load(builder), pointer);
         }
@@ -121,13 +117,12 @@ try
     builder.GetDebug().CreateVariable(builder, m_Name, storage);
     builder.SetValue(m_Name, std::move(storage));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-llove::StatementPtr llove::LetStatement::Reflect(Context& context) const
-try
+llove::StatementPtr llove::LetStatement::Reflect(Context &context) const try
 {
     Field field;
     ExpressionPtr value;
@@ -138,17 +133,17 @@ try
     if (m_Value)
         m_Value->Reflect(context, value);
 
-    for (auto& argument : m_Arguments)
+    for (auto &argument : m_Arguments)
         argument->Reflect(context, arguments.emplace_back());
 
     return std::make_unique<LetStatement>(m_Loc, std::move(field), m_Name, std::move(value), std::move(arguments));
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
-std::ostream& llove::LetStatement::Print(std::ostream& stream) const
+std::ostream &llove::LetStatement::Print(std::ostream &stream) const
 {
     m_Field.Print(stream << "let ", true, m_Name);
 

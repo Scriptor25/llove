@@ -36,19 +36,19 @@ llove::InlineExpression::InlineExpression(
 }
 
 llove::ValuePtr llove::InlineExpression::GenVal(
-    Builder& builder,
+    Builder &builder,
     TypePtr /* expect */) const
 {
     std::vector<Field> elements, parameters;
-    std::vector<llvm::Type*> element_types, parameter_types;
+    std::vector<llvm::Type *> element_types, parameter_types;
     std::string constraints;
 
     for (auto it = m_DstOperands.begin(); it != m_DstOperands.end(); ++it)
     {
-        auto& type = it->second;
+        auto &type = it->second;
 
         elements.emplace_back(type);
-        element_types.emplace_back(type->GenIR(builder));
+        element_types.push_back(type->GenIR(builder));
 
         if (it != m_DstOperands.begin())
             constraints += ',';
@@ -57,10 +57,10 @@ llove::ValuePtr llove::InlineExpression::GenVal(
 
     for (auto it = m_SrcOperands.begin(); it != m_SrcOperands.end(); ++it)
     {
-        auto& type = it->second;
+        auto &type = it->second;
 
         parameters.emplace_back(type);
-        parameter_types.emplace_back(type->GenIR(builder));
+        parameter_types.push_back(type->GenIR(builder));
 
         if (!m_DstOperands.empty() || it != m_SrcOperands.begin())
             constraints += ',';
@@ -75,7 +75,7 @@ llove::ValuePtr llove::InlineExpression::GenVal(
     }
 
     Field result;
-    llvm::Type* result_type;
+    llvm::Type *result_type;
 
     if (element_types.empty())
     {
@@ -94,33 +94,49 @@ llove::ValuePtr llove::InlineExpression::GenVal(
     }
 
     auto function_type = llvm::FunctionType::get(result_type, parameter_types, false);
-    auto inline_asm = llvm::InlineAsm::get(function_type, m_AsmString, constraints, m_SideEffect, m_AlignStack, m_IntelDialect ? llvm::InlineAsm::AD_Intel : llvm::InlineAsm::AD_ATT, m_Unwind);
+    auto inline_asm = llvm::InlineAsm::get(
+        function_type,
+        m_AsmString,
+        constraints,
+        m_SideEffect,
+        m_AlignStack,
+        m_IntelDialect ? llvm::InlineAsm::AD_Intel : llvm::InlineAsm::AD_ATT,
+        m_Unwind);
 
     return Value::CreateR(builder.GetContext().GetFunction(result, std::move(parameters)), inline_asm);
 }
 
-llove::StatementPtr llove::InlineExpression::Reflect(Context& context) const
+llove::StatementPtr llove::InlineExpression::Reflect(Context &context) const
 {
     std::vector<InlineOperand> dst_operands, src_operands;
 
-    for (auto& operand : m_DstOperands)
+    for (const auto &[fst, snd] : m_DstOperands)
     {
         TypePtr type;
-        Type::Reflect(context, operand.second, type);
-        dst_operands.emplace_back(operand.first, std::move(type));
+        Type::Reflect(context, snd, type);
+        dst_operands.emplace_back(fst, std::move(type));
     }
 
-    for (auto& operand : m_SrcOperands)
+    for (const auto &[fst, snd] : m_SrcOperands)
     {
         TypePtr type;
-        Type::Reflect(context, operand.second, type);
-        src_operands.emplace_back(operand.first, std::move(type));
+        Type::Reflect(context, snd, type);
+        src_operands.emplace_back(fst, std::move(type));
     }
 
-    return std::make_unique<InlineExpression>(m_Loc, m_AsmString, std::move(dst_operands), std::move(src_operands), m_Clobbers, m_SideEffect, m_AlignStack, m_IntelDialect, m_Unwind);
+    return std::make_unique<InlineExpression>(
+        m_Loc,
+        m_AsmString,
+        std::move(dst_operands),
+        std::move(src_operands),
+        m_Clobbers,
+        m_SideEffect,
+        m_AlignStack,
+        m_IntelDialect,
+        m_Unwind);
 }
 
-std::ostream& llove::InlineExpression::Print(std::ostream& stream) const
+std::ostream &llove::InlineExpression::Print(std::ostream &stream) const
 {
     stream << "inline(" << m_AsmString;
 

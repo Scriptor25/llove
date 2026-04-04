@@ -68,5 +68,10 @@ llove::GlobalPtr llove::Parser::ParseImportGlobal()
         filename,
         filepath.string());
 
-    return std::make_unique<ImportGlobal>(std::move(loc), std::move(as), std::move(symbols), std::move(filepath), m_Includes);
+    return std::make_unique<ImportGlobal>(
+        std::move(loc),
+        std::move(as),
+        std::move(symbols),
+        std::move(filepath),
+        m_Includes);
 }

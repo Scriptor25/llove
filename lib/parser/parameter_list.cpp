@@ -1,17 +1,17 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
+using namespace std::placeholders;
+
 llove::Location llove::Parser::ParseParameterList(
-    std::vector<Parameter>& parameters,
-    std::pair<
-        bool,
-        std::string>& variadic)
+    std::vector<Parameter> &parameters,
+    std::pair<bool, std::string> &variadic)
 {
     return ParseList<Parameter, std::pair<bool, std::string>>(
         parameters,
         variadic,
-        [this](auto& element) { ParseParameter(element); },
-        [this](auto& ellipsis)
+        std::bind(&Parser::ParseParameter, this, _1),
+        [&](std::pair<bool, std::string> &ellipsis)
         {
             ellipsis.first = true;
             if (At(TokenType_Symbol))
@@ -26,13 +26,11 @@ llove::Location llove::Parser::ParseParameterList(
 }
 
 llove::Location llove::Parser::ParseTemplateParameterList(
-    std::vector<std::pair<
-        std::string,
-        TemplateType::Ptr>>& parameters)
+    std::vector<std::pair<std::string, TemplateType::Ptr>> &parameters)
 {
     return ParseList<TemplateParameter>(
         parameters,
-        [this](auto& element)
+        [&](TemplateParameter &element)
         {
             auto parameter_name = Expect(TokenType_Symbol).Value;
             element = { parameter_name, std::make_shared<TemplateType>(parameter_name) };

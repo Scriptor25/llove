@@ -1,11 +1,13 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-llove::Location llove::Parser::ParseArgumentList(std::vector<ExpressionPtr>& arguments)
+using namespace std::placeholders;
+
+llove::Location llove::Parser::ParseArgumentList(std::vector<ExpressionPtr> &arguments)
 {
     return ParseList<ExpressionPtr>(
         arguments,
-        [this](auto& element) { element = ParseExpression(); },
+        std::bind(&Parser::ParseExpressionElement, this, _1),
         TokenType_Other,
         "(",
         TokenType_Other,

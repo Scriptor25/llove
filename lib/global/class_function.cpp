@@ -33,15 +33,15 @@ std::string llove::ClassFunctionGlobal::GetName() const
     return m_Name;
 }
 
-llove::GlobalPtr llove::ClassFunctionGlobal::Reflect(Context& context) const
+llove::GlobalPtr llove::ClassFunctionGlobal::Reflect(Context &context) const
 {
     ClassType::Ptr class_type;
     Type::Reflect(context, m_ClassType, class_type);
 
     std::vector<Parameter> parameters;
-    for (auto& parameter : m_Parameters)
+    for (auto &parameter : m_Parameters)
     {
-        auto& p = parameters.emplace_back();
+        auto &p = parameters.emplace_back();
         p.Name = parameter.Name;
         parameter.Info.Reflect(context, p.Info);
     }
@@ -50,21 +50,29 @@ llove::GlobalPtr llove::ClassFunctionGlobal::Reflect(Context& context) const
     m_Result.Reflect(context, result);
 
     std::vector<Initializer> initializers;
-    for (auto& initializer : m_Initializers)
+    for (auto &initializer : m_Initializers)
         initializer.Reflect(context, initializers.emplace_back());
 
     StatementPtr content;
     m_Content->Reflect(context, content);
 
-    return std::make_unique<ClassFunctionGlobal>(m_Loc, std::move(class_type), m_IsMutable, m_Name, std::move(parameters), m_Variadic, std::move(result), std::move(initializers), std::move(content));
+    return std::make_unique<ClassFunctionGlobal>(
+        m_Loc,
+        std::move(class_type),
+        m_IsMutable,
+        m_Name,
+        std::move(parameters),
+        m_Variadic,
+        std::move(result),
+        std::move(initializers),
+        std::move(content));
 }
 
-void llove::ClassFunctionGlobal::Gen(Builder& builder) const
-try
+void llove::ClassFunctionGlobal::Gen(Builder &builder) const try
 {
     std::vector<Field> parameters;
-    for (auto& parameter : m_Parameters)
-        parameters.emplace_back(parameter.Info);
+    for (const auto &[info_, name_] : m_Parameters)
+        parameters.push_back(info_);
 
     const auto reference = m_ClassType->GetFunction(
         m_ClassType,
@@ -76,14 +84,14 @@ try
     Assert(reference.has_value(), "class function prototype mismatch");
 
     std::vector<Initializer> initializers;
-    for (auto& initializer : m_Initializers)
+    for (auto &initializer : m_Initializers)
         initializer.Reflect(builder.GetContext(), initializers.emplace_back());
 
     StatementPtr content;
     if (m_Content)
         m_Content->Reflect(builder.GetContext(), content);
 
-    auto& [parent, function] = *reference;
+    auto &[parent, function] = *reference;
 
     Function agg;
     agg.Loc = m_Loc;
@@ -103,29 +111,29 @@ try
 
     builder.GenFunction(agg, false);
 }
-catch (ref_exception<ErrorStack>& cause)
+catch (ref_exception<ErrorStack> &cause)
 {
     throw ref_exception<ErrorStack>(std::move(cause), m_Loc, std::nullopt);
 }
 
 llove::TemplateInstancePtr llove::ClassFunctionGlobal::GenTemplate(
-    Builder* /* builder */,
-    Context& /* context */,
+    Builder * /* builder */,
+    Context & /* context */,
     std::string /* name */) const
 {
     Error(m_Loc, "class functions do not support templating");
 }
 
 llove::Import llove::ClassFunctionGlobal::GenImport(
-    Context& /* context */,
-    Builder& /* builder */,
-    const std::string& /* as */,
-    const ImportSymbols& /* symbols */) const
+    Context & /* context */,
+    Builder & /* builder */,
+    const std::string & /* as */,
+    const ImportSymbols & /* symbols */) const
 {
     return {};
 }
 
-std::ostream& llove::ClassFunctionGlobal::Print(std::ostream& stream) const
+std::ostream &llove::ClassFunctionGlobal::Print(std::ostream &stream) const
 {
     stream << "function:" << m_ClassType->GetName() << ' ' << (m_IsMutable ? "mut " : "") << m_Name << '(';
 
