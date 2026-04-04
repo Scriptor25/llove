@@ -8,17 +8,17 @@ type vec3 = {
 
 function +(&l: vec3, &r: vec3): vec3 {
     ret {
-        x: l.x + r.x,
-        y: l.y + r.y,
-        z: l.z + r.z,
+        .x = l.x + r.x,
+        .y = l.y + r.y,
+        .z = l.z + r.z,
     };
 }
 
 function -(&l: vec3, &r: vec3): vec3 {
     ret {
-        x: l.x - r.x,
-        y: l.y - r.y,
-        z: l.z - r.z,
+        .x = l.x - r.x,
+        .y = l.y - r.y,
+        .z = l.z - r.z,
     };
 }
 
@@ -35,8 +35,8 @@ function foo(mut bar: i32) {
 
 interface main(count: i32, args: i8[][]): i32 {
 
-    let u: vec3 = { x: 1.0, y: 2.0, z: 3.0 };
-    let v: vec3 = { x: 3.0, y: 2.0, z: 1.0 };
+    let u: vec3 = { .x = 1.0, .y = 2.0, .z = 3.0 };
+    let v: vec3 = { .x = 3.0, .y = 2.0, .z = 1.0 };
     let w = u + v;
 
     format("{::2} {::2} {::2}\n", u.x, u.y, u.z);

@@ -2,8 +2,6 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-using namespace std::placeholders;
-
 void llove::Parser::ParseClassFunction(ClassFunction &function, const bool require_content)
 {
     static const std::set<std::string_view> no_result
@@ -42,7 +40,10 @@ void llove::Parser::ParseClassFunction(ClassFunction &function, const bool requi
     if (function.Name == "create" && At(TokenType_Other, "["))
         ParseList<Initializer>(
             function.Initializers,
-            std::bind(&Parser::ParseInitializer, this, _1),
+            [&](Initializer &element)
+            {
+                ParseInitializer(element);
+            },
             TokenType_Other,
             "[",
             TokenType_Other,
@@ -51,5 +52,18 @@ void llove::Parser::ParseClassFunction(ClassFunction &function, const bool requi
     if (function.Initializers.empty() && !require_content && SkipIf(TokenType_Other, ";"))
         return;
 
-    function.Content = ParseScopeStatement();
+    if (At(TokenType_Operator, "->"))
+    {
+        auto ret_loc = Skip().Loc;
+
+        auto expression = ParseExpression();
+        Expect(TokenType_Other, ";");
+
+        if (function.Result.GetType()->IsVoid())
+            function.Content = std::move(expression);
+        else
+            function.Content = std::make_unique<RetStatement>(std::move(ret_loc), std::move(expression));
+    }
+    else
+        function.Content = ParseScopeStatement();
 }

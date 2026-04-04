@@ -120,10 +120,7 @@ namespace llove
     class raw_pwrite_stream_adapter final : public llvm::raw_pwrite_stream
     {
     public:
-        explicit raw_pwrite_stream_adapter(
-            std::basic_ostream<
-                C,
-                T> &stream)
+        explicit raw_pwrite_stream_adapter(std::basic_ostream<C, T> &stream)
             : raw_pwrite_stream(true),
               m_Stream(stream)
         {

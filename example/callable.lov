@@ -1,16 +1,10 @@
 import { format } from "std/format.lov";
 
-function add_fn(a: i32, b: i32): i32 {
-    ret a + b;
-}
+function add_fn(a: i32, b: i32): i32 -> a + b;
 
 class add_ty {
 
-    public ()(a: i32, b: i32): i32 {
-        ret a + b;
-    }
-
-    let _: i32;
+    public ()(a: i32, b: i32): i32 -> a + b;
 }
 
 function callable() {
@@ -30,19 +24,13 @@ function callable() {
 
 type context_ty = { mut v: i32 };
 
-function inc_fn(mut &ctx: context_ty, v: i32) {
-    ctx.v += v;
-}
+function inc_fn(mut &ctx: context_ty, v: i32) -> ctx.v += v;
 
 class inc_ty {
 
-    public mut ()(v: i32) {
-        self.v += v;
-    }
+    public mut ()(v: i32) -> self.v += v;
 
-    public v(): &i32 {
-        ret self.v;
-    }
+    public v(): &i32 -> self.v;
 
     let mut v: i32;
 }
@@ -64,9 +52,31 @@ function callable_context() {
     format("{} + {} + {} = {}\n", 1, 2, 3, i.v());
 }
 
+function callable_lambda() {
+
+    let add = [](a: i32, b: i32): i32 -> a + b;
+
+    format("{} + {} = {}\n", 1, 2, add(1, 2));
+
+    let mut v: i32;
+    let inc = [mut &v](x: i32) -> self.v += x;
+
+    inc(1);
+    inc(2);
+    inc(3);
+
+    format("{} + {} + {} = {}\n", 1, 2, 3, v);
+}
+
 interface main(): i32 {
     callable();
     callable_context();
+    callable_lambda();
 
     ret 0;
 }
+
+# lambda    => '[' ( '&' | '=' | reference+ )? ']' '(' argument* ')' ( ':' result )? ( '{' statement* '}' | '->' expression )
+# reference => 'mut'? '&'? name
+# argument  => reference ':' type
+# result    => 'mut'? '&'? type

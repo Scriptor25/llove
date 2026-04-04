@@ -15,7 +15,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &name, co
         if (function.Name != name)
             continue;
 
-        if (suffix != function_type->HasVariadic())
+        if (suffix != function_type->IsVariadic())
             continue;
 
         auto error = 0u;
@@ -56,7 +56,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &name, co
         const auto class_type = As<ClassType>(operand.GetType());
         for (const auto functions = class_type->GetFunctions(class_type, name); auto &[parent, function] : functions)
         {
-            if (suffix != function.HasVariadic)
+            if (suffix != function.IsVariadic)
                 continue;
 
             auto error = 0u;
@@ -87,7 +87,7 @@ llove::Operator<1>::Ptr llove::Builder::FindOperator(const std::string &name, co
             agg.IsMutable = function.IsMutable;
             agg.Class = parent;
             agg.Name = function.Name;
-            agg.Variadic = { function.HasVariadic, {} };
+            agg.Variadic = { function.IsVariadic, {} };
             agg.Result = function.Result;
 
             auto reference = GenFunction(agg, false);
@@ -119,7 +119,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(const std::string &name, co
         if (function.Name != name)
             continue;
 
-        if (function_type->HasVariadic())
+        if (function_type->IsVariadic())
             continue;
 
         auto error = 0u;
@@ -168,7 +168,7 @@ llove::Operator<2>::Ptr llove::Builder::FindOperator(const std::string &name, co
         {
             const auto parameter_count = function.Parameters.size();
 
-            if (function.HasVariadic)
+            if (function.IsVariadic)
                 continue;
 
             auto error = 0u;

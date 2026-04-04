@@ -35,9 +35,7 @@ llove::InlineExpression::InlineExpression(
 {
 }
 
-llove::ValuePtr llove::InlineExpression::GenVal(
-    Builder &builder,
-    TypePtr /* expect */) const
+llove::ValuePtr llove::InlineExpression::GenVal(Builder &builder, TypePtr /* expect */) const
 {
     std::vector<Field> elements, parameters;
     std::vector<llvm::Type *> element_types, parameter_types;

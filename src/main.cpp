@@ -46,11 +46,7 @@ static unsigned get_console_width()
 #endif
 }
 
-static void print_help(
-    const std::map<
-        std::string,
-        cli::OptionTemplate> &templates,
-    const bool ascii)
+static void print_help(const std::map<std::string, cli::OptionTemplate> &templates, const bool ascii)
 {
     print_version();
 

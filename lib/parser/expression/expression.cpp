@@ -5,8 +5,3 @@ llove::ExpressionPtr llove::Parser::ParseExpression()
 {
     return ParseBinaryExpression();
 }
-
-void llove::Parser::ParseExpressionElement(ExpressionPtr &element)
-{
-    element = ParseExpression();
-}

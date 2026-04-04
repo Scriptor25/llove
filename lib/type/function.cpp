@@ -24,7 +24,7 @@ const llove::Field &llove::FunctionType::GetParameter(const unsigned index) cons
     return m_Parameters.at(index);
 }
 
-bool llove::FunctionType::HasVariadic() const
+bool llove::FunctionType::IsVariadic() const
 {
     return m_Variadic;
 }

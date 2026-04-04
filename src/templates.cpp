@@ -4,8 +4,6 @@
 
 #include <llove/error.hpp>
 
-using namespace std::placeholders;
-
 bool YAML::convert<cli::OptionTemplate>::decode(const Node &node, cli::OptionTemplate &option)
 {
     if (!node.IsMap() || !node["pattern"].IsDefined() || !node["type"].IsDefined())

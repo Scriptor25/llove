@@ -1,21 +1,22 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-using namespace std::placeholders;
-
 llove::Location llove::Parser::ParseParameterList(
     std::vector<Parameter> &parameters,
-    std::pair<bool, std::string> &variadic)
+    Variadic &variadic)
 {
-    return ParseList<Parameter, std::pair<bool, std::string>>(
+    return ParseList<Parameter, Variadic>(
         parameters,
         variadic,
-        std::bind(&Parser::ParseParameter, this, _1),
-        [&](std::pair<bool, std::string> &ellipsis)
+        [&](Parameter &element)
         {
-            ellipsis.first = true;
+            ParseParameter(element);
+        },
+        [&](Variadic &ellipsis)
+        {
+            ellipsis.Is = true;
             if (At(TokenType_Symbol))
-                ellipsis.second = std::move(Skip().Value);
+                ellipsis.Name = std::move(Skip().Value);
         },
         TokenType_Other,
         "(",

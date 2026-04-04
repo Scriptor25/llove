@@ -37,8 +37,6 @@ llove::ClassType::Ptr llove::ClassType::GetParentClass() const
 
 bool llove::ClassType::HasMember(const std::string &name) const
 {
-    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
-
     return std::ranges::any_of(
                m_Members,
                [&](const ClassMemberReference &member)
@@ -50,8 +48,6 @@ bool llove::ClassType::HasMember(const std::string &name) const
 
 unsigned llove::ClassType::GetMemberIndex(const std::string &name) const
 {
-    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
-
     for (unsigned i = 0; i < m_Members.size(); ++i)
         if (m_Members.at(i).Name == name)
             return i + (m_ParentClass ? m_ParentClass->GetMemberCount() : 0);
@@ -64,15 +60,11 @@ unsigned llove::ClassType::GetMemberIndex(const std::string &name) const
 
 unsigned llove::ClassType::GetMemberCount() const
 {
-    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
-
     return m_Members.size() + (m_ParentClass ? m_ParentClass->GetMemberCount() : 0);
 }
 
 const llove::Field &llove::ClassType::GetMember(unsigned index) const
 {
-    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
-
     if (m_ParentClass)
     {
         if (index < m_ParentClass->GetMemberCount())
@@ -82,7 +74,7 @@ const llove::Field &llove::ClassType::GetMember(unsigned index) const
 
     Assert(index < m_Members.size(), "index out of bounds");
 
-    return m_Members.at(index).Info;
+    return m_Members[index].Info;
 }
 
 void llove::ClassType::ForEachMember(const std::function<void(unsigned, const ClassMemberReference &)> &callback) const
@@ -112,7 +104,7 @@ llove::ClassType::OptRef<llove::ClassFunctionReference> llove::ClassType::GetFun
             continue;
         if (function.IsMutable != is_mutable)
             continue;
-        if (function.HasVariadic != has_variadic)
+        if (function.IsVariadic != has_variadic)
             continue;
         if (function.Parameters.size() != parameters.size())
             continue;
@@ -190,16 +182,16 @@ void llove::ClassType::SetParentClass(Ptr parent_class_type)
     m_IRType = nullptr;
     m_DIType = nullptr;
 
+    m_Initialized = true;
     m_ParentClass = std::move(parent_class_type);
 }
 
 void llove::ClassType::SetMembers(std::vector<ClassMemberReference> members)
 {
-    Assert(m_ParentClass != nullptr || !members.empty(), "members must not be empty");
-
     m_IRType = nullptr;
     m_DIType = nullptr;
 
+    m_Initialized = true;
     m_Members = std::move(members);
 }
 
@@ -208,6 +200,7 @@ void llove::ClassType::SetFunctions(std::vector<ClassFunctionReference> function
     m_IRType = nullptr;
     m_DIType = nullptr;
 
+    m_Initialized = true;
     m_Functions = std::move(functions);
 }
 
@@ -223,8 +216,6 @@ bool llove::ClassType::IsClass() const
 
 std::vector<llvm::Type *> llove::ClassType::GenIRElements(Builder &builder) const
 {
-    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
-
     std::vector<llvm::Type *> elements;
 
     if (m_ParentClass)
@@ -241,8 +232,6 @@ std::vector<llvm::Type *> llove::ClassType::GenIRElements(Builder &builder) cons
 
 std::pair<std::vector<llvm::Metadata *>, unsigned> llove::ClassType::GenDIElements(Builder &builder)
 {
-    Assert(m_ParentClass != nullptr || !m_Members.empty(), "members must not be empty");
-
     std::vector<llvm::Metadata *> elements;
     auto base_offset = 0u;
 
@@ -271,13 +260,13 @@ llvm::StructType *llove::ClassType::GenIR(Builder &builder)
 {
     if (!m_IRType)
     {
-        if (!m_ParentClass && m_Members.empty())
-            m_IRType = builder.GetOrCreateNamedStructType(m_Name);
-        else
+        if (m_Initialized)
         {
             const auto elements = GenIRElements(builder);
             m_IRType = builder.GetOrCreateNamedStructType(m_Name, elements, false);
         }
+        else
+            m_IRType = builder.GetOrCreateNamedStructType(m_Name);
     }
 
     return llvm::dyn_cast<llvm::StructType>(m_IRType);

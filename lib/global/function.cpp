@@ -1,8 +1,9 @@
+#include <utility>
+
 #include <llove/builder.hpp>
 #include <llove/forward.hpp>
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
-#include <utility>
 
 llove::FunctionGlobal::FunctionGlobal(
     Location loc,
@@ -12,9 +13,7 @@ llove::FunctionGlobal::FunctionGlobal(
     const bool is_operator,
     std::string name,
     std::vector<Parameter> parameters,
-    std::pair<
-        bool,
-        std::string> variadic,
+    Variadic variadic,
     Field result,
     StatementPtr content)
     : Global(std::move(loc)),
@@ -168,13 +167,11 @@ std::ostream &llove::FunctionGlobal::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (m_Variadic.first)
+    if (m_Variadic.Is)
     {
         if (!m_Parameters.empty())
             stream << ", ";
-        stream << "...";
-        if (!m_Variadic.second.empty())
-            stream << m_Variadic.second;
+        stream << "..." << m_Variadic.Name;
     }
 
     stream << "): " << m_Result;

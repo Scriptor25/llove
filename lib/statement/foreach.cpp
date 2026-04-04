@@ -117,7 +117,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         if (begin_fld.GetType()->IsFunction())
         {
             const auto fn_type = As<FunctionType>(begin_fld.GetType());
-            Assert(!fn_type->HasVariadic(), "illegal variadic argument");
+            Assert(!fn_type->IsVariadic(), "illegal variadic argument");
             Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
             begin = builder.CreateCall(begin);
@@ -126,7 +126,7 @@ void llove::ForEachStatement::Gen(Builder &builder) const try
         if (end_fld.GetType()->IsFunction())
         {
             const auto fn_type = As<FunctionType>(end_fld.GetType());
-            Assert(!fn_type->HasVariadic(), "illegal variadic argument");
+            Assert(!fn_type->IsVariadic(), "illegal variadic argument");
             Assert(fn_type->GetParameterCount() == 0, "illegal parameter count");
 
             end = builder.CreateCall(end);

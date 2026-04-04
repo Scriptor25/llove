@@ -104,20 +104,20 @@ void llove::Builder::DeferAction(llvm::Value *key, std::function<void()> action)
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    m_Stack.back().Deferred.emplace_back(key, action);
+    m_Stack.back().Deferred.emplace_back(key, std::move(action));
 }
 
 void llove::Builder::PushDestructor(llvm::Value *self, FunctionReference reference)
 {
     Assert(!m_Stack.empty(), "stack is empty");
 
-    auto action = [this, self, reference]
+    auto action = [this, self, function = std::move(reference)]
     {
-        auto self_value = Value::CreateL(reference.Type->GetSelf()->GetType(), self, true);
-        CreateCall(reference, {}, std::move(self_value));
+        auto self_value = Value::CreateL(function.Type->GetSelf()->GetType(), self, true);
+        CreateCall(function, {}, std::move(self_value));
     };
 
-    DeferAction(self, action);
+    DeferAction(self, std::move(action));
 }
 
 void llove::Builder::PushDestructor(llvm::Value *self, const ClassType::Ptr &class_type)
@@ -160,4 +160,14 @@ void llove::Builder::CallDeferred(const std::set<llvm::Value *> &mask, const boo
         for (auto &frame = m_Stack.back(); auto &[key, action] : frame.Deferred)
             if (!mask.contains(key))
                 action();
+}
+
+std::vector<llove::Frame>::const_reverse_iterator llove::Builder::GetStackTop() const
+{
+    return m_Stack.rbegin();
+}
+
+std::vector<llove::Frame>::const_reverse_iterator llove::Builder::GetStackBottom() const
+{
+    return m_Stack.rend() - 1; // exclude the global frame
 }

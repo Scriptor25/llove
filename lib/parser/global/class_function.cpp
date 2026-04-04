@@ -2,8 +2,6 @@
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
 
-using namespace std::placeholders;
-
 llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
 {
     static const std::set<std::string_view> no_result
@@ -32,7 +30,7 @@ llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
     }
 
     std::vector<Parameter> parameters;
-    std::pair<bool, std::string> variadic;
+    Variadic variadic;
     ParseParameterList(parameters, variadic);
 
     Field result;
@@ -45,13 +43,30 @@ llove::GlobalPtr llove::Parser::ParseClassFunctionGlobal(Location loc)
     if (name == "create" && At(TokenType_Other, "["))
         ParseList<Initializer>(
             initializers,
-            std::bind(&Parser::ParseInitializer, this, _1),
+            [&](Initializer &element)
+            {
+                return ParseInitializer(element);
+            },
             TokenType_Other,
             "[",
             TokenType_Other,
             "]");
 
-    auto content = ParseScopeStatement();
+    StatementPtr content;
+    if (At(TokenType_Operator, "->"))
+    {
+        auto ret_loc = Skip().Loc;
+
+        auto expression = ParseExpression();
+        Expect(TokenType_Other, ";");
+
+        if (result.GetType()->IsVoid())
+            content = std::move(expression);
+        else
+            content = std::make_unique<RetStatement>(std::move(ret_loc), std::move(expression));
+    }
+    else
+        content = ParseScopeStatement();
 
     return std::make_unique<ClassFunctionGlobal>(
         std::move(loc),

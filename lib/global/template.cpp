@@ -51,7 +51,7 @@ llove::TemplateInstancePtr llove::TemplateGlobal::GenTemplate(
 
 llove::Import llove::TemplateGlobal::GenImport(
     Context &context,
-    Builder &builder,
+    Builder & /* builder */,
     const std::string &as,
     const ImportSymbols &symbols) const
 {

@@ -400,9 +400,9 @@ function push_buffer(c: i32, ptr: [mut]) {
 
 export function format(buffer: buffer_t, count: u64, format: string_t, ...args) {
     let mut context: buffer_context_t = {
-        buffer: buffer,
-        count: count,
-        index: 0,
+        .buffer,
+        .count,
+        .index = 0,
     };
     format(push_buffer, &context, format, args);
 }

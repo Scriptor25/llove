@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 
 namespace llove
@@ -29,6 +30,15 @@ namespace llove
     class DebugBuilder;
 
     struct Location;
+
+    using Import = std::pair<std::string, ValuePtr>;
+    using ImportSymbols = std::map<std::string, std::string>;
+
+    struct Variadic
+    {
+        bool Is = false;
+        std::string Name;
+    };
 
     using GlobalPtr = std::unique_ptr<Global>;
     using StatementPtr = std::unique_ptr<Statement>;

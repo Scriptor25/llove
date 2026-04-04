@@ -20,10 +20,12 @@
 
 namespace llove
 {
-    using Import = std::pair<std::string, ValuePtr>;
-    using ImportSymbols = std::map<std::string, std::string>;
-
-    using Variadic = std::pair<bool, std::string>;
+    struct Capture
+    {
+        Location Loc;
+        bool IsMutable;
+        bool IsReference;
+    };
 
     class Global
     {
@@ -124,7 +126,7 @@ namespace llove
         bool m_IsMutable;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
-        std::pair<bool, std::string> m_Variadic;
+        Variadic m_Variadic;
         Field m_Result;
         std::vector<Initializer> m_Initializers;
         StatementPtr m_Content;
@@ -190,7 +192,7 @@ namespace llove
         bool m_IsOperator;
         std::string m_Name;
         std::vector<Parameter> m_Parameters;
-        std::pair<bool, std::string> m_Variadic;
+        Variadic m_Variadic;
         Field m_Result;
         StatementPtr m_Content;
     };
@@ -520,7 +522,7 @@ namespace llove
     class ArrayExpression final : public Expression
     {
     public:
-        explicit ArrayExpression(Location loc, std::vector<ExpressionPtr> values, ArrayType::Ptr type);
+        explicit ArrayExpression(Location loc, std::vector<ExpressionPtr> values, TypePtr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Context &context) const override;
@@ -528,7 +530,7 @@ namespace llove
 
     private:
         std::vector<ExpressionPtr> m_Values;
-        ArrayType::Ptr m_Type;
+        TypePtr m_Type;
     };
 
     class BinaryExpression final : public Expression
@@ -648,6 +650,32 @@ namespace llove
         TypePtr m_Type;
     };
 
+    class LambdaExpression final : public Expression
+    {
+    public:
+        explicit LambdaExpression(
+            Location loc,
+            std::optional<Capture> default_capture,
+            std::map<std::string, Capture> captures,
+            std::vector<Parameter> parameters,
+            Variadic variadic,
+            Field result,
+            StatementPtr content);
+
+        ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
+        CalleeInfo GenCallee(Builder &builder) const override;
+        StatementPtr Reflect(Context &context) const override;
+        std::ostream &Print(std::ostream &stream) const override;
+
+    private:
+        std::optional<Capture> m_DefaultCapture;
+        std::map<std::string, Capture> m_Captures;
+        std::vector<Parameter> m_Parameters;
+        Variadic m_Variadic;
+        Field m_Result;
+        StatementPtr m_Content;
+    };
+
     class MemberExpression final : public Expression
     {
     public:
@@ -720,7 +748,7 @@ namespace llove
     class StructExpression final : public Expression
     {
     public:
-        explicit StructExpression(Location loc, std::map<std::string, ExpressionPtr> values, TypePtr type);
+        explicit StructExpression(Location loc, std::map<std::string, ExpressionPtr> values, StructType::Ptr type);
 
         ValuePtr GenVal(Builder &builder, TypePtr expect) const override;
         StatementPtr Reflect(Context &context) const override;
@@ -728,7 +756,7 @@ namespace llove
 
     private:
         std::map<std::string, ExpressionPtr> m_Values;
-        TypePtr m_Type;
+        StructType::Ptr m_Type;
     };
 
     class SubscriptExpression final : public Expression

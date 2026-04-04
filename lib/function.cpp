@@ -1,5 +1,3 @@
-#include <utility>
-
 #include <llove/function.hpp>
 #include <llove/tree.hpp>
 
@@ -21,7 +19,7 @@ std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
             stream << ", ";
         stream << Type->GetParameter(i);
     }
-    if (Type->HasVariadic())
+    if (Type->IsVariadic())
     {
         if (Type->GetParameterCount())
             stream << ", ";
@@ -29,13 +27,6 @@ std::ostream &llove::FunctionReference::Print(std::ostream &stream) const
     }
 
     return stream << "): " << Type->GetResult();
-}
-
-llove::Initializer::Initializer(std::string name, ExpressionPtr value, std::vector<ExpressionPtr> arguments)
-    : Name(std::move(name)),
-      Value(std::move(value)),
-      Arguments(std::move(arguments))
-{
 }
 
 void llove::Initializer::Reflect(Context &context, Initializer &initializer) const

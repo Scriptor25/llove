@@ -35,7 +35,7 @@ llove::GlobalPtr llove::Parser::ParseFunctionGlobal(
     }
 
     std::vector<Parameter> parameters;
-    std::pair<bool, std::string> variadic;
+    Variadic variadic;
     ParseParameterList(parameters, variadic);
 
     Field result;
@@ -51,7 +51,20 @@ llove::GlobalPtr llove::Parser::ParseFunctionGlobal(
     StatementPtr content;
     if (!SkipIf(TokenType_Other, ";"))
     {
-        content = ParseScopeStatement();
+        if (At(TokenType_Operator, "->"))
+        {
+            auto ret_loc = Skip().Loc;
+
+            auto expression = ParseExpression();
+            Expect(TokenType_Other, ";");
+
+            if (result.GetType()->IsVoid())
+                content = std::move(expression);
+            else
+                content = std::make_unique<RetStatement>(std::move(ret_loc), std::move(expression));
+        }
+        else
+            content = ParseScopeStatement();
     }
 
     return std::make_unique<FunctionGlobal>(

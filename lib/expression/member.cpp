@@ -212,5 +212,5 @@ catch (ref_exception<ErrorStack> &cause)
 
 std::ostream &llove::MemberExpression::Print(std::ostream &stream) const
 {
-    return stream << m_Value << (m_Dereference ? "::" : ".") << m_Member;
+    return stream << m_Value << (m_Dereference ? "->" : ".") << m_Member;
 }

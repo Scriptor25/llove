@@ -24,10 +24,10 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
         return ParseUnaryExpression();
 
     if (At(TokenType_Other, "["))
-        return ParseArrayExpression();
+        return ParseLambdaExpression();
 
     if (At(TokenType_Other, "{"))
-        return ParseStructExpression();
+        return ParseInitializerExpression();
 
     if (At(TokenType_Operator, "<"))
         return ParseTemplateCallExpression();
@@ -59,9 +59,5 @@ llove::ExpressionPtr llove::Parser::ParsePrimaryExpression()
     if (At(TokenType_Symbol))
         return ParseSymbolExpression();
 
-    Error(
-        m_Token.Loc,
-        "unable to parse expression from {} : '{}'",
-        m_Token.Type,
-        m_Token.Value);
+    Error(m_Token.Loc, "unable to parse expression from {} : '{}'", m_Token.Type, m_Token.Value);
 }

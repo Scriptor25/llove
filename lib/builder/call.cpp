@@ -27,7 +27,7 @@ llove::ValuePtr llove::Builder::CreateCall(
         argument_values.push_back(parameter.GenCast(*this, std::move(argument)));
     }
 
-    if (function_type->HasVariadic())
+    if (function_type->IsVariadic())
     {
         if (const auto count = arguments.size() - i; count == 1 && arguments[i]->GetType()->IsVariadic())
             argument_values.push_back(arguments[i++]->Load(*this));
@@ -100,7 +100,7 @@ llove::ValuePtr llove::Builder::CreateCall(const ValuePtr &callee)
     auto &function_result = function_type->GetResult();
 
     std::vector<llvm::Value *> arguments;
-    if (function_type->HasVariadic())
+    if (function_type->IsVariadic())
         arguments.push_back(llvm::Constant::getNullValue(GetVariadicType()));
 
     const auto result_value = m_LLVMBuilder.CreateCall(

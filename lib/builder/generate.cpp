@@ -18,7 +18,7 @@ std::string llove::Builder::Mangle(const Function &function)
         mangled += (function.IsMutable ? 'm' : 'c') + std::to_string(class_name.size()) + '_' + class_name;
     }
 
-    if (function.Variadic.first)
+    if (function.Variadic.Is)
         mangled += 'v';
 
     mangled += std::to_string(function.Parameters.size()) + '_';
@@ -45,11 +45,11 @@ llove::FunctionReference llove::Builder::GenFunction(const Function &function, c
         callee_type = m_Context.GetFunction(
             function.Result,
             std::move(type_parameters),
-            function.Variadic.first,
+            function.Variadic.Is,
             *self);
     }
     else
-        callee_type = m_Context.GetFunction(function.Result, std::move(type_parameters), function.Variadic.first);
+        callee_type = m_Context.GetFunction(function.Result, std::move(type_parameters), function.Variadic.Is);
 
     const auto callee = GetOrCreateFunction(mangled, callee_type, function.IsExport || function.IsInterface);
 
@@ -250,7 +250,7 @@ llove::FunctionReference llove::Builder::GenFunction(const Function &function, c
 llvm::Value *llove::Builder::GenParameters(
     llvm::Function *parent,
     const std::vector<Parameter> &parameters,
-    const std::pair<bool, std::string> &variadic,
+    const Variadic &variadic,
     const std::optional<Field> &self)
 {
     auto iterator = parent->arg_begin();
@@ -300,18 +300,18 @@ llvm::Value *llove::Builder::GenParameters(
         SetValue(name_, std::move(storage));
     }
 
-    if (variadic.first && !variadic.second.empty())
+    if (variadic.Is && !variadic.Name.empty())
     {
         const auto argument = iterator;
-        argument->setName(variadic.second);
+        argument->setName(variadic.Name);
 
         const auto pointer = CreateAlloca(GetVariadicType(), parent);
         CreateStore(argument, pointer);
 
         auto storage = Value::CreateL(m_Context.GetVariadic(), pointer, true);
 
-        m_DebugBuilder.CreateParameter(*this, variadic.second, index, storage);
-        SetValue(variadic.second, std::move(storage));
+        m_DebugBuilder.CreateParameter(*this, variadic.Name, index, storage);
+        SetValue(variadic.Name, std::move(storage));
     }
 
     return self_pointer;

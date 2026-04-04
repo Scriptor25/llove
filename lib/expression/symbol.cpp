@@ -40,7 +40,7 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
 
     if (builder.HasValue(m_Name))
     {
-        const auto value = builder.GetValue(m_Name);
+        auto value = builder.GetValue(m_Name);
         value_type = value->GetType();
 
         if (value_type->IsFunction())
@@ -56,7 +56,7 @@ llove::CalleeInfo llove::SymbolExpression::GenCallee(Builder &builder) const try
         {
             auto functions = builder.GetFunctions("()", value->AsField());
             candidates.insert(candidates.end(), functions.begin(), functions.end());
-            self = value;
+            self = std::move(value);
         }
     }
 

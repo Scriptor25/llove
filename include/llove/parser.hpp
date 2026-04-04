@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+#include <llove/forward.hpp>
 #include <llove/location.hpp>
 #include <llove/type.hpp>
 
@@ -91,7 +92,7 @@ namespace llove
         void ParseParameter(Parameter &parameter);
         void ParseInitializer(Initializer &initializer);
 
-        Location ParseParameterList(std::vector<Parameter> &parameters, std::pair<bool, std::string> &variadic);
+        Location ParseParameterList(std::vector<Parameter> &parameters, Variadic &variadic);
         Location ParseTemplateParameterList(std::vector<std::pair<std::string, TemplateType::Ptr>> &parameters);
         Location ParseArgumentList(std::vector<ExpressionPtr> &arguments);
 
@@ -129,7 +130,7 @@ namespace llove
             const TokenType ellipsis_type,
             const std::string &ellipsis_value)
         {
-            auto token = Expect(beg_type, beg_value);
+            auto loc = Expect(beg_type, beg_value).Loc;
             while (!At(end_type, end_value))
             {
                 if (SkipIf(ellipsis_type, ellipsis_value))
@@ -144,7 +145,7 @@ namespace llove
                     Expect(TokenType_Other, ",");
             }
             Expect(end_type, end_value);
-            return std::move(token.Loc);
+            return loc;
         }
 
         GlobalPtr ParseGlobal(bool is_template);
@@ -178,9 +179,8 @@ namespace llove
         StatementPtr ParseWhileStatement(bool is_inline);
 
         ExpressionPtr ParseExpression();
-        void ParseExpressionElement(ExpressionPtr &element);
 
-        ExpressionPtr ParseArrayExpression();
+        ExpressionPtr ParseLambdaExpression();
         ExpressionPtr ParseBinaryExpression();
         ExpressionPtr ParseBinaryExpression(ExpressionPtr left, unsigned min_precedence);
         ExpressionPtr ParseCallExpression(ExpressionPtr callee);
@@ -196,7 +196,7 @@ namespace llove
         ExpressionPtr ParseRangeExpression(ExpressionPtr begin);
         ExpressionPtr ParseSizeofExpression();
         ExpressionPtr ParseStringExpression();
-        ExpressionPtr ParseStructExpression();
+        ExpressionPtr ParseInitializerExpression();
         ExpressionPtr ParseSubscriptExpression(ExpressionPtr value);
         ExpressionPtr ParseSwitchExpression();
         ExpressionPtr ParseSymbolExpression();

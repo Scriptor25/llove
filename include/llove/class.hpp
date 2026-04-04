@@ -31,30 +31,21 @@ namespace llove
     {
         std::ostream &Print(std::ostream &stream) const;
 
-        bool IsExport = false;
-        bool IsPublic = false;
-        bool IsVirtual = false;
-        bool IsOverride = false;
-        bool IsImplicit = false;
-        bool IsMutable = false;
+        bool IsExport{};
+        bool IsPublic{};
+        bool IsVirtual{};
+        bool IsOverride{};
+        bool IsImplicit{};
+        bool IsMutable{};
 
         std::string Name;
         std::vector<Field> Parameters;
-        bool HasVariadic = false;
+        bool IsVariadic{};
         Field Result;
     };
 
     struct Initializer final
     {
-        Initializer() = default;
-        Initializer(std::string name, ExpressionPtr value, std::vector<ExpressionPtr> arguments);
-
-        Initializer(Initializer &&) = default;
-        Initializer &operator=(Initializer &&) = default;
-
-        Initializer(const Initializer &) = delete;
-        Initializer &operator=(const Initializer &) = delete;
-
         void Reflect(Context &context, Initializer &initializer) const;
 
         std::string Name;
@@ -64,28 +55,20 @@ namespace llove
 
     struct ClassFunction final
     {
-        ClassFunction() = default;
-
-        ClassFunction(ClassFunction &&) = default;
-        ClassFunction &operator=(ClassFunction &&) = default;
-
-        ClassFunction(const ClassFunction &) = delete;
-        ClassFunction &operator=(const ClassFunction &) = delete;
-
         void Reflect(Context &context, ClassFunction &function) const;
         std::ostream &Print(std::ostream &stream) const;
 
         Location Loc;
 
-        bool IsPublic = false;
-        bool IsVirtual = false;
-        bool IsOverride = false;
-        bool IsImplicit = false;
-        bool IsMutable = false;
+        bool IsPublic{};
+        bool IsVirtual{};
+        bool IsOverride{};
+        bool IsImplicit{};
+        bool IsMutable{};
 
         std::string Name;
         std::vector<Parameter> Parameters;
-        std::pair<bool, std::string> Variadic;
+        Variadic Variadic;
         Field Result;
 
         std::vector<Initializer> Initializers;

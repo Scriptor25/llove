@@ -10,9 +10,7 @@ llove::ClassFunctionGlobal::ClassFunctionGlobal(
     const bool is_mutable,
     std::string name,
     std::vector<Parameter> parameters,
-    std::pair<
-        bool,
-        std::string> variadic,
+    Variadic variadic,
     Field result,
     std::vector<Initializer> initializers,
     StatementPtr content)
@@ -79,7 +77,7 @@ void llove::ClassFunctionGlobal::Gen(Builder &builder) const try
         m_Name,
         m_IsMutable,
         parameters,
-        m_Variadic.first,
+        m_Variadic.Is,
         m_Result);
     Assert(reference.has_value(), "class function prototype mismatch");
 
@@ -93,21 +91,23 @@ void llove::ClassFunctionGlobal::Gen(Builder &builder) const try
 
     auto &[parent, function] = *reference;
 
-    Function agg;
-    agg.Loc = m_Loc;
-    agg.IsExport = function.IsExport;
-    agg.IsPublic = function.IsPublic;
-    agg.IsVirtual = function.IsVirtual;
-    agg.IsOverride = function.IsOverride;
-    agg.IsImplicit = function.IsImplicit;
-    agg.IsMutable = function.IsMutable;
-    agg.Class = parent;
-    agg.Name = function.Name;
-    agg.Parameters = m_Parameters;
-    agg.Variadic = m_Variadic;
-    agg.Result = function.Result;
-    agg.Initializers = std::move(initializers);
-    agg.Content = std::move(content);
+    const Function agg
+    {
+        .Loc = m_Loc,
+        .IsExport = function.IsExport,
+        .IsPublic = function.IsPublic,
+        .IsVirtual = function.IsVirtual,
+        .IsOverride = function.IsOverride,
+        .IsImplicit = function.IsImplicit,
+        .IsMutable = function.IsMutable,
+        .Class = parent,
+        .Name = function.Name,
+        .Parameters = m_Parameters,
+        .Variadic = m_Variadic,
+        .Result = function.Result,
+        .Initializers = std::move(initializers),
+        .Content = std::move(content),
+    };
 
     builder.GenFunction(agg, false);
 }
@@ -143,13 +143,11 @@ std::ostream &llove::ClassFunctionGlobal::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (m_Variadic.first)
+    if (m_Variadic.Is)
     {
         if (!m_Parameters.empty())
             stream << ", ";
-        stream << "...";
-        if (!m_Variadic.second.empty())
-            stream << m_Variadic.second;
+        stream << "..." << m_Variadic.Name;
     }
 
     stream << "): " << m_Result;

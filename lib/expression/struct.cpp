@@ -5,22 +5,18 @@
 
 llove::StructExpression::StructExpression(
     Location loc,
-    std::map<
-        std::string,
-        ExpressionPtr> values,
-    TypePtr type)
+    std::map<std::string, ExpressionPtr> values,
+    StructType::Ptr type)
     : Expression(std::move(loc)),
       m_Values(std::move(values)),
       m_Type(std::move(type))
 {
 }
 
-llove::ValuePtr llove::StructExpression::GenVal(
-    Builder &builder,
-    TypePtr expect) const try
+llove::ValuePtr llove::StructExpression::GenVal(Builder &builder, TypePtr expect) const try
 {
     auto type = m_Type
-                    ? As<StructType>(m_Type)
+                    ? m_Type
                     : expect && expect->IsStruct()
                     ? As<StructType>(std::move(expect))
                     : nullptr;
@@ -54,7 +50,7 @@ llove::StatementPtr llove::StructExpression::Reflect(Context &context) const try
     for (auto &[key, value] : m_Values)
         value->Reflect(context, values[key]);
 
-    TypePtr type;
+    StructType::Ptr type;
     Type::Reflect(context, m_Type, type);
 
     return std::make_unique<StructExpression>(m_Loc, std::move(values), std::move(type));
@@ -71,7 +67,7 @@ std::ostream &llove::StructExpression::Print(std::ostream &stream) const
     {
         if (i != m_Values.begin())
             stream << ", ";
-        stream << i->first << ": " << i->second;
+        stream << '.' << i->first << " = " << i->second;
     }
     stream << " }";
     if (m_Type)

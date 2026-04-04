@@ -92,7 +92,7 @@ std::vector<llove::FunctionReference> llove::Builder::GetFunctions(
             agg.Class = parent;
             agg.Name = function.Name;
             agg.Parameters = std::move(parameters);
-            agg.Variadic = { function.HasVariadic, {} };
+            agg.Variadic = { function.IsVariadic, {} };
             agg.Result = function.Result;
 
             auto reference = GenFunction(agg, false);
@@ -127,7 +127,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         if (parameter_count > arguments.size())
             continue;
-        if (!function_type->HasVariadic() && parameter_count < arguments.size())
+        if (!function_type->IsVariadic() && parameter_count < arguments.size())
             continue;
 
         if (parameter_count != arguments.size())
@@ -185,7 +185,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
 
         if (parameter_count > argument_count)
             continue;
-        if (!function.HasVariadic && parameter_count < argument_count)
+        if (!function.IsVariadic && parameter_count < argument_count)
             continue;
 
         if (parameter_count != argument_count)
@@ -229,7 +229,7 @@ std::optional<llove::FunctionReference> llove::Builder::FindFunction(
         agg.Class = parent;
         agg.Name = candidate.Name;
         agg.Parameters = std::move(parameters);
-        agg.Variadic = { candidate.HasVariadic, {} };
+        agg.Variadic = { candidate.IsVariadic, {} };
         agg.Result = candidate.Result;
 
         return GenFunction(agg, false);

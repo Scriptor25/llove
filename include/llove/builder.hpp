@@ -80,12 +80,12 @@ namespace llove
         llvm::ArrayType *GetArrayType(llvm::Type *base, unsigned size);
         llvm::PointerType *GetPointerType();
         llvm::FunctionType *GetFunctionType(llvm::Type *result, const std::vector<llvm::Type *> &parameters);
-        llvm::StructType *GetStructType(const std::vector<llvm::Type *> &fields, bool packed = false);
+        llvm::StructType *GetStructType(const std::vector<llvm::Type *> &elements, bool packed = false);
         llvm::StructType *GetNamedStructType(const std::string &name);
         llvm::StructType *GetOrCreateNamedStructType(const std::string &name);
         llvm::StructType *GetOrCreateNamedStructType(
             const std::string &name,
-            const std::vector<llvm::Type *> &fields,
+            const std::vector<llvm::Type *> &elements,
             bool packed = false);
         llvm::StructType *GetVariadicType();
 
@@ -284,6 +284,9 @@ namespace llove
         void PushDestructor(llvm::Value *self, const ClassType::Ptr &class_type);
         void CallDeferred(const std::set<llvm::Value *> &mask, bool propagate);
 
+        std::vector<Frame>::const_reverse_iterator GetStackTop() const;
+        std::vector<Frame>::const_reverse_iterator GetStackBottom() const;
+
         ValuePtr CreateCast(ValuePtr value, TypePtr dst, bool is_implicit);
         bool IsCastable(const Field &src, const Field &dst, bool is_implicit) const;
 
@@ -291,7 +294,7 @@ namespace llove
         llvm::Value *GenParameters(
             llvm::Function *parent,
             const std::vector<Parameter> &parameters,
-            const std::pair<bool, std::string> &variadic,
+            const Variadic &variadic,
             const std::optional<Field> &self = std::nullopt);
 
         void Seal(

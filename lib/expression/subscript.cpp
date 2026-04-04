@@ -4,19 +4,14 @@
 #include <llove/tree.hpp>
 #include <llove/value.hpp>
 
-llove::SubscriptExpression::SubscriptExpression(
-    Location loc,
-    ExpressionPtr value,
-    ExpressionPtr index)
+llove::SubscriptExpression::SubscriptExpression(Location loc, ExpressionPtr value, ExpressionPtr index)
     : Expression(std::move(loc)),
       m_Value(std::move(value)),
       m_Index(std::move(index))
 {
 }
 
-llove::ValuePtr llove::SubscriptExpression::GenVal(
-    Builder &builder,
-    TypePtr) const try
+llove::ValuePtr llove::SubscriptExpression::GenVal(Builder &builder, TypePtr) const try
 {
     const auto value = m_Value->GenVal(builder, nullptr);
     const auto index = m_Index->GenVal(builder, nullptr);

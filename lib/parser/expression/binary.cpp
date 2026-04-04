@@ -1,17 +1,17 @@
+#include <map>
+
 #include <llove/parser.hpp>
 #include <llove/tree.hpp>
-#include <map>
 
 llove::ExpressionPtr llove::Parser::ParseBinaryExpression()
 {
     return ParseBinaryExpression(ParseOperandExpression(), 0);
 }
 
-llove::ExpressionPtr llove::Parser::ParseBinaryExpression(
-    ExpressionPtr left,
-    const unsigned min_precedence)
+llove::ExpressionPtr llove::Parser::ParseBinaryExpression(ExpressionPtr left, const unsigned min_precedence)
 {
-    static const std::map<std::string_view, unsigned> map{
+    static const std::map<std::string_view, unsigned> map
+    {
         { "=", 0 },
         { "+=", 0 },
         { "-=", 0 },
@@ -73,8 +73,9 @@ llove::ExpressionPtr llove::Parser::ParseBinaryExpression(
         auto token = Skip();
 
         auto right = ParseOperandExpression();
-        while (has_precedence() && (get_precedence() > operator_precedence || (
-                                        !get_precedence() && get_precedence() >= operator_precedence)))
+        while (has_precedence()
+               && (get_precedence() > operator_precedence
+                   || (!get_precedence() && get_precedence() >= operator_precedence)))
             right = ParseBinaryExpression(
                 std::move(right),
                 operator_precedence + (get_precedence() > operator_precedence ? 1 : 0));

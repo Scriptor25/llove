@@ -31,7 +31,7 @@ std::ostream &llove::ClassFunctionReference::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (HasVariadic)
+    if (IsVariadic)
     {
         if (!Parameters.empty())
             stream << ", ";
@@ -80,13 +80,13 @@ std::ostream &llove::ClassFunction::Print(std::ostream &stream) const
             stream << ", ";
         stream << *i;
     }
-    if (Variadic.first)
+    if (Variadic.Is)
     {
         if (!Parameters.empty())
             stream << ", ";
         stream << "...";
-        if (!Variadic.second.empty())
-            stream << Variadic.second;
+        if (!Variadic.Name.empty())
+            stream << Variadic.Name;
     }
     stream << "): " << Result;
     if (!Content)

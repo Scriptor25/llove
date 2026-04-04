@@ -166,9 +166,7 @@ std::string cli::Arguments::BuildCommandLine() const
     return stream.str();
 }
 
-const std::map<
-    std::string,
-    cli::OptionTemplate> &cli::Arguments::templates() const
+const std::map<std::string, cli::OptionTemplate> &cli::Arguments::templates() const
 {
     return m_Templates;
 }

@@ -3,7 +3,6 @@
 
 #include <llove/builder.hpp>
 #include <llove/context.hpp>
-#include <llove/field.hpp>
 #include <llove/forward.hpp>
 #include <llove/type.hpp>
 
@@ -22,7 +21,7 @@ unsigned llove::TupleType::GetFieldCount() const
 
 const llove::Field &llove::TupleType::GetField(const unsigned index) const
 {
-    return m_Fields.at(index);
+    return m_Fields[index];
 }
 
 llove::TypeId llove::TupleType::GetId() const
@@ -40,7 +39,7 @@ llvm::StructType *llove::TupleType::GenIR(Builder &builder)
     if (!m_IRType)
     {
         std::vector<llvm::Type *> fields;
-        for (auto &field : m_Fields)
+        for (const auto &field : m_Fields)
             fields.push_back(field.GenIRType(builder));
 
         m_IRType = builder.GetStructType(fields);
@@ -55,19 +54,20 @@ llvm::DIType *llove::TupleType::GenDI(Builder &builder)
     {
         const auto layout = builder.GetDataLayout().getStructLayout(GenIR(builder));
 
-        std::vector<llvm::Metadata *> elements;
+        std::vector<llvm::Metadata *> fields;
 
         for (unsigned i = 0; i < m_Fields.size(); ++i)
         {
-            auto &field = m_Fields.at(i);
+            const auto &field = m_Fields[i];
+
             const auto size = field.SizeBits(builder);
             const auto offset = layout->getElementOffsetInBits(i);
 
-            elements.push_back(
+            fields.push_back(
                 builder.GetDebug().GetFieldType(std::to_string(i), field.GenDIType(builder), size, offset));
         }
 
-        m_DIType = builder.GetDebug().GetStructType(elements, layout->getSizeInBits());
+        m_DIType = builder.GetDebug().GetStructType(fields, layout->getSizeInBits());
     }
 
     return m_DIType;
@@ -102,12 +102,12 @@ std::string llove::TupleType::Mangle() const
 
 std::ostream &llove::TupleType::Print(std::ostream &stream) const
 {
-    stream << "[ ";
+    stream << "{ ";
     for (auto it = m_Fields.begin(); it != m_Fields.end(); ++it)
     {
         if (it != m_Fields.begin())
             stream << ", ";
         stream << *it;
     }
-    return stream << " ]";
+    return stream << " }";
 }

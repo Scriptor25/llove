@@ -24,7 +24,7 @@ llove::ValuePtr llove::Builder::CreateCast(ValuePtr value, TypePtr dst, const bo
         if (is_implicit && !function.IsImplicit)
             continue;
 
-        if (function_type->HasVariadic())
+        if (function_type->IsVariadic())
             continue;
 
         if (const auto &function_self = function_type->GetSelf())
@@ -238,7 +238,7 @@ bool llove::Builder::IsCastable(const Field &src, const Field &dst, const bool i
         const auto &function_type = function.Type;
         const auto &function_result = function_type->GetResult();
 
-        if (function_type->HasVariadic())
+        if (function_type->IsVariadic())
             continue;
 
         if (const auto &function_self = function_type->GetSelf())

@@ -88,7 +88,7 @@ void llove::ClassGlobal::Gen(Builder &builder) const try
                 .IsMutable = function.IsMutable,
                 .Name = function.Name,
                 .Parameters = std::move(parameters),
-                .HasVariadic = function.Variadic.first,
+                .IsVariadic = function.Variadic.Is,
                 .Result = function.Result,
             });
     }
@@ -129,7 +129,7 @@ catch (ref_exception<ErrorStack> &cause)
 }
 
 llove::TemplateInstancePtr llove::ClassGlobal::GenTemplate(
-    Builder *builder,
+    Builder * /* builder */,
     Context &context,
     std::string name) const
 {
@@ -172,7 +172,7 @@ llove::TemplateInstancePtr llove::ClassGlobal::GenTemplate(
                 .IsMutable = function.IsMutable,
                 .Name = function.Name,
                 .Parameters = std::move(parameters),
-                .HasVariadic = function.Variadic.first,
+                .IsVariadic = function.Variadic.Is,
                 .Result = function.Result,
             });
     }
@@ -258,7 +258,7 @@ llove::Import llove::ClassGlobal::GenImport(
                 .IsMutable = function.IsMutable,
                 .Name = function.Name,
                 .Parameters = std::move(parameters),
-                .HasVariadic = function.Variadic.first,
+                .IsVariadic = function.Variadic.Is,
                 .Result = function.Result,
             });
     }

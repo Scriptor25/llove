@@ -51,11 +51,11 @@ llvm::FunctionType *llove::Builder::GetFunctionType(llvm::Type *result, const st
     return llvm::FunctionType::get(result, parameters, false);
 }
 
-llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> &fields, const bool packed)
+llvm::StructType *llove::Builder::GetStructType(const std::vector<llvm::Type *> &elements, const bool packed)
 {
-    Assert(!fields.empty(), "fields must not be empty");
+    Assert(!elements.empty(), "elements must not be empty");
 
-    return llvm::StructType::get(m_LLVMContext, fields, packed);
+    return llvm::StructType::get(m_LLVMContext, elements, packed);
 }
 
 llvm::StructType *llove::Builder::GetNamedStructType(const std::string &name)
@@ -77,19 +77,18 @@ llvm::StructType *llove::Builder::GetOrCreateNamedStructType(const std::string &
 
 llvm::StructType *llove::Builder::GetOrCreateNamedStructType(
     const std::string &name,
-    const std::vector<llvm::Type *> &fields,
+    const std::vector<llvm::Type *> &elements,
     const bool packed)
 {
     Assert(!name.empty(), "name must not be empty");
-    Assert(!fields.empty(), "fields must not be empty");
 
     if (const auto type = llvm::StructType::getTypeByName(m_LLVMContext, name))
     {
-        type->setBody(fields, packed);
+        type->setBody(elements, packed);
         return type;
     }
 
-    return llvm::StructType::create(m_LLVMContext, fields, name, packed);
+    return llvm::StructType::create(m_LLVMContext, elements, name, packed);
 }
 
 llvm::StructType *llove::Builder::GetVariadicType()
