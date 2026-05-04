@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
+
 project(llove)
 
 option(SILENCE "silence all generated compiler warnings" OFF)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (MSVC)
@@ -12,7 +13,7 @@ if (MSVC)
 endif ()
 
 find_package(yaml-cpp REQUIRED)
-find_package(LLVM 21.1 REQUIRED CONFIG)
+find_package(LLVM 22.1 REQUIRED CONFIG)
 
 execute_process(
         COMMAND ${LLVM_TOOLS_BINARY_DIR}/llvm-config --libnames core support passes all-targets

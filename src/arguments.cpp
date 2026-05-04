@@ -127,7 +127,7 @@ std::string cli::Arguments::BuildCommandLine() const
         {
             stream << ' ';
         }
-        stream << '"' << *m_Templates.at(id).Pattern.begin() << '"';
+        stream << *m_Templates.at(id).Pattern.begin();
     }
     for (auto &[id, value] : m_Values)
     {
@@ -139,7 +139,7 @@ std::string cli::Arguments::BuildCommandLine() const
         {
             stream << ' ';
         }
-        stream << '"' << *m_Templates.at(id).Pattern.begin() << '=' << value << '"';
+        stream << *m_Templates.at(id).Pattern.begin() << '=' << value;
     }
     for (auto &[id, values] : m_Arrays)
     {
@@ -151,7 +151,7 @@ std::string cli::Arguments::BuildCommandLine() const
         {
             stream << ' ';
         }
-        stream << '"' << *m_Templates.at(id).Pattern.begin() << '=';
+        stream << *m_Templates.at(id).Pattern.begin() << '=';
         for (auto i = values.begin(); i != values.end(); ++i)
         {
             if (i != values.begin())
@@ -160,7 +160,6 @@ std::string cli::Arguments::BuildCommandLine() const
             }
             stream << *i;
         }
-        stream << '"';
     }
 
     return stream.str();

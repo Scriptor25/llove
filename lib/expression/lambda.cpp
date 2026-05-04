@@ -138,13 +138,13 @@ llove::ValuePtr llove::LambdaExpression::GenVal(Builder &builder, TypePtr /* exp
     const Function agg
     {
         .Loc = m_Loc,
-        .IsPublic = true,
         .IsMutable = require_mutable,
         .Class = class_type,
         .Name = "()",
         .Parameters = m_Parameters,
         .Variadic = m_Variadic,
         .Result = m_Result,
+        .Initializers = {},
         .Content = std::move(content),
     };
     builder.GenFunction(agg, false);

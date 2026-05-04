@@ -1,5 +1,5 @@
 help:
-  pattern: ["--help", "-h", "-?", "?"]
+  pattern: [ "--help", "-h", "-?", "?" ]
   type: flag
   description: "print this help text."
 ascii:
@@ -7,36 +7,36 @@ ascii:
   type: flag
   description: "print help table with ascii characters."
 version:
-  pattern: ["--version", "-v"]
+  pattern: [ "--version", "-v" ]
   type: flag
   description: "print version text."
 format:
-  pattern: ["--format", "-f"]
+  pattern: [ "--format", "-f" ]
   type: value
-  filter: ["asm", "obj"]
+  filter: [ "asm", "obj" ]
   description: "specify codegen output format."
 output:
-  pattern: ["--output", "-o"]
+  pattern: [ "--output", "-o" ]
   type: value
   filter: string
   description: "specify output filename. use 'stdout' or leave empty for standard output stream."
 include:
-  pattern: ["--include", "-i"]
+  pattern: [ "--include", "-i" ]
   type: array
   filter: string
   description: "specify include directories."
 print:
-  pattern: ["--print", "-p"]
+  pattern: [ "--print", "-p" ]
   type: array
-  filter: ["llove", "llvm"]
+  filter: [ "llove", "llvm" ]
   description: "specify print types."
 print-output:
-  pattern: ["--print-output", "-po"]
+  pattern: [ "--print-output", "-po" ]
   type: value
   filter: string
   description: "specify print output destination. use 'stderr' or leave empty for standard error stream or 'stdout' for standard output stream."
 triple:
-  pattern: ["--triple", "--target", "-t"]
+  pattern: [ "--triple", "--target", "-t" ]
   type: value
   filter: string
   description: "specify target triple."
@@ -51,77 +51,104 @@ features:
   filter: string
   description: "specify target features."
 relocation:
-  pattern: ["--relocation", "-r"]
+  pattern: [ "--relocation", "-r" ]
   type: value
-  filter: ["static", "pic", "dynamic-no-pic", "ropi", "rwpi", "ropi-rwpi"]
+  filter: [ "static", "pic", "dynamic-no-pic", "ropi", "rwpi", "ropi-rwpi" ]
   description: "specify codegen relocation type."
 level:
-  pattern: ["--level", "-l"]
+  pattern: [ "--level", "-l" ]
   type: value
-  filter: ["0", "1", "2", "3", "s", "z"]
+  filter: [ "0", "1", "2", "3", "s", "z" ]
   description: "specify codegen optimization level."
 debug:
-  pattern: ["--debug", "-g"]
+  pattern: [ "--debug", "-g" ]
   type: flag
   description: "generate debug information."
 profiling:
-  pattern: ["--profiling"]
+  pattern: [ "--profiling" ]
   type: flag
   description: "generate additional profiling information."
 debug-kind:
-  pattern: ["--debug-kind", "-e"]
+  pattern: [ "--debug-kind", "-e" ]
   type: value
   filter:
-    ["no-debug", "full-debug", "line-tables-only", "debug-directives-only"]
+    [ "no-debug", "full-debug", "line-tables-only", "debug-directives-only" ]
   description: "specify what type of debug information is emitted."
 
+option-allow-fp-op-fusion:
+  pattern: "--option-allow-fp-op-fusion"
+  type: value
+  filter: [ "fast", "standard", "strict" ]
+  description: ""
+
+option-bb-addr-map:
+  pattern: "--option-bb-addr-map"
+  type: flag
+  description: ""
+option-bb-sections:
+  pattern: "--option-bb-sections"
+  type: value
+  filter: [ "all", "list", "labels", "preset", "none" ]
+  description: ""
 option-binutils-version:
   pattern: "--option-binutils-version"
   type: array
   filter: integer
   description: "specify binutils version <major,minor>"
-option-unsafe-fp-math:
-  pattern: "--option-unsafe-fp-math"
+
+option-data-sections:
+  pattern: "--option-data-sections"
   type: flag
   description: ""
-option-no-infs-fp-math:
-  pattern: "--option-no-infs-fp-math"
+option-debugger-tuning:
+  pattern: "--option-debugger-tuning"
+  type: value
+  filter: [ "default", "gdb", "lldb", "sce", "dbx" ]
+  description: ""
+option-debug-strict-dwarf:
+  pattern: "--option-debug-strict-dwarf"
   type: flag
   description: ""
-option-no-nans-fp-math:
-  pattern: "--option-no-nans-fp-math"
+option-disable-integrated-as:
+  pattern: "--option-disable-integrated-as"
   type: flag
   description: ""
-option-no-trapping-fp-math:
-  pattern: "--option-no-trapping-fp-math"
+
+option-eabi-version:
+  pattern: "--option-eabi-version"
+  type: value
+  filter: [ "unknown", "default", "eabi4", "eabi5", "gnu" ]
+  description: ""
+option-emit-addrsig:
+  pattern: "--option-emit-addrsig"
   type: flag
   description: ""
-option-no-signed-zeros-fp-math:
-  pattern: "--option-no-signed-zeros-fp-math"
+option-emit-call-graph-section:
+  pattern: "--option-emit-call-graph-section"
   type: flag
   description: ""
-option-approx-func-fp-math:
-  pattern: "--option-approx-func-fp-math"
+option-emit-call-site-info:
+  pattern: "--option-emit-call-site-info"
+  type: flag
+  description: ""
+option-emit-stack-size-section:
+  pattern: "--option-emit-stack-size-section"
+  type: flag
+  description: ""
+option-emulated-tls:
+  pattern: "--option-emulated-tls"
   type: flag
   description: ""
 option-enable-aix-extended-altivec-abi:
   pattern: "--option-enable-aix-extended-altivec-abi"
   type: flag
   description: ""
-option-honor-sign-dependent-rounding-fp-math:
-  pattern: "--option-honor-sign-dependent-rounding-fp-math"
+option-enable-cfi-fixup:
+  pattern: "--option-enable-cfi-fixup"
   type: flag
   description: ""
-option-no-zeros-in-bss:
-  pattern: "--option-no-zeros-in-bss"
-  type: flag
-  description: ""
-option-guaranteed-tail-call-opt:
-  pattern: "--option-guaranteed-tail-call-opt"
-  type: flag
-  description: ""
-option-stack-symbol-ordering:
-  pattern: "--option-stack-symbol-ordering"
+option-enable-debug-entry-values:
+  pattern: "--option-enable-debug-entry-values"
   type: flag
   description: ""
 option-enable-fast-isel:
@@ -132,147 +159,127 @@ option-enable-global-isel:
   pattern: "--option-enable-global-isel"
   type: flag
   description: ""
-option-global-isel-abort:
-  pattern: "--option-global-isel-abort"
-  type: value
-  filter: ["enable", "disable", "disable-with-diag"]
-  description: ""
-option-swift-async-frame-pointer:
-  pattern: "--option-swift-async-frame-pointer"
-  type: value
-  filter: ["deployment-based", "always", "never"]
-  description: ""
-option-use-init-array:
-  pattern: "--option-use-init-array"
-  type: flag
-  description: ""
-option-disable-integrated-as:
-  pattern: "--option-disable-integrated-as"
-  type: flag
-  description: ""
-option-function-sections:
-  pattern: "--option-function-sections"
-  type: flag
-  description: ""
-option-data-sections:
-  pattern: "--option-data-sections"
-  type: flag
-  description: ""
-option-ignore-xcoff-visibility:
-  pattern: "--option-ignore-xcoff-visibility"
-  type: flag
-  description: ""
-option-xcoff-traceback-table:
-  pattern: "--option-xcoff-traceback-table"
-  type: flag
-  description: ""
-option-unique-section-names:
-  pattern: "--option-unique-section-names"
-  type: flag
-  description: ""
-option-unique-basic-block-section-names:
-  pattern: "--option-unique-basic-block-section-names"
-  type: flag
-  description: ""
-option-trap-unreachable:
-  pattern: "--option-trap-unreachable"
-  type: flag
-  description: ""
-option-no-trap-after-noreturn:
-  pattern: "--option-no-trap-after-noreturn"
-  type: flag
-  description: ""
-option-tls-size:
-  pattern: "--option-tls-size"
-  type: flag
-  description: ""
-option-emulated-tls:
-  pattern: "--option-emulated-tls"
-  type: flag
-  description: ""
-option-enable-tls-desc:
-  pattern: "--option-enable-tls-desc"
-  type: flag
-  description: ""
 option-enable-ipra:
   pattern: "--option-enable-ipra"
-  type: flag
-  description: ""
-option-emit-stack-size-section:
-  pattern: "--option-emit-stack-size-section"
-  type: flag
-  description: ""
-option-enable-machine-outliner:
-  pattern: "--option-enable-machine-outliner"
   type: flag
   description: ""
 option-enable-machine-function-splitter:
   pattern: "--option-enable-machine-function-splitter"
   type: flag
   description: ""
-option-supports-default-outlining:
-  pattern: "--option-supports-default-outlining"
+option-enable-machine-outliner:
+  pattern: "--option-enable-machine-outliner"
   type: flag
   description: ""
-option-emit-addrsig:
-  pattern: "--option-emit-addrsig"
+option-enable-static-data-partitioning:
+  pattern: "--option-enable-static-data-partitioning"
   type: flag
   description: ""
-option-bb-sections:
-  pattern: "--option-bb-sections"
+option-enable-tls-desc:
+  pattern: "--option-enable-tls-desc"
+  type: flag
+  description: ""
+option-exception-model:
+  pattern: "--option-exception-model"
   type: value
-  filter: ["all", "list", "labels", "preset", "none"]
+  filter: [ "none", "dwarf-cfi", "sjlj", "arm", "win-eh", "wasm", "aix", "zos" ]
   description: ""
-option-emit-call-site-info:
-  pattern: "--option-emit-call-site-info"
-  type: flag
-  description: ""
-option-supports-debug-entry-values:
-  pattern: "--option-supports-debug-entry-values"
-  type: flag
-  description: ""
-option-enable-debug-entry-values:
-  pattern: "--option-enable-debug-entry-values"
-  type: flag
-  description: ""
-option-value-tracking-variable-locations:
-  pattern: "--option-value-tracking-variable-locations"
-  type: flag
+
+option-float-abi-type:
+  pattern: "--option-float-abi-type"
+  type: value
+  filter: [ "default", "soft", "hard" ]
   description: ""
 option-force-dwarf-frame-section:
   pattern: "--option-force-dwarf-frame-section"
   type: flag
   description: ""
-option-xray-function-index:
-  pattern: "--option-xray-function-index"
+option-function-sections:
+  pattern: "--option-function-sections"
   type: flag
   description: ""
-option-debug-strict-dwarf:
-  pattern: "--option-debug-strict-dwarf"
+
+option-global-isel-abort:
+  pattern: "--option-global-isel-abort"
+  type: value
+  filter: [ "enable", "disable", "disable-with-diag" ]
+  description: ""
+option-guaranteed-tail-call-opt:
+  pattern: "--option-guaranteed-tail-call-opt"
+  type: flag
+  description: ""
+
+option-honor-sign-dependent-rounding-fp-math:
+  pattern: "--option-honor-sign-dependent-rounding-fp-math"
   type: flag
   description: ""
 option-hotpatch:
   pattern: "--option-hotpatch"
   type: flag
   description: ""
-option-ppc-gen-scalar-mass-entries:
-  pattern: "--option-ppc-gen-scalar-mass-entries"
+
+option-ignore-xcoff-visibility:
+  pattern: "--option-ignore-xcoff-visibility"
   type: flag
   description: ""
+
 option-jmc-instrument:
   pattern: "--option-jmc-instrument"
   type: flag
   description: ""
-option-enable-cfi-fixup:
-  pattern: "--option-enable-cfi-fixup"
+
+option-loop-alignment:
+  pattern: "--option-loop-alignment"
   type: flag
   description: ""
+
 option-mis-expect:
   pattern: "--option-mis-expect"
   type: flag
   description: ""
-option-xcoff-read-only-pointers:
-  pattern: "--option-xcoff-read-only-pointers"
+
+option-no-infs-fp-math:
+  pattern: "--option-no-infs-fp-math"
+  type: flag
+  description: ""
+option-no-nans-fp-math:
+  pattern: "--option-no-nans-fp-math"
+  type: flag
+  description: ""
+option-no-signed-zeros-fp-math:
+  pattern: "--option-no-signed-zeros-fp-math"
+  type: flag
+  description: ""
+option-no-trap-after-noreturn:
+  pattern: "--option-no-trap-after-noreturn"
+  type: flag
+  description: ""
+option-no-trapping-fp-math:
+  pattern: "--option-no-trapping-fp-math"
+  type: flag
+  description: ""
+option-no-zeros-in-bss:
+  pattern: "--option-no-zeros-in-bss"
+  type: flag
+  description: ""
+
+option-object-filename-for-debug:
+  pattern: "--option-object-filename-for-debug"
+  type: value
+  filter: string
+  description: ""
+
+option-ppc-gen-scalar-mass-entries:
+  pattern: "--option-ppc-gen-scalar-mass-entries"
+  type: flag
+  description: ""
+
+option-separate-named-sections:
+  pattern: "--option-separate-named-sections"
+  type: flag
+  description: ""
+option-stack-symbol-ordering:
+  pattern: "--option-stack-symbol-ordering"
   type: flag
   description: ""
 option-stack-usage-output:
@@ -280,49 +287,72 @@ option-stack-usage-output:
   type: value
   filter: string
   description: ""
-option-loop-alignment:
-  pattern: "--option-loop-alignment"
+option-supports-debug-entry-values:
+  pattern: "--option-supports-debug-entry-values"
   type: flag
   description: ""
-option-float-abi-type:
-  pattern: "--option-float-abi-type"
-  type: value
-  filter: ["default", "soft", "hard"]
+option-supports-default-outlining:
+  pattern: "--option-supports-default-outlining"
+  type: flag
   description: ""
-option-allow-fp-op-fusion:
-  pattern: "--option-allow-fp-op-fusion"
+option-swift-async-frame-pointer:
+  pattern: "--option-swift-async-frame-pointer"
   type: value
-  filter: ["fast", "standard", "strict"]
+  filter: [ "deployment-based", "always", "never" ]
   description: ""
+
 option-thread-model:
   pattern: "--option-thread-model"
   type: value
-  filter: ["posix", "single"]
+  filter: [ "posix", "single" ]
   description: ""
-option-eabi-version:
-  pattern: "--option-eabi-version"
-  type: value
-  filter: ["unknown", "default", "eabi4", "eabi5", "gnu"]
+option-tls-size:
+  pattern: "--option-tls-size"
+  type: flag
   description: ""
-option-debugger-tuning:
-  pattern: "--option-debugger-tuning"
-  type: value
-  filter: ["default", "gdb", "lldb", "sce", "dbx"]
+option-trap-unreachable:
+  pattern: "--option-trap-unreachable"
+  type: flag
   description: ""
-option-fp-denormal-mode:
-  pattern: "--option-fp-denormal-mode"
-  type: array
-  filter: ["ieee", "preserve-sign", "positive-zero", "dynamic"]
-  description: "<out,in>"
-option-fp32-denormal-mode:
-  pattern: "--option-fp32-denormal-mode"
-  type: array
-  filter: ["ieee", "preserve-sign", "positive-zero", "dynamic"]
-  description: "<out,in>"
-option-exception-model:
-  pattern: "--option-exception-model"
+
+option-unique-basic-block-section-names:
+  pattern: "--option-unique-basic-block-section-names"
+  type: flag
+  description: ""
+option-unique-section-names:
+  pattern: "--option-unique-section-names"
+  type: flag
+  description: ""
+option-use-init-array:
+  pattern: "--option-use-init-array"
+  type: flag
+  description: ""
+
+option-value-tracking-variable-locations:
+  pattern: "--option-value-tracking-variable-locations"
+  type: flag
+  description: ""
+option-vec-lib:
+  pattern: "--option-vec-lib"
   type: value
-  filter: ["none", "dwarf-cfi", "sjlj", "arm", "win-eh", "wasm", "aix", "zos"]
+  filter: [ "no-library", "accelerate", "darwin-lib-system-m", "libmvec", "massv", "svml", "sleefgnuabi", "arm-pl", "amdlibm" ]
+  description: ""
+option-verify-arg-abi-compliance:
+  pattern: "--option-verify-arg-abi-compliance"
+  type: flag
+  description: ""
+
+option-xcoff-read-only-pointers:
+  pattern: "--option-xcoff-read-only-pointers"
+  type: flag
+  description: ""
+option-xcoff-traceback-table:
+  pattern: "--option-xcoff-traceback-table"
+  type: flag
+  description: ""
+option-xray-function-index:
+  pattern: "--option-xray-function-index"
+  type: flag
   description: ""
 
 mc-option-relax-all:
@@ -380,7 +410,7 @@ mc-option-dwarf64:
 mc-option-emit-dwarf-unwind:
   pattern: "--mc-option-emit-dwarf-unwind"
   type: value
-  filter: ["always", "no-compact-unwind", "default"]
+  filter: [ "always", "no-compact-unwind", "default" ]
   description: ""
 mc-option-dwarf-version:
   pattern: "--mc-option-dwarf-version"
@@ -390,7 +420,7 @@ mc-option-dwarf-version:
 mc-option-use-dwarf-directory:
   pattern: "--mc-option-use-dwarf-directory"
   type: value
-  filter: ["disable", "enable", "default"]
+  filter: [ "disable", "enable", "default" ]
   description: ""
 mc-option-abi-name:
   pattern: "--mc-option-abi-name"

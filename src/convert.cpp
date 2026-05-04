@@ -15,6 +15,13 @@ bool cli::convert_value(int &dst, const std::string &value)
 }
 
 template<>
+bool cli::convert_value(unsigned &dst, const std::string &value)
+{
+    dst = std::stoul(value);
+    return true;
+}
+
+template<>
 bool cli::convert_value(std::filesystem::path &dst, const std::string &value)
 {
     dst = std::filesystem::weakly_canonical(value);
@@ -349,6 +356,31 @@ bool cli::convert_value(llvm::MCTargetOptions::DwarfDirectory &dst, const std::s
         { "disable", llvm::MCTargetOptions::DisableDwarfDirectory },
         { "enable", llvm::MCTargetOptions::EnableDwarfDirectory },
         { "default", llvm::MCTargetOptions::DefaultDwarfDirectory },
+    };
+
+    if (!VALUES.contains(value))
+    {
+        return false;
+    }
+
+    dst = VALUES.at(value);
+    return true;
+}
+
+template<>
+bool cli::convert_value(llvm::VectorLibrary &dst, const std::string &value)
+{
+    static const std::map<std::string_view, llvm::VectorLibrary> VALUES
+    {
+        { "no-library", llvm::VectorLibrary::NoLibrary },
+        { "accelerate", llvm::VectorLibrary::Accelerate },
+        { "darwin-lib-system-m", llvm::VectorLibrary::DarwinLibSystemM },
+        { "libmvec", llvm::VectorLibrary::LIBMVEC },
+        { "massv", llvm::VectorLibrary::MASSV },
+        { "svml", llvm::VectorLibrary::SVML },
+        { "sleefgnuabi", llvm::VectorLibrary::SLEEFGNUABI },
+        { "arm-pl", llvm::VectorLibrary::ArmPL },
+        { "amdlibm", llvm::VectorLibrary::AMDLIBM },
     };
 
     if (!VALUES.contains(value))
